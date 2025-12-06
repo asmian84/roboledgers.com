@@ -31,20 +31,30 @@ const TransactionGrid = {
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.columnApi = params.columnApi;
-                this.gridApi.sizeColumnsToFit();
 
                 // Add custom grid toolbar
                 this.addGridToolbar(container);
+
+                // Set up window resize listener for responsive grid
+                this.setupResizeListener();
+
+                // Sort by date on initial load
+                this.gridApi.applyColumnState({
+                    state: [{ colId: 'date', sort: 'asc' }],
+                    defaultState: { sort: null }
+                });
+            },
+            onFirstDataRendered: (params) => {
+                // Size columns to fit once data is loaded
+                params.api.sizeColumnsToFit();
             },
             getRowStyle: (params) => {
-                if (params.data.status === 'unmatched') {
-                    return { background: 'rgba(239, 68, 68, 0.1)' };
-                } else if (params.data.status === 'matched') {
-                    return { background: 'rgba(34, 197, 94, 0.1)' };
-                } else if (params.data.status === 'manual') {
-                    return { background: 'rgba(59, 130, 246, 0.1)' };
+                // Rainbow color scheme: alternating rows
+                if (params.node.rowIndex % 2 === 0) {
+                    return { background: 'rgba(224, 242, 254, 0.3)' }; // Light blue (even)
+                } else {
+                    return { background: 'rgba(255, 255, 255, 0.5)' }; // White (odd)
                 }
-                return null;
             }
         };
 
@@ -173,15 +183,30 @@ const TransactionGrid = {
                 headerName: 'Date',
                 field: 'date',
                 width: 120,
+                editable: true,
+                sort: 'asc', // Default sort ascending
+                comparator: (date1, date2) => {
+                    // Date comparator for proper sorting
+                    const d1 = new Date(date1);
+                    const d2 = new Date(date2);
+                    return d1.getTime() - d2.getTime();
+                },
                 valueFormatter: (params) => {
                     return Utils.formatDate(params.value, 'MM/DD/YYYY');
-                }
+                },
+                valueParser: (params) => {
+                    // Parse and validate date input
+                    return this.parseAndValidateDate(params.newValue);
+                },
+                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
                 headerName: 'Payee',
                 field: 'payee',
                 width: 250,
-                tooltipField: 'payee'
+                editable: true,
+                tooltipField: 'payee',
+                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
                 headerName: 'Vendor',
@@ -194,30 +219,40 @@ const TransactionGrid = {
                 headerName: 'Debit',
                 field: 'debits',
                 width: 120,
+                editable: true,
                 type: 'numericColumn',
                 valueFormatter: (params) => {
                     return params.value > 0 ? Utils.formatCurrency(params.value) : '';
                 },
+                valueParser: (params) => {
+                    return this.parseCurrencyInput(params.newValue);
+                },
                 cellStyle: (params) => {
+                    const baseStyle = { background: 'rgba(99, 102, 241, 0.05)' };
                     if (params.value > 0) {
-                        return { color: '#ef4444', fontWeight: '500' };
+                        return { ...baseStyle, color: '#ef4444', fontWeight: '500' };
                     }
-                    return null;
+                    return baseStyle;
                 }
             },
             {
                 headerName: 'Credit',
                 field: 'amount',
                 width: 120,
+                editable: true,
                 type: 'numericColumn',
                 valueFormatter: (params) => {
                     return params.value > 0 ? Utils.formatCurrency(params.value) : '';
                 },
+                valueParser: (params) => {
+                    return this.parseCurrencyInput(params.newValue);
+                },
                 cellStyle: (params) => {
+                    const baseStyle = { background: 'rgba(99, 102, 241, 0.05)' };
                     if (params.value > 0) {
-                        return { color: '#22c55e', fontWeight: '500' };
+                        return { ...baseStyle, color: '#22c55e', fontWeight: '500' };
                     }
-                    return null;
+                    return baseStyle;
                 }
             },
             {
@@ -281,6 +316,43 @@ const TransactionGrid = {
     onCellValueChanged(event) {
         const transaction = event.data;
         const field = event.colDef.field;
+        let shouldRecalculateBalance = false;
+
+        // Handle date change
+        if (field === 'date') {
+            transaction.date = event.newValue;
+            transaction.status = 'manual';
+            shouldRecalculateBalance = true; // Date change requires re-sort and balance recalc
+
+            // Re-sort grid by date
+            this.gridApi.applyColumnState({
+                state: [{ colId: 'date', sort: 'asc' }],
+                defaultState: { sort: null }
+            });
+        }
+
+        // Handle payee change
+        if (field === 'payee') {
+            transaction.payee = event.newValue;
+            transaction.status = 'manual';
+            this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+        }
+
+        // Handle debit change
+        if (field === 'debits') {
+            const newValue = parseFloat(event.newValue) || 0;
+            transaction.debits = newValue;
+            transaction.status = 'manual';
+            shouldRecalculateBalance = true;
+        }
+
+        // Handle credit/amount change
+        if (field === 'amount') {
+            const newValue = parseFloat(event.newValue) || 0;
+            transaction.amount = newValue;
+            transaction.status = 'manual';
+            shouldRecalculateBalance = true;
+        }
 
         // Handle account selection
         if (field === 'allocatedAccountName') {
@@ -320,8 +392,18 @@ const TransactionGrid = {
             this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
         }
 
+        // Recalculate balances if amount or date changed
+        if (shouldRecalculateBalance) {
+            this.recalculateAllBalances();
+        }
+
         // Save to localStorage
         Storage.saveTransactions(this.transactions);
+
+        // Update statistics
+        if (shouldRecalculateBalance) {
+            App.updateStatistics();
+        }
     },
 
     getTransactions() {
@@ -343,6 +425,98 @@ const TransactionGrid = {
                 fileName: `transactions_${ExcelExporter.getDateString()}.csv`
             });
         }
+    },
+
+    // Helper method: Parse currency input (supports $1,234.56, 1234.56, etc.)
+    parseCurrencyInput(value) {
+        if (!value) return 0;
+
+        // Remove currency symbols and commas
+        const cleaned = String(value).replace(/[$,]/g, '');
+
+        // Parse as float
+        const parsed = parseFloat(cleaned);
+
+        // Return 0 if invalid
+        return isNaN(parsed) ? 0 : Math.max(0, parsed);
+    },
+
+    // Helper method: Parse and validate date input
+    parseAndValidateDate(value) {
+        if (!value) return null;
+
+        // Try to parse the date
+        const date = new Date(value);
+
+        // Check if valid
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid date input:', value);
+            return null;
+        }
+
+        return date.toISOString();
+    },
+
+    // Helper method: Recalculate all balances from opening balance
+    recalculateAllBalances() {
+        if (!this.transactions || this.transactions.length === 0) return;
+
+        // Sort transactions by date
+        const sortedTransactions = [...this.transactions].sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateA.getTime() - dateB.getTime();
+        });
+
+        // Get opening balance from reconciliation panel or use first transaction balance
+        const openingBalanceInput = document.getElementById('expectedOpeningBalance');
+        let runningBalance = 0;
+
+        if (openingBalanceInput && openingBalanceInput.value) {
+            runningBalance = parseFloat(openingBalanceInput.value) || 0;
+        } else if (sortedTransactions.length > 0) {
+            // Calculate backward from first transaction if no opening balance
+            const firstTx = sortedTransactions[0];
+            runningBalance = (firstTx.balance || 0) + (firstTx.debits || 0) - (firstTx.amount || 0);
+        }
+
+        // Recalculate each transaction balance
+        for (let i = 0; i < sortedTransactions.length; i++) {
+            const tx = sortedTransactions[i];
+            const debit = parseFloat(tx.debits) || 0;
+            const credit = parseFloat(tx.amount) || 0;
+
+            // Balance = Previous Balance - Debit + Credit
+            runningBalance = runningBalance - debit + credit;
+            tx.balance = runningBalance;
+        }
+
+        // Refresh the grid to show updated balances
+        if (this.gridApi) {
+            this.gridApi.setRowData(this.transactions);
+            this.gridApi.refreshCells({ force: true });
+        }
+
+        // Update reconciliation if available
+        if (typeof App !== 'undefined' && App.updateReconciliation) {
+            App.updateReconciliation();
+        }
+    },
+
+    // Helper method: Setup window resize listener
+    setupResizeListener() {
+        let resizeTimer;
+
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (this.gridApi) {
+                    this.gridApi.sizeColumnsToFit();
+                }
+            }, 250); // Debounce resize events
+        };
+
+        window.addEventListener('resize', handleResize);
     }
 };
 
