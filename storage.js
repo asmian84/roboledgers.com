@@ -1,0 +1,190 @@
+// LocalStorage management for AutoBookkeeping
+
+const Storage = {
+    KEYS: {
+        VENDORS: 'autobookkeeping_vendors',
+        ACCOUNTS: 'autobookkeeping_accounts',
+        TRANSACTIONS: 'autobookkeeping_transactions',
+        SETTINGS: 'autobookkeeping_settings'
+    },
+
+    // Vendor Dictionary
+    saveVendors(vendors) {
+        try {
+            const data = vendors.map(v => ({
+                id: v.id,
+                name: v.name,
+                patterns: v.patterns,
+                defaultAccount: v.defaultAccount,
+                defaultAccountName: v.defaultAccountName,
+                category: v.category,
+                notes: v.notes,
+                matchCount: v.matchCount,
+                lastMatched: v.lastMatched
+            }));
+            localStorage.setItem(this.KEYS.VENDORS, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving vendors:', error);
+            return false;
+        }
+    },
+
+    loadVendors() {
+        try {
+            const data = localStorage.getItem(this.KEYS.VENDORS);
+            if (!data) return [];
+            const parsed = JSON.parse(data);
+            return parsed.map(v => new Vendor(v));
+        } catch (error) {
+            console.error('Error loading vendors:', error);
+            return [];
+        }
+    },
+
+    // Chart of Accounts
+    saveAccounts(accounts) {
+        try {
+            const data = accounts.map(a => ({
+                code: a.code,
+                name: a.name,
+                type: a.type,
+                category: a.category,
+                isActive: a.isActive
+            }));
+            localStorage.setItem(this.KEYS.ACCOUNTS, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving accounts:', error);
+            return false;
+        }
+    },
+
+    loadAccounts() {
+        try {
+            const data = localStorage.getItem(this.KEYS.ACCOUNTS);
+            if (!data) {
+                // Load default chart of accounts
+                return DEFAULT_CHART_OF_ACCOUNTS.map(a => new Account(a));
+            }
+            const parsed = JSON.parse(data);
+            return parsed.map(a => new Account(a));
+        } catch (error) {
+            console.error('Error loading accounts:', error);
+            return DEFAULT_CHART_OF_ACCOUNTS.map(a => new Account(a));
+        }
+    },
+
+    // Transactions (for session persistence)
+    saveTransactions(transactions) {
+        try {
+            const data = transactions.map(t => ({
+                id: t.id,
+                ref: t.ref,
+                date: t.date,
+                payee: t.payee,
+                debits: t.debits,
+                amount: t.amount,
+                balance: t.balance,
+                account: t.account,
+                vendor: t.vendor,
+                vendorId: t.vendorId,
+                allocatedAccount: t.allocatedAccount,
+                allocatedAccountName: t.allocatedAccountName,
+                category: t.category,
+                notes: t.notes,
+                status: t.status
+            }));
+            localStorage.setItem(this.KEYS.TRANSACTIONS, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving transactions:', error);
+            return false;
+        }
+    },
+
+    loadTransactions() {
+        try {
+            const data = localStorage.getItem(this.KEYS.TRANSACTIONS);
+            if (!data) return [];
+            const parsed = JSON.parse(data);
+            return parsed.map(t => new Transaction(t));
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            return [];
+        }
+    },
+
+    clearTransactions() {
+        localStorage.removeItem(this.KEYS.TRANSACTIONS);
+    },
+
+    // Settings
+    saveSettings(settings) {
+        try {
+            localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
+            return true;
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            return false;
+        }
+    },
+
+    loadSettings() {
+        try {
+            const data = localStorage.getItem(this.KEYS.SETTINGS);
+            if (!data) return this.getDefaultSettings();
+            return { ...this.getDefaultSettings(), ...JSON.parse(data) };
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            return this.getDefaultSettings();
+        }
+    },
+
+    getDefaultSettings() {
+        return {
+            autoMatch: true,
+            fuzzyMatchThreshold: 0.7,
+            autoSave: true,
+            showHints: true,
+            dateFormat: 'MM/DD/YYYY'
+        };
+    },
+
+    // Export/Import functionality
+    exportVendorDictionary() {
+        const vendors = this.loadVendors();
+        const blob = new Blob([JSON.stringify(vendors, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vendor-dictionary-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    },
+
+    importVendorDictionary(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const vendors = data.map(v => new Vendor(v));
+                    this.saveVendors(vendors);
+                    resolve(vendors);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
+    },
+
+    // Clear all data
+    clearAll() {
+        Object.values(this.KEYS).forEach(key => {
+            localStorage.removeItem(key);
+        });
+    }
+};

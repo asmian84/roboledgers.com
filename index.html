@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoboLedgers - AI-Powered Smart Bookkeeping</title>
+    <meta name="description"
+        content="Future-forward automated bookkeeping platform with intelligent transaction categorization and multi-account support">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- SheetJS for Excel/CSV processing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- AG Grid for interactive spreadsheet -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section" id="logoHome"
+                    style="flex: 1; text-align: right; padding-right: 3rem; cursor: pointer;" title="Return to Home">
+                    <h1 style="font-size: 2.25rem; font-weight: 700;">RoboLedgers<span class="domain"
+                            style="font-weight: 400; opacity: 0.85;">.com</span>
+                    </h1>
+                </div>
+                <div class="header-actions">
+                    <button id="reportsBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M18 17V9"></path>
+                            <path d="M13 17v-6"></path>
+                            <path d="M8 17v-3"></path>
+                        </svg>
+                        Reports
+                    </button>
+                    <button id="settingsBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24">
+                            </path>
+                        </svg>
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Step 1: Upload Zone -->
+            <section id="uploadSection" class="section active">
+                <div class="upload-container">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h2>Drop your CSV file here</h2>
+                        <p class="upload-subtitle">or click to browse</p>
+                        <p class="upload-hint">Supports CSV bank statement files</p>
+                        <input type="file" id="fileInput" accept=".csv" hidden>
+                    </div>
+
+                    <div class="upload-info">
+                        <div class="info-card">
+                            <div class="info-icon">📊</div>
+                            <h3>Smart Categorization</h3>
+                            <p>Automatically matches vendors to your dictionary and assigns accounts</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-icon">✏️</div>
+                            <h3>Interactive Review</h3>
+                            <p>Edit transactions in a spreadsheet-like interface with real-time updates</p>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-icon">⚡</div>
+                            <h3>Export Ready</h3>
+                            <p>Generate Excel files formatted for QuickBooks and CASEWARE import</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2: Processing -->
+            <section id="processingSection" class="section">
+                <div class="processing-container">
+                    <div class="processing-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                    <h2 id="processingText">Processing your file...</h2>
+                    <p id="processingDetails" class="processing-details"></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3: Transaction Review -->
+            <section id="reviewSection" class="section">
+                <div class="review-header">
+                    <div class="review-title">
+                        <h2>Transaction Review</h2>
+                        <p id="reviewStats" class="review-stats"></p>
+                    </div>
+                    <div class="review-actions">
+                        <button id="rethinkTransactionsBtn" class="btn-primary"
+                            title="AI-powered vendor and account optimization">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            ✨ AI Re-think
+                        </button>
+                        <div class="ref-prefix-control"
+                            style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem;">
+                            <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                Ref#:
+                            </label>
+                            <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
+                                    padding: 0.4rem 0.6rem;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 4px;
+                                    background: var(--input-bg);
+                                    color: var(--text-primary);
+                                    width: 70px;
+                                    font-size: 0.9rem;
+                                " />
+                        </div>
+                        <div class="account-type-control"
+                            style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem;">
+                            <label for="accountTypeSelect" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                Account Type:
+                            </label>
+                            <select id="accountTypeSelect" style="
+                                    padding: 0.4rem 0.6rem;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 4px;
+                                    background: var(--input-bg);
+                                    color: var(--text-primary);
+                                    font-size: 0.9rem;
+                                    cursor: pointer;
+                                ">
+                                <option value="chequing">Chequing</option>
+                                <option value="savings">Savings</option>
+                                <option value="credit">Credit Card</option>
+                                <option value="loan">Loan</option>
+                                <option value="investment">Investment</option>
+                            </select>
+                        </div>
+                        <button id="exportBtn" class="btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export XLS
+                        </button>
+                        <button id="resetBtn" class="btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            New File
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid-container">
+                    <div id="transactionGrid" class="ag-theme-alpine"></div>
+                </div>
+
+                <!-- Bank Reconciliation Panel -->
+                <div id="reconciliationPanel" class="reconciliation-panel" style="display: none;">
+                    <h3>🏦 Bank Reconciliation</h3>
+                    <div class="reconciliation-grid">
+                        <div class="reconciliation-section">
+                            <h4>Opening Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="number" id="expectedOpeningBalance" placeholder="0.00" step="0.01">
+                            </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Ending Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="number" id="expectedEndingBalance" placeholder="0.00" step="0.01">
+                            </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Discrepancy</h4>
+                            <div class="status-item">
+                                <label>Opening</label>
+                                <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Ending</label>
+                                <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-indicator" id="statusIndicator">
+                                <span class="status-icon">⚪</span>
+                                <span class="status-text">Enter expected balances</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-panel">
+                    <div class="summary-card">
+                        <h3>Trial Balance Summary</h3>
+                        <div id="trialBalanceSummary" class="trial-balance"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Vendor Dictionary Modal -->
+        <div id="vendorModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Vendor Dictionary</h2>
+                    <button class="modal-close" id="closeVendorModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="vendor-controls">
+                        <button id="addVendorBtn" class="btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Add Vendor
+                        </button>
+                        <button id="rethinkVendorsBtn" class="btn-primary" title="AI-powered vendor optimization">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            ✨ Re-think
+                        </button>
+                        <button id="bulkIndexBtn" class="btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Bulk Index
+                        </button>
+                        <button id="importDictBtn" class="btn-secondary">Import</button>
+                        <button id="exportDictBtn" class="btn-secondary">Export</button>
+                    </div>
+
+                    <!-- Bulk Indexing Info Panel -->
+                    <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
+                        <h3>📚 Bulk Dictionary Indexing</h3>
+                        <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
+                            system will:</p>
+                        <ul>
+                            <li>Extract vendor names from all transactions</li>
+                            <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
+                            <li>Consolidate duplicate vendors</li>
+                            <li>Learn account mappings from your historical data</li>
+                        </ul>
+                        <div class="bulk-upload-zone" id="bulkUploadZone">
+                            <p>Drop multiple CSV files here or click to browse</p>
+                            <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
+                        </div>
+                        <div id="bulkProgress" style="display: none;">
+                            <p id="bulkProgressText">Processing files...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="bulkProgressFill"></div>
+                            </div>
+                        </div>
+                        <div id="bulkResults" style="display: none;"></div>
+                    </div>
+
+                    <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Modal -->
+        <div id="accountsModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Chart of Accounts</h2>
+                    <button class="modal-close" id="closeAccountsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="accounts-info">
+                        <p>Standard chart of accounts loaded. You can search and filter below.</p>
+                    </div>
+                    <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Options Modal -->
+        <div id="exportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Export Options</h2>
+                    <button class="modal-close" id="closeExportModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="export-description">Choose your export format:</p>
+                    <div class="export-options">
+                        <button class="export-option-card" data-format="quickbooks">
+                            <div class="export-icon">📗</div>
+                            <h3>QuickBooks</h3>
+                            <p>IIF format for QuickBooks Desktop import</p>
+                        </button>
+                        <button class="export-option-card" data-format="caseware">
+                            <div class="export-icon">📘</div>
+                            <h3>CASEWARE</h3>
+                            <p>Trial balance format for CASEWARE</p>
+                        </button>
+                        <button class="export-option-card" data-format="general">
+                            <div class="export-icon">📊</div>
+                            <h3>General Ledger</h3>
+                            <p>Detailed transaction listing with all fields</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content modal-large settings-modal">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <button class="modal-close" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body settings-body">
+                <!-- Settings Tabs -->
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="appearance">Appearance</button>
+                    <button class="settings-tab" data-tab="company">Company</button>
+                    <button class="settings-tab" data-tab="data">Data</button>
+                </div>
+
+                <!-- Appearance Settings -->
+                <div class="settings-panel active" data-panel="appearance">
+                    <h3>🎨 Appearance</h3>
+
+                    <div class="settings-section">
+                        <div class="settings-row">
+                            <div class="settings-col-half">
+                                <label class="settings-label">Font Family</label>
+                                <select id="fontFamilySelect" class="settings-select">
+                                    <option value="Inter">Inter (Default)</option>
+                                    <option value="San Francisco">San Francisco</option>
+                                    <option value="Helvetica">Helvetica Neue</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Monospace">Monospace</option>
+                                </select>
+                            </div>
+                            <div class="settings-col-half">
+                                <label class="settings-label">Font Size</label>
+                                <select id="fontSizeSelect" class="settings-select">
+                                    <option value="small">Small</option>
+                                    <option value="medium">Medium (Default)</option>
+                                    <option value="large">Large</option>
+                                    <option value="xlarge">Extra Large</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <label class="settings-label">Color Theme</label>
+                        <select id="themeSelect" class="settings-select">
+                            <option value="cyber-night">🌃 Cyber Night - Dark cyan/purple</option>
+                            <option value="arctic-dawn">❄️ Arctic Dawn - Light blue</option>
+                            <option value="neon-forest">🌲 Neon Forest - Dark green</option>
+                            <option value="royal-amethyst">💎 Royal Amethyst - Purple</option>
+                            <option value="sunset-horizon">🌅 Sunset Horizon - Orange</option>
+                        </select>
+                        <div id="themePreview" class="theme-preview-large"></div>
+                    </div>
+                </div>
+
+                <!-- Company Settings -->
+                <div class="settings-panel" data-panel="company">
+                    <h3>🏢 Company Information</h3>
+
+                    <div class="settings-section">
+                        <label class="settings-label">Company Name</label>
+                        <input type="text" id="companyNameInput" class="settings-input"
+                            placeholder="Enter company name (optional)">
+                        <p class="settings-hint">Will be displayed above Transaction Review</p>
+                    </div>
+                </div>
+
+                <!-- Data Management Settings -->
+                <div class="settings-panel" data-panel="data">
+                    <h3>📊 Data Management</h3>
+
+                    <div class="settings-section">
+                        <h4>Vendor Dictionary</h4>
+                        <div class="button-group">
+                            <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                Manage Vendor Dictionary
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h4>Chart of Accounts</h4>
+                        <div class="button-group">
+                            <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <path d="M3 9h18" />
+                                    <path d="M9 21V9" />
+                                </svg>
+                                View Chart of Accounts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="models.js"></script>
+    <script src="storage.js"></script>
+    <script src="utils.js"></script>
+    <script src="vendor-name-utils.js"></script>
+    <script src="csv-parser.js"></script>
+    <script src="vendor-matcher.js"></script>
+    <script src="account-allocator.js"></script>
+    <script src="excel-exporter.js"></script>
+    <script src="bulk-indexer.js"></script>
+    <script src="transaction-grid.js"></script>
+    <script src="vendor-ai.js"></script>
+    <script src="vendor-manager.js"></script>
+    <script src="account-chart.js"></script>
+    <script src="reconciliation.js"></script>
+    <script src="settings-manager.js"></script>
+    <script src="theme-manager.js"></script>
+    <script>
+        // Debug test - verify JavaScript works
+        console.log('🔍 TEST: JavaScript is executing!');
+        console.log('🔍 TEST: About to load app.js...');
+    </script>
+    <script src="app.js"></script>
+</body>
+
+</html>
