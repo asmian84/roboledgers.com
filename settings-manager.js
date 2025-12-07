@@ -115,22 +115,6 @@ const Settings = {
 
     get(key) {
         return this.current[key];
-    },
-
-    getAll() {
-        return { ...this.current };
-    },
-
-    setGridColorScheme(scheme) {
-        this.current.gridColorScheme = scheme;
-        Storage.saveSettings(this.current);
-        if (typeof TransactionGrid !== 'undefined') {
-            TransactionGrid.applyGridCustomization();
-        }
-    },
-
-    setGridFont(fontFamily, fontSize) {
-        if (fontFamily) this.current.gridFontFamily = fontFamily;
         if (fontSize) this.current.gridFontSize = fontSize;
         Storage.saveSettings(this.current);
         if (typeof TransactionGrid !== 'undefined') {
