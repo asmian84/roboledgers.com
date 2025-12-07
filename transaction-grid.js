@@ -54,16 +54,7 @@ const TransactionGrid = {
                 params.api.sizeColumnsToFit();
             },
             getRowStyle: (params) => {
-                // Rainbow pastel color scheme (6 colors cycling)
-                const rainbowColors = [
-                    { background: '#FFD1DC' },  // Pink
-                    { background: '#D1F2FF' },  // Cyan
-                    { background: '#D1FFD1' },  // Mint
-                    { background: '#FFFACD' },  // Lemon
-                    { background: '#FFDAB9' },  // Peach
-                    { background: '#E6E6FA' }   // Lavender
-                ];
-                return rainbowColors[params.node.rowIndex % 6];
+                return this.getRowStyle(params);
             }
         };
 
@@ -554,7 +545,45 @@ const TransactionGrid = {
         return rainbowColors[params.node.rowIndex % 6];
     },
 
-    // Setup listener for opening balance input changes
+    // Color schemes for grid rows
+    colorSchemes: {
+        rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],  // 6 pastel colors
+        classic: ['#FFFFFF', '#F5F5F5'],  // White/light gray
+        default: ['transparent', 'transparent'],  // Grid default
+        ledger: ['#E8F5E9', '#F1F8E9'],  // Green accounting
+        postit: ['#FFF9C4', '#FFEB3B'],  // Yellow sticky notes
+        pastel: ['#FFE4E1', '#E6F3FF', '#FFF0F5', '#F0FFF0'],  // Soft pastels
+        professional: ['#FFFFFF', '#E3F2FD'],  // Corporate blue/white
+        highcontrast: ['#FFFFFF', '#E0E0E0']  // Strong gray
+    },
+
+    // Get row style based on selected color scheme
+    getRowStyle(params) {
+        const scheme = Settings.current.gridColorScheme || 'rainbow';
+        const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
+        const colorIndex = params.node.rowIndex % colors.length;
+
+        const style = { background: colors[colorIndex] };
+
+        // Apply font customization if set
+        if (Settings.current.gridFontFamily) {
+            style.fontFamily = Settings.current.gridFontFamily;
+        }
+        if (Settings.current.gridFontSize) {
+            style.fontSize = Settings.current.gridFontSize + 'px';
+        }
+
+        return style;
+    },
+
+    // Apply grid customization
+    applyGridCustomization() {
+        if (this.gridApi) {
+            this.gridApi.redrawRows();
+        }
+    },
+
+    // Helper method: Setup opening balance input changes
     setupOpeningBalanceListener() {
         const openingBalanceInput = document.getElementById('expectedOpeningBalance');
         if (openingBalanceInput) {

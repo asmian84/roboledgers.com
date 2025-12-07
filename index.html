@@ -412,6 +412,37 @@
                         </select>
                         <div id="themePreview" class="theme-preview-large"></div>
                     </div>
+
+                    <div class="settings-section">
+                        <label class="settings-label">Grid Color Scheme</label>
+                        <select id="gridColorScheme" class="settings-select">
+                            <option value="rainbow">🌈 Rainbow - Pastel colors</option>
+                            <option value="classic">📋 Classic - White/gray alternating</option>
+                            <option value="default">⚪ Default - Grid default</option>
+                            <option value="ledger">📗 Ledger Pad - Green accounting paper</option>
+                            <option value="postit">📝 Post-it Note - Yellow sticky notes</option>
+                            <option value="pastel">🎨 Pastel - Soft alternating</option>
+                            <option value="professional">💼 Professional - Corporate blue/white</option>
+                            <option value="highcontrast">🔲 High Contrast - Strong borders</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-section">
+                        <label class="settings-label">Grid Font Family</label>
+                        <select id="gridFontFamily" class="settings-select">
+                            <option value="Arial">Arial</option>
+                            <option value="'Times New Roman'">Times New Roman</option>
+                            <option value="'Courier New'">Courier New</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="'Segoe UI'">Segoe UI</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-section">
+                        <label class="settings-label">Grid Font Size: <span id="fontSizeValue">12px</span></label>
+                        <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
+                    </div>
                 </div>
 
                 <!-- Company Settings -->
