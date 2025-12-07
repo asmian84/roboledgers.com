@@ -743,8 +743,8 @@ body {
 }
 
 /* Settings modal should be below other modals */
-.settings-modal {
-    z-index: 1500;
+#settingsModal {
+    z-index: 1500 !important;
 }
 
 .modal.active {
