@@ -188,6 +188,8 @@ const ExcelExporter = {
         // Add header
         glData.push({
             'Ref#': 'Ref#',
+            'Date': 'Date',
+            'Description': 'Description',
             'Debits': 'Debits',
             'Credits': 'Credits',
             'Balance': 'Balance',
@@ -245,6 +247,8 @@ const ExcelExporter = {
 
             glData.push({
                 'Ref#': refNum,
+                'Date': txn.date || '',
+                'Description': txn.description || txn.payee || '',
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
                 'Credits': credit > 0 ? credit.toFixed(2) : '',
                 'Balance': runningBalance.toFixed(2),
@@ -258,6 +262,8 @@ const ExcelExporter = {
         // Set column widths
         worksheet['!cols'] = [
             { wch: 8 },   // Ref#
+            { wch: 12 },  // Date
+            { wch: 40 },  // Description
             { wch: 12 },  // Debits
             { wch: 12 },  // Credits
             { wch: 12 },  // Balance
