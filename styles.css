@@ -836,7 +836,7 @@ body {
 
 .modal-body {
     padding: var(--spacing-lg);
-    overflow-y: auto;
+    overflow-y: hidden;
 }
 
 .vendor-controls {
