@@ -557,13 +557,16 @@ body {
 .review-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .review-title h2 {
@@ -576,7 +579,14 @@ body {
     font-size: 0.875rem;
 }
 
-.review-actions {
+.review-actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.review-buttons {
     display: flex;
     gap: var(--spacing-sm);
 }
@@ -710,6 +720,11 @@ body {
     align-items: center;
     justify-content: center;
     padding: var(--spacing-lg);
+}
+
+/* Settings modal should be below other modals */
+.settings-modal {
+    z-index: 1500;
 }
 
 .modal.active {

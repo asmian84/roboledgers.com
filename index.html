@@ -116,9 +116,45 @@
                         <h2>Transaction Review</h2>
                         <p id="reviewStats" class="review-stats"></p>
                     </div>
-                    <div class="review-actions">
+                    <div class="review-actions-wrapper">
+                        <!-- Top Row: Buttons -->
+                        <div class="review-buttons">
+                            <button id="rethinkTransactionsBtn" class="btn-primary"
+                                title="AI-powered vendor and account optimization">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                    <path d="M2 17l10 5 10-5"></path>
+                                    <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                                ✨ AI Re-think
+                            </button>
+                            <button id="exportBtn" class="btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Export XLS
+                            </button>
+                            <button id="addDataBtn" class="btn-secondary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Add Data
+                            </button>
+                            <button id="startOverBtn" class="btn-secondary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="1 4 1 10 7 10"></polyline>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                </svg>
+                                Start Over
+                            </button>
+                        </div>
+                        <!-- Bottom Row: Search Controls -->
                         <div class="search-controls"
-                            style="display: flex; align-items: center; gap: 0.75rem; margin-right: auto;">
+                            style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
                             <input type="text" id="gridQuickFilter" placeholder="Quick search..."
                                 style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-primary); width: 200px; font-size: 0.9rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -156,38 +192,6 @@
                                 </select>
                             </div>
                         </div>
-                        <button id="rethinkTransactionsBtn" class="btn-primary"
-                            title="AI-powered vendor and account optimization">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                <path d="M2 17l10 5 10-5"></path>
-                                <path d="M2 12l10 5 10-5"></path>
-                            </svg>
-                            ✨ AI Re-think
-                        </button>
-                        <button id="exportBtn" class="btn-primary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Export XLS
-                        </button>
-                        <button id="addDataBtn" class="btn-secondary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            Add Data
-                        </button>
-                        <button id="startOverBtn" class="btn-secondary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="1 4 1 10 7 10"></polyline>
-                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                            </svg>
-                            Start Over
-                        </button>
                     </div>
                 </div>
 
@@ -236,13 +240,6 @@
                                 <span class="status-text">Enter expected balances</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="summary-panel">
-                    <div class="summary-card">
-                        <h3>Trial Balance Summary</h3>
-                        <div id="trialBalanceSummary" class="trial-balance"></div>
                     </div>
                 </div>
             </section>

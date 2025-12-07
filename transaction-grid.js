@@ -494,16 +494,23 @@ const TransactionGrid = {
             runningBalance = parseFloat(openingBalanceInput.value) || 0;
         }
 
+        console.log('Starting balance calculation from opening:', runningBalance);
+
         // Recalculate each transaction balance
         for (let i = 0; i < sortedTransactions.length; i++) {
             const tx = sortedTransactions[i];
             const debit = parseFloat(tx.debits) || 0;
             const credit = parseFloat(tx.amount) || 0;
 
-            // Balance = Previous Balance - Debit + Credit
+            // Balance calculation: Opening Balance - Debit + Credit
             // Debits decrease balance (money out), Credits increase balance (money in)
             runningBalance = runningBalance - debit + credit;
             tx.balance = runningBalance;
+
+            // Debug first few transactions
+            if (i < 3) {
+                console.log(`Txn ${i + 1}: Debit=${debit}, Credit=${credit}, Balance=${runningBalance}`);
+            }
         }
 
         // Update the actual transactions array with the sorted data
@@ -519,6 +526,8 @@ const TransactionGrid = {
         if (typeof App !== 'undefined' && App.updateReconciliation) {
             App.updateReconciliation();
         }
+
+        console.log('Balance calculation complete. Final balance:', runningBalance);
     },
 
     // Helper method: Setup window resize listener
