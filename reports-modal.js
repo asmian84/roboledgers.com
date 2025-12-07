@@ -1,16 +1,18 @@
-// Reports Modal Handler
-// Manages the Reports modal UI and report generation
-
 const ReportsModal = {
     initialize() {
         this.setupEventListeners();
     },
 
     setupEventListeners() {
-        // Reports button
+        // Reports button - FORCE OVERRIDE old listener
         const reportsBtn = document.getElementById('reportsBtn');
         if (reportsBtn) {
-            reportsBtn.addEventListener('click', () => {
+            // Clone button to remove ALL existing event listeners
+            const newBtn = reportsBtn.cloneNode(true);
+            reportsBtn.parentNode.replaceChild(newBtn, reportsBtn);
+
+            // Now add OUR listener to the fresh button
+            newBtn.addEventListener('click', () => {
                 this.show();
             });
         }
