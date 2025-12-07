@@ -355,8 +355,6 @@ const App = {
             return;
         }
 
-        panel.style.display = 'block';
-
         const expectedOpening = parseFloat(document.getElementById('expectedOpeningBalance')?.value) || null;
         const expectedEnding = parseFloat(document.getElementById('expectedEndingBalance')?.value) || null;
 
