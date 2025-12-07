@@ -327,6 +327,10 @@ const TransactionGrid = {
         if (this.gridApi) {
             this.gridApi.setRowData(this.transactions);
             this.gridApi.sizeColumnsToFit();
+
+            // CRITICAL: Auto-calculate balances when loading transactions
+            console.log('🔢 AUTO-CALCULATING BALANCES for', this.transactions.length, 'transactions');
+            this.recalculateAllBalances();
         }
     },
 
