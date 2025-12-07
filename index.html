@@ -386,39 +386,49 @@
                     <h3>🎨 Appearance</h3>
 
                     <div class="settings-section">
-                        <div class="settings-row">
-                            <div class="settings-col-half">
-                                <label class="settings-label">Font Family</label>
-                                <select id="fontFamilySelect" class="settings-select">
-                                    <option value="Inter">Inter (Default)</option>
-                                    <option value="San Francisco">San Francisco</option>
-                                    <option value="Helvetica">Helvetica Neue</option>
-                                    <option value="Georgia">Georgia</option>
-                                    <option value="Monospace">Monospace</option>
-                                </select>
-                            </div>
-                            <div class="settings-col-half">
-                                <label class="settings-label">Font Size</label>
-                                <select id="fontSizeSelect" class="settings-select">
-                                    <option value="small">Small</option>
-                                    <option value="medium">Medium (Default)</option>
-                                    <option value="large">Large</option>
-                                    <option value="xlarge">Extra Large</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
                         <label class="settings-label">Color Theme</label>
-                        <select id="themeSelect" class="settings-select">
-                            <option value="cyber-night">🌃 Cyber Night - Dark cyan/purple</option>
-                            <option value="arctic-dawn">❄️ Arctic Dawn - Light blue</option>
-                            <option value="neon-forest">🌲 Neon Forest - Dark green</option>
-                            <option value="royal-amethyst">💎 Royal Amethyst - Purple</option>
-                            <option value="sunset-horizon">🌅 Sunset Horizon - Orange</option>
-                        </select>
-                        <div id="themePreview" class="theme-preview-large"></div>
+                        <div class="theme-radio-group">
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="cyber-night" checked>
+                                <span class="theme-radio-label">
+                                    <span class="theme-icon">🌃</span>
+                                    <span class="theme-name">Cyber Night</span>
+                                    <span class="theme-desc">Dark cyan/purple</span>
+                                </span>
+                            </label>
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="arctic-dawn">
+                                <span class="theme-radio-label">
+                                    <span class="theme-icon">❄️</span>
+                                    <span class="theme-name">Arctic Dawn</span>
+                                    <span class="theme-desc">Light blue</span>
+                                </span>
+                            </label>
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="neon-forest">
+                                <span class="theme-radio-label">
+                                    <span class="theme-icon">🌲</span>
+                                    <span class="theme-name">Neon Forest</span>
+                                    <span class="theme-desc">Dark green</span>
+                                </span>
+                            </label>
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="royal-amethyst">
+                                <span class="theme-radio-label">
+                                    <span class="theme-icon">💎</span>
+                                    <span class="theme-name">Royal Amethyst</span>
+                                    <span class="theme-desc">Purple</span>
+                                </span>
+                            </label>
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="sunset-horizon">
+                                <span class="theme-radio-label">
+                                    <span class="theme-icon">🌅</span>
+                                    <span class="theme-name">Sunset Horizon</span>
+                                    <span class="theme-desc">Orange</span>
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="settings-section">
