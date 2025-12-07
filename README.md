@@ -1,131 +1,81 @@
-# AutoBookkeeping
+# RoboLedgers
 
-**Version 1.03** - Intelligent Bank Statement Processor
+🤖 **AI-Powered Smart Bookkeeping Platform**
 
-## Overview
-AutoBookkeeping automatically processes bank statement CSV files, matches transactions to vendors, allocates accounts using AI, and exports properly formatted General Ledger files for accounting software.
+Transform your bookkeeping workflow with intelligent automation, fuzzy vendor matching, and beautiful visualizations.
 
-## Features
+## ✨ Features
 
-### Core Functionality
-- **CSV Import**: Drag & drop CSV bank statement files
-- **Smart Vendor Matching**: Automatically matches transactions to vendor dictionary
-- **AI-Powered Allocation**: Suggests account codes based on vendor names and categories
-- **Interactive Review**: Edit transactions in spreadsheet-like grid with real-time updates
-- **Bank Reconciliation**: Automatic balance validation and discrepancy detection
-- **General Ledger Export**: Export to Excel with proper Debit/Credit/Balance columns
+### 🤖 AI Intelligence
+- **Smart Auto-Learning** - Assign an account once, applies to all matching transactions
+- **AI Re-think** - One-click batch re-categorization
+- **Fuzzy Vendor Matching** - Recognizes AMZN as Amazon automatically
 
-### Version 1.03 (Latest)
-- ✅ **Chronological Ref# Numbering**: Transactions numbered 001, 002, 003...
-- ✅ **Responsive Grid Layout**: Properly adapts to window resizing
-- ✅ **Simplified Excel Export**: Only exports essential columns (Ref#, Debits, Credits, Balance, Account)
-- ✅ **Running Balance Calculation**: Accurate cumulative balance in exports
+### 📊 Data Management
+- Drag & drop CSV import
+- Interactive spreadsheet grid (AG Grid)
+- Real-time search and filtering
+- Inline cell editing
 
-### Version 1.02
-- ✅ Fixed transaction grid initialization errors
-- ✅ Fixed file processing element ID mismatches
-- ✅ Restored all missing grid methods
+### 🎯 Bank Reconciliation
+- Smart balance calculation
+- Discrepancy detection
+- Chronological transaction sorting
+- Opening/ending balance tracking
 
-### Version 1.01
-- ✅ Bi-directional Vendor Learning: Manual allocations update vendor dictionary
-- ✅ AI Re-think Feature: Batch optimize unallocated transactions
-- ✅ Bank Reconciliation Panel: Validate opening/ending balances
-- ✅ Dark/Light Theme Toggle
-- ✅ Fully Editable Vendor Dictionary
+### 📤 Export Formats
+- General Ledger (complete listing)
+- QuickBooks journal entries
+- CASEWARE trial balance
+- Excel/XLSX with formatting
 
-## Quick Start
+### 🎨 Visual Experience
+- Rainbow grid theme (6-color rotation)
+- 5 beautiful app themes
+- Glassmorphism effects
+- Responsive design
 
-1. **Open Application**
-   - Open `index.html` in a modern web browser
-   - For best results, use a local web server:
-     ```
-     python -m http.server 8000
-     ```
-   - Navigate to `http://localhost:8000`
+## 🚀 Live Demo
 
-2. **Upload CSV File**
-   - Drag & drop your bank statement CSV onto the upload zone
-   - Or click to browse and select file
+Visit: [RoboLedgers Live](https://yourusername.github.io/roboledgers/)
 
-3. **Review Transactions**
-   - View auto-matched vendors and allocated accounts
-   - Edit any transaction directly in the grid
-   - Manual edits automatically update vendor dictionary
+## 💻 Tech Stack
 
-4. **Export**
-   - Click "Export XLS" to download General Ledger
-   - Format: Ref#, Debits, Credits, Balance, Account
+- **Frontend:** Vanilla JavaScript (ES6+)
+- **Grid:** AG Grid Community Edition
+- **Export:** SheetJS (xlsx)
+- **Styling:** Modern CSS with CSS Variables
+- **Data:** LocalStorage (client-side only)
 
-## Excel Export Format
+## 🔒 Privacy
 
-The General Ledger export contains only 5 columns:
-- **Ref#**: Sequential transaction number (001, 002, 003...)
-- **Debits**: Positive transaction amounts
-- **Credits**: Negative transaction amounts (as positive numbers)
-- **Balance**: Running cumulative balance
-- **Account**: Account code and description
+- **100% client-side** - All data stays in your browser
+- **No server uploads** - Complete privacy
+- **No tracking** - Your data is yours alone
 
-## File Structure
+## 📥 Installation
 
-```
-AutoBookkeeping/
-├── index.html              # Main application
-├── app.js                  # Application controller
-├── transaction-grid.js     # Transaction grid with AG Grid
-├── excel-exporter.js       # Excel export functionality
-├── csv-parser.js           # CSV file parsing
-├── vendor-matcher.js       # Vendor matching logic
-├── vendor-ai.js            # AI categorization
-├── account-allocator.js    # Account allocation
-├── reconciliation.js       # Bank reconciliation
-├── theme-manager.js        # Theme switching
-└── styles.css              # Application styles
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/roboledgers.git
+   ```
 
-## Browser Compatibility
+2. Open `index.html` in your browser
 
-- Chrome 90+ (recommended)
-- Firefox 88+
-- Edge 90+
-- Safari 14+
+That's it! No build process needed.
 
-## Technologies
+## 🎯 Roadmap
 
-- **AG Grid Community**: High-performance data grid
-- **SheetJS (XLSX)**: Excel file generation
-- **Vanilla JavaScript**: No framework dependencies
+View our comprehensive [Feature Roadmap](roadmap.html) with 100+ planned features and innovations.
 
-## Changelog
+## 📄 License
 
-### v1.03 (2025-12-06)
-- Added chronological Ref# numbering to transaction grid
-- Fixed responsive grid layout issues
-- Completely rewrote Excel export to simplified General Ledger format
-- Removed unnecessary columns from export
-- Implemented proper running balance calculation
+MIT License - Free to use and modify
 
-### v1.02 (2025-12-06)
-- Fixed critical initialization errors
-- Restored missing TransactionGrid methods
-- Fixed file processing element ID references
+## 🤝 Contributing
 
-### v1.01 (2025-12-05)
-- Added bi-directional vendor learning
-- Added AI Re-think batch optimization feature
-- Added bank reconciliation panel
-- Improved UI/UX
+Contributions welcome! Please feel free to submit issues or pull requests.
 
-### v1.0 (2025-12-04)
-- Initial release
-- CSV import and parsing
-- Vendor dictionary management
-- Account allocation
-- Excel export
+---
 
-## License
-
-Proprietary - For Internal Use Only
-
-## Support
-
-For issues or questions, contact the development team.
+**Version 1.04+** • Built with ❤️ and AI • December 2025
