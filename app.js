@@ -422,7 +422,7 @@ const App = {
 
         // Get account type from dropdown
         const accountTypeSelect = document.getElementById('accountTypeSelect');
-        const accountType = accountTypeSelect ? accountTypeSelect.value : 'v');
+        const accountType = accountTypeSelect ? accountTypeSelect.value : 'chequing';
 
         let categorized = 0;
         let allocated = 0;
