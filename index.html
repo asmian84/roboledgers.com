@@ -492,6 +492,79 @@
         </div>
     </div>
 
+    <!-- Manage Accounts Modal -->
+    <div id="manageAccountsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>🏦 Manage Accounts</h2>
+                <button class="modal-close" id="closeManageAccountsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="accounts-toolbar">
+                    <button id="addAccountBtn" class="btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Account
+                    </button>
+                </div>
+
+                <div id="accountsList" class="accounts-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Account Modal -->
+    <div id="accountFormModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="accountFormTitle">Add Account</h2>
+                <button class="modal-close" id="closeAccountFormModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="accountForm">
+                    <input type="hidden" id="accountFormId">
+
+                    <div class="form-group">
+                        <label for="accountName">Account Name *</label>
+                        <input type="text" id="accountName" required placeholder="e.g., Main Chequing">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="accountType">Account Type *</label>
+                        <select id="accountType" required>
+                            <option value="CHEQUING">Chequing Account</option>
+                            <option value="SAVINGS">Savings Account</option>
+                            <option value="CREDIT_CARD">Credit Card</option>
+                            <option value="LINE_OF_CREDIT">Line of Credit</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="accountOpeningBalance">Opening Balance</label>
+                        <input type="number" id="accountOpeningBalance" step="0.01" value="0" placeholder="0.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="accountIsDefault">
+                            Set as default account
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelAccountForm">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="models.js"></script>
     <script src="storage.js"></script>
