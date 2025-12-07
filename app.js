@@ -82,6 +82,18 @@ const App = {
             });
         }
 
+        // Features button
+        const featuresBtn = document.getElementById('featuresBtn');
+        if (featuresBtn) {
+            featuresBtn.addEventListener('click', () => {
+                const featuresModal = document.getElementById('featuresModal');
+                if (featuresModal) {
+                    featuresModal.classList.add('active');
+                    featuresModal.style.display = 'flex';
+                }
+            });
+        }
+
         // Settings modal close
         const closeSettingsModal = document.getElementById('closeSettingsModal');
         const settingsModal = document.getElementById('settingsModal');
@@ -94,6 +106,24 @@ const App = {
             settingsModal.addEventListener('click', (e) => {
                 if (e.target.id === 'settingsModal') {
                     settingsModal.classList.remove('active');
+                }
+            });
+        }
+
+        // Features modal close
+        const closeFeaturesModal = document.getElementById('closeFeaturesModal');
+        const featuresModal = document.getElementById('featuresModal');
+
+        if (closeFeaturesModal && featuresModal) {
+            closeFeaturesModal.addEventListener('click', () => {
+                featuresModal.classList.remove('active');
+                featuresModal.style.display = 'none';
+            });
+
+            featuresModal.addEventListener('click', (e) => {
+                if (e.target.id === 'featuresModal') {
+                    featuresModal.classList.remove('active');
+                    featuresModal.style.display = 'none';
                 }
             });
         }
