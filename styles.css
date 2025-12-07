@@ -1713,3 +1713,73 @@ textarea:focus {
 .full-width {
     width: 100%;
 }
+
+/* Account Selector Styles */
+.account-select {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.account-select:hover {
+    border-color: var(--primary);
+    background: var(--bg-tertiary);
+}
+
+.account-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.account-select option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 0.5rem;
+}
+
+/* Accounts List */
+.accounts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.account-item-info {
+    flex: 1;
+}
+
+.account-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.account-item-details {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.account-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.accounts-toolbar {
+    margin-bottom: 1rem;
+}
