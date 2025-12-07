@@ -413,59 +413,68 @@ const App = {
     async rethinkTransactions() {
         console.log('🤔 AI Re-think: Starting batch optimization...');
 
-        const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED');
+        const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED' || t.allocatedAccount === '9970');
 
         if (unallocated.length === 0) {
             alert('All transactions are already allocated!');
             return;
         }
 
+        // Get account type from dropdown
+        const accountTypeSelect = document.getElementById('accountTypeSelect');
+        const accountType = accountTypeSelect ? accountTypeSelect.value : 'v');
+
         let categorized = 0;
         let allocated = 0;
         let learned = 0;
 
         for (const txn of unallocated) {
-            if (!txn.vendor) continue;
+            // Use both vendor and payee for matching
+            const vendorName = txn.vendor || txn.payee || txn.description;
+            if (!vendorName) continue;
 
             // Try to match existing vendor first
-            let vendor = VendorMatcher.getVendor(txn.vendor);
+            let vendor = VendorMatcher.getVendor(vendorName);
 
             if (!vendor && typeof VendorAI !== 'undefined') {
                 // Use AI to categorize and allocate
-                const category = VendorAI.categorizeVendor(txn.vendor);
-                const accountCode = VendorAI.suggestAccountNumber(txn.vendor, category);
+                const category = VendorAI.suggestCategory(vendorName);
+                const suggestedAccount = VendorAI.suggestAccount(vendorName, category, accountType);
 
                 if (category) {
                     txn.category = category;
                     categorized++;
                 }
 
-                if (accountCode) {
-                    const account = AccountAllocator.getAccountByCode(accountCode);
-                    txn.allocatedAccount = accountCode;
-                    txn.allocatedAccountName = account ? account.name : '';
-                    txn.status = 'Allocated';
+                if (suggestedAccount) {
+                    txn.allocatedAccount = suggestedAccount.code;
+                    txn.allocatedAccountName = suggestedAccount.name;
+                    txn.status = 'matched';
                     allocated++;
 
                     // Auto-learn: Add to vendor dictionary
                     VendorMatcher.addVendor({
-                        name: txn.vendor,
-                        accountCode: accountCode,
-                        accountName: account ? account.name : '',
+                        name: vendorName,
+                        defaultAccount: suggestedAccount.code,
+                        defaultAccountName: suggestedAccount.name,
                         category: category || 'General',
-                        notes: 'AI-generated allocation'
+                        notes: `AI-generated (${accountType})`,
+                        patterns: [vendorName.toLowerCase()]
                     });
                     learned++;
                 }
             } else if (vendor) {
                 // Apply existing vendor mapping
-                txn.allocatedAccount = vendor.accountCode;
-                txn.allocatedAccountName = vendor.accountName;
+                txn.allocatedAccount = vendor.defaultAccount;
+                txn.allocatedAccountName = vendor.defaultAccountName;
                 txn.category = vendor.category;
-                txn.status = 'Allocated';
+                txn.status = 'matched';
                 allocated++;
             }
         }
+
+        // Save updated transactions
+        Storage.saveTransactions(this.transactions);
 
         // Refresh the grid
         TransactionGrid.loadTransactions(this.transactions);
@@ -476,7 +485,7 @@ const App = {
         this.updateReconciliation();
 
         // Show results
-        alert(`AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nNew vendors have been added to your dictionary for future use.`);
+        alert(`✨ AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nAccount Type: ${accountType.toUpperCase()}\n\nNew vendors have been added to your dictionary for future use.`);
     },
 
     delay(ms) {
