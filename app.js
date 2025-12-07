@@ -341,11 +341,38 @@ const App = {
         const expectedOpening = document.getElementById('expectedOpeningBalance');
         const expectedEnding = document.getElementById('expectedEndingBalance');
 
+        // Format currency inputs
+        const formatCurrencyInput = (input) => {
+            if (!input.value) return;
+            
+            // Remove any non-numeric characters except decimal point
+            let value = input.value.replace(/[^0-9.]/g, '');
+            
+            // Parse as number
+            const number = parseFloat(value);
+            if (isNaN(number)) {
+                input.value = '';
+                return;
+            }
+            
+            // Format with commas and dollar sign
+            input.value = '$' + number.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+
         if (expectedOpening) {
             expectedOpening.addEventListener('input', () => this.updateReconciliation());
+            expectedOpening.addEventListener('blur', () => formatCurrencyInput(expectedOpening));
+            // Clear on page load
+            expectedOpening.value = '';
         }
         if (expectedEnding) {
             expectedEnding.addEventListener('input', () => this.updateReconciliation());
+            expectedEnding.addEventListener('blur', () => formatCurrencyInput(expectedEnding));
+            // Clear on page load
+            expectedEnding.value = '';
         }
     },
 
@@ -355,8 +382,14 @@ const App = {
             return;
         }
 
-        const expectedOpening = parseFloat(document.getElementById('expectedOpeningBalance')?.value) || null;
-        const expectedEnding = parseFloat(document.getElementById('expectedEndingBalance')?.value) || null;
+        // Parse currency inputs (remove $ and commas)
+        const openingInput = document.getElementById('expectedOpeningBalance');
+        const endingInput = document.getElementById('expectedEndingBalance');
+
+        const expectedOpening = openingInput?.value ?
+            parseFloat(openingInput.value.replace(/[$,]/g, '')) : null;
+        const expectedEnding = endingInput?.value ?
+            parseFloat(endingInput.value.replace(/[$,]/g, '')) : null;
 
         // DEBUG: Log transaction count
         console.log('🔍 updateReconciliation called. Transaction count:', this.transactions?.length || 0);
