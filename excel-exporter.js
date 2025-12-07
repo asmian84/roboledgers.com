@@ -185,7 +185,8 @@ const ExcelExporter = {
             'Debits': 'Debits',
             'Credits': 'Credits',
             'Balance': 'Balance',
-            'Account': 'Account'
+            'Account #': 'Account #',
+            'Account Name': 'Account Name'
         });
 
         // Sort transactions by date (chronological order)
@@ -221,14 +222,19 @@ const ExcelExporter = {
             const num = String(index + 1).padStart(3, '0');
             const refNum = prefix ? `${prefix}-${num}` : num;
 
-            // Get account description
-            let accountDesc = '';
+            // Extract account number and name separately
+            let accountNumber = '';
+            let accountName = '';
+
             if (txn.allocatedAccount && txn.allocatedAccountName) {
-                accountDesc = `${txn.allocatedAccount} - ${txn.allocatedAccountName}`;
+                accountNumber = txn.allocatedAccount;
+                accountName = txn.allocatedAccountName;
             } else if (txn.allocatedAccount) {
-                accountDesc = txn.allocatedAccount;
+                accountNumber = txn.allocatedAccount;
+                accountName = '';
             } else {
-                accountDesc = 'Unallocated';
+                accountNumber = '';
+                accountName = 'Unallocated';
             }
 
             glData.push({
@@ -236,7 +242,8 @@ const ExcelExporter = {
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
                 'Credits': credit > 0 ? credit.toFixed(2) : '',
                 'Balance': runningBalance.toFixed(2),
-                'Account': accountDesc
+                'Account #': accountNumber,
+                'Account Name': accountName
             });
         });
 
@@ -248,7 +255,8 @@ const ExcelExporter = {
             { wch: 12 },  // Debits
             { wch: 12 },  // Credits
             { wch: 12 },  // Balance
-            { wch: 45 }   // Account
+            { wch: 12 },  // Account #
+            { wch: 35 }   // Account Name
         ];
 
         // Format currency cells
