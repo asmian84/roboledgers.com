@@ -1586,6 +1586,9 @@ textarea:focus {
 
 .settings-panel.active {
     display: block;
+}
+
+.settings-panel[data-panel="data"] {
     padding-top: 2rem;
 }
 
