@@ -198,6 +198,46 @@ const App = {
             });
         }
 
+        // Grid Font Family
+        const gridFontFamily = document.getElementById('gridFontFamily');
+        if (gridFontFamily) {
+            gridFontFamily.addEventListener('change', (e) => {
+                const fontFamily = e.target.value;
+                Settings.setGridStyle('gridFontFamily', fontFamily);
+                if (TransactionGrid.gridApi) {
+                    TransactionGrid.applyGridStyling();
+                }
+            });
+        }
+
+        // Grid Font Size
+        const gridFontSize = document.getElementById('gridFontSize');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        if (gridFontSize) {
+            gridFontSize.addEventListener('input', (e) => {
+                const fontSize = parseInt(e.target.value);
+                if (fontSizeValue) {
+                    fontSizeValue.textContent = fontSize + 'px';
+                }
+                Settings.setGridStyle('gridFontSize', fontSize);
+                if (TransactionGrid.gridApi) {
+                    TransactionGrid.applyGridStyling();
+                }
+            });
+        }
+
+        // Grid Color Scheme
+        const gridColorScheme = document.getElementById('gridColorScheme');
+        if (gridColorScheme) {
+            gridColorScheme.addEventListener('change', (e) => {
+                const scheme = e.target.value;
+                Settings.setGridStyle('gridColorScheme', scheme);
+                if (TransactionGrid.gridApi) {
+                    TransactionGrid.applyGridStyling();
+                }
+            });
+        }
+
         // Logo click - return to home
         const logoHome = document.getElementById('logoHome');
         if (logoHome) {
