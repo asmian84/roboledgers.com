@@ -32,7 +32,7 @@ const ReconciliationManager = {
         const balances = sorted.map(t => {
             // Credits add to balance (money in)
             // Debits subtract from balance (money out)
-            runningBalance += (t.credits || 0) - (t.debits || 0);
+            runningBalance += (t.credit || 0) - (t.debit || 0);
 
             return {
                 date: t.date,
@@ -89,8 +89,8 @@ const ReconciliationManager = {
             opening: openingValidation,
             ending: endingValidation,
             totalTransactions: transactions.length,
-            totalDebits: transactions.reduce((sum, t) => sum + (t.debits || 0), 0),
-            totalCredits: transactions.reduce((sum, t) => sum + (t.credits || 0), 0)
+            totalDebits: transactions.reduce((sum, t) => sum + (t.debit || 0), 0),
+            totalCredits: transactions.reduce((sum, t) => sum + (t.credit || 0), 0)
         };
     },
 
