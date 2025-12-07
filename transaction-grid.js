@@ -40,6 +40,9 @@ const TransactionGrid = {
                 // Set up window resize listener for responsive grid
                 this.setupResizeListener();
 
+                // Set up opening balance change listener
+                this.setupOpeningBalanceListener();
+
                 // Sort by date on initial load
                 this.gridApi.applyColumnState({
                     state: [{ colId: 'date', sort: 'asc' }],
@@ -51,12 +54,16 @@ const TransactionGrid = {
                 params.api.sizeColumnsToFit();
             },
             getRowStyle: (params) => {
-                // Rainbow color scheme: alternating rows
-                if (params.node.rowIndex % 2 === 0) {
-                    return { background: 'rgba(224, 242, 254, 0.3)' }; // Light blue (even)
-                } else {
-                    return { background: 'rgba(255, 255, 255, 0.5)' }; // White (odd)
-                }
+                // Rainbow pastel color scheme (6 colors cycling)
+                const rainbowColors = [
+                    { background: '#FFD1DC' },  // Pink
+                    { background: '#D1F2FF' },  // Cyan
+                    { background: '#D1FFD1' },  // Mint
+                    { background: '#FFFACD' },  // Lemon
+                    { background: '#FFDAB9' },  // Peach
+                    { background: '#E6E6FA' }   // Lavender
+                ];
+                return rainbowColors[params.node.rowIndex % 6];
             }
         };
 
@@ -528,6 +535,33 @@ const TransactionGrid = {
         }
 
         console.log('Balance calculation complete. Final balance:', runningBalance);
+    },
+
+    // Rainbow row styling
+    getRowStyle(params) {
+        const rainbowColors = [
+            { background: '#FFD1DC' },  // Pink
+            { background: '#D1F2FF' },  // Cyan
+            { background: '#D1FFD1' },  // Mint
+            { background: '#FFFACD' },  // Yellow/Cream
+            { background: '#FFDAB9' },  // Peach
+            { background: '#E6E6FA' }   // Lavender
+        ];
+        return rainbowColors[params.node.rowIndex % 6];
+    },
+
+    // Setup listener for opening balance input changes
+    setupOpeningBalanceListener() {
+        const openingBalanceInput = document.getElementById('expectedOpeningBalance');
+        if (openingBalanceInput) {
+            openingBalanceInput.addEventListener('input', () => {
+                console.log('⚡ Opening balance changed, recalculating...');
+                this.recalculateAllBalances();
+            });
+            console.log('✅ Opening balance listener attached');
+        } else {
+            console.warn('⚠️ Opening balance input not found');
+        }
     },
 
     // Helper method: Setup window resize listener

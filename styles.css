@@ -556,8 +556,8 @@ body {
 /* Review Section */
 .review-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
     background: var(--glass-bg);
@@ -567,6 +567,23 @@ body {
     position: sticky;
     top: 0;
     z-index: 50;
+}
+
+.review-title-center {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+    width: 100%;
+}
+
+.review-title-center h2 {
+    font-size: 1.75rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.review-title-center .review-stats {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
 }
 
 .review-title h2 {
@@ -582,13 +599,16 @@ body {
 .review-actions-wrapper {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: var(--spacing-sm);
-    flex: 1;
+    width: 100%;
 }
 
 .review-buttons {
     display: flex;
     gap: var(--spacing-sm);
+    justify-center;
+    flex-wrap: wrap;
 }
 
 .grid-container {
