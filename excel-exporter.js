@@ -64,11 +64,11 @@ const ExcelExporter = {
         // Generate Excel file with blob-based download for Chrome compatibility
         const filename = `QuickBooks_Import_${this.getDateString()}.xlsx`;
 
-        // Write to binary array
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        // Write to buffer (Chrome-compatible)
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
-        // Create blob and download
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Create blob with Uint8Array for Chrome
+        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
         // Create download link
         const url = URL.createObjectURL(blob);
@@ -147,11 +147,11 @@ const ExcelExporter = {
         // Generate Excel file with blob-based download for Chrome compatibility
         const filename = `CASEWARE_TrialBalance_${this.getDateString()}.xlsx`;
 
-        // Write to binary array
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        // Write to buffer (Chrome-compatible)
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
-        // Create blob and download
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Create blob with Uint8Array for Chrome
+        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
         // Create download link
         const url = URL.createObjectURL(blob);
@@ -278,11 +278,11 @@ const ExcelExporter = {
         // Generate Excel file with proper download
         const filename = `General_Ledger_${this.getDateString()}.xlsx`;
 
-        // Write to binary string
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        // Write to buffer (Chrome-compatible)
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
-        // Create blob and download
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Create blob with Uint8Array for Chrome
+        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
         // Create download link
         const url = URL.createObjectURL(blob);
