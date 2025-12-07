@@ -32,6 +32,24 @@
                             style="font-weight: 400; opacity: 0.85;">.com</span>
                     </h1>
                 </div>
+
+                <!-- Account Selector -->
+                <div class="account-selector"
+                    style="display: flex; align-items: center; gap: 0.5rem; margin-right: auto; margin-left: 2rem;">
+                    <label for="accountSelect"
+                        style="font-size: 0.875rem; color: var(--text-secondary);">Account:</label>
+                    <select id="accountSelect" class="account-select" style="min-width: 200px;">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <button id="manageAccountsBtn" class="btn-icon" title="Manage Accounts">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+
                 <div class="header-actions">
                     <button id="reportsBtn" class="btn-secondary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
