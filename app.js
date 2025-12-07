@@ -885,44 +885,16 @@ const App = {
             }
         }
 
-        if (themeSelect && typeof Settings !== 'undefined') {
-            // Set initial preview
-            updateThemePreview(Settings.current.theme || 'cyber-night');
-            themeSelect.value = Settings.current.theme || 'cyber-night';
-
-            // Handle theme changes
-            themeSelect.addEventListener('change', (e) => {
-                const theme = e.target.value;
-                Settings.setTheme(theme);
-                updateThemePreview(theme);
+        VendorManager.showModal();
+    }
             });
         }
 
-        // Reports button (placeholder)
-        const reportsBtn = document.getElementById('reportsBtn');
-        if (reportsBtn) {
-            reportsBtn.addEventListener('click', () => {
-                alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
-            });
-        }
+if (settingsAccountsBtn) {
+    settingsAccountsBtn.addEventListener('click', () => {
+        App.showAccountsModal();
+    });
+}
 
-        // Settings Data tab buttons
-        const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-        const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
-
-        if (settingsVendorDictBtn) {
-            settingsVendorDictBtn.addEventListener('click', () => {
-                if (typeof VendorManager !== 'undefined') {
-                    VendorManager.showModal();
-                }
-            });
-        }
-
-        if (settingsAccountsBtn) {
-            settingsAccountsBtn.addEventListener('click', () => {
-                App.showAccountsModal();
-            });
-        }
-
-        console.log('✅ App.js loaded and event listeners set up');
+console.log('✅ App.js loaded and event listeners set up');
     });
