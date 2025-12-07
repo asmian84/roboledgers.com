@@ -644,6 +644,7 @@ body {
     gap: var(--spacing-xs);
     transition: all var(--transition-fast);
     font-family: inherit;
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -705,7 +706,7 @@ body {
     inset: 0;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
-    z-index: 1000;
+    z-index: 2000;
     align-items: center;
     justify-content: center;
     padding: var(--spacing-lg);

@@ -33,8 +33,9 @@ const TransactionGrid = {
                 this.gridApi = params.api;
                 this.columnApi = params.columnApi;
 
-                // Add custom grid toolbar
-                this.addGridToolbar(container);
+                // REMOVED: Duplicate grid toolbar with Quick Search
+                // Now using Quick Search from review header instead
+                // this.addGridToolbar(container);
 
                 // Set up window resize listener for responsive grid
                 this.setupResizeListener();
@@ -485,16 +486,12 @@ const TransactionGrid = {
             return dateA.getTime() - dateB.getTime();
         });
 
-        // Get opening balance from reconciliation panel or use first transaction balance
+        // Get opening balance from reconciliation panel or default to 0
         const openingBalanceInput = document.getElementById('expectedOpeningBalance');
         let runningBalance = 0;
 
         if (openingBalanceInput && openingBalanceInput.value) {
             runningBalance = parseFloat(openingBalanceInput.value) || 0;
-        } else if (sortedTransactions.length > 0) {
-            // Calculate backward from first transaction if no opening balance
-            const firstTx = sortedTransactions[0];
-            runningBalance = (firstTx.balance || 0) + (firstTx.debits || 0) - (firstTx.amount || 0);
         }
 
         // Recalculate each transaction balance
@@ -504,9 +501,13 @@ const TransactionGrid = {
             const credit = parseFloat(tx.amount) || 0;
 
             // Balance = Previous Balance - Debit + Credit
+            // Debits decrease balance (money out), Credits increase balance (money in)
             runningBalance = runningBalance - debit + credit;
             tx.balance = runningBalance;
         }
+
+        // Update the actual transactions array with the sorted data
+        this.transactions = sortedTransactions;
 
         // Refresh the grid to show updated balances
         if (this.gridApi) {
