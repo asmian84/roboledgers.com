@@ -416,8 +416,43 @@ const App = {
         const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED' || t.allocatedAccount === '9970');
 
         if (unallocated.length === 0) {
-            alert('All transactions are already allocated!');
+            alert('✅ All transactions are already allocated!');
             return;
+        }
+
+        // Create progress modal
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'aiProgressModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px; text-align: center;">
+                <div class="modal-body">
+                    <div class="ai-progress-animation" style="font-size: 64px; margin: 2rem 0; animation: magicWand 1.5s ease-in-out infinite;">
+                        🪄✨
+                    </div>
+                    <h2 style="margin-bottom: 1rem;">AI Re-think in Progress</h2>
+                    <p id="aiProgressText" style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        Processing <span id="aiCurrentCount">0</span> of <span id="aiTotalCount">${unallocated.length}</span> transactions...
+                    </p>
+                    <div class="progress-bar" style="width: 100%; max-width: 400px; margin: 0 auto;">
+                        <div id="aiProgressFill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Add animation style if not exists
+        if (!document.getElementById('aiAnimationStyle')) {
+            const style = document.createElement('style');
+            style.id = 'aiAnimationStyle';
+            style.textContent = `
+                @keyframes magicWand {
+                    0%, 100% { transform: rotate(-15deg) scale(1); }
+                    50% { transform: rotate(15deg) scale(1.1); }
+                }
+            `;
+            document.head.appendChild(style);
         }
 
         // Get account type from dropdown
@@ -427,11 +462,23 @@ const App = {
         let categorized = 0;
         let allocated = 0;
         let learned = 0;
+        let processed = 0;
+
+        const updateProgress = () => {
+            const progressText = document.getElementById('aiCurrentCount');
+            const progressFill = document.getElementById('aiProgressFill');
+            if (progressText) progressText.textContent = processed;
+            if (progressFill) progressFill.style.width = ((processed / unallocated.length) * 100) + '%';
+        };
 
         for (const txn of unallocated) {
             // Use both vendor and payee for matching
             const vendorName = txn.vendor || txn.payee || txn.description;
-            if (!vendorName) continue;
+            if (!vendorName) {
+                processed++;
+                updateProgress();
+                continue;
+            }
 
             // Try to match existing vendor first
             let vendor = VendorMatcher.getVendor(vendorName);
@@ -471,7 +518,18 @@ const App = {
                 txn.status = 'matched';
                 allocated++;
             }
+
+            processed++;
+            updateProgress();
+
+            // Small delay to make progress visible
+            if (processed % 5 === 0) {
+                await this.delay(10);
+            }
         }
+
+        // Remove progress modal
+        modal.remove();
 
         // Save updated transactions
         Storage.saveTransactions(this.transactions);
@@ -485,7 +543,11 @@ const App = {
         this.updateReconciliation();
 
         // Show results
-        alert(`✨ AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nAccount Type: ${accountType.toUpperCase()}\n\nNew vendors have been added to your dictionary for future use.`);
+        if (allocated === 0) {
+            alert(`✨ AI Re-think Complete!\n\n💡 No changes made\n\nAll ${unallocated.length} unallocated transactions were already optimally categorized or require manual review.`);
+        } else {
+            alert(`✨ AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nAccount Type: ${accountType.toUpperCase()}\n\nNew vendors have been added to your dictionary for future use.`);
+        }
     },
 
     delay(ms) {
