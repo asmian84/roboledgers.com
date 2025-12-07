@@ -7,11 +7,11 @@ const ReconciliationManager = {
     endingDate: null,
 
     // Calculate balances from transactions
-    calculateBalances(transactions) {
+    calculateBalances(transactions, userOpeningBalance = 0) {
         if (!transactions || transactions.length === 0) {
             return {
-                openingBalance: 0,
-                endingBalance: 0,
+                openingBalance: userOpeningBalance,
+                endingBalance: userOpeningBalance,
                 openingDate: null,
                 endingDate: null
             };
@@ -24,12 +24,15 @@ const ReconciliationManager = {
             return dateA - dateB;
         });
 
+        // Start with user's opening balance
+        let runningBalance = userOpeningBalance;
+
         // Calculate running balance through transactions
-        let runningBalance = 0;
+        // Formula: Balance = Opening + Credits - Debits
         const balances = sorted.map(t => {
-            // Debits increase balance (money in)
-            // Credits decrease balance (money out)
-            runningBalance += (t.debits || 0) - (t.credits || 0);
+            // Credits add to balance (money in)
+            // Debits subtract from balance (money out)
+            runningBalance += (t.credits || 0) - (t.debits || 0);
 
             return {
                 date: t.date,
@@ -38,16 +41,15 @@ const ReconciliationManager = {
             };
         });
 
-        // Opening balance is before first transaction
+        // Opening balance is the starting balance
         // Ending balance is after last transaction
-        const opening = sorted.length > 0 ? balances[0] : null;
         const ending = sorted.length > 0 ? balances[balances.length - 1] : null;
 
         return {
-            openingBalance: 0, // Starting point
-            endingBalance: ending ? ending.balance : 0,
-            openingDate: opening ? opening.date : null,
-            endingDate: ending ? ending.date : null,
+            openingBalance: userOpeningBalance,
+            endingBalance: ending ? ending.balance : userOpeningBalance,
+            openingDate: sorted[0]?.date || null,
+            endingDate: sorted[sorted.length - 1]?.date || null,
             runningBalances: balances
         };
     },
@@ -67,7 +69,9 @@ const ReconciliationManager = {
 
     // Get reconciliation summary
     getReconciliationData(transactions, expectedOpening = null, expectedEnding = null) {
-        const calculated = this.calculateBalances(transactions);
+        // Use user's expected opening balance as the starting point
+        const openingValue = expectedOpening !== null ? parseFloat(expectedOpening) : 0;
+        const calculated = this.calculateBalances(transactions, openingValue);
 
         let openingValidation = null;
         let endingValidation = null;
