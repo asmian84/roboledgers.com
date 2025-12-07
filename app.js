@@ -140,6 +140,34 @@ const App = {
             });
         }
 
+        // Quick Search / Filter
+        const gridQuickFilter = document.getElementById('gridQuickFilter');
+        if (gridQuickFilter) {
+            gridQuickFilter.addEventListener('input', (e) => {
+                if (TransactionGrid.gridApi) {
+                    TransactionGrid.gridApi.setQuickFilter(e.target.value);
+                }
+            });
+        }
+
+        // Ref# Prefix Input
+        const refPrefixInput = document.getElementById('refPrefixInput');
+        if (refPrefixInput) {
+            refPrefixInput.addEventListener('input', (e) => {
+                const prefix = e.target.value.toUpperCase();
+                TransactionGrid.setRefPrefix(prefix);
+            });
+        }
+
+        // Account Type Dropdown (filter transactions)
+        const accountTypeSelect = document.getElementById('accountTypeSelect');
+        if (accountTypeSelect) {
+            accountTypeSelect.addEventListener('change', (e) => {
+                const accountType = e.target.value;
+                this.filterByAccountType(accountType);
+            });
+        }
+
         // Logo click - return to home
         const logoHome = document.getElementById('logoHome');
         if (logoHome) {
@@ -680,6 +708,26 @@ const App = {
         this.showSection('upload');
 
         console.log('✅ Application reset complete');
+    },
+
+    // Filter transactions by account type
+    filterByAccountType(accountType) {
+        if (!TransactionGrid.gridApi) return;
+
+        if (!accountType || accountType === 'all') {
+            // Clear filter
+            TransactionGrid.gridApi.setFilterModel(null);
+        } else {
+            // Apply filter on 'Account Type' column
+            const filterModel = {
+                accountType: {
+                    filterType: 'text',
+                    type: 'equals',
+                    filter: accountType
+                }
+            };
+            TransactionGrid.gridApi.setFilterModel(filterModel);
+        }
     }
 };
 
