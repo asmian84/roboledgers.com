@@ -330,11 +330,31 @@ const App = {
         // Update statistics
         this.updateStatistics();
 
+        // Update year-end date display in reconciliation
+        this.updateYearEndDisplay();
+
         // Show and update reconciliation
         this.updateReconciliation();
 
         // Setup reconciliation input listeners
         this.setupReconciliationListeners();
+    },
+
+    updateYearEndDisplay() {
+        const yearEndDate = localStorage.getItem('yearEndDate');
+        const header = document.getElementById('endingBalanceHeader');
+
+        if (header && yearEndDate) {
+            const date = new Date(yearEndDate);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            header.textContent = `Ending Balance (as of ${formattedDate})`;
+        } else if (header) {
+            header.textContent = 'Ending Balance';
+        }
     },
 
     setupReconciliationListeners() {
@@ -344,17 +364,17 @@ const App = {
         // Format currency inputs
         const formatCurrencyInput = (input) => {
             if (!input.value) return;
-            
+
             // Remove any non-numeric characters except decimal point
             let value = input.value.replace(/[^0-9.]/g, '');
-            
+
             // Parse as number
             const number = parseFloat(value);
             if (isNaN(number)) {
                 input.value = '';
                 return;
             }
-            
+
             // Format with commas and dollar sign
             input.value = '$' + number.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
