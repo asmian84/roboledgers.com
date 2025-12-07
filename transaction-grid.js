@@ -3,6 +3,7 @@
 const TransactionGrid = {
     gridApi: null,
     transactions: [],
+    refPrefix: '',
 
     initialize(containerId) {
         const container = document.getElementById(containerId);
@@ -177,7 +178,14 @@ const TransactionGrid = {
                 headerName: 'Ref #',
                 field: 'ref',
                 width: 120,
-                pinned: 'left'
+                pinned: 'left',
+                valueGetter: (params) => {
+                    // Auto-generate ref number based on row index
+                    const rowIndex = params.node.rowIndex + 1;
+                    const refNum = String(rowIndex).padStart(3, '0');
+                    const prefix = this.refPrefix || '';
+                    return prefix ? `${prefix}-${refNum}` : refNum;
+                }
             },
             {
                 headerName: 'Date',
@@ -201,18 +209,11 @@ const TransactionGrid = {
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
-                headerName: 'Payee',
+                headerName: 'Description',
                 field: 'payee',
-                width: 250,
+                width: 300,
                 editable: true,
                 tooltipField: 'payee',
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
-            },
-            {
-                headerName: 'Vendor',
-                field: 'vendor',
-                width: 180,
-                editable: true,
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
@@ -307,9 +308,25 @@ const TransactionGrid = {
 
     loadTransactions(transactions) {
         this.transactions = transactions;
+
+        // Sort transactions chronologically before loading
+        const sortedTransactions = [...transactions].sort((a, b) => {
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        this.transactions = sortedTransactions;
+
         if (this.gridApi) {
-            this.gridApi.setRowData(transactions);
+            this.gridApi.setRowData(this.transactions);
             this.gridApi.sizeColumnsToFit();
+        }
+    },
+
+    setRefPrefix(prefix) {
+        this.refPrefix = prefix || '';
+        // Refresh grid to update ref numbers
+        if (this.gridApi) {
+            this.gridApi.refreshCells({ columns: ['ref'], force: true });
         }
     },
 

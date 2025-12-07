@@ -132,9 +132,15 @@ const VendorAI = {
         return null;
     },
 
-    suggestAccount(vendorName, category) {
+    suggestAccount(vendorName, category, accountType = 'chequing') {
         const accounts = AccountAllocator.getAllAccounts();
         const name = vendorName.toLowerCase();
+
+        // Account type influences suggestions
+        // Credit cards: favor expense accounts (8xxx)
+        // Income/Revenue accounts: favor 4xxx
+        const isCreditCard = accountType === 'credit';
+        const isIncome = accountType === 'savings' || accountType === 'investment';
 
         if (category === 'Office Supplies' || name.includes('office')) {
             return accounts.find(a => a.code === '7710');
@@ -159,6 +165,16 @@ const VendorAI = {
         }
         if (category === 'Bank Fees' || name.includes('fee')) {
             return accounts.find(a => a.code === '8390');
+        }
+
+        // Check for income indicators
+        if (name.includes('payment') || name.includes('deposit') || name.includes('client') || name.includes('revenue')) {
+            return accounts.find(a => a.code === '4000') || accounts.find(a => a.code === '4100');
+        }
+
+        // For credit cards, default to expense accounts
+        if (isCreditCard) {
+            return accounts.find(a => a.code === '8000') || accounts.find(a => a.code === '7700');
         }
 
         return accounts.find(a => a.code === '7700');

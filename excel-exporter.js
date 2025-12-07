@@ -61,9 +61,28 @@ const ExcelExporter = {
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Journal Entries');
 
-        // Generate Excel file
+        // Generate Excel file with blob-based download for Chrome compatibility
         const filename = `QuickBooks_Import_${this.getDateString()}.xlsx`;
-        XLSX.writeFile(workbook, filename);
+
+        // Write to binary array
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+        // Create blob and download
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
     },
 
     // Export to CASEWARE format (Trial Balance)
@@ -125,9 +144,28 @@ const ExcelExporter = {
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Trial Balance');
 
-        // Generate Excel file
+        // Generate Excel file with blob-based download for Chrome compatibility
         const filename = `CASEWARE_TrialBalance_${this.getDateString()}.xlsx`;
-        XLSX.writeFile(workbook, filename);
+
+        // Write to binary array
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+        // Create blob and download
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
     },
 
     // Export General Ledger format (Simplified)

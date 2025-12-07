@@ -117,6 +117,45 @@
                         <p id="reviewStats" class="review-stats"></p>
                     </div>
                     <div class="review-actions">
+                        <div class="search-controls"
+                            style="display: flex; align-items: center; gap: 0.75rem; margin-right: auto;">
+                            <input type="text" id="gridQuickFilter" placeholder="Quick search..."
+                                style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-primary); width: 200px; font-size: 0.9rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Ref#:
+                                </label>
+                                <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
+                                    padding: 0.4rem 0.6rem;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 4px;
+                                    background: var(--input-bg);
+                                    color: var(--text-primary);
+                                    width: 70px;
+                                    font-size: 0.9rem;
+                                " />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label for="accountTypeSelect" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Account Type:
+                                </label>
+                                <select id="accountTypeSelect" style="
+                                    padding: 0.4rem 0.6rem;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 4px;
+                                    background: var(--input-bg);
+                                    color: var(--text-primary);
+                                    font-size: 0.9rem;
+                                    cursor: pointer;
+                                ">
+                                    <option value="chequing">Chequing</option>
+                                    <option value="savings">Savings</option>
+                                    <option value="credit">Credit Card</option>
+                                    <option value="loan">Loan</option>
+                                    <option value="investment">Investment</option>
+                                </select>
+                            </div>
+                        </div>
                         <button id="rethinkTransactionsBtn" class="btn-primary"
                             title="AI-powered vendor and account optimization">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -126,42 +165,6 @@
                             </svg>
                             ✨ AI Re-think
                         </button>
-                        <div class="ref-prefix-control"
-                            style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem;">
-                            <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
-                                Ref#:
-                            </label>
-                            <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
-                                    padding: 0.4rem 0.6rem;
-                                    border: 1px solid var(--border-color);
-                                    border-radius: 4px;
-                                    background: var(--input-bg);
-                                    color: var(--text-primary);
-                                    width: 70px;
-                                    font-size: 0.9rem;
-                                " />
-                        </div>
-                        <div class="account-type-control"
-                            style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem;">
-                            <label for="accountTypeSelect" style="font-size: 0.9rem; color: var(--text-secondary);">
-                                Account Type:
-                            </label>
-                            <select id="accountTypeSelect" style="
-                                    padding: 0.4rem 0.6rem;
-                                    border: 1px solid var(--border-color);
-                                    border-radius: 4px;
-                                    background: var(--input-bg);
-                                    color: var(--text-primary);
-                                    font-size: 0.9rem;
-                                    cursor: pointer;
-                                ">
-                                <option value="chequing">Chequing</option>
-                                <option value="savings">Savings</option>
-                                <option value="credit">Credit Card</option>
-                                <option value="loan">Loan</option>
-                                <option value="investment">Investment</option>
-                            </select>
-                        </div>
                         <button id="exportBtn" class="btn-primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -170,12 +173,20 @@
                             </svg>
                             Export XLS
                         </button>
-                        <button id="resetBtn" class="btn-secondary">
+                        <button id="addDataBtn" class="btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Add Data
+                        </button>
+                        <button id="startOverBtn" class="btn-secondary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
-                            New File
+                            Start Over
                         </button>
                     </div>
                 </div>
