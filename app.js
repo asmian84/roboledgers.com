@@ -568,6 +568,118 @@ const App = {
 
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
+    // Add Data: Append transactions from new CSV file
+    async addData() {
+        console.log('📥 Add Data: Opening file picker...');
+
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput) return;
+
+        // Create a new file input to trigger selection
+        const newInput = document.createElement('input');
+        newInput.type = 'file';
+        newInput.accept = '.csv';
+        newInput.style.display = 'none';
+
+        newInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                this.showSection('processing');
+                this.updateProcessing('Parsing new transactions...', 30);
+
+                // Parse the new CSV
+                const result = await CSVParser.parseCSV(file);
+                const newTransactions = result.transactions;
+
+                console.log('📊 Adding', newTransactions.length, 'new transactions');
+                this.updateProcessing('Merging transactions...', 60);
+
+                // Merge with existing transactions
+                const beforeCount = this.transactions.length;
+                this.transactions = this.mergeTransactions(this.transactions, newTransactions);
+                const addedCount = this.transactions.length - beforeCount;
+
+                this.updateProcessing('Saving data...', 90);
+                Storage.saveTransactions(this.transactions);
+
+                await this.delay(500);
+
+                // Reload the review section
+                this.showSection('review');
+                this.loadReviewSection();
+
+                alert(`✅ Successfully added ${addedCount} new transactions!\n\nTotal transactions: ${this.transactions.length}`);
+                console.log('✅ Add Data complete:', addedCount, 'added,', this.transactions.length, 'total');
+
+            } catch (error) {
+                console.error('❌ Error adding data:', error);
+                alert('Error adding data: ' + error.message);
+                this.showSection('review');
+            } finally {
+                document.body.removeChild(newInput);
+            }
+        });
+
+        document.body.appendChild(newInput);
+        newInput.click();
+    },
+
+    // Merge transactions and remove duplicates
+    mergeTransactions(existing, newTxns) {
+        const merged = [...existing];
+        let duplicates = 0;
+
+        for (const newTx of newTxns) {
+            // Check if duplicate exists
+            const isDuplicate = existing.some(existingTx =>
+                existingTx.date === newTx.date &&
+                existingTx.amount === newTx.amount &&
+                existingTx.description === newTx.description
+            );
+
+            if (!isDuplicate) {
+                merged.push(newTx);
+            } else {
+                duplicates++;
+            }
+        }
+
+        console.log('🔍 Duplicates skipped:', duplicates);
+        return merged;
+    },
+
+    // Start Over: Clear all data and return to upload
+    startOver() {
+        const confirmMsg = 'Are you sure you want to start over?\n\nThis will clear ALL transactions and reset the application.\n\n⚠️ This action cannot be undone!';
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        console.log('🔄 Starting over - clearing all data');
+
+        // Clear transactions
+        this.transactions = [];
+        Storage.clearTransactions();
+
+        // Clear reconciliation inputs
+        const openingInput = document.getElementById('expectedOpeningBalance');
+        const endingInput = document.getElementById('expectedEndingBalance');
+        if (openingInput) openingInput.value = '';
+        if (endingInput) endingInput.value = '';
+
+        // Reset file input
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.value = '';
+
+        // Return to upload section
+        this.showSection('upload');
+
+        console.log('✅ Application reset complete');
     }
 };
 
