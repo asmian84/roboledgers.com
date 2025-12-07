@@ -376,6 +376,17 @@ const App = {
                 calcEnding.textContent = ReconciliationManager.formatCurrency(reconciliation.calculated.endingBalance);
             }
 
+            // Update transaction totals
+            const totalCreditsEl = document.getElementById('totalCredits');
+            const totalDebitsEl = document.getElementById('totalDebits');
+
+            if (totalCreditsEl) {
+                totalCreditsEl.textContent = ReconciliationManager.formatCurrency(reconciliation.totalCredits);
+            }
+            if (totalDebitsEl) {
+                totalDebitsEl.textContent = ReconciliationManager.formatCurrency(reconciliation.totalDebits);
+            }
+
             // Update discrepancies
             const openingDiscEl = document.getElementById('openingDiscrepancy');
             const endingDiscEl = document.getElementById('endingDiscrepancy');
