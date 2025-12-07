@@ -22,6 +22,15 @@
         const cleanBtn = reportsBtn.cloneNode(true);
         reportsBtn.parentNode.replaceChild(cleanBtn, reportsBtn);
 
-        console.log('✅ Reports button cleaned - old listeners removed');
+        // Re-add the CORRECT listener (open Reports modal)
+        cleanBtn.addEventListener('click', () => {
+            if (window.ReportsModal && typeof ReportsModal.show === 'function') {
+                ReportsModal.show();
+            } else {
+                console.error('ReportsModal not available');
+            }
+        });
+
+        console.log('✅ Reports button fixed - modal listener added');
     }
 })();
