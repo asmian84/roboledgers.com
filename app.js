@@ -255,134 +255,192 @@ const App = {
         const panel = document.getElementById('reconciliationPanel');
         if (!panel || this.transactions.length === 0) {
             if (panel) panel.style.display = 'none';
-            updateStatistics() {
-                const stats = AccountAllocator.getStats(this.transactions);
+            return;
+        }
 
-                const reviewStats = document.getElementById('reviewStats');
-                if (reviewStats) {
-                    reviewStats.innerHTML = `
+        panel.style.display = 'block';
+
+        const expectedOpening = parseFloat(document.getElementById('expectedOpeningBalance')?.value) || null;
+        const expectedEnding = parseFloat(document.getElementById('expectedEndingBalance')?.value) || null;
+
+        if (typeof ReconciliationManager !== 'undefined') {
+            const reconciliation = ReconciliationManager.getReconciliationData(
+                this.transactions,
+                expectedOpening,
+                expectedEnding
+            );
+
+            // Update calculated values
+            const calcOpening = document.getElementById('calculatedOpeningBalance');
+            const calcEnding = document.getElementById('calculatedEndingBalance');
+
+            if (calcOpening) {
+                calcOpening.textContent = ReconciliationManager.formatCurrency(reconciliation.calculated.openingBalance);
+            }
+            if (calcEnding) {
+                calcEnding.textContent = ReconciliationManager.formatCurrency(reconciliation.calculated.endingBalance);
+            }
+
+            // Update discrepancies
+            const openingDiscEl = document.getElementById('openingDiscrepancy');
+            const endingDiscEl = document.getElementById('endingDiscrepancy');
+
+            if (openingDiscEl && reconciliation.opening) {
+                openingDiscEl.textContent = ReconciliationManager.formatCurrency(reconciliation.opening.discrepancy);
+                openingDiscEl.className = 'discrepancy-value ' + (reconciliation.opening.isBalanced ? 'balanced' : 'error');
+            }
+
+            if (endingDiscEl && reconciliation.ending) {
+                endingDiscEl.textContent = ReconciliationManager.formatCurrency(reconciliation.ending.discrepancy);
+                endingDiscEl.className = 'discrepancy-value ' + (reconciliation.ending.isBalanced ? 'balanced' : 'error');
+            }
+
+            // Update status
+            const statusIcon = document.querySelector('#statusIndicator .status-icon');
+            const statusText = document.querySelector('#statusIndicator .status-text');
+
+            if (statusIcon && statusText && reconciliation.opening && reconciliation.ending) {
+                if (reconciliation.opening.isBalanced && reconciliation.ending.isBalanced) {
+                    statusIcon.textContent = '✅';
+                    statusText.textContent = 'Reconciled Successfully';
+                    statusText.style.color = 'var(--success-color)';
+                } else {
+                    statusIcon.textContent = '❌';
+                    statusText.textContent = 'Discrepancy Found';
+                    statusText.style.color = 'var(--error-color)';
+                }
+            }
+        }
+    },
+
+    updateStatistics() {
+        const stats = AccountAllocator.getStats(this.transactions);
+
+        const reviewStats = document.getElementById('reviewStats');
+        if (reviewStats) {
+            reviewStats.innerHTML = `
                 ${stats.total} transactions | 
                 ${stats.allocated} allocated (${stats.allocationRate}%) | 
                 ${stats.unallocated} unallocated | 
                 ${stats.accountsUsed} accounts used
             `;
-                }
+        }
 
-                this.updateTrialBalance();
-            },
+        this.updateTrialBalance();
+    },
 
-            updateTrialBalance() {
-                // Trial balance summary - optional UI element
-                const summaryElement = document.getElementById('trialBalanceSummary');
-                if (!summaryElement) return;
+    updateTrialBalance() {
+        // Trial balance summary - optional UI element
+        const summaryElement = document.getElementById('trialBalanceSummary');
+        if (!summaryElement) return;
 
-                const summary = AccountAllocator.generateSummary(this.transactions);
-                const summaryHtml = [];
+        const summary = AccountAllocator.generateSummary(this.transactions);
+        const summaryHtml = [];
 
-                summaryHtml.push('<div class="balance-row">');
-                summaryHtml.push('<strong>Account</strong>');
-                summaryHtml.push('<strong>Debits</strong>');
-                summaryHtml.push('<strong>Credits</strong>');
-                summaryHtml.push('<strong>Balance</strong>');
-                summaryHtml.push('</div>');
+        summaryHtml.push('<div class="balance-row">');
+        summaryHtml.push('<strong>Account</strong>');
+        summaryHtml.push('<strong>Debits</strong>');
+        summaryHtml.push('<strong>Credits</strong>');
+        summaryHtml.push('<strong>Balance</strong>');
+        summaryHtml.push('</div>');
 
-                const topAccounts = summary.slice(0, 10);
-                for (const entry of topAccounts) {
-                    summaryHtml.push('<div class="balance-row">');
-                    summaryHtml.push(`<span>${entry.code} - ${entry.name}</span>`);
-                    summaryHtml.push(`<span>${Utils.formatCurrency(entry.debits)}</span>`);
-                    summaryHtml.push(`<span>${Utils.formatCurrency(entry.credits)}</span>`);
-                    summaryHtml.push(`<span>${Utils.formatCurrency(entry.debits - entry.credits)}</span>`);
-                    summaryHtml.push('</div>');
-                }
+        const topAccounts = summary.slice(0, 10);
+        for (const entry of topAccounts) {
+            summaryHtml.push('<div class="balance-row">');
+            summaryHtml.push(`<span>${entry.code} - ${entry.name}</span>`);
+            summaryHtml.push(`<span>${Utils.formatCurrency(entry.debits)}</span>`);
+            summaryHtml.push(`<span>${Utils.formatCurrency(entry.credits)}</span>`);
+            summaryHtml.push(`<span>${Utils.formatCurrency(entry.debits - entry.credits)}</span>`);
+            summaryHtml.push('</div>');
+        }
 
-                summaryElement.innerHTML = summaryHtml.join('');
-            },
+        summaryElement.innerHTML = summaryHtml.join('');
+    },
 
-            updateProcessing(message, progress) {
-                const textEl = document.getElementById('processingText');
-                const progressEl = document.getElementById('progressFill');
+    updateProcessing(message, progress) {
+        const textEl = document.getElementById('processingText');
+        const progressEl = document.getElementById('progressFill');
 
-                if (textEl) textEl.textContent = message;
-                if (progressEl) progressEl.style.width = progress + '%';
-            },
+        if (textEl) textEl.textContent = message;
+        if (progressEl) progressEl.style.width = progress + '%';
+    },
 
-            showSection(sectionName) {
-                // Remove active class from all sections
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                });
+    showSection(sectionName) {
+        // Remove active class from all sections
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
 
-                // Add active class to requested section
-                const targetSection = document.getElementById(sectionName + 'Section');
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                }
+        // Add active class to requested section
+        const targetSection = document.getElementById(sectionName + 'Section');
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
 
-                this.currentSection = sectionName;
-            },
+        this.currentSection = sectionName;
+    },
 
-            showAccountsModal() {
-                const modal = document.getElementById('accountsModal');
-                if (!modal) return;
+    showAccountsModal() {
+        const modal = document.getElementById('accountsModal');
+        if (!modal) return;
 
-                const container = document.getElementById('accountsGrid');
-                const accounts = AccountAllocator.getAllAccounts();
+        const container = document.getElementById('accountsGrid');
+        const accounts = AccountAllocator.getAllAccounts();
 
-                // Build simple grid
-                const gridOptions = {
-                    columnDefs: [
-                        { headerName: 'Code', field: 'code', width: 100 },
-                        { headerName: 'Name', field: 'name', width: 250 },
-                        { headerName: 'Type', field: 'type', width: 150 },
-                        { headerName: 'Full Name', field: 'fullName', width: 350 }
-                    ],
-                    rowData: accounts,
-                    animateRows: true
-                };
+        // Build simple grid
+        const gridOptions = {
+            columnDefs: [
+                { headerName: 'Code', field: 'code', width: 100 },
+                { headerName: 'Name', field: 'name', width: 250 },
+                { headerName: 'Type', field: 'type', width: 150 },
+                { headerName: 'Full Name', field: 'fullName', width: 350 }
+            ],
+            rowData: accounts,
+            animateRows: true
+        };
 
-                if (typeof agGrid !== 'undefined') {
-                    new agGrid.Grid(container, gridOptions);
-                }
-                modal.style.display = 'flex';
-            },
+        if (typeof agGrid !== 'undefined') {
+            new agGrid.Grid(container, gridOptions);
+        }
+        modal.style.display = 'flex';
+    },
 
-            hideAccountsModal() {
-                const modal = document.getElementById('accountsModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-            },
+    hideAccountsModal() {
+        const modal = document.getElementById('accountsModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    },
 
-            reset() {
-                if (confirm('Start over with a new file? (Current data will be lost)')) {
-                    this.transactions = [];
-                    Storage.clearTransactions();
-                    this.showSection('upload');
+    reset() {
+        if (confirm('Start over with a new file? (Current data will be lost)')) {
+            this.transactions = [];
+            Storage.clearTransactions();
+            this.showSection('upload');
 
-                    // Reset file input
-                    const fileInput = document.getElementById('fileInput');
-                    if (fileInput) {
-                        fileInput.value = '';
-                    }
-                }
-            },
+            // Reset file input
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    },
 
     async rethinkTransactions() {
-                console.log('🤔 AI Re-think: Starting batch optimization...');
+        console.log('🤔 AI Re-think: Starting batch optimization...');
 
-                const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED' || t.allocatedAccount === '9970');
+        const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED' || t.allocatedAccount === '9970');
 
-                if (unallocated.length === 0) {
-                    alert('✅ All transactions are already allocated!');
-                    return;
-                }
+        if (unallocated.length === 0) {
+            alert('✅ All transactions are already allocated!');
+            return;
+        }
 
-                // Create progress modal
-                const modal = document.createElement('div');
-                modal.className = 'modal active';
-                modal.id = 'aiProgressModal';
-                modal.innerHTML = `
+        // Create progress modal
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'aiProgressModal';
+        modal.innerHTML = `
             <div class="modal-content" style="max-width: 500px; text-align: center;">
                 <div class="modal-body">
                     <div class="ai-progress-animation" style="font-size: 64px; margin: 2rem 0; animation: magicWand 1.5s ease-in-out infinite;">
@@ -398,315 +456,315 @@ const App = {
                 </div>
             </div>
         `;
-                document.body.appendChild(modal);
+        document.body.appendChild(modal);
 
-                // Add animation style if not exists
-                if (!document.getElementById('aiAnimationStyle')) {
-                    const style = document.createElement('style');
-                    style.id = 'aiAnimationStyle';
-                    style.textContent = `
+        // Add animation style if not exists
+        if (!document.getElementById('aiAnimationStyle')) {
+            const style = document.createElement('style');
+            style.id = 'aiAnimationStyle';
+            style.textContent = `
                 @keyframes magicWand {
                     0%, 100% { transform: rotate(-15deg) scale(1); }
                     50% { transform: rotate(15deg) scale(1.1); }
                 }
             `;
-                    document.head.appendChild(style);
+            document.head.appendChild(style);
+        }
+
+        // Get account type from dropdown
+        const accountTypeSelect = document.getElementById('accountTypeSelect');
+        const accountType = accountTypeSelect ? accountTypeSelect.value : 'chequing';
+
+        let categorized = 0;
+        let allocated = 0;
+        let learned = 0;
+        let processed = 0;
+
+        const updateProgress = () => {
+            const progressText = document.getElementById('aiCurrentCount');
+            const progressFill = document.getElementById('aiProgressFill');
+            if (progressText) progressText.textContent = processed;
+            if (progressFill) progressFill.style.width = ((processed / unallocated.length) * 100) + '%';
+        };
+
+        for (const txn of unallocated) {
+            // Use both vendor and payee for matching
+            const vendorName = txn.vendor || txn.payee || txn.description;
+            if (!vendorName) {
+                processed++;
+                updateProgress();
+                continue;
+            }
+
+            // Try to match existing vendor first
+            let vendor = VendorMatcher.getVendor(vendorName);
+
+            if (!vendor && typeof VendorAI !== 'undefined') {
+                // Use AI to categorize and allocate
+                const category = VendorAI.suggestCategory(vendorName);
+                const suggestedAccount = VendorAI.suggestAccount(vendorName, category, accountType);
+
+                if (category) {
+                    txn.category = category;
+                    categorized++;
                 }
 
-                // Get account type from dropdown
-                const accountTypeSelect = document.getElementById('accountTypeSelect');
-                const accountType = accountTypeSelect ? accountTypeSelect.value : 'chequing';
+                if (suggestedAccount) {
+                    txn.allocatedAccount = suggestedAccount.code;
+                    txn.allocatedAccountName = suggestedAccount.name;
+                    txn.status = 'matched';
+                    allocated++;
 
-                let categorized = 0;
-                let allocated = 0;
-                let learned = 0;
-                let processed = 0;
-
-                const updateProgress = () => {
-                    const progressText = document.getElementById('aiCurrentCount');
-                    const progressFill = document.getElementById('aiProgressFill');
-                    if (progressText) progressText.textContent = processed;
-                    if (progressFill) progressFill.style.width = ((processed / unallocated.length) * 100) + '%';
-                };
-
-                for (const txn of unallocated) {
-                    // Use both vendor and payee for matching
-                    const vendorName = txn.vendor || txn.payee || txn.description;
-                    if (!vendorName) {
-                        processed++;
-                        updateProgress();
-                        continue;
-                    }
-
-                    // Try to match existing vendor first
-                    let vendor = VendorMatcher.getVendor(vendorName);
-
-                    if (!vendor && typeof VendorAI !== 'undefined') {
-                        // Use AI to categorize and allocate
-                        const category = VendorAI.suggestCategory(vendorName);
-                        const suggestedAccount = VendorAI.suggestAccount(vendorName, category, accountType);
-
-                        if (category) {
-                            txn.category = category;
-                            categorized++;
-                        }
-
-                        if (suggestedAccount) {
-                            txn.allocatedAccount = suggestedAccount.code;
-                            txn.allocatedAccountName = suggestedAccount.name;
-                            txn.status = 'matched';
-                            allocated++;
-
-                            // Auto-learn: Add to vendor dictionary
-                            VendorMatcher.addVendor({
-                                name: vendorName,
-                                defaultAccount: suggestedAccount.code,
-                                defaultAccountName: suggestedAccount.name,
-                                category: category || 'General',
-                                notes: `AI-generated (${accountType})`,
-                                patterns: [vendorName.toLowerCase()]
-                            });
-                            learned++;
-                        }
-                    } else if (vendor) {
-                        // Apply existing vendor mapping
-                        txn.allocatedAccount = vendor.defaultAccount;
-                        txn.allocatedAccountName = vendor.defaultAccountName;
-                        txn.category = vendor.category;
-                        txn.status = 'matched';
-                        allocated++;
-                    }
-
-                    processed++;
-                    updateProgress();
-
-                    // Small delay to make progress visible
-                    if (processed % 5 === 0) {
-                        await this.delay(10);
-                    }
+                    // Auto-learn: Add to vendor dictionary
+                    VendorMatcher.addVendor({
+                        name: vendorName,
+                        defaultAccount: suggestedAccount.code,
+                        defaultAccountName: suggestedAccount.name,
+                        category: category || 'General',
+                        notes: `AI-generated (${accountType})`,
+                        patterns: [vendorName.toLowerCase()]
+                    });
+                    learned++;
                 }
+            } else if (vendor) {
+                // Apply existing vendor mapping
+                txn.allocatedAccount = vendor.defaultAccount;
+                txn.allocatedAccountName = vendor.defaultAccountName;
+                txn.category = vendor.category;
+                txn.status = 'matched';
+                allocated++;
+            }
 
-                // Remove progress modal
-                modal.remove();
+            processed++;
+            updateProgress();
 
-                // Save updated transactions
-                Storage.saveTransactions(this.transactions);
+            // Small delay to make progress visible
+            if (processed % 5 === 0) {
+                await this.delay(10);
+            }
+        }
 
-                // Refresh the grid
-                TransactionGrid.loadTransactions(this.transactions);
+        // Remove progress modal
+        modal.remove();
 
-                // Update statistics
-                this.updateStatistics();
-                this.updateTrialBalance();
-                this.updateReconciliation();
+        // Save updated transactions
+        Storage.saveTransactions(this.transactions);
 
-                // Show results
-                if (allocated === 0) {
-                    alert(`✨ AI Re-think Complete!\n\n💡 No changes made\n\nAll ${unallocated.length} unallocated transactions were already optimally categorized or require manual review.`);
-                } else {
-                    alert(`✨ AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nAccount Type: ${accountType.toUpperCase()}\n\nNew vendors have been added to your dictionary for future use.`);
-                }
-            },
+        // Refresh the grid
+        TransactionGrid.loadTransactions(this.transactions);
 
-            delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            },
+        // Update statistics
+        this.updateStatistics();
+        this.updateTrialBalance();
+        this.updateReconciliation();
+
+        // Show results
+        if (allocated === 0) {
+            alert(`✨ AI Re-think Complete!\n\n💡 No changes made\n\nAll ${unallocated.length} unallocated transactions were already optimally categorized or require manual review.`);
+        } else {
+            alert(`✨ AI Re-think Complete!\n\n✅ Categorized: ${categorized} vendors\n💰 Allocated: ${allocated} transactions\n📚 Learned: ${learned} new vendors\n\nAccount Type: ${accountType.toUpperCase()}\n\nNew vendors have been added to your dictionary for future use.`);
+        }
+    },
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    },
 
     // Add Data: Append transactions from new CSV file
     async addData() {
-                console.log('📥 Add Data: Opening file picker...');
+        console.log('📥 Add Data: Opening file picker...');
 
-                const fileInput = document.getElementById('fileInput');
-                if (!fileInput) return;
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput) return;
 
-                // Create a new file input to trigger selection
-                const newInput = document.createElement('input');
-                newInput.type = 'file';
-                newInput.accept = '.csv';
-                newInput.style.display = 'none';
+        // Create a new file input to trigger selection
+        const newInput = document.createElement('input');
+        newInput.type = 'file';
+        newInput.accept = '.csv';
+        newInput.style.display = 'none';
 
-                newInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+        newInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-                    try {
-                        this.showSection('processing');
-                        this.updateProcessing('Parsing new transactions...', 30);
+            try {
+                this.showSection('processing');
+                this.updateProcessing('Parsing new transactions...', 30);
 
-                        // Parse the new CSV
-                        const result = await CSVParser.parseCSV(file);
-                        const newTransactions = result.transactions;
+                // Parse the new CSV
+                const result = await CSVParser.parseCSV(file);
+                const newTransactions = result.transactions;
 
-                        console.log('📊 Adding', newTransactions.length, 'new transactions');
-                        this.updateProcessing('Merging transactions...', 60);
+                console.log('📊 Adding', newTransactions.length, 'new transactions');
+                this.updateProcessing('Merging transactions...', 60);
 
-                        // Merge with existing transactions
-                        const beforeCount = this.transactions.length;
-                        this.transactions = this.mergeTransactions(this.transactions, newTransactions);
-                        const addedCount = this.transactions.length - beforeCount;
+                // Merge with existing transactions
+                const beforeCount = this.transactions.length;
+                this.transactions = this.mergeTransactions(this.transactions, newTransactions);
+                const addedCount = this.transactions.length - beforeCount;
 
-                        this.updateProcessing('Saving data...', 90);
-                        Storage.saveTransactions(this.transactions);
+                this.updateProcessing('Saving data...', 90);
+                Storage.saveTransactions(this.transactions);
 
-                        await this.delay(500);
+                await this.delay(500);
 
-                        // Reload the review section
-                        this.showSection('review');
-                        this.loadReviewSection();
+                // Reload the review section
+                this.showSection('review');
+                this.loadReviewSection();
 
-                        alert(`✅ Successfully added ${addedCount} new transactions!\n\nTotal transactions: ${this.transactions.length}`);
-                        console.log('✅ Add Data complete:', addedCount, 'added,', this.transactions.length, 'total');
+                alert(`✅ Successfully added ${addedCount} new transactions!\n\nTotal transactions: ${this.transactions.length}`);
+                console.log('✅ Add Data complete:', addedCount, 'added,', this.transactions.length, 'total');
 
-                    } catch (error) {
-                        console.error('❌ Error adding data:', error);
-                        alert('Error adding data: ' + error.message);
-                        this.showSection('review');
-                    } finally {
-                        document.body.removeChild(newInput);
-                    }
-                });
-
-                document.body.appendChild(newInput);
-                newInput.click();
-            },
-
-            // Merge transactions and remove duplicates
-            mergeTransactions(existing, newTxns) {
-                const merged = [...existing];
-                let duplicates = 0;
-
-                for (const newTx of newTxns) {
-                    // Check if duplicate exists
-                    const isDuplicate = existing.some(existingTx =>
-                        existingTx.date === newTx.date &&
-                        existingTx.amount === newTx.amount &&
-                        existingTx.description === newTx.description
-                    );
-
-                    if (!isDuplicate) {
-                        merged.push(newTx);
-                    } else {
-                        duplicates++;
-                    }
-                }
-
-                console.log('🔍 Duplicates skipped:', duplicates);
-                return merged;
-            },
-
-            // Start Over: Clear all data and return to upload
-            startOver() {
-                const confirmMsg = 'Are you sure you want to start over?\n\nThis will clear ALL transactions and reset the application.\n\n⚠️ This action cannot be undone!';
-
-                if (!confirm(confirmMsg)) {
-                    return;
-                }
-
-                console.log('🔄 Starting over - clearing all data');
-
-                // Clear transactions
-                this.transactions = [];
-                Storage.clearTransactions();
-
-                // Clear reconciliation inputs
-                const openingInput = document.getElementById('expectedOpeningBalance');
-                const endingInput = document.getElementById('expectedEndingBalance');
-                if (openingInput) openingInput.value = '';
-                if (endingInput) endingInput.value = '';
-
-                // Reset file input
-                const fileInput = document.getElementById('fileInput');
-                if (fileInput) fileInput.value = '';
-
-                // Return to upload section
-                this.showSection('upload');
-
-                console.log('✅ Application reset complete');
+            } catch (error) {
+                console.error('❌ Error adding data:', error);
+                alert('Error adding data: ' + error.message);
+                this.showSection('review');
+            } finally {
+                document.body.removeChild(newInput);
             }
-        };
-
-        // Initialize app when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('📋 DOM Content Loaded - Initializing App...');
-            App.initialize();
-
-            // Setup settings tab switching
-            const settingsTabs = document.querySelectorAll('.settings-tab');
-            const settingsPanels = document.querySelectorAll('.settings-panel');
-
-            settingsTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetPanel = tab.dataset.tab;
-
-                    // Remove active from all tabs and panels
-                    settingsTabs.forEach(t => t.classList.remove('active'));
-                    settingsPanels.forEach(p => p.classList.remove('active'));
-
-                    // Add active to clicked tab and corresponding panel
-                    tab.classList.add('active');
-                    const panel = document.querySelector(`[data-panel="${targetPanel}"]`);
-                    if (panel) {
-                        panel.classList.add('active');
-                    }
-                });
-            });
-
-            // Setup theme dropdown with live preview
-            const themeSelect = document.getElementById('themeSelect');
-            const themePreview = document.getElementById('themePreview');
-
-            const themePreviews = {
-                'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
-                'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
-                'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
-                'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
-                'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
-            };
-
-            function updateThemePreview(theme) {
-                if (themePreview && themePreviews[theme]) {
-                    themePreview.style.background = themePreviews[theme];
-                }
-            }
-
-            if (themeSelect && typeof Settings !== 'undefined') {
-                // Set initial preview
-                updateThemePreview(Settings.current.theme || 'cyber-night');
-                themeSelect.value = Settings.current.theme || 'cyber-night';
-
-                // Handle theme changes
-                themeSelect.addEventListener('change', (e) => {
-                    const theme = e.target.value;
-                    Settings.setTheme(theme);
-                    updateThemePreview(theme);
-                });
-            }
-
-            // Reports button (placeholder)
-            const reportsBtn = document.getElementById('reportsBtn');
-            if (reportsBtn) {
-                reportsBtn.addEventListener('click', () => {
-                    alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
-                });
-            }
-
-            // Settings Data tab buttons
-            const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-            const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
-
-            if (settingsVendorDictBtn) {
-                settingsVendorDictBtn.addEventListener('click', () => {
-                    if (typeof VendorManager !== 'undefined') {
-                        VendorManager.showModal();
-                    }
-                });
-            }
-
-            if (settingsAccountsBtn) {
-                settingsAccountsBtn.addEventListener('click', () => {
-                    App.showAccountsModal();
-                });
-            }
-
-            console.log('✅ App.js loaded and event listeners set up');
         });
+
+        document.body.appendChild(newInput);
+        newInput.click();
+    },
+
+    // Merge transactions and remove duplicates
+    mergeTransactions(existing, newTxns) {
+        const merged = [...existing];
+        let duplicates = 0;
+
+        for (const newTx of newTxns) {
+            // Check if duplicate exists
+            const isDuplicate = existing.some(existingTx =>
+                existingTx.date === newTx.date &&
+                existingTx.amount === newTx.amount &&
+                existingTx.description === newTx.description
+            );
+
+            if (!isDuplicate) {
+                merged.push(newTx);
+            } else {
+                duplicates++;
+            }
+        }
+
+        console.log('🔍 Duplicates skipped:', duplicates);
+        return merged;
+    },
+
+    // Start Over: Clear all data and return to upload
+    startOver() {
+        const confirmMsg = 'Are you sure you want to start over?\n\nThis will clear ALL transactions and reset the application.\n\n⚠️ This action cannot be undone!';
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        console.log('🔄 Starting over - clearing all data');
+
+        // Clear transactions
+        this.transactions = [];
+        Storage.clearTransactions();
+
+        // Clear reconciliation inputs
+        const openingInput = document.getElementById('expectedOpeningBalance');
+        const endingInput = document.getElementById('expectedEndingBalance');
+        if (openingInput) openingInput.value = '';
+        if (endingInput) endingInput.value = '';
+
+        // Reset file input
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) fileInput.value = '';
+
+        // Return to upload section
+        this.showSection('upload');
+
+        console.log('✅ Application reset complete');
+    }
+};
+
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📋 DOM Content Loaded - Initializing App...');
+    App.initialize();
+
+    // Setup settings tab switching
+    const settingsTabs = document.querySelectorAll('.settings-tab');
+    const settingsPanels = document.querySelectorAll('.settings-panel');
+
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetPanel = tab.dataset.tab;
+
+            // Remove active from all tabs and panels
+            settingsTabs.forEach(t => t.classList.remove('active'));
+            settingsPanels.forEach(p => p.classList.remove('active'));
+
+            // Add active to clicked tab and corresponding panel
+            tab.classList.add('active');
+            const panel = document.querySelector(`[data-panel="${targetPanel}"]`);
+            if (panel) {
+                panel.classList.add('active');
+            }
+        });
+    });
+
+    // Setup theme dropdown with live preview
+    const themeSelect = document.getElementById('themeSelect');
+    const themePreview = document.getElementById('themePreview');
+
+    const themePreviews = {
+        'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
+        'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
+        'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
+        'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
+        'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
+    };
+
+    function updateThemePreview(theme) {
+        if (themePreview && themePreviews[theme]) {
+            themePreview.style.background = themePreviews[theme];
+        }
+    }
+
+    if (themeSelect && typeof Settings !== 'undefined') {
+        // Set initial preview
+        updateThemePreview(Settings.current.theme || 'cyber-night');
+        themeSelect.value = Settings.current.theme || 'cyber-night';
+
+        // Handle theme changes
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            Settings.setTheme(theme);
+            updateThemePreview(theme);
+        });
+    }
+
+    // Reports button (placeholder)
+    const reportsBtn = document.getElementById('reportsBtn');
+    if (reportsBtn) {
+        reportsBtn.addEventListener('click', () => {
+            alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
+        });
+    }
+
+    // Settings Data tab buttons
+    const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
+    const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
+
+    if (settingsVendorDictBtn) {
+        settingsVendorDictBtn.addEventListener('click', () => {
+            if (typeof VendorManager !== 'undefined') {
+                VendorManager.showModal();
+            }
+        });
+    }
+
+    if (settingsAccountsBtn) {
+        settingsAccountsBtn.addEventListener('click', () => {
+            App.showAccountsModal();
+        });
+    }
+
+    console.log('✅ App.js loaded and event listeners set up');
+});
