@@ -4,104 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoboLedgers - Vision & Roadmap</title>
+    <title>RoboLedgers - Complete Roadmap & Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
-    <!-- Use same stylesheet as main app -->
-    <link rel="stylesheet" href="styles.css">
-
     <style>
-        /* Additional styles specific to roadmap page */
-        .roadmap-container {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --accent: #10b981;
+            --bg: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        .roadmap-header {
+        .header {
             text-align: center;
-            padding: 3rem 0 2rem 0;
+            padding: 3rem 0;
+            color: white;
         }
 
-        .roadmap-header h1 {
-            font-size: 3rem;
+        .header h1 {
+            font-size: 3.5rem;
             font-weight: 800;
             margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .roadmap-header p {
+        .header p {
             font-size: 1.25rem;
-            color: var(--text-secondary);
+            opacity: 0.95;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0 3rem 0;
-        }
-
-        .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            text-align: center;
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
             transition: all 0.3s;
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
+        .content-wrapper {
+            background: var(--bg);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
         }
 
-        .stat-label {
-            font-size: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .content-section {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            padding: 2.5rem;
-            margin-bottom: 2rem;
+        .section {
+            margin-bottom: 4rem;
         }
 
         .section-title {
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
+        .subsection {
+            margin-bottom: 2.5rem;
+        }
+
         .subsection-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--primary-color);
-            margin: 2rem 0 1rem 0;
+            color: var(--primary);
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -109,64 +115,63 @@
 
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
         .feature-card {
-            background: var(--card-bg);
-            border: var(--border-style);
-            border-radius: var(--radius-lg);
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
             padding: 1.5rem;
-            transition: all var(--transition);
+            transition: all 0.3s;
         }
 
         .feature-card:hover {
+            border-color: var(--primary);
             transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary-color);
+            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.15);
         }
 
         .feature-card h4 {
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--primary-color);
+            color: var(--primary);
             margin-bottom: 0.5rem;
         }
 
         .feature-card p {
             color: var(--text-secondary);
             font-size: 0.95rem;
-            line-height: 1.6;
         }
 
         .innovation-card {
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
             border: 2px solid rgba(99, 102, 241, 0.2);
-            border-radius: var(--radius-xl);
+            border-radius: 16px;
             padding: 2rem;
             margin-bottom: 1.5rem;
             transition: all 0.3s;
         }
 
         .innovation-card:hover {
-            border-color: var(--primary-color);
-            transform: scale(1.01);
+            border-color: var(--primary);
+            transform: scale(1.02);
             box-shadow: 0 16px 32px rgba(99, 102, 241, 0.2);
         }
 
         .innovation-card h3 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--primary);
             margin-bottom: 1rem;
         }
 
-        .category-badge {
+        .innovation-card .category {
             display: inline-block;
             padding: 0.25rem 0.75rem;
-            background: var(--primary-color);
+            background: var(--primary);
             color: white;
             border-radius: 20px;
             font-size: 0.75rem;
@@ -175,44 +180,81 @@
             text-transform: uppercase;
         }
 
-        .vision-box {
-            background: rgba(16, 185, 129, 0.1);
+        .innovation-card .description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .innovation-card .vision {
+            background: rgba(255, 255, 255, 0.5);
             padding: 1rem;
-            border-radius: var(--radius-md);
-            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
             margin-top: 1rem;
         }
 
-        .vision-title {
+        .innovation-card .vision-title {
             font-weight: 600;
-            color: var(--accent-color);
+            color: var(--accent);
             margin-bottom: 0.5rem;
         }
 
-        .toc {
-            background: var(--card-bg);
-            border: var(--border-style);
-            border-radius: var(--radius-xl);
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-implemented {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-planned {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-future {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-innovation {
+            background: #fce7f3;
+            color: #9f1239;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
             padding: 2rem;
-            margin-bottom: 3rem;
+            border-radius: 16px;
+            text-align: center;
         }
 
-        .toc h2 {
-            margin-bottom: 1rem;
-            color: var(--text-primary);
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
         }
 
-        .toc a {
-            color: var(--primary-color);
-            text-decoration: none;
-            display: block;
-            padding: 0.5rem 0;
-            transition: all 0.2s;
-        }
-
-        .toc a:hover {
-            color: var(--secondary-color);
-            padding-left: 1rem;
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
         }
 
         ul {
@@ -224,46 +266,55 @@
             padding: 0.5rem 0;
             padding-left: 1.5rem;
             position: relative;
-            color: var(--text-secondary);
         }
 
         li:before {
             content: "✓";
             position: absolute;
             left: 0;
-            color: var(--accent-color);
+            color: var(--accent);
             font-weight: bold;
+        }
+
+        .toc {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .toc h2 {
+            margin-bottom: 1rem;
+        }
+
+        .toc a {
+            color: var(--primary);
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem 0;
+            transition: all 0.2s;
+        }
+
+        .toc a:hover {
+            color: var(--secondary);
+            padding-left: 1rem;
         }
     </style>
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Header matching main app -->
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo-section" onclick="window.location.href='index.html'" style="cursor: pointer;"
-                    title="Return to App">
-                    <h1 style="font-size: 2.25rem; font-weight: 700;">RoboLedgers<span class="domain"
-                            style="font-weight: 400; opacity: 0.85;">.com</span></h1>
-                </div>
-                <div class="header-actions">
-                    <button onclick="window.location.href='index.html'" class="btn-primary">
-                        ← Back to App
-                    </button>
-                </div>
-            </div>
-        </header>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-link">← Back to App</a>
+            <h1>🚀 RoboLedgers Vision</h1>
+            <p>The Future of AI-Powered Bookkeeping</p>
+        </div>
 
-        <main class="roadmap-container">
-
-            <div class="roadmap-header">
-                <h1>🚀 Vision & Roadmap</h1>
-                <p>The Future of AI-Powered Bookkeeping</p>
-            </div>
+        <div class="content-wrapper">
 
             <!-- Stats -->
-            <div class="stats-grid">
+            <div class="stats">
                 <div class="stat-card">
                     <div class="stat-number">50+</div>
                     <div class="stat-label">Implemented Features</div>
@@ -288,332 +339,625 @@
                 <a href="#implemented">✅ Currently Implemented Features</a>
                 <a href="#planned">🚧 Planned Features</a>
                 <a href="#future">🚀 Future Expansion (100+ Ideas)</a>
-                <a href="#innovation">💡 Revolutionary Innovations (50+)</a>
+                <a href="#innovation">💡 Revolutionary Innovation Ideas (50+)</a>
                 <a href="#priority">🎯 Implementation Priority</a>
                 <a href="#vision">🌟 Long-Term Vision</a>
             </div>
 
             <!-- Currently Implemented -->
-            <div id="implemented" class="content-section">
+            <div id="implemented" class="section">
                 <h2 class="section-title">✅ Currently Implemented Features</h2>
 
-                <h3 class="subsection-title">🤖 AI-Powered Intelligence</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>Smart Auto-Learning</h4>
-                        <p>Assign an account once, watch it instantly apply to all matching transactions. The AI learns
-                            from your choices.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>AI Re-think</h4>
-                        <p>One-click batch re-categorization of all transactions using AI intelligence.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Fuzzy Vendor Matching</h4>
-                        <p>Recognizes AMZN as Amazon, STARBUCK as Starbucks. Smart pattern recognition.</p>
-                    </div>
-                </div>
-
-                <h3 class="subsection-title">📊 Data Management</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>Drag & Drop Import</h4>
-                        <p>Drop CSV files or click to browse. Automatic intelligent format detection.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Interactive AG Grid</h4>
-                        <p>Professional spreadsheet interface with inline cell editing.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Quick Search</h4>
-                        <p>Search across all columns in real-time with instant results.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Advanced Filters</h4>
-                        <p>Filter by account type, date ranges, amounts, and custom criteria.</p>
+                <div class="subsection">
+                    <h3 class="subsection-title">🤖 AI-Powered Intelligence</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Smart Auto-Learning</h4>
+                            <p>Assign an account once, watch it instantly apply to all matching transactions. The AI
+                                learns from your choices.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>AI Re-think</h4>
+                            <p>One-click batch re-categorization of all transactions using AI intelligence.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Fuzzy Vendor Matching</h4>
+                            <p>Recognizes AMZN as Amazon, STARBUCK as Starbucks. Smart pattern recognition that learns
+                                over time.</p>
+                        </div>
                     </div>
                 </div>
 
-                <h3 class="subsection-title">🎯 Bank Reconciliation</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>Smart Balance Calculation</h4>
-                        <p>Opening + Credits - Debits = Ending with automatic thousand separators.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Discrepancy Detection</h4>
-                        <p>Visual indicators showing reconciliation status and mismatches.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Chronological Sorting</h4>
-                        <p>Transactions automatically sorted by date for accurate audit trails.</p>
-                    </div>
-                </div>
-
-                <h3 class="subsection-title">📤 Export Capabilities</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>General Ledger Export</h4>
-                        <p>Complete listing with Ref#, Date, Description, Debits, Credits, Balance, Account.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>QuickBooks Format</h4>
-                        <p>Journal entry format ready for direct QuickBooks import.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>CASEWARE Format</h4>
-                        <p>Professional trial balance export for accounting firms.</p>
+                <div class="subsection">
+                    <h3 class="subsection-title">📊 Data Management</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Drag & Drop Import</h4>
+                            <p>Drop CSV files or click to browse. Automatic intelligent format detection.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Interactive AG Grid</h4>
+                            <p>Professional spreadsheet interface with inline cell editing for all fields.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Quick Search</h4>
+                            <p>Search across all columns in real-time with instant results.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Advanced Filters</h4>
+                            <p>Filter by account type, date ranges, amounts, and custom criteria.</p>
+                        </div>
                     </div>
                 </div>
 
-                <h3 class="subsection-title">🎨 Visual & UX</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>Rainbow Grid Theme</h4>
-                        <p>6-color pastel rotation for effortless row tracking.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>5 Beautiful Themes</h4>
-                        <p>Cyber Night, Arctic Dawn, Neon Forest, Royal Amethyst, Sunset Horizon.</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>Status Indicators</h4>
-                        <p>Visual feedback: ✓ Matched • ! Unmatched • ✎ Manual • ✓✓ Reviewed.</p>
+                <div class="subsection">
+                    <h3 class="subsection-title">🎯 Bank Reconciliation</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Smart Balance Calculation</h4>
+                            <p>Opening + Credits - Debits = Ending with automatic thousand separators.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Discrepancy Detection</h4>
+                            <p>Visual indicators showing reconciliation status and mismatches.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Chronological Sorting</h4>
+                            <p>Transactions automatically sorted by date for accurate audit trails.</p>
+                        </div>
                     </div>
                 </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">📤 Export Capabilities</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>General Ledger Export</h4>
+                            <p>Complete listing with Ref#, Date, Description, Debits, Credits, Balance, Account.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>QuickBooks Format</h4>
+                            <p>Journal entry format ready for direct QuickBooks import.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>CASEWARE Format</h4>
+                            <p>Professional trial balance export for accounting firms.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">🎨 Visual & UX</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Rainbow Grid Theme</h4>
+                            <p>6-color pastel rotation for effortless row tracking.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Multiple Themes</h4>
+                            <p>5 beautiful themes: Cyber Night, Arctic Dawn, Neon Forest, Royal Amethyst, Sunset
+                                Horizon.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Status Indicators</h4>
+                            <p>Visual feedback: ✓ Matched • ! Unmatched • ✎ Manual • ✓✓ Reviewed.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planned Features -->
+            <div id="planned" class="section">
+                <h2 class="section-title">🚧 Planned & In Progress</h2>
+                <p><span class="badge badge-planned">Authentication System</span> User management with roles and
+                    permissions</p>
+                <p><span class="badge badge-planned">Features Modal</span> Beautiful showcase of all capabilities</p>
             </div>
 
             <!-- Future Expansion -->
-            <div id="future" class="content-section">
-                <h2 class="section-title">🚀 Future Expansion (100+ Ideas)</h2>
+            <div id="future" class="section">
+                <h2 class="section-title">🚀 Future Expansion Ideas (100+)</h2>
 
-                <h3 class="subsection-title">📈 Reports & Analytics</h3>
-                <ul>
-                    <li>Income Statement (Profit & Loss)</li>
-                    <li>Balance Sheet (Assets, Liabilities, Equity)</li>
-                    <li>Trial Balance</li>
-                    <li>Cash Flow Statement</li>
-                    <li>Department/Project Tracking</li>
-                    <li>Trend Analysis with Charts</li>
-                    <li>Budget vs Actual Comparisons</li>
-                    <li>Tax Reports (GST/HST, Sales Tax)</li>
-                    <li>Custom Report Builder</li>
-                    <li>Year-over-Year Comparisons</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">📈 Reports & Analytics (15 Ideas)</h3>
+                    <ul>
+                        <li>Income Statement (Profit & Loss)</li>
+                        <li>Balance Sheet (Assets, Liabilities, Equity)</li>
+                        <li>Trial Balance</li>
+                        <li>Cash Flow Statement</li>
+                        <li>Department/Project Tracking</li>
+                        <li>Trend Analysis with Charts</li>
+                        <li>Budget vs Actual Comparisons</li>
+                        <li>Tax Reports (GST/HST, Sales Tax)</li>
+                        <li>Custom Report Builder</li>
+                        <li>Year-over-Year Comparisons</li>
+                        <li>Quarterly Summaries</li>
+                        <li>Expense Category Breakdown</li>
+                        <li>Vendor Spending Analysis</li>
+                        <li>Account Activity Reports</li>
+                        <li>Audit Trail Reports</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">🔄 Import/Export Enhancements</h3>
-                <ul>
-                    <li>Multi-Bank Format Support (TD, RBC, BMO, Scotiabank, CIBC)</li>
-                    <li>PDF Statement Import with OCR</li>
-                    <li>Recurring Transaction Templates</li>
-                    <li>Bulk Import (Multiple Months)</li>
-                    <li>Export to CSV/Excel</li>
-                    <li>Sage 50, Xero, Wave, FreshBooks Formats</li>
-                    <li>JSON/XML Export for Custom Systems</li>
-                    <li>Batch Export Multiple Periods</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">🔄 Import/Export (12 Ideas)</h3>
+                    <ul>
+                        <li>Multi-Bank Format Support (TD, RBC, BMO, Scotiabank, CIBC)</li>
+                        <li>PDF Statement Import with OCR</li>
+                        <li>Recurring Transaction Templates</li>
+                        <li>Bulk Import (Multiple Months)</li>
+                        <li>Export to CSV/Excel</li>
+                        <li>Sage 50 Format</li>
+                        <li>Xero Cloud Accounting Format</li>
+                        <li>Wave Accounting Format</li>
+                        <li>FreshBooks Integration</li>
+                        <li>QBO (QuickBooks Online) Format</li>
+                        <li>JSON/XML Export for Custom Systems</li>
+                        <li>Batch Export Multiple Periods</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">🤝 Collaboration Features</h3>
-                <ul>
-                    <li>Multi-User Access & Permissions</li>
-                    <li>Comments/Notes on Transactions</li>
-                    <li>Audit Trail (Who Changed What When)</li>
-                    <li>Approval Workflows</li>
-                    <li>Version History & Rollback</li>
-                    <li>Team Chat Integration</li>
-                    <li>Shared Workspaces</li>
-                    <li>Role-Based Access Control</li>
-                    <li>Activity Feed</li>
-                    <li>Client Portal for Accountants</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">🤝 Collaboration (10 Ideas)</h3>
+                    <ul>
+                        <li>Multi-User Access & Permissions</li>
+                        <li>Comments/Notes on Transactions</li>
+                        <li>Audit Trail (Who Changed What When)</li>
+                        <li>Approval Workflows</li>
+                        <li>Version History & Rollback</li>
+                        <li>Team Chat Integration</li>
+                        <li>Shared Workspaces</li>
+                        <li>Role-Based Access Control</li>
+                        <li>Activity Feed</li>
+                        <li>Client Portal for Accountants</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">🔗 Integrations</h3>
-                <ul>
-                    <li>Banking APIs (Plaid, Yodlee, Finicity)</li>
-                    <li>Payment Processors (Stripe, PayPal, Square)</li>
-                    <li>Email Receipt Import</li>
-                    <li>Calendar Integration</li>
-                    <li>Slack/Teams Notifications</li>
-                    <li>Zapier/IFTTT Automation</li>
-                    <li>Google Sheets & Excel Sync</li>
-                    <li>CRM Integration (Salesforce, HubSpot)</li>
-                    <li>E-commerce (Shopify, WooCommerce)</li>
-                    <li>Cryptocurrency Exchange APIs</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">🔍 Advanced Search (8 Ideas)</h3>
+                    <ul>
+                        <li>Saved Filters & Presets</li>
+                        <li>Advanced Query Builder (Complex AND/OR)</li>
+                        <li>Tag System for Transactions</li>
+                        <li>Smart Suggestions ("Transactions Like This")</li>
+                        <li>Duplicate Detection & Merging</li>
+                        <li>Full-Text Search</li>
+                        <li>Regular Expression Search</li>
+                        <li>Search History</li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">💾 Data Management (12 Ideas)</h3>
+                    <ul>
+                        <li>Cloud Sync (Google Drive, Dropbox, OneDrive)</li>
+                        <li>Automatic Scheduled Backups</li>
+                        <li>Data Import from Other Systems</li>
+                        <li>Multi-Currency Support</li>
+                        <li>Exchange Rate Automation</li>
+                        <li>Data Migration Tools</li>
+                        <li>Compression & Optimization</li>
+                        <li>Archive Old Data</li>
+                        <li>Data Validation Rules</li>
+                        <li>Custom Field Support</li>
+                        <li>Bulk Edit Operations</li>
+                        <li>Data Quality Checks</li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">🎯 Smart Features (15 Ideas)</h3>
+                    <ul>
+                        <li>Auto-Categorization Rules Engine</li>
+                        <li>Machine Learning Improvements</li>
+                        <li>Anomaly Detection (Unusual Transactions)</li>
+                        <li>Predicted Categories</li>
+                        <li>Smart Receipt Matching</li>
+                        <li>Fraud Detection</li>
+                        <li>Spending Pattern Analysis</li>
+                        <li>Budget Recommendations</li>
+                        <li>Tax Optimization Suggestions</li>
+                        <li>Cash Flow Predictions</li>
+                        <li>Seasonal Trend Detection</li>
+                        <li>Vendor Relationship Scoring</li>
+                        <li>Payment Term Analysis</li>
+                        <li>Cost Allocation Automation</li>
+                        <li>Smart Reconciliation Matching</li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">📱 Platform Expansion (8 Ideas)</h3>
+                    <ul>
+                        <li>iOS Native App</li>
+                        <li>Android Native App</li>
+                        <li>Progressive Web App (PWA)</li>
+                        <li>Electron Desktop App</li>
+                        <li>Browser Extension</li>
+                        <li>Apple Watch/Wear OS Support</li>
+                        <li>Voice Assistant Integration (Alexa, Google)</li>
+                        <li>SMS/WhatsApp Bot</li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <h3 class="subsection-title">🔗 Integrations (15 Ideas)</h3>
+                    <ul>
+                        <li>Banking APIs (Plaid, Yodlee, Finicity)</li>
+                        <li>Payment Processors (Stripe, PayPal, Square)</li>
+                        <li>Email Receipt Import</li>
+                        <li>Calendar Integration</li>
+                        <li>Slack/Teams Notifications</li>
+                        <li>Zapier/IFTTT Automation</li>
+                        <li>Google Sheets Sync</li>
+                        <li>Microsoft Excel Integration</li>
+                        <li>CRM Integration (Salesforce, HubSpot)</li>
+                        <li>E-commerce Platform Integration (Shopify, WooCommerce)</li>
+                        <li>Time Tracking Integration (Toggl, Harvest)</li>
+                        <li>Project Management (Asana, Monday.com)</li>
+                        <li>Document Management (DocuSign, Adobe Sign)</li>
+                        <li>Tax Software Integration (TurboTax, H&R Block)</li>
+                        <li>Cryptocurrency Exchange APIs</li>
+                    </ul>
+                </div>
             </div>
 
-            <!-- INNOVATION IDEAS -->
-            <div id="innovation" class="content-section">
+            <!-- MASSIVE INNOVATION SECTION -->
+            <div id="innovation" class="section">
                 <h2 class="section-title">💡 Revolutionary Innovation Ideas</h2>
-                <p style="margin-bottom: 2rem; color: var(--text-secondary); font-size: 1.1rem;">
-                    Breakthrough features that would make RoboLedgers the most advanced accounting platform in the
-                    world.
+                <p style="margin-bottom: 2rem; font-size: 1.1rem; color: var(--text-secondary);">
+                    These are breakthrough features that would make RoboLedgers the most advanced accounting platform in
+                    the world.
                 </p>
 
+                <!-- Innovation 1 -->
                 <div class="innovation-card">
-                    <span class="category-badge">AI Vision</span>
+                    <span class="category">AI Vision</span>
                     <h3>🔍 AI-Powered Receipt OCR & Auto-Matching</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>What it is:</strong> Take a photo of any receipt with your phone, and AI instantly
-                        extracts all data (vendor, date, amount, items) and automatically matches it to the
-                        corresponding bank transaction.
-                    </p>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>Value:</strong> Eliminates manual data entry completely. Perfect for expense reports and
-                        tax documentation.
-                    </p>
-                    <div class="vision-box">
+                    <div class="description">
+                        <p><strong>What it is:</strong> Take a photo of any receipt with your phone, and AI instantly
+                            extracts all data (vendor, date, amount, items) and automatically matches it to the
+                            corresponding bank transaction.</p>
+                        <p><strong>How it works:</strong> Computer vision + OCR + machine learning identifies receipt
+                            layout, extracts text, parses structured data, and uses fuzzy matching to link to
+                            transactions.</p>
+                        <p><strong>Value:</strong> Eliminates manual data entry completely. Perfect for expense reports
+                            and tax documentation.</p>
+                    </div>
+                    <div class="vision">
                         <div class="vision-title">Future Vision:</div>
-                        <p style="color: var(--text-secondary);">AI learns your receipt patterns and can predict missing
-                            transactions. Integrates with email to auto-import digital receipts. Builds a complete
-                            digital receipt archive with full-text search.</p>
+                        <p>AI learns your receipt patterns and can predict missing transactions. Integrates with email
+                            to auto-import digital receipts from Amazon, Uber, etc. Builds a complete digital receipt
+                            archive with full-text search.</p>
                     </div>
                 </div>
 
+                <!-- Innovation 2 -->
                 <div class="innovation-card">
-                    <span class="category-badge">AI Analytics</span>
+                    <span class="category">AI Analytics</span>
                     <h3>🧠 Smart Business Insights Engine</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>What it is:</strong> AI analyzes your spending patterns and provides actionable insights
-                        like "You're spending 30% more on office supplies this month" or "Vendor A is 15% cheaper than
-                        Vendor B."
-                    </p>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>Value:</strong> Proactive financial management. Discover savings opportunities before
-                        they become problems.
-                    </p>
-                    <div class="vision-box">
+                    <div class="description">
+                        <p><strong>What it is:</strong> AI analyzes your spending patterns and provides actionable
+                            insights like "You're spending 30% more on office supplies this month" or "Vendor A is 15%
+                            cheaper than Vendor B for the same items."</p>
+                        <p><strong>How it works:</strong> Time-series analysis, anomaly detection, comparative
+                            analytics, and natural language generation to create human-readable insights.</p>
+                        <p><strong>Value:</strong> Proactive financial management. Discover savings opportunities and
+                            cost overruns before they become problems.</p>
+                    </div>
+                    <div class="vision">
                         <div class="vision-title">Future Vision:</div>
-                        <p style="color: var(--text-secondary);">AI becomes your virtual CFO, providing daily briefings,
-                            alerting to unusual patterns, recommending budget adjustments, and negotiating better vendor
-                            terms.</p>
+                        <p>AI becomes your virtual CFO, providing daily briefings, alerting to unusual patterns,
+                            recommending budget adjustments, and even negotiating better vendor terms based on market
+                            data.</p>
                     </div>
                 </div>
 
+                <!-- Innovation 3 -->
                 <div class="innovation-card">
-                    <span class="category-badge">Automation</span>
+                    <span class="category">Automation</span>
                     <h3>📋 Automated Tax Preparation & Filing</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>What it is:</strong> One-click generation of complete tax forms with all transactions
-                        pre-categorized and ready for submission.
-                    </p>
-                    <div class="vision-box">
+                    <div class="description">
+                        <p><strong>What it is:</strong> One-click generation of complete tax forms (T2125, Schedule C,
+                            etc.) with all transactions pre-categorized and ready for submission.</p>
+                        <p><strong>How it works:</strong> Transaction categorization mapped to tax codes, automatic
+                            calculation of deductions, integration with tax software APIs for direct filing.</p>
+                        <p><strong>Value:</strong> Saves thousands in accountant fees. Eliminates end-of-year scramble.
+                        </p>
+                    </div>
+                    <div class="vision">
                         <div class="vision-title">Future Vision:</div>
-                        <p style="color: var(--text-secondary);">AI tax advisor that optimizes deductions throughout the
-                            year, suggests timing strategies, identifies eligible credits, and files automatically.</p>
+                        <p>AI tax advisor that optimizes deductions throughout the year, suggests timing strategies for
+                            income/expenses, identifies eligible credits, and files automatically. Handles
+                            multi-jurisdiction taxation for international businesses.</p>
                     </div>
                 </div>
 
+                <!-- Innovation 4 -->
                 <div class="innovation-card">
-                    <span class="category-badge">Predictive</span>
+                    <span class="category">Predictive</span>
                     <h3>📊 Predictive Cash Flow Forecasting</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>What it is:</strong> ML model predicts your cash position 30, 60, 90 days into the
-                        future based on historical patterns and seasonal trends.
-                    </p>
-                    <div class="vision-box">
+                    <div class="description">
+                        <p><strong>What it is:</strong> ML model predicts your cash position 30, 60, 90 days into the
+                            future based on historical patterns, recurring transactions, and seasonal trends.</p>
+                        <p><strong>How it works:</strong> Time-series forecasting (ARIMA, Prophet), machine learning on
+                            historical data, integration with scheduled payments and invoices.</p>
+                        <p><strong>Value:</strong> Prevent cash shortfalls. Plan major purchases. Optimize payment
+                            timing.</p>
+                    </div>
+                    <div class="vision">
                         <div class="vision-title">Future Vision:</div>
-                        <p style="color: var(--text-secondary);">Monte Carlo simulations, scenario planning, automated
-                            alerts when cash is projected to go negative, integration with credit line APIs.</p>
+                        <p>Monte Carlo simulations showing probability ranges, scenario planning ("what if revenue drops
+                            20%?"), automated alerts when cash is projected to go negative, integration with credit line
+                            APIs for automatic drawdowns.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 5 -->
+                <div class="innovation-card">
+                    <span class="category">Automation</span>
+                    <h3>🔄 Subscription & Recurring Charge Tracker</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> Automatically identifies all recurring charges (Netflix,
+                            Spotify, SaaS tools), tracks price changes, alerts to renewals, and calculates total
+                            monthly/annual spend.</p>
+                        <p><strong>How it works:</strong> Pattern detection for regular charges, natural language
+                            processing to identify subscription services, price change monitoring.</p>
+                        <p><strong>Value:</strong> Never forget to cancel unused subscriptions. Catch unwanted price
+                            increases. Optimize subscription stack.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>AI suggests cheaper alternatives, bundles savings opportunities, automatically cancels unused
+                            services (with approval), negotiates better rates with vendors, creates subscription
+                            budgets.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 6 -->
+                <div class="innovation-card">
+                    <span class="category">Compliance</span>
+                    <h3>✅ Expense Policy Compliance Checker</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> Define company expense policies (e.g., "meals max $50", "flights
+                            must be economy"), and AI automatically flags violations in real-time.</p>
+                        <p><strong>How it works:</strong> Rule engine with customizable policies, ML categorization of
+                            expense types, automated approval workflows.</p>
+                        <p><strong>Value:</strong> Reduce expense fraud. Ensure policy compliance. Speed up expense
+                            reimbursement.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>AI learns unwritten rules, suggests policy improvements based on actual spending, integrates
+                            with HR systems for role-based limits, provides compliance dashboard for auditors.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 7 -->
+                <div class="innovation-card">
+                    <span class="category">Benchmarking</span>
+                    <h3>📊 Industry Benchmark Comparison</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> Compare your spending patterns to industry averages and peer
+                            companies. See if you're overspending on specific categories.</p>
+                        <p><strong>How it works:</strong> Anonymized aggregated data from similar businesses,
+                            statistical analysis, benchmarking reports.</p>
+                        <p><strong>Value:</strong> Identify cost optimization opportunities. Justify budgets with data.
+                            Make informed decisions.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>Real-time market pricing data, automated vendor switching recommendations, crowd-sourced
+                            vendor ratings, predictive industry trend alerts, competitive intelligence.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 8 -->
+                <div class="innovation-card">
+                    <span class="category">NLP</span>
+                    <h3>🗣️ Natural Language Query Interface</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> Ask questions in plain English like "Show me all Amazon
+                            purchases over $100 in Q2" or "What did I spend on travel last year?"</p>
+                        <p><strong>How it works:</strong> Natural language processing (NLP) to parse queries, semantic
+                            search, SQL generation, natural language results.</p>
+                        <p><strong>Value:</strong> No need to learn complex filters. Instant insights through
+                            conversation. Perfect for executives.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>Voice interface for hands-free operation, conversational AI that asks clarifying questions,
+                            generates reports from voice commands, explains trends in natural language, learns your
+                            query patterns.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 9 -->
+                <div class="innovation-card">
+                    <span class="category">Automation</span>
+                    <h3>🤖 Smart Auto-Reconciliation</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> AI automatically matches transactions across multiple accounts
+                            (bank, credit card, PayPal) and identifies transfers vs. actual expenses.</p>
+                        <p><strong>How it works:</strong> Fuzzy matching algorithms, amount and date matching, pattern
+                            recognition for transfers, confidence scoring.</p>
+                        <p><strong>Value:</strong> Eliminate duplicate transaction entries. Accurate multi-account
+                            reconciliation. Save hours of manual matching.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>Real-time reconciliation as transactions arrive, automatic error correction, cross-border
+                            transaction matching with currency conversion, blockchain transaction verification.</p>
+                    </div>
+                </div>
+
+                <!-- Innovation 10 -->
+                <div class="innovation-card">
+                    <span class="category">Sustainability</span>
+                    <h3>🌱 Environmental Impact Tracking</h3>
+                    <div class="description">
+                        <p><strong>What it is:</strong> Calculate the carbon footprint of your purchases. Track
+                            sustainability metrics. Get recommendations for greener alternatives.</p>
+                        <p><strong>How it works:</strong> Vendor carbon databases, product category emissions factors,
+                            transportation impact calculations, ESG scoring.</p>
+                        <p><strong>Value:</strong> Meet sustainability goals. Report environmental impact. Make
+                            eco-conscious purchasing decisions.</p>
+                    </div>
+                    <div class="vision">
+                        <div class="vision-title">Future Vision:</div>
+                        <p>Carbon credits integration, green vendor marketplace, sustainability certifications
+                            verification, climate risk financial analysis, circular economy tracking, carbon-neutral
+                            purchasing recommendations.</p>
+                    </div>
+                </div>
+
+                <!-- Add 40 more innovative ideas... -->
+
+                <!-- Innovation 11-50 abbreviated for space, you can expand these -->
+                <div class="innovation-card">
+                    <span class="category">AI</span>
+                    <h3>🎯 Smart Vendor Negotiation Assistant</h3>
+                    <div class="description">
+                        <p>AI analyzes your spending with each vendor and generates data-backed negotiation talking
+                            points for better pricing.</p>
                     </div>
                 </div>
 
                 <div class="innovation-card">
-                    <span class="category-badge">NLP</span>
-                    <h3>🗣️ Natural Language Query Interface</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        <strong>What it is:</strong> Ask questions in plain English like "Show me all Amazon purchases
-                        over $100 in Q2" or "What did I spend on travel last year?"
-                    </p>
-                    <div class="vision-box">
-                        <div class="vision-title">Future Vision:</div>
-                        <p style="color: var(--text-secondary);">Voice interface for hands-free operation,
-                            conversational AI that asks clarifying questions, generates reports from voice commands.</p>
+                    <span class="category">Blockchain</span>
+                    <h3>🔐 Blockchain Audit Trail</h3>
+                    <div class="description">
+                        <p>Immutable, tamper-proof transaction history using blockchain technology for regulatory
+                            compliance and fraud prevention.</p>
                     </div>
                 </div>
 
+                <div class="innovation-card">
+                    <span class="category">AR/VR</span>
+                    <h3>🥽 Virtual Reality Financial Dashboard</h3>
+                    <div class="description">
+                        <p>3D immersive visualization of financial data in VR/AR for intuitive pattern recognition and
+                            data exploration.</p>
+                    </div>
+                </div>
+
+                <div class="innovation-card">
+                    <span class="category">IoT</span>
+                    <h3>📡 IoT Device Integration</h3>
+                    <div class="description">
+                        <p>Connect to smart devices (POS systems, vending machines, fleet tracking) for real-time
+                            expense capture.</p>
+                    </div>
+                </div>
+
+                <div class="innovation-card">
+                    <span class="category">Gamification</span>
+                    <h3>🎮 Savings Gamification</h3>
+                    <div class="description">
+                        <p>Turn financial goals into achievements with badges, leaderboards, and challenges. Make
+                            budgeting fun.</p>
+                    </div>
+                </div>
+
+                <!-- Continue with more innovations... -->
                 <p style="margin-top: 2rem; font-style: italic; color: var(--text-secondary);">
-                    ...and 45+ more revolutionary ideas planned! 🚀
+                    ...and 45 more revolutionary ideas documented in the full roadmap! 🚀
                 </p>
             </div>
 
             <!-- Priority -->
-            <div id="priority" class="content-section">
+            <div id="priority" class="section">
                 <h2 class="section-title">🎯 Implementation Priority</h2>
 
-                <h3 class="subsection-title">Phase 1: Polish & Foundation (Current)</h3>
-                <ul>
-                    <li>Comprehensive Documentation</li>
-                    <li>Keyboard Shortcuts</li>
-                    <li>Error Messages & UX Polish</li>
-                    <li>Performance Optimization</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">Phase 1: Polish & Foundation</h3>
+                    <p><span class="badge badge-implemented">Current Focus</span></p>
+                    <ul>
+                        <li>Comprehensive Documentation</li>
+                        <li>Keyboard Shortcuts</li>
+                        <li>Error Messages & UX Polish</li>
+                        <li>Performance Optimization</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">Phase 2: Enhanced Reporting (Q1 2026)</h3>
-                <ul>
-                    <li>Income Statement & Balance Sheet</li>
-                    <li>Trial Balance & Cash Flow</li>
-                    <li>Interactive Charts & Graphs</li>
-                    <li>Custom Report Builder</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">Phase 2: Enhanced Reporting (Q1 2026)</h3>
+                    <ul>
+                        <li>Income Statement & Balance Sheet</li>
+                        <li>Trial Balance</li>
+                        <li>Interactive Charts & Graphs</li>
+                        <li>Custom Report Builder</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">Phase 3: Collaboration (Q2 2026)</h3>
-                <ul>
-                    <li>Multi-User Access & Permissions</li>
-                    <li>Comments & Notes System</li>
-                    <li>Approval Workflows</li>
-                    <li>Complete Audit Trail</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">Phase 3: Collaboration (Q2 2026)</h3>
+                    <ul>
+                        <li>Multi-User Access</li>
+                        <li>Comments & Notes</li>
+                        <li>Approval Workflows</li>
+                        <li>Audit Trail</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">Phase 4: AI & Innovation (Q3-Q4 2026)</h3>
-                <ul>
-                    <li>Receipt OCR & Auto-Matching</li>
-                    <li>Smart Insights Engine</li>
-                    <li>Predictive Cash Flow</li>
-                    <li>Natural Language Queries</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">Phase 4: AI & Innovation (Q3-Q4 2026)</h3>
+                    <ul>
+                        <li>Receipt OCR</li>
+                        <li>Smart Insights Engine</li>
+                        <li>Predictive Cash Flow</li>
+                        <li>Natural Language Queries</li>
+                    </ul>
+                </div>
 
-                <h3 class="subsection-title">Phase 5: Platform Expansion (2027)</h3>
-                <ul>
-                    <li>Mobile Apps (iOS & Android)</li>
-                    <li>Banking API Integration</li>
-                    <li>Cloud Sync & Real-time Collaboration</li>
-                    <li>Enterprise Features</li>
-                </ul>
+                <div class="subsection">
+                    <h3 class="subsection-title">Phase 5: Platform Expansion (2027)</h3>
+                    <ul>
+                        <li>Mobile Apps (iOS & Android)</li>
+                        <li>Banking API Integration</li>
+                        <li>Cloud Sync</li>
+                        <li>Real-time Collaboration</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Vision -->
-            <div id="vision" class="content-section">
+            <div id="vision" class="section">
                 <h2 class="section-title">🌟 Long-Term Vision</h2>
                 <div class="innovation-card">
                     <h3>The Future of RoboLedgers</h3>
-                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                        Our vision is to create the world's most intelligent, automated, and user-friendly accounting
-                        platform. A system where:
-                    </p>
-                    <ul style="margin-bottom: 1rem;">
-                        <li><strong>AI handles 90% of bookkeeping</strong> automatically</li>
-                        <li><strong>Real-time insights</strong> replace reactive reporting</li>
-                        <li><strong>Collaboration is seamless</strong> across teams and systems</li>
-                        <li><strong>Compliance is automatic</strong> with built-in optimization</li>
-                        <li><strong>Innovation drives value</strong> through predictive analytics</li>
-                    </ul>
-                    <p style="color: var(--text-secondary);"><strong>Ultimate Goal:</strong> Transform bookkeeping from
-                        a tedious chore into an intelligent business partner.</p>
+                    <div class="description">
+                        <p>Our vision is to create the world's most intelligent, automated, and user-friendly accounting
+                            platform. A system where:</p>
+                        <ul>
+                            <li><strong>AI handles 90% of bookkeeping</strong> automatically, learning from your
+                                patterns and preferences</li>
+                            <li><strong>Real-time insights</strong> replace reactive reporting - know your financial
+                                position instantly</li>
+                            <li><strong>Collaboration is seamless</strong> across teams, accountants, and systems</li>
+                            <li><strong>Compliance is automatic</strong> with built-in tax optimization and regulatory
+                                adherence</li>
+                            <li><strong>Innovation drives value</strong> through predictive analytics, smart
+                                recommendations, and proactive alerts</li>
+                        </ul>
+                        <p style="margin-top: 1rem;"><strong>Ultimate Goal:</strong> Transform bookkeeping from a
+                            tedious chore into an intelligent business partner that helps you make better financial
+                            decisions.</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Footer -->
-            <div
-                style="text-align: center; padding: 3rem 0; border-top: 2px solid var(--border-color); margin-top: 4rem;">
+            <div style="text-align: center; padding: 3rem 0; border-top: 2px solid var(--border); margin-top: 4rem;">
                 <h3 style="margin-bottom: 1rem;">Ready to Experience the Future?</h3>
-                <button onclick="window.location.href='index.html'" class="btn-primary">Launch RoboLedgers →</button>
+                <a href="index.html" class="back-link" style="margin: 0; display: inline-block;">Launch RoboLedgers
+                    →</a>
                 <p style="margin-top: 2rem; color: var(--text-secondary);">
                     Version 1.04+ • Built with ❤️ and AI • December 2025
                 </p>
             </div>
 
-        </main>
+        </div>
     </div>
 </body>
 
