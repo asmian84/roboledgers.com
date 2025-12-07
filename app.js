@@ -116,6 +116,22 @@ const App = {
             });
         }
 
+        // Add Data button (append new transactions)
+        const addDataBtn = document.getElementById('addDataBtn');
+        if (addDataBtn) {
+            addDataBtn.addEventListener('click', () => {
+                this.addData();
+            });
+        }
+
+        // Start Over button (clear all)
+        const startOverBtn = document.getElementById('startOverBtn');
+        if (startOverBtn) {
+            startOverBtn.addEventListener('click', () => {
+                this.startOver();
+            });
+        }
+
         // Reset button  
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) {
