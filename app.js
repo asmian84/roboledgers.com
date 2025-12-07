@@ -351,8 +351,7 @@ const App = {
 
     updateReconciliation() {
         const panel = document.getElementById('reconciliationPanel');
-        if (!panel || this.transactions.length === 0) {
-            if (panel) panel.style.display = 'none';
+        if (!panel) {
             return;
         }
 
@@ -363,7 +362,7 @@ const App = {
 
         if (typeof ReconciliationManager !== 'undefined') {
             const reconciliation = ReconciliationManager.getReconciliationData(
-                this.transactions,
+                this.transactions || [],
                 expectedOpening,
                 expectedEnding
             );
