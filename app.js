@@ -358,12 +358,25 @@ const App = {
         const expectedOpening = parseFloat(document.getElementById('expectedOpeningBalance')?.value) || null;
         const expectedEnding = parseFloat(document.getElementById('expectedEndingBalance')?.value) || null;
 
+        // DEBUG: Log transaction count
+        console.log('🔍 updateReconciliation called. Transaction count:', this.transactions?.length || 0);
+        if (this.transactions && this.transactions.length > 0) {
+            console.log('📊 Sample transaction:', this.transactions[0]);
+        }
+
         if (typeof ReconciliationManager !== 'undefined') {
             const reconciliation = ReconciliationManager.getReconciliationData(
                 this.transactions || [],
                 expectedOpening,
                 expectedEnding
             );
+
+            // DEBUG: Log reconciliation data
+            console.log('💰 Reconciliation data:', {
+                totalCredits: reconciliation.totalCredits,
+                totalDebits: reconciliation.totalDebits,
+                calculatedEnding: reconciliation.calculated.endingBalance
+            });
 
             // Update calculated values
             const calcOpening = document.getElementById('calculatedOpeningBalance');
