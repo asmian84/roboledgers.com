@@ -61,28 +61,30 @@ const ExcelExporter = {
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Journal Entries');
 
-        // Generate Excel file with blob-based download for Chrome compatibility
+        // Generate Excel file with Chrome file:// protocol compatibility
         const filename = `QuickBooks_Import_${this.getDateString()}.xlsx`;
 
-        // Write to buffer (Chrome-compatible)
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+        // Use base64 for maximum Chrome compatibility
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
 
-        // Create blob with Uint8Array for Chrome
-        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Convert base64 to blob
+        const byteCharacters = atob(wbout);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-        // Create download link
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-
-        // Cleanup
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        // Download using data URL for Chrome file:// compatibility
+        const reader = new FileReader();
+        reader.onloadend = function () {
+            const a = document.createElement('a');
+            a.href = reader.result;
+            a.download = filename;
+            a.click();
+        };
+        reader.readAsDataURL(blob);
     },
 
     // Export to CASEWARE format (Trial Balance)
@@ -144,28 +146,30 @@ const ExcelExporter = {
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Trial Balance');
 
-        // Generate Excel file with blob-based download for Chrome compatibility
+        // Generate Excel file with Chrome file:// protocol compatibility
         const filename = `CASEWARE_TrialBalance_${this.getDateString()}.xlsx`;
 
-        // Write to buffer (Chrome-compatible)
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+        // Use base64 for maximum Chrome compatibility
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
 
-        // Create blob with Uint8Array for Chrome
-        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Convert base64 to blob
+        const byteCharacters = atob(wbout);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-        // Create download link
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-
-        // Cleanup
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        // Download using data URL for Chrome file:// compatibility
+        const reader = new FileReader();
+        reader.onloadend = function () {
+            const a = document.createElement('a');
+            a.href = reader.result;
+            a.download = filename;
+            a.click();
+        };
+        reader.readAsDataURL(blob);
     },
 
     // Export General Ledger format (Simplified)
@@ -283,28 +287,30 @@ const ExcelExporter = {
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'General Ledger');
 
-        // Generate Excel file with proper download
+        // Generate Excel file with Chrome file:// protocol compatibility
         const filename = `General_Ledger_${this.getDateString()}.xlsx`;
 
-        // Write to buffer (Chrome-compatible)
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+        // Use base64 for maximum Chrome compatibility
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
 
-        // Create blob with Uint8Array for Chrome
-        const blob = new Blob([new Uint8Array(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // Convert base64 to blob
+        const byteCharacters = atob(wbout);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-        // Create download link
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-
-        // Cleanup
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        // Download using data URL for Chrome file:// compatibility
+        const reader = new FileReader();
+        reader.onloadend = function () {
+            const a = document.createElement('a');
+            a.href = reader.result;
+            a.download = filename;
+            a.click();
+        };
+        reader.readAsDataURL(blob);
     },
 
     // Add summary sheet to workbook
