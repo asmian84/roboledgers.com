@@ -282,7 +282,7 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--glass-border);
-    padding: var(--spacing-md) var(--spacing-xl);
+    padding: 0.75rem 1.5rem;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -326,7 +326,7 @@ body {
 /* Main Content */
 .main-content {
     flex: 1;
-    padding: var(--spacing-xl);
+    padding: 1rem 1.5rem;
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
@@ -357,9 +357,9 @@ body {
 .upload-container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     align-items: center;
-    padding: 1.5rem 0;
+    padding: 0.5rem 0;
 }
 
 .upload-zone {
@@ -367,9 +367,9 @@ body {
     backdrop-filter: blur(20px);
     border: 2px dashed var(--glass-border);
     border-radius: var(--radius-xl);
-    padding: 2rem;
+    padding: 1.5rem;
     width: 100%;
-    max-width: 500px;
+    max-width: 450px;
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -407,8 +407,8 @@ body {
 }
 
 .upload-icon svg {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     color: var(--primary-color);
     animation: float 3s ease-in-out infinite;
 }
@@ -426,8 +426,8 @@ body {
 }
 
 .upload-zone h2 {
-    font-size: 1.75rem;
-    margin-bottom: var(--spacing-xs);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
     font-weight: 600;
 }
 
@@ -459,7 +459,7 @@ body {
     backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1rem;
     text-align: center;
     transition: all var(--transition-normal);
 }
@@ -471,13 +471,13 @@ body {
 }
 
 .info-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
 }
 
 .info-card h3 {
-    font-size: 1.125rem;
-    margin-bottom: var(--spacing-xs);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
     font-weight: 600;
 }
 
