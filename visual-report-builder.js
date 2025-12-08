@@ -157,7 +157,7 @@ const VisualReportBuilder = {
                 template: this.selectedTemplate,
                 period: this.periods.primary,
                 dates: periodDates,
-                transactionCount: transactions.length
+                totalTransactions: transactions.length
             });
 
             // Generate report based on template
@@ -168,19 +168,31 @@ const VisualReportBuilder = {
                 throw new Error('Reports engine not loaded');
             }
 
+            // CRITICAL: Filter transactions by period FIRST
+            const filteredTransactions = ReportsEngine.getTransactionsForPeriod(
+                transactions,
+                periodDates.start,
+                periodDates.end
+            );
+
+            console.log(`✅ Filtered to ${filteredTransactions.length} transactions in period`);
+
+            // Generate report based on template using FILTERED transactions
+            let reportHTML = '';
+
             switch (this.selectedTemplate) {
                 case 'balance':
-                    const balanceData = ReportsEngine.generateBalanceSheet(transactions);
+                    const balanceData = ReportsEngine.generateBalanceSheet(filteredTransactions);
                     reportHTML = ReportsEngine.renderBalanceSheet(balanceData);
                     break;
 
                 case 'income':
-                    const incomeData = ReportsEngine.generateIncomeStatement(transactions);
+                    const incomeData = ReportsEngine.generateIncomeStatement(filteredTransactions);
                     reportHTML = ReportsEngine.renderIncomeStatement(incomeData);
                     break;
 
                 case 'trial':
-                    const trialData = ReportsEngine.generateTrialBalance(transactions);
+                    const trialData = ReportsEngine.generateTrialBalance(filteredTransactions);
                     reportHTML = ReportsEngine.renderTrialBalance(trialData);
                     break;
 
