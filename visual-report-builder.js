@@ -198,37 +198,41 @@ const VisualReportBuilder = {
     },
 
     showReportResults(html) {
-        // Create a simple modal overlay for results
-        const existing = document.getElementById('reportResultsModal');
-        if (existing) existing.remove();
+        // Display results in the same modal by replacing content
+        const modal = document.getElementById('visualReportBuilderModal');
+        if (!modal) return;
 
-        const modal = document.createElement('div');
-        modal.id = 'reportResultsModal';
-        modal.className = 'modal active';
-        modal.innerHTML = `
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>📊 Report Results</h2>
-                    <button class="modal-close" onclick="document.getElementById('reportResultsModal').remove()">&times;</button>
+        // Store the original builder HTML
+        const builder = document.querySelector('.visual-report-builder');
+        if (!builder) return;
+
+        const originalHTML = builder.innerHTML;
+
+        // Replace builder content with report
+        builder.innerHTML = `
+            <div class="report-results-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: var(--text-primary); margin: 0;">Report Results</h3>
+                    <button class="btn-secondary" id="backToBuilderBtn" style="padding: 8px 16px;">
+                        ← Back to Builder
+                    </button>
                 </div>
-                <div class="modal-body">
+                <div class="report-content">
                     ${html}
                 </div>
             </div>
         `;
 
-        document.body.appendChild(modal);
-
-        // Close Visual Report Builder
-        const vrbModal = document.getElementById('visualReportBuilderModal');
-        if (vrbModal) vrbModal.classList.remove('active');
-
-        // Click outside to close
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'reportResultsModal') {
-                modal.remove();
-            }
-        });
+        // Wire up back button
+        const backBtn = document.getElementById('backToBuilderBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                builder.innerHTML = originalHTML;
+                // Re-initialize event listeners
+                this.setupEventListeners();
+                this.updateUI();
+            });
+        }
     }
 };
 

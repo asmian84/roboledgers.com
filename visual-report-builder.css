@@ -1,7 +1,7 @@
-/* Visual Report Builder Styles */
+/* Visual Report Builder Styles - Integrated with Site Theme */
 
 .visual-report-builder {
-    background: #1a1a2e;
+    background: var(--panel-bg);
     border-radius: 12px;
     padding: 32px;
     max-width: 700px;
@@ -9,11 +9,13 @@
 }
 
 .visual-report-builder h1 {
-    color: #ffffff;
+    color: var(--text-primary);
     font-size: 24px;
     font-weight: 700;
     margin-bottom: 32px;
     text-align: center;
+    display: none;
+    /* Hidden per user request */
 }
 
 /* Section Styles */
@@ -38,8 +40,8 @@
 }
 
 .vrb-template-card {
-    background: #16213e;
-    border: 1px solid #374151;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
     cursor: pointer;
@@ -53,15 +55,15 @@
 }
 
 .vrb-template-card:hover:not(.disabled) {
-    background: #1f2b4a;
-    border-color: #4b5563;
+    background: var(--hover-bg);
+    border-color: var(--accent-primary);
     transform: translateY(-2px);
 }
 
 .vrb-template-card.selected {
-    background: #2d1950;
-    border: 2px solid #a855f7;
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    background: var(--selected-bg);
+    border: 2px solid var(--accent-primary);
+    box-shadow: 0 0 20px var(--glow-color);
 }
 
 .vrb-template-card.disabled {
@@ -77,17 +79,17 @@
 .vrb-template-name {
     font-size: 16px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .vrb-template-card.disabled .vrb-template-name {
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 /* Period Configuration */
 .vrb-period-container {
-    background: #16213e;
-    border: 1px solid #374151;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 24px;
 }
@@ -109,7 +111,7 @@
 .vrb-period-label {
     font-size: 13px;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--text-secondary);
     margin-bottom: 8px;
     display: block;
 }
@@ -117,10 +119,10 @@
 .vrb-period-select {
     width: 100%;
     height: 44px;
-    background: #1a1a2e;
-    border: 1px solid #374151;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #ffffff;
+    color: var(--text-primary);
     padding: 0 16px;
     font-size: 14px;
     font-family: inherit;
@@ -130,19 +132,19 @@
 
 .vrb-period-select:focus {
     outline: none;
-    border-color: #a855f7;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .vrb-period-select option {
-    background: #16213e;
-    color: #ffffff;
+    background: var(--card-bg);
+    color: var(--text-primary);
 }
 
 /* Dimensions */
 .vrb-dimensions-container {
-    background: #16213e;
-    border: 1px solid #374151;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 24px;
 }
@@ -152,7 +154,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid #374151;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .vrb-dimension-row:last-child {
@@ -162,11 +164,11 @@
 .vrb-dimension-label {
     font-size: 14px;
     font-weight: 500;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .vrb-dimension-row.disabled .vrb-dimension-label {
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 /* Toggle Switch */
@@ -174,14 +176,14 @@
     position: relative;
     width: 52px;
     height: 28px;
-    background: #374151;
+    background: var(--toggle-off-bg);
     border-radius: 14px;
     cursor: pointer;
     transition: background 0.3s ease;
 }
 
 .vrb-toggle.active {
-    background: linear-gradient(135deg, #a855f7, #ec4899);
+    background: var(--accent-gradient);
 }
 
 .vrb-toggle.disabled {
@@ -209,7 +211,7 @@
     width: 100%;
     max-width: 400px;
     height: 56px;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    background: var(--accent-gradient);
     border: none;
     border-radius: 8px;
     color: #ffffff;
@@ -218,18 +220,18 @@
     cursor: pointer;
     margin: 0 auto;
     display: block;
-    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 4px 16px var(--button-shadow);
     transition: all 0.2s ease;
 }
 
 .vrb-generate-btn:hover {
-    box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+    box-shadow: 0 6px 24px var(--button-shadow-hover);
     transform: translateY(-2px);
 }
 
 .vrb-generate-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 2px 8px var(--button-shadow);
 }
 
 .vrb-generate-btn:disabled {

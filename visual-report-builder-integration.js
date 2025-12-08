@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function () {
     <div id="visualReportBuilderModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>📊 Visual Report Builder</h2>
                 <button class="modal-close" id="closeVisualReportBuilder">&times;</button>
             </div>
             <div class="modal-body">
