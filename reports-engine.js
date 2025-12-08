@@ -183,15 +183,24 @@ const ReportsEngine = {
 
         // Determine title for Income Statement based on profit/loss
         let title = reportType;
+        let dateLine;
+
         if (reportType === 'Income Statement' && netIncome !== null) {
             title = netIncome >= 0 ? 'Statement of Income' : 'Statement of Deficit';
+            dateLine = `For the Year Ended ${formattedDate}`;
+        } else if (reportType === 'Balance Sheet') {
+            dateLine = `As of ${formattedDate}`;
+        } else if (reportType === 'Trial Balance') {
+            dateLine = `As of ${formattedDate}`;
+        } else {
+            dateLine = formattedDate;
         }
 
         return `
             <div class="report-header">
                 <h2 class="company-name">${companyName}</h2>
                 <h3 class="report-title">${title}</h3>
-                <p class="report-date">For the Year Ended ${formattedDate}</p>
+                <p class="report-date">${dateLine}</p>
             </div>
         `;
     },
