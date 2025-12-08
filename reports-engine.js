@@ -200,41 +200,7 @@ const ReportsEngine = {
         return '$' + Math.abs(amount).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        });
-    },
-
-    // Format report header with company name, report type, and date
-    formatReportHeader(reportType, netIncome = null) {
-        const companyName = localStorage.getItem('companyName') || 'Company Name Not Set';
-        const yearEndDate = localStorage.getItem('yearEndDate');
-
-        // Format date: "December 31, 2025"
-        const date = yearEndDate ? new Date(yearEndDate) : new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = date.toLocaleDateString('en-US', options);
-
-        // Determine title for Income Statement based on profit/loss
-        let title = reportType;
-        let dateLine;
-
-        if (reportType === 'Income Statement' && netIncome !== null) {
-            title = netIncome >= 0 ? 'Statement of Income' : 'Statement of Deficit';
-            dateLine = `For the Year Ended ${formattedDate}`;
-        } else if (reportType === 'Balance Sheet') {
-            dateLine = `As of ${formattedDate}`;
-        } else if (reportType === 'Trial Balance') {
-            dateLine = `As of ${formattedDate}`;
-        } else {
-            dateLine = formattedDate;
-        }
-
-        return `
-            <div class="report-header">
-                <h2 class="company-name">${companyName}</h2>
-                <h3 class="report-title">${title}</h3>
-                <p class="report-date">${dateLine}</p>
-            </div>
-        `;
+                `;
     },
 
     // Render Income Statement HTML
@@ -242,10 +208,10 @@ const ReportsEngine = {
         const header = this.formatReportHeader('Income Statement', data.netIncome);
 
         let html = `
-            <div class="report-container">
-                ${header}
-                
-                <div class="report-section">
+                < div class= "report-container" >
+                    ${ header }
+
+        < div class= "report-section" >
                     <h4>Revenue</h4>
                     <table class="report-table">
                         <thead>
@@ -267,7 +233,7 @@ const ReportsEngine = {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </div >
 
                 <div class="report-section">
                     <h4>Expenses</h4>
@@ -295,8 +261,8 @@ const ReportsEngine = {
                         </tr>
                     </table>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
 
         return html;
     },
@@ -306,8 +272,8 @@ const ReportsEngine = {
         const header = this.formatReportHeader('Balance Sheet');
 
         let html = `
-            <div class="report-container">
-                ${header}
+    < div class="report-container" >
+        ${ header }
                 
                 <div class="report-section">
                     <h4>Assets</h4>
@@ -368,8 +334,8 @@ const ReportsEngine = {
                         ${data.balanced ? '✅ Balanced' : '❌ Imbalanced'} - Assets = Liabilities + Equity
                     </p>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
 
         return html;
     },
@@ -379,8 +345,8 @@ const ReportsEngine = {
         const header = this.formatReportHeader('Trial Balance');
 
         let html = `
-            <div class="report-container">
-                ${header}
+    < div class="report-container" >
+        ${ header }
                 
                 <table class="report-table">
                     <thead>
@@ -413,8 +379,8 @@ const ReportsEngine = {
                         ${data.balanced ? '✅ Balanced' : '❌ Imbalanced'} - Total Debits = Total Credits
                     </p>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
 
         return html;
     }
