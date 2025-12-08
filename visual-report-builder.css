@@ -3,8 +3,8 @@
 .visual-report-builder {
     background: var(--panel-bg);
     border-radius: 12px;
-    padding: 32px;
-    max-width: 700px;
+    padding: 24px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
@@ -12,7 +12,7 @@
     color: var(--text-primary);
     font-size: 24px;
     font-weight: 700;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
     text-align: center;
     display: none;
     /* Hidden per user request */
@@ -20,7 +20,7 @@
 
 /* Section Styles */
 .vrb-section {
-    margin-bottom: 32px;
+    margin-bottom: 20px;
 }
 
 .vrb-section-header {
@@ -35,7 +35,7 @@
 /* Template Grid */
 .vrb-template-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
 }
 

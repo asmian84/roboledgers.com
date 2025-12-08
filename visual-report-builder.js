@@ -4,10 +4,6 @@
 const VisualReportBuilder = {
     selectedTemplate: 'balance',
     period: 'QUARTERLY',
-    dimensions: {
-        bySegment: false,
-        byGeography: false
-    },
 
     initialize() {
         console.log('🎨 Initializing Visual Report Builder...');
