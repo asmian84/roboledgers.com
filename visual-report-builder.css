@@ -1,0 +1,286 @@
+/* Visual Report Builder Styles */
+
+.visual-report-builder {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.visual-report-builder h1 {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+/* Section Styles */
+.vrb-section {
+    margin-bottom: 32px;
+}
+
+.vrb-section-header {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9ca3af;
+    margin-bottom: 16px;
+}
+
+/* Template Grid */
+.vrb-template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.vrb-template-card {
+    background: #16213e;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.vrb-template-card:hover:not(.disabled) {
+    background: #1f2b4a;
+    border-color: #4b5563;
+    transform: translateY(-2px);
+}
+
+.vrb-template-card.selected {
+    background: #2d1950;
+    border: 2px solid #a855f7;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.vrb-template-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.vrb-template-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.vrb-template-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.vrb-template-card.disabled .vrb-template-name {
+    color: #6b7280;
+}
+
+/* Period Configuration */
+.vrb-period-container {
+    background: #16213e;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.vrb-period-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.vrb-period-row:last-child {
+    margin-bottom: 0;
+}
+
+.vrb-period-field {
+    flex: 1;
+}
+
+.vrb-period-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.vrb-period-select {
+    width: 100%;
+    height: 44px;
+    background: #1a1a2e;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 0 16px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vrb-period-select:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.vrb-period-select option {
+    background: #16213e;
+    color: #ffffff;
+}
+
+/* Dimensions */
+.vrb-dimensions-container {
+    background: #16213e;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.vrb-dimension-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #374151;
+}
+
+.vrb-dimension-row:last-child {
+    border-bottom: none;
+}
+
+.vrb-dimension-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.vrb-dimension-row.disabled .vrb-dimension-label {
+    color: #6b7280;
+}
+
+/* Toggle Switch */
+.vrb-toggle {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background: #374151;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.vrb-toggle.active {
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+}
+
+.vrb-toggle.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.vrb-toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vrb-toggle.active .vrb-toggle-slider {
+    transform: translateX(24px);
+}
+
+/* Generate Button */
+.vrb-generate-btn {
+    width: 100%;
+    max-width: 400px;
+    height: 56px;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin: 0 auto;
+    display: block;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+    transition: all 0.2s ease;
+}
+
+.vrb-generate-btn:hover {
+    box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+    transform: translateY(-2px);
+}
+
+.vrb-generate-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+}
+
+.vrb-generate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .visual-report-builder {
+        padding: 24px 16px;
+    }
+
+    .vrb-template-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vrb-period-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .vrb-generate-btn {
+        max-width: 100%;
+    }
+}
+
+/* Loading State */
+.vrb-generate-btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.vrb-generate-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 3px solid #ffffff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: vrb-spin 0.8s linear infinite;
+}
+
+@keyframes vrb-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
