@@ -271,23 +271,29 @@ const ExcelExporter = {
             { wch: 35 }   // Account Name
         ];
 
-        // Format currency cells
+        // Format cells properly
         const range = XLSX.utils.decode_range(worksheet['!ref']);
         for (let R = 1; R <= range.e.r; ++R) {
-            // Format Debits column (B)
-            const debitCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 1 })];
+            // Format Date column (column 1 = B) as short date
+            const dateCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 1 })];
+            if (dateCell && dateCell.v && dateCell.v !== 'Date') {
+                dateCell.z = 'm/d/yy'; // Short date format
+            }
+
+            // Format Debits column (column 3 = D)
+            const debitCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 3 })];
             if (debitCell && debitCell.v && debitCell.v !== 'Debits') {
                 debitCell.z = '$#,##0.00';
             }
 
-            // Format Credits column (C)
-            const creditCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 2 })];
+            // Format Credits column (column 4 = E)
+            const creditCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 4 })];
             if (creditCell && creditCell.v && creditCell.v !== 'Credits') {
                 creditCell.z = '$#,##0.00';
             }
 
-            // Format Balance column (D)
-            const balanceCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 3 })];
+            // Format Balance column (column 5 = F)
+            const balanceCell = worksheet[XLSX.utils.encode_cell({ r: R, c: 5 })];
             if (balanceCell && balanceCell.v !== 'Balance') {
                 balanceCell.z = '$#,##0.00';
             }
