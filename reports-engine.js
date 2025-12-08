@@ -171,11 +171,38 @@ const ReportsEngine = {
         });
     },
 
+    // Format report header with company name, report type, and date
+    formatReportHeader(reportType, netIncome = null) {
+        const companyName = localStorage.getItem('companyName') || 'Company Name Not Set';
+        const yearEndDate = localStorage.getItem('yearEndDate');
+
+        // Format date: "December 31, 2025"
+        const date = yearEndDate ? new Date(yearEndDate) : new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = date.toLocaleDateString('en-US', options);
+
+        // Determine title for Income Statement based on profit/loss
+        let title = reportType;
+        if (reportType === 'Income Statement' && netIncome !== null) {
+            title = netIncome >= 0 ? 'Statement of Income' : 'Statement of Deficit';
+        }
+
+        return `
+            <div class="report-header">
+                <h2 class="company-name">${companyName}</h2>
+                <h3 class="report-title">${title}</h3>
+                <p class="report-date">For the Year Ended ${formattedDate}</p>
+            </div>
+        `;
+    },
+
     // Render Income Statement HTML
     renderIncomeStatement(data) {
+        const header = this.formatReportHeader('Income Statement', data.netIncome);
+
         let html = `
             <div class="report-container">
-                <h3 style="text-align: center; margin-bottom: 2rem;">Income Statement</h3>
+                ${header}
                 
                 <div class="report-section">
                     <h4>Revenue</h4>
@@ -238,9 +265,11 @@ const ReportsEngine = {
 
     // Render Balance Sheet HTML
     renderBalanceSheet(data) {
+        const header = this.formatReportHeader('Balance Sheet');
+
         let html = `
             <div class="report-container">
-                <h3 style="text-align: center; margin-bottom: 2rem;">Balance Sheet</h3>
+                ${header}
                 
                 <div class="report-section">
                     <h4>Assets</h4>
@@ -312,9 +341,11 @@ const ReportsEngine = {
 
     // Render Trial Balance HTML
     renderTrialBalance(data) {
+        const header = this.formatReportHeader('Trial Balance');
+
         let html = `
             <div class="report-container">
-                <h3 style="text-align: center; margin-bottom: 2rem;">Trial Balance</h3>
+                ${header}
                 
                 <table class="report-table">
                     <thead>

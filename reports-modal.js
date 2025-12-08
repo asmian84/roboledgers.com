@@ -15,6 +15,14 @@ const ReportsModal = {
             });
         }
 
+        // Export PDF button
+        const exportBtn = document.getElementById('exportReportPDF');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportToPDF();
+            });
+        }
+
         // Tab switching
         const tabs = document.querySelectorAll('[data-report]');
         tabs.forEach(tab => {
@@ -51,6 +59,24 @@ const ReportsModal = {
                 }
             }
         });
+    },
+
+    exportToPDF() {
+        // Set document title for PDF filename
+        const companyName = localStorage.getItem('companyName') || 'Company';
+        const activeTab = document.querySelector('[data-report].active');
+        const reportType = activeTab?.dataset.report || 'report';
+        const date = new Date().toISOString().split('T')[0];
+
+        document.title = `${companyName} - ${reportType} - ${date}`;
+
+        // Trigger browser print dialog
+        window.print();
+
+        // Restore original title
+        setTimeout(() => {
+            document.title = 'RoboLedgers - AI-Powered Smart Bookkeeping';
+        }, 500);
     },
 
     show() {
