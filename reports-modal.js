@@ -122,61 +122,130 @@ const ReportsModal = {
         const endDateInput = document.getElementById('reportEndDate');
         const endDate = endDateInput?.value ? new Date(endDateInput.value) : new Date();
 
+        // Use comparative periods for monthly/quarterly, single period for yearly
+        if (period === 'monthly' || period === 'quarterly') {
+            // Generate multiple periods
+            const periods = ReportsEngine.generateComparativePeriods(period, endDate);
 
-        // Add click handlers for drill-down
-        const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
-        clickableRows.forEach(row => {
-            row.style.cursor = 'pointer';
-            row.addEventListener('click', (e) => {
-                const account = e.currentTarget.dataset.account;
-                this.showAccountDrillDown(account, periodTransactions);
-            });
-        });
-    }
-} catch (error) {
-    console.error('Error generating report:', error);
-    alert('Error generating report. Check console for details.');
-}
-        } else {
-    // Yearly - single period (existing logic)
-    if (!ReportsEngine || typeof ReportsEngine.calculatePeriodDates !== 'function') {
-        console.error('ReportsEngine.calculatePeriodDates is not available!');
-        alert('Error: Report engine not loaded properly. Please refresh the page.');
-        return;
-    }
+            console.log(`📊 Generated ${periods.length} ${period} periods`);
 
-    const periodData = ReportsEngine.calculatePeriodDates(period, endDate);
-    const startDate = periodData.startDate;
+            // For now, just use the LAST period (most recent) to show data
+            // TODO: Phase 2 will render all periods in columns
+            const lastPeriod = periods[periods.length - 1];
+            const periodTransactions = ReportsEngine.getTransactionsForPeriod(
+                transactions,
+                lastPeriod.startDate,
+                lastPeriod.endDate
+            );
 
-    const periodTransactions = ReportsEngine.getTransactionsForPeriod(
-        transactions,
-        startDate,
-        endDate
-    );
+            if (periodTransactions.length === 0) {
+                alert(`No transactions found for ${lastPeriod.label}.`);
+                return;
+            }
 
-    if (periodTransactions.length === 0) {
-        alert('No transactions found for the selected period.');
-        return;
-    }
-
-    // Generate and render report
-    let html = '';
-    try {
-        if (reportType === 'income') {
-            const data = ReportsEngine.generateIncomeStatement(periodTransactions);
-            html = ReportsEngine.renderIncomeStatement(data);
-            showAccountDrillDown(account, periodTransactions) {
-                const accountTransactions = periodTransactions.filter(t =>
-                    (t.allocatedAccount || '9970') === account
-                );
-
-                if (accountTransactions.length === 0) {
-                    alert('No transactions found for this account.');
-                    return;
+            // Generate and render report for most recent period
+            let html = '';
+            try {
+                if (reportType === 'income') {
+                    const data = ReportsEngine.generateIncomeStatement(periodTransactions);
+                    html = ReportsEngine.renderIncomeStatement(data);
+                } else if (reportType === 'balance') {
+                    const data = ReportsEngine.generateBalanceSheet(periodTransactions);
+                    html = ReportsEngine.renderBalanceSheet(data);
+                } else if (reportType === 'trial') {
+                    const data = ReportsEngine.generateTrialBalance(periodTransactions);
+                    html = ReportsEngine.renderTrialBalance(data);
                 }
 
-                const accountName = accountTransactions[0].allocatedAccountName || 'Unallocated';
-                const html = `
+                // Display report
+                const reportDisplay = document.getElementById('reportDisplay');
+                if (reportDisplay) {
+                    reportDisplay.innerHTML = html;
+
+                    // Add click handlers for drill-down
+                    const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
+                    clickableRows.forEach(row => {
+                        row.style.cursor = 'pointer';
+                        row.addEventListener('click', (e) => {
+                            const account = e.currentTarget.dataset.account;
+                            this.showAccountDrillDown(account, periodTransactions);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Check console for details.');
+            }
+        } else {
+            // Yearly - single period (existing logic)
+            if (!ReportsEngine || typeof ReportsEngine.calculatePeriodDates !== 'function') {
+                console.error('ReportsEngine.calculatePeriodDates is not available!');
+                alert('Error: Report engine not loaded properly. Please refresh the page.');
+                return;
+            }
+
+            const periodData = ReportsEngine.calculatePeriodDates(period, endDate);
+            const startDate = periodData.startDate;
+
+            const periodTransactions = ReportsEngine.getTransactionsForPeriod(
+                transactions,
+                startDate,
+                endDate
+            );
+
+            if (periodTransactions.length === 0) {
+                alert('No transactions found for the selected period.');
+                return;
+            }
+
+            // Generate and render report
+            let html = '';
+            try {
+                if (reportType === 'income') {
+                    const data = ReportsEngine.generateIncomeStatement(periodTransactions);
+                    html = ReportsEngine.renderIncomeStatement(data);
+                } else if (reportType === 'balance') {
+                    const data = ReportsEngine.generateBalanceSheet(periodTransactions);
+                    html = ReportsEngine.renderBalanceSheet(data);
+                } else if (reportType === 'trial') {
+                    const data = ReportsEngine.generateTrialBalance(periodTransactions);
+                    html = ReportsEngine.renderTrialBalance(data);
+                }
+
+                // Display report
+                const reportDisplay = document.getElementById('reportDisplay');
+                if (reportDisplay) {
+                    reportDisplay.innerHTML = html;
+
+                    // Add click handlers for drill-down
+                    const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
+                    clickableRows.forEach(row => {
+                        row.style.cursor = 'pointer';
+                        row.addEventListener('click', (e) => {
+                            const account = e.currentTarget.dataset.account;
+                            this.showAccountDrillDown(account, periodTransactions);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Check console for details.');
+            }
+        }
+    },
+
+    showAccountDrillDown(account, periodTransactions) {
+        const accountTransactions = periodTransactions.filter(t =>
+            (t.allocatedAccount || '9970') === account
+        );
+
+        if (accountTransactions.length === 0) {
+            alert('No transactions found for this account.');
+            return;
+        }
+
+        const accountName = accountTransactions[0].allocatedAccountName || 'Unallocated';
+        const html = `
             <div class="modal active" id="drillDownModal" style="z-index: 1001;">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -209,15 +278,15 @@ const ReportsModal = {
             </div>
         `;
 
-                document.body.insertAdjacentHTML('beforeend', html);
-            }
-        };
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+};
 
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                ReportsModal.initialize();
-            });
-        } else {
-            ReportsModal.initialize();
-        }
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        ReportsModal.initialize();
+    });
+} else {
+    ReportsModal.initialize();
+}
