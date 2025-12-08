@@ -178,7 +178,14 @@ const ReportsModal = {
             }
         } else {
             // Yearly - single period (existing logic)
-            const { startDate } = ReportsEngine.calculatePeriodDates(period, endDate);
+            if (!ReportsEngine || typeof ReportsEngine.calculatePeriodDates !== 'function') {
+                console.error('ReportsEngine.calculatePeriodDates is not available!');
+                alert('Error: Report engine not loaded properly. Please refresh the page.');
+                return;
+            }
+
+            const periodData = ReportsEngine.calculatePeriodDates(period, endDate);
+            const startDate = periodData.startDate;
 
             const periodTransactions = ReportsEngine.getTransactionsForPeriod(
                 transactions,
