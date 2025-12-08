@@ -22,7 +22,12 @@ const Storage = {
                 matchCount: v.matchCount,
                 lastMatched: v.lastMatched
             }));
-            localStorage.setItem(this.KEYS.VENDORS, JSON.stringify(data));
+            const jsonData = JSON.stringify(data);
+
+            // Save to both keys for backward compatibility
+            localStorage.setItem(this.KEYS.VENDORS, jsonData);
+            localStorage.setItem('vendors', jsonData);  // Old key
+
             return true;
         } catch (error) {
             console.error('Error saving vendors:', error);
@@ -32,7 +37,21 @@ const Storage = {
 
     loadVendors() {
         try {
-            const data = localStorage.getItem(this.KEYS.VENDORS);
+            // Check if data exists in new key
+            let data = localStorage.getItem(this.KEYS.VENDORS);
+
+            // MIGRATION: Check old key if new key is empty
+            if (!data) {
+                const oldData = localStorage.getItem('vendors');
+                if (oldData) {
+                    console.log('Migrating vendors from old storage key...');
+                    // Copy to new key
+                    localStorage.setItem(this.KEYS.VENDORS, oldData);
+                    data = oldData;
+                    // Keep old key for backward compatibility
+                }
+            }
+
             if (!data) return [];
             const parsed = JSON.parse(data);
             return parsed.map(v => new Vendor(v));
