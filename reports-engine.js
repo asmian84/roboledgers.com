@@ -3,10 +3,21 @@
 const ReportsEngine = {
     // Get transactions within a date range
     getTransactionsForPeriod(transactions, startDate, endDate) {
-        return transactions.filter(t => {
+        console.log(`🔍 Filtering ${transactions.length} transactions between ${startDate.toISOString()} and ${endDate.toISOString()}`);
+
+        const filtered = transactions.filter(t => {
             const date = new Date(t.date);
-            return date >= startDate && date <= endDate;
+            const inRange = date >= startDate && date <= endDate;
+            return inRange;
         });
+
+        console.log(`✅ Found ${filtered.length} transactions in period`);
+        if (filtered.length > 0) {
+            console.log(`   First: ${new Date(filtered[0].date).toLocaleDateString()}`);
+            console.log(`   Last: ${new Date(filtered[filtered.length - 1].date).toLocaleDateString()}`);
+        }
+
+        return filtered;
     },
 
     // Calculate period dates based on year-end
