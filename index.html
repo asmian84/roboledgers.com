@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="report-styles.css">
     <link rel="stylesheet" href="bulk-actions.css">
     <link rel="stylesheet" href="comparative-reports.css">
-    <link rel="stylesheet" href="visual-report-builder.css">
+    <link rel="stylesheet" href="visual-report-builder.css">`r`n    <link rel="stylesheet" href="vrb-dropdown-fix.css">
 
     <!-- SheetJS for Excel/CSV processing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -89,17 +89,17 @@
 
                     <div class="upload-info">
                         <div class="info-card">
-                            <div class="info-icon">📊</div>
+                            <div class="info-icon">??</div>
                             <h3>Smart Categorization</h3>
                             <p>Automatically matches vendors to your dictionary and assigns accounts</p>
                         </div>
                         <div class="info-card">
-                            <div class="info-icon">✏️</div>
+                            <div class="info-icon">??</div>
                             <h3>Interactive Review</h3>
                             <p>Edit transactions in a spreadsheet-like interface with real-time updates</p>
                         </div>
                         <div class="info-card">
-                            <div class="info-icon">⚡</div>
+                            <div class="info-icon">?</div>
                             <h3>Export Ready</h3>
                             <p>Generate Excel files formatted for QuickBooks and CASEWARE import</p>
                         </div>
@@ -138,7 +138,7 @@
                                     <path d="M2 17l10 5 10-5"></path>
                                     <path d="M2 12l10 5 10-5"></path>
                                 </svg>
-                                ✨ AI Re-think
+                                ? AI Re-think
                             </button>
                             <button id="exportBtn" class="btn-primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -236,7 +236,7 @@
 
                 <!-- Bank Reconciliation Panel -->
                 <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>🏦 Bank Reconciliation</h3>
+                    <h3>?? Bank Reconciliation</h3>
                     <div class="reconciliation-grid">
                         <div class="reconciliation-section">
                             <h4>Opening Balance</h4>
@@ -284,7 +284,7 @@
                                 <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
                             </div>
                             <div class="status-indicator" id="statusIndicator">
-                                <span class="status-icon">⚪</span>
+                                <span class="status-icon">?</span>
                                 <span class="status-text">Enter expected balances</span>
                             </div>
                         </div>
@@ -295,7 +295,7 @@
 
     <!-- Bulk Indexing Info Panel -->
     <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
-        <h3>📚 Bulk Dictionary Indexing</h3>
+        <h3>?? Bulk Dictionary Indexing</h3>
         <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
             system will:</p>
         <ul>
@@ -349,17 +349,17 @@
                 <p class="export-description">Choose your export format:</p>
                 <div class="export-options">
                     <button class="export-option-card" data-format="quickbooks">
-                        <div class="export-icon">📗</div>
+                        <div class="export-icon">??</div>
                         <h3>QuickBooks</h3>
                         <p>IIF format for QuickBooks Desktop import</p>
                     </button>
                     <button class="export-option-card" data-format="caseware">
-                        <div class="export-icon">📘</div>
+                        <div class="export-icon">??</div>
                         <h3>CASEWARE</h3>
                         <p>Trial balance format for CASEWARE</p>
                     </button>
                     <button class="export-option-card" data-format="general">
-                        <div class="export-icon">📊</div>
+                        <div class="export-icon">??</div>
                         <h3>General Ledger</h3>
                         <p>Detailed transaction listing with all fields</p>
                     </button>
@@ -374,7 +374,7 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content modal-large settings-modal">
             <div class="modal-header">
-                <h2>⚙️ Settings</h2>
+                <h2>?? Settings</h2>
                 <button class="modal-close" id="closeSettingsModal">&times;</button>
             </div>
             <div class="modal-body settings-body">
@@ -395,42 +395,42 @@
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="cyber-night" checked>
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌃</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Cyber Night</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="arctic-dawn">
                                 <div class="theme-content">
-                                    <span class="theme-icon">❄️</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Arctic Dawn</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="neon-forest">
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌲</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Neon Forest</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="royal-amethyst">
                                 <div class="theme-content">
-                                    <span class="theme-icon">💎</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Royal Amethyst</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="sunset-horizon">
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌅</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Sunset Horizon</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="ocean-depths">
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌊</span>
+                                    <span class="theme-icon">??</span>
                                     <span class="theme-name">Ocean Depths</span>
                                 </div>
                             </label>
@@ -487,10 +487,10 @@
                     <div class="settings-section" style="display:none;">
                         <label class="settings-label">Import/Export</label>
                         <button id="settingsImportBtn" class="settings-btn settings-btn-secondary">
-                            📥 Import Data
+                            ?? Import Data
                         </button>
                         <button id="settingsExportBtn" class="settings-btn settings-btn-secondary">
-                            📤 Export Data
+                            ?? Export Data
                         </button>
                     </div>
                     -->
@@ -502,17 +502,17 @@
                     <div class="settings-section">
                         <label class="settings-label">Keyboard Shortcuts</label>
                         <button id="showKeyboardShortcuts" class="settings-btn settings-btn-secondary">
-                            ⌨️ View Keyboard Shortcuts
+                            ?? View Keyboard Shortcuts
                         </button>
                     </div>
                     
                     <div class="settings-section">
                         <label class="settings-label">Backup & Restore</label>
                         <button id="backupDataBtn" class="settings-btn settings-btn-secondary">
-                            💾 Backup All Data
+                            ?? Backup All Data
                         </button>
                         <button id="restoreDataBtn" class="settings-btn settings-btn-secondary">
-                            🔄 Restore from Backup
+                            ?? Restore from Backup
                         </button>
                     </div>
                 </div>
@@ -526,7 +526,7 @@
     <div id="manageAccountsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>🏦 Manage Accounts</h2>
+                <h2>?? Manage Accounts</h2>
                 <button class="modal-close" id="closeManageAccountsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -599,9 +599,9 @@
     <div id="reportsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>📊 Financial Reports</h2>
+                <h2>?? Financial Reports</h2>
                 <button class="export-pdf-btn" id="exportReportPDF">
-                    <span>📄</span>
+                    <span>??</span>
                     <span>Export PDF</span>
                 </button>
                 <button class="modal-close" id="closeReportsModal">&times;</button>
@@ -673,8 +673,8 @@
     <script src="theme-radio-handler.js"></script>
     <script>
         // Debug test - verify JavaScript works
-        console.log('🔍 TEST: JavaScript is executing!');
-        console.log('🔍 TEST: About to load app.js...');
+        console.log('?? TEST: JavaScript is executing!');
+        console.log('?? TEST: About to load app.js...');
         <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
         </div>
     </div >
@@ -730,7 +730,7 @@
     <div id="manageAccountsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>🏦 Manage Accounts</h2>
+                <h2>?? Manage Accounts</h2>
                 <button class="modal-close" id="closeManageAccountsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -805,9 +805,9 @@
     < div id = "reportsModal_OLD" class="modal" >
             <div class="modal-content modal-large">
                 <div class="modal-header">
-                    <h2>📊 Financial Reports</h2>
+                    <h2>?? Financial Reports</h2>
                     <button class="export-pdf-btn" id="exportReportPDF">
-                        <span>📄</span>
+                        <span>??</span>
                         <span>Export PDF</span>
                     </button>
                     <button class="modal-close" id="closeReportsModal">&times;</button>
