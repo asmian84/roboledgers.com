@@ -20,53 +20,33 @@ const ReportsEngine = {
         return filtered;
     },
 
-    // Generate multiple periods for comparative reports
-    generateComparativePeriods(periodType, yearEndDate) {
-        const periods = [];
+    // Calculate period dates based on year-end
+    calculatePeriodDates(periodType, yearEndDate) {
         const endDate = new Date(yearEndDate);
+        let startDate = new Date(endDate);
 
-        if (periodType === 'monthly') {
-            // Generate 12 months ending on year-end
-            for (let i = 11; i >= 0; i--) {
-                const periodEnd = new Date(endDate);
-                periodEnd.setMonth(endDate.getMonth() - i);
+        switch (periodType) {
+            case 'monthly':
+                // One month period ending on selected date
+                startDate.setMonth(startDate.getMonth() - 1);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
+                break;
 
-                const periodStart = new Date(periodEnd);
-                periodStart.setMonth(periodStart.getMonth() - 1);
-                periodStart.setDate(periodStart.getDate() + 1);
+            case 'quarterly':
+                // Three month period ending on selected date
+                startDate.setMonth(startDate.getMonth() - 3);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
+                break;
 
-                // Format: "Jan/31/24"
-                const label = periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '');
-
-                periods.push({ startDate: periodStart, endDate: periodEnd, label });
-            }
-        } else if (periodType === 'quarterly') {
-            // Generate 4 quarters ending on year-end
-            for (let i = 3; i >= 0; i--) {
-                const periodEnd = new Date(endDate);
-                periodEnd.setMonth(endDate.getMonth() - (i * 3));
-
-                const periodStart = new Date(periodEnd);
-                periodStart.setMonth(periodStart.getMonth() - 3);
-                periodStart.setDate(periodStart.getDate() + 1);
-
-                const quarter = 4 - i;
-                const label = `Q${quarter} ${periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '')}`;
-
-                periods.push({ startDate: periodStart, endDate: periodEnd, label });
-            }
-        } else {
-            // Yearly - single period
-            const periodStart = new Date(endDate);
-            periodStart.setFullYear(periodStart.getFullYear() - 1);
-            periodStart.setDate(periodStart.getDate() + 1);
-
-            const label = 'Year Ended';
-            periods.push({ startDate: periodStart, endDate: endDate, label });
+            case 'yearly':
+                // One year period ending on selected date
+                startDate.setFullYear(startDate.getFullYear() - 1);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
+                break;
         }
 
-        console.log(`📊 Generated ${periods.length} periods for ${periodType}`);
-        return periods;
+        console.log(`📊 Period: ${periodType}, Range: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
+        return { startDate, endDate };
     },
 
     // Group transactions by account
@@ -195,28 +175,79 @@ const ReportsEngine = {
         };
     },
 
-                    < h4 > Revenue</h4>
-    <table class="report-table">
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th style="text-align: right;">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${data.revenue.map(r => `
+    // Format currency
+    formatCurrency(amount) {
+        return '$' + Math.abs(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    },
+
+    // Format report header with company name, report type, and date
+    formatReportHeader(reportType, netIncome = null) {
+        const companyName = localStorage.getItem('companyName') || 'Company Name Not Set';
+        const yearEndDate = localStorage.getItem('yearEndDate');
+
+        // Format date: "December 31, 2025"
+        const date = yearEndDate ? new Date(yearEndDate) : new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = date.toLocaleDateString('en-US', options);
+
+        // Determine title for Income Statement based on profit/loss
+        let title = reportType;
+        let dateLine;
+
+        if (reportType === 'Income Statement' && netIncome !== null) {
+            title = netIncome >= 0 ? 'Statement of Income' : 'Statement of Deficit';
+            dateLine = `For the Year Ended ${formattedDate}`;
+        } else if (reportType === 'Balance Sheet') {
+            dateLine = `As of ${formattedDate}`;
+        } else if (reportType === 'Trial Balance') {
+            dateLine = `As of ${formattedDate}`;
+        } else {
+            dateLine = formattedDate;
+        }
+
+        return `
+            <div class="report-header">
+                <h2 class="company-name">${companyName}</h2>
+                <h3 class="report-title">${title}</h3>
+                <p class="report-date">${dateLine}</p>
+            </div>
+        `;
+    },
+
+    // Render Income Statement HTML
+    renderIncomeStatement(data) {
+        const header = this.formatReportHeader('Income Statement', data.netIncome);
+
+        let html = `
+            <div class="report-container">
+                ${header}
+                
+                <div class="report-section">
+                    <h4>Revenue</h4>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.revenue.map(r => `
                                 <tr class="clickable-row" data-account="${r.account}">
                                     <td>${r.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(r.balance)}</td>
                                 </tr>
                             `).join('')}
-            <tr class="total-row">
-                <td><strong>Total Revenue</strong></td>
-                <td style="text-align: right;"><strong>${this.formatCurrency(data.totalRevenue)}</strong></td>
-            </tr>
-        </tbody>
-    </table>
-                </div >
+                            <tr class="total-row">
+                                <td><strong>Total Revenue</strong></td>
+                                <td style="text-align: right;"><strong>${this.formatCurrency(data.totalRevenue)}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <div class="report-section">
                     <h4>Expenses</h4>
@@ -244,8 +275,8 @@ const ReportsEngine = {
                         </tr>
                     </table>
                 </div>
-            </div >
-    `;
+            </div>
+        `;
 
         return html;
     },
@@ -255,8 +286,8 @@ const ReportsEngine = {
         const header = this.formatReportHeader('Balance Sheet');
 
         let html = `
-    < div class="report-container" >
-        ${ header }
+            <div class="report-container">
+                ${header}
                 
                 <div class="report-section">
                     <h4>Assets</h4>
@@ -317,8 +348,8 @@ const ReportsEngine = {
                         ${data.balanced ? '✅ Balanced' : '❌ Imbalanced'} - Assets = Liabilities + Equity
                     </p>
                 </div>
-            </div >
-    `;
+            </div>
+        `;
 
         return html;
     },
@@ -328,8 +359,8 @@ const ReportsEngine = {
         const header = this.formatReportHeader('Trial Balance');
 
         let html = `
-    < div class="report-container" >
-        ${ header }
+            <div class="report-container">
+                ${header}
                 
                 <table class="report-table">
                     <thead>
@@ -362,8 +393,8 @@ const ReportsEngine = {
                         ${data.balanced ? '✅ Balanced' : '❌ Imbalanced'} - Total Debits = Total Credits
                     </p>
                 </div>
-            </div >
-    `;
+            </div>
+        `;
 
         return html;
     }
