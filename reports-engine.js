@@ -185,7 +185,10 @@ const ReportsEngine = {
 
     // Format report header with company name, report type, and date
     formatReportHeader(reportType, netIncome = null) {
-        const companyName = localStorage.getItem('companyName') || 'Company Name Not Set';
+        // Get from Settings object (where it's actually stored)
+        const companyName = (typeof Settings !== 'undefined' && Settings.current.companyName)
+            ? Settings.current.companyName
+            : 'Company Name Not Set';
         const yearEndDate = localStorage.getItem('yearEndDate');
 
         // Format date: "December 31, 2025"
