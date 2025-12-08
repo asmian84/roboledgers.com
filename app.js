@@ -622,41 +622,6 @@ const App = {
             return;
         }
 
-        // Create progress modal
-        const modal = document.createElement('div');
-        modal.className = 'modal active';
-        modal.id = 'aiProgressModal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 500px; text-align: center;">
-                <div class="modal-body">
-                    <div class="ai-progress-animation" style="font-size: 64px; margin: 2rem 0; animation: magicWand 1.5s ease-in-out infinite;">
-                        🪄✨
-                    </div>
-                    <h2 style="margin-bottom: 1rem;">AI Re-think in Progress</h2>
-                    <p id="aiProgressText" style="color: var(--text-secondary); margin-bottom: 1rem;">
-                        Processing <span id="aiCurrentCount">0</span> of <span id="aiTotalCount">${this.transactions.length}</span> transactions...
-                    </p>
-                    <div class="progress-bar" style="width: 100%; max-width: 400px; margin: 0 auto;">
-                        <div id="aiProgressFill" class="progress-fill" style="width: 0%;"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        // Add animation style if not exists
-        if (!document.getElementById('aiAnimationStyle')) {
-            const style = document.createElement('style');
-            style.id = 'aiAnimationStyle';
-            style.textContent = `
-                @keyframes magicWand {
-                    0%, 100% { transform: rotate(-15deg) scale(1); }
-                    50% { transform: rotate(15deg) scale(1.1); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
         // Get account type from dropdown
         const accountTypeSelect = document.getElementById('accountTypeSelect');
         const accountType = accountTypeSelect ? accountTypeSelect.value : 'chequing';
@@ -664,22 +629,12 @@ const App = {
         let categorized = 0;
         let allocated = 0;
         let learned = 0;
-        let processed = 0;
 
-        const updateProgress = () => {
-            const progressText = document.getElementById('aiCurrentCount');
-            const progressFill = document.getElementById('aiProgressFill');
-            if (progressText) progressText.textContent = processed;
-            if (progressFill) progressFill.style.width = ((processed / this.transactions.length) * 100) + '%';
-        };
-
-        // Process ALL transactions (not just unallocated)
+        // Process ALL transactions (no progress modal - just blaze through instantly!)
         for (const txn of this.transactions) {
             // Use both vendor and payee for matching
             const vendorName = txn.vendor || txn.payee || txn.description;
             if (!vendorName) {
-                processed++;
-                updateProgress();
                 continue;
             }
 
