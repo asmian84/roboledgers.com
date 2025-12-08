@@ -144,7 +144,7 @@ const VisualReportBuilder = {
 
         try {
             // Get transactions
-            const transactions = TransactionGrid.transactions || [];
+            const transactions = TransactionGrid?.transactions || [];
             if (transactions.length === 0) {
                 alert('⚠️ No transactions loaded. Please upload a CSV file first.');
                 return;
@@ -153,8 +153,20 @@ const VisualReportBuilder = {
             // Get period dates
             const periodDates = this.getPeriodDates(this.periods.primary);
 
+            console.log('📊 Generating report:', {
+                template: this.selectedTemplate,
+                period: this.periods.primary,
+                dates: periodDates,
+                transactionCount: transactions.length
+            });
+
             // Generate report based on template
             let reportHTML = '';
+
+            // Check if ReportsEngine exists
+            if (typeof ReportsEngine === 'undefined') {
+                throw new Error('Reports engine not loaded');
+            }
 
             switch (this.selectedTemplate) {
                 case 'balance':
@@ -184,16 +196,25 @@ const VisualReportBuilder = {
                     return;
             }
 
-            // Create report display modal
+            console.log('✅ Report generated, HTML length:', reportHTML?.length);
+
+            // Verify we got valid HTML
+            if (!reportHTML || typeof reportHTML !== 'string') {
+                throw new Error('Report generation returned invalid data');
+            }
+
+            // Display the report
             this.showReportResults(reportHTML);
 
         } catch (error) {
-            console.error('Error generating report:', error);
-            alert('❌ Error generating report: ' + error.message);
+            console.error('❌ Error generating report:', error);
+            alert('❌ Error generating report: ' + error.message + '\n\nCheck console for details.');
         } finally {
             // Remove loading state
-            btn.classList.remove('loading');
-            btn.disabled = false;
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
         }
     },
 
@@ -206,7 +227,10 @@ const VisualReportBuilder = {
         const builder = document.querySelector('.visual-report-builder');
         if (!builder) return;
 
-        const originalHTML = builder.innerHTML;
+        // Store original HTML - we need to capture it fresh each time
+        if (!this._originalBuilderHTML) {
+            this._originalBuilderHTML = builder.innerHTML;
+        }
 
         // Replace builder content with report
         builder.innerHTML = `
@@ -227,10 +251,21 @@ const VisualReportBuilder = {
         const backBtn = document.getElementById('backToBuilderBtn');
         if (backBtn) {
             backBtn.addEventListener('click', () => {
-                builder.innerHTML = originalHTML;
-                // Re-initialize event listeners
-                this.setupEventListeners();
-                this.updateUI();
+                // Restore original HTML
+                builder.innerHTML = this._originalBuilderHTML;
+
+                // Re-initialize event listeners and UI
+                setTimeout(() => {
+                    this.setupEventListeners();
+                    this.updateUI();
+
+                    // Make sure loading state is cleared
+                    const generateBtn = document.getElementById('vrbGenerateBtn');
+                    if (generateBtn) {
+                        generateBtn.classList.remove('loading');
+                        generateBtn.disabled = false;
+                    }
+                }, 50);
             });
         }
     }
