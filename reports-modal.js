@@ -122,53 +122,108 @@ const ReportsModal = {
         const endDateInput = document.getElementById('reportEndDate');
         const endDate = endDateInput?.value ? new Date(endDateInput.value) : new Date();
 
-        // Calculate period dates
-        const { startDate } = ReportsEngine.calculatePeriodDates(period, endDate);
+        // Use comparative periods for monthly/quarterly, single period for yearly
+        if (period === 'monthly' || period === 'quarterly') {
+            // Generate multiple periods
+            const periods = ReportsEngine.generateComparativePeriods(period, endDate);
 
-        // Filter transactions for period
-        const periodTransactions = ReportsEngine.getTransactionsForPeriod(
-            transactions,
-            startDate,
-            endDate
-        );
+            console.log(`📊 Generated ${periods.length} ${period} periods`);
 
-        if (periodTransactions.length === 0) {
-            alert('No transactions found for the selected period.');
-            return;
-        }
+            // For now, just use the LAST period (most recent) to show data
+            // TODO: Phase 2 will render all periods in columns
+            const lastPeriod = periods[periods.length - 1];
+            const periodTransactions = ReportsEngine.getTransactionsForPeriod(
+                transactions,
+                lastPeriod.startDate,
+                lastPeriod.endDate
+            );
 
-        // Generate and render report
-        let html = '';
-        try {
-            if (reportType === 'income') {
-                const data = ReportsEngine.generateIncomeStatement(periodTransactions);
-                html = ReportsEngine.renderIncomeStatement(data);
-            } else if (reportType === 'balance') {
-                const data = ReportsEngine.generateBalanceSheet(periodTransactions);
-                html = ReportsEngine.renderBalanceSheet(data);
-            } else if (reportType === 'trial') {
-                const data = ReportsEngine.generateTrialBalance(periodTransactions);
-                html = ReportsEngine.renderTrialBalance(data);
+            if (periodTransactions.length === 0) {
+                alert(`No transactions found for ${lastPeriod.label}.`);
+                return;
             }
 
-            // Display report
-            const reportDisplay = document.getElementById('reportDisplay');
-            if (reportDisplay) {
-                reportDisplay.innerHTML = html;
+            // Generate and render report for most recent period
+            let html = '';
+            try {
+                if (reportType === 'income') {
+                    const data = ReportsEngine.generateIncomeStatement(periodTransactions);
+                    html = ReportsEngine.renderIncomeStatement(data);
+                } else if (reportType === 'balance') {
+                    const data = ReportsEngine.generateBalanceSheet(periodTransactions);
+                    html = ReportsEngine.renderBalanceSheet(data);
+                } else if (reportType === 'trial') {
+                    const data = ReportsEngine.generateTrialBalance(periodTransactions);
+                    html = ReportsEngine.renderTrialBalance(data);
+                }
 
-                // Add click handlers for drill-down
-                const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
-                clickableRows.forEach(row => {
-                    row.style.cursor = 'pointer';
-                    row.addEventListener('click', (e) => {
-                        const account = e.currentTarget.dataset.account;
-                        this.showAccountDrillDown(account, periodTransactions);
+                // Display report
+                const reportDisplay = document.getElementById('reportDisplay');
+                if (reportDisplay) {
+                    reportDisplay.innerHTML = html;
+
+                    // Add click handlers for drill-down
+                    const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
+                    clickableRows.forEach(row => {
+                        row.style.cursor = 'pointer';
+                        row.addEventListener('click', (e) => {
+                            const account = e.currentTarget.dataset.account;
+                            this.showAccountDrillDown(account, periodTransactions);
+                        });
                     });
-                });
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Check console for details.');
             }
-        } catch (error) {
-            console.error('Error generating report:', error);
-            alert('Error generating report. Check console for details.');
+        } else {
+            // Yearly - single period (existing logic)
+            const { startDate } = ReportsEngine.calculatePeriodDates(period, endDate);
+
+            const periodTransactions = ReportsEngine.getTransactionsForPeriod(
+                transactions,
+                startDate,
+                endDate
+            );
+
+            if (periodTransactions.length === 0) {
+                alert('No transactions found for the selected period.');
+                return;
+            }
+
+            // Generate and render report
+            let html = '';
+            try {
+                if (reportType === 'income') {
+                    const data = ReportsEngine.generateIncomeStatement(periodTransactions);
+                    html = ReportsEngine.renderIncomeStatement(data);
+                } else if (reportType === 'balance') {
+                    const data = ReportsEngine.generateBalanceSheet(periodTransactions);
+                    html = ReportsEngine.renderBalanceSheet(data);
+                } else if (reportType === 'trial') {
+                    const data = ReportsEngine.generateTrialBalance(periodTransactions);
+                    html = ReportsEngine.renderTrialBalance(data);
+                }
+
+                // Display report
+                const reportDisplay = document.getElementById('reportDisplay');
+                if (reportDisplay) {
+                    reportDisplay.innerHTML = html;
+
+                    // Add click handlers for drill-down
+                    const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
+                    clickableRows.forEach(row => {
+                        row.style.cursor = 'pointer';
+                        row.addEventListener('click', (e) => {
+                            const account = e.currentTarget.dataset.account;
+                            this.showAccountDrillDown(account, periodTransactions);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Check console for details.');
+            }
         }
     },
 
