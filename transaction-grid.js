@@ -26,9 +26,10 @@ const TransactionGrid = {
             enableCellChangeFlash: true,
             enableRangeSelection: true, // Allow selecting ranges
             enableFillHandle: true, // Allow dragging to fill cells
-            suppressRowClickSelection: false,
+            suppressRowClickSelection: true, // Only checkbox selects rows
             rowSelection: 'multiple',
             onCellValueChanged: this.onCellValueChanged.bind(this),
+            onSelectionChanged: this.onSelectionChanged.bind(this), // Track selection changes
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.columnApi = params.columnApi;
@@ -173,6 +174,18 @@ const TransactionGrid = {
         const accountOptions = accounts.map(a => a.fullName);
 
         return [
+            // Checkbox for batch selection
+            {
+                headerName: '',
+                checkboxSelection: true,
+                headerCheckboxSelection: true,
+                width: 50,
+                pinned: 'left',
+                lockPosition: true,
+                suppressMenu: true,
+                filter: false,
+                resizable: false
+            },
             {
                 headerName: 'Ref #',
                 field: 'ref',
@@ -322,6 +335,9 @@ const TransactionGrid = {
             // CRITICAL: Auto-calculate balances when loading transactions
             console.log('🔢 AUTO-CALCULATING BALANCES for', this.transactions.length, 'transactions');
             this.recalculateAllBalances();
+
+            // Initialize bulk actions toolbar
+            this.initializeBulkActions();
         }
     },
 
@@ -506,6 +522,108 @@ const TransactionGrid = {
         }
 
         return date.toISOString();
+    },
+
+    // BATCH SELECTION: Handle selection changes
+    onSelectionChanged() {
+        const selectedRows = this.gridApi.getSelectedRows();
+        const count = selectedRows.length;
+
+        // Show/hide bulk actions bar
+        const bulkBar = document.getElementById('bulkActionsBar');
+        const countEl = document.getElementById('selectedCount');
+
+        if (bulkBar && countEl) {
+            if (count > 0) {
+                bulkBar.style.display = 'flex';
+                countEl.textContent = count;
+            } else {
+                bulkBar.style.display = 'none';
+            }
+        }
+
+        console.log(`📋 ${count} rows selected`);
+    },
+
+    // BATCH SELECTION: Apply account to all selected transactions
+    applyBulkAccount(accountCode, accountName) {
+        const selectedRows = this.gridApi.getSelectedRows();
+
+        if (selectedRows.length === 0) {
+            alert('No transactions selected');
+            return;
+        }
+
+        // Confirm bulk update
+        const confirmMsg = `Assign "${accountName}" to ${selectedRows.length} selected transaction(s)?`;
+        if (!confirm(confirmMsg)) return;
+
+        // Update all selected transactions
+        selectedRows.forEach(row => {
+            row.allocatedAccount = accountCode;
+            row.allocatedAccountName = accountName;
+            row.status = 'manual';
+
+            // Learn from each transaction
+            VendorMatcher.learnFromTransaction(row);
+        });
+
+        // Refresh grid
+        this.gridApi.refreshCells({ force: true });
+
+        // Clear selection
+        this.gridApi.deselectAll();
+
+        // Save and update stats
+        Storage.saveTransactions(this.transactions);
+        App.updateStatistics();
+
+        console.log(`✅ Bulk assigned ${accountCode} to ${selectedRows.length} transactions`);
+    },
+
+    // BATCH SELECTION: Initialize bulk actions toolbar
+    initializeBulkActions() {
+        const accountSelect = document.getElementById('bulkAccountSelect');
+        const applyBtn = document.getElementById('applyBulkAccount');
+        const clearBtn = document.getElementById('clearSelection');
+
+        if (!accountSelect || !applyBtn || !clearBtn) {
+            console.warn('⚠️ Bulk actions UI elements not found');
+            return;
+        }
+
+        // Populate account dropdown
+        const accounts = AccountAllocator.getAllAccounts();
+        accountSelect.innerHTML = '<option value="">Assign Account...</option>';
+
+        accounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.code;
+            option.textContent = `${account.code} - ${account.fullName}`;
+            accountSelect.appendChild(option);
+        });
+
+        // Apply button handler
+        applyBtn.addEventListener('click', () => {
+            const selectedAccount = accountSelect.value;
+            if (!selectedAccount) {
+                alert('Please select an account');
+                return;
+            }
+
+            const account = accounts.find(a => a.code === selectedAccount);
+            if (account) {
+                this.applyBulkAccount(account.code, account.fullName);
+                accountSelect.value = ''; // Reset dropdown
+            }
+        });
+
+        // Clear selection button
+        clearBtn.addEventListener('click', () => {
+            this.gridApi.deselectAll();
+        });
+
+        console.log('✅ Bulk actions initialized');
     },
 
     // Helper method: Recalculate all balances from opening balance
