@@ -1,4 +1,5 @@
-// Visual Report Builder Controller
+// Visual Report Builder - Simplified version that IS the Reports Modal
+// This replaces the old reports modal completely
 
 const VisualReportBuilder = {
     selectedTemplate: 'balance',
@@ -57,6 +58,25 @@ const VisualReportBuilder = {
                 this.generateReport();
             });
         }
+
+        // Close button
+        const closeBtn = document.getElementById('closeVisualReportBuilder');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                const modal = document.getElementById('visualReportBuilderModal');
+                if (modal) modal.classList.remove('active');
+            });
+        }
+
+        // Click outside to close
+        const modal = document.getElementById('visualReportBuilderModal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'visualReportBuilderModal') {
+                    modal.classList.remove('active');
+                }
+            });
+        }
     },
 
     selectTemplate(template) {
@@ -95,7 +115,6 @@ const VisualReportBuilder = {
     },
 
     getPeriodDates(periodCode) {
-        const year = 2024;
         const periods = {
             'Q1_2024': { start: new Date(2024, 0, 1), end: new Date(2024, 2, 31) },
             'Q2_2024': { start: new Date(2024, 3, 1), end: new Date(2024, 5, 30) },
@@ -136,7 +155,6 @@ const VisualReportBuilder = {
 
             // Generate report based on template
             let reportHTML = '';
-            const reportTitle = this.getReportTitle();
 
             switch (this.selectedTemplate) {
                 case 'balance':
@@ -166,8 +184,8 @@ const VisualReportBuilder = {
                     return;
             }
 
-            // Display report
-            this.displayReport(reportTitle, reportHTML);
+            // Create report display modal
+            this.showReportResults(reportHTML);
 
         } catch (error) {
             console.error('Error generating report:', error);
@@ -179,45 +197,38 @@ const VisualReportBuilder = {
         }
     },
 
-    getReportTitle() {
-        const templates = {
-            'balance': 'Balance Sheet',
-            'income': 'Income Statement',
-            'trial': 'Trial Balance',
-            'cashflow': 'Cash Flow Statement'
-        };
+    showReportResults(html) {
+        // Create a simple modal overlay for results
+        const existing = document.getElementById('reportResultsModal');
+        if (existing) existing.remove();
 
-        const periodLabels = {
-            'Q1_2024': 'Q1 2024',
-            'Q2_2024': 'Q2 2024',
-            'Q3_2024': 'Q3 2024',
-            'Q4_2024': 'Q4 2024',
-            'FY_2024': 'Fiscal Year 2024',
-            'MTD': 'Month-to-Date',
-            'YTD': 'Year-to-Date'
-        };
+        const modal = document.createElement('div');
+        modal.id = 'reportResultsModal';
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>📊 Report Results</h2>
+                    <button class="modal-close" onclick="document.getElementById('reportResultsModal').remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    ${html}
+                </div>
+            </div>
+        `;
 
-        const templateName = templates[this.selectedTemplate] || 'Report';
-        const periodName = periodLabels[this.periods.primary] || 'Current Period';
+        document.body.appendChild(modal);
 
-        return `${templateName} - ${periodName}`;
-    },
-
-    displayReport(title, html) {
-        // Close Visual Report Builder modal
+        // Close Visual Report Builder
         const vrbModal = document.getElementById('visualReportBuilderModal');
-        if (vrbModal) {
-            vrbModal.classList.remove('active');
-        }
+        if (vrbModal) vrbModal.classList.remove('active');
 
-        // Open Reports modal with generated report
-        const reportsModal = document.getElementById('reportsModal');
-        const reportDisplay = document.getElementById('reportDisplay');
-
-        if (reportsModal && reportDisplay) {
-            reportDisplay.innerHTML = html;
-            reportsModal.classList.add('active');
-        }
+        // Click outside to close
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'reportResultsModal') {
+                modal.remove();
+            }
+        });
     }
 };
 

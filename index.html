@@ -799,60 +799,64 @@
         </div>
     </div>
 
-    <!--Reports Modal-- >
-    <div id="reportsModal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h2>📊 Financial Reports</h2>
-                <button class="export-pdf-btn" id="exportReportPDF">
-                    <span>📄</span>
-                    <span>Export PDF</span>
-                </button>
-                <button class="modal-close" id="closeReportsModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- Report Tabs -->
-                <div class="settings-tabs">
-                    <button class="settings-tab active" data-report="income">Income Statement</button>
-                    <button class="settings-tab" data-report="balance">Balance Sheet</button>
-                    <button class="settings-tab" data-report="trial">Trial Balance</button>
-                </div>
 
-                <!-- Period Selector -->
-                <div class="report-controls"
-                    style="margin: 1rem 0; padding: 1rem; background: var(--panel-bg); border-radius: 8px;">
-                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <div>
-                            <label
-                                style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Period:</label>
-                            <select id="reportPeriod" class="settings-select" style="padding: 0.5rem;">
-                                <option value="monthly">Monthly</option>
-                                <option value="quarterly">Quarterly</option>
-                                <option value="yearly" selected>Yearly</option>
-                            </select>
+    <!--OLD REPORTS MODAL(BACKUP - Replaced by Visual Report Builder)-- >
+    < !--
+    < div id = "reportsModal_OLD" class="modal" >
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>📊 Financial Reports</h2>
+                    <button class="export-pdf-btn" id="exportReportPDF">
+                        <span>📄</span>
+                        <span>Export PDF</span>
+                    </button>
+                    <button class="modal-close" id="closeReportsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" data-report="income">Income Statement</button>
+                        <button class="settings-tab" data-report="balance">Balance Sheet</button>
+                        <button class="settings-tab" data-report="trial">Trial Balance</button>
+                    </div>
+
+                    <div class="report-controls"
+                        style="margin: 1rem 0; padding: 1rem; background: var(--panel-bg); border-radius: 8px;">
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <div>
+                                <label
+                                    style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Period:</label>
+                                <select id="reportPeriod" class="settings-select" style="padding: 0.5rem;">
+                                    <option value="monthly">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="yearly" selected>Yearly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">End
+                                    Date:</label>
+                                <input type="date" id="reportEndDate" class="settings-input"
+                                    style="padding: 0.5rem; width: auto;">
+                            </div>
+                            <button id="generateReportBtn" class="btn-primary">Generate Report</button>
                         </div>
-                        <div>
-                            <label style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">End
-                                Date:</label>
-                            <input type="date" id="reportEndDate" class="settings-input"
-                                style="padding: 0.5rem; width: auto;">
+                    </div>
+
+                    <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
+                        <div class="report-placeholder"
+                            style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            <p>Select a period and click "Generate Report" to view financial data</p>
                         </div>
-                        <button id="generateReportBtn" class="btn-primary">Generate Report</button>
                     </div>
                 </div>
-
-                <!-- Report Display Area -->
-                <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
-                    <div class="report-placeholder"
-                        style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                        <p>Select a period and click "Generate Report" to view financial data</p>
-                    </div>
-                </div>
             </div>
-        </div>
-    </div>
+    </div >
+            -->
+    < !--END OLD REPORTS MODAL BACKUP-- >
+            </div >
+        </div >
+    </div >
 
-    <!--Scripts -->
+    < !--Scripts -->
             <script src="models.js"></script>
     <script src="storage.js"></script>
     <script src="utils.js"></script>

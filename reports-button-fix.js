@@ -1,49 +1,38 @@
-// Reports Button Fix - Removes old "coming soon" listener and adds modal handler
-// This script runs AFTER app.js to override the Reports button
+// Reports Button - Wire to Visual Report Builder
+// Visual Report Builder IS the new Reports Modal
 
 (function () {
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', fixReportsButton);
+        document.addEventListener('DOMContentLoaded', wireReportsButton);
     } else {
-        fixReportsButton();
+        wireReportsButton();
     }
 
-    function fixReportsButton() {
-        console.log('🔧 Fixing Reports button...');
+    function wireReportsButton() {
+        console.log('🔧 Wiring Reports button to Visual Report Builder...');
 
         const reportsBtn = document.getElementById('reportsBtn');
         if (!reportsBtn) {
-            console.warn('Reports button not found');
+            console.warn('⚠️ Reports button not found');
             return;
         }
 
-        // Clone the button to remove ALL existing event listeners
+        // Clone button to remove all existing listeners
         const cleanBtn = reportsBtn.cloneNode(true);
         reportsBtn.parentNode.replaceChild(cleanBtn, reportsBtn);
 
-        // Add the CORRECT listener (open Reports modal)
+        // Wire to Visual Report Builder
         cleanBtn.addEventListener('click', () => {
-            console.log('📊 Reports button clicked - opening modal');
-            const modal = document.getElementById('reportsModal');
+            console.log('📊 Opening Visual Report Builder...');
+            const modal = document.getElementById('visualReportBuilderModal');
             if (modal) {
                 modal.classList.add('active');
-
-                // Set default end date
-                const yearEndDate = localStorage.getItem('yearEndDate');
-                const endDateInput = document.getElementById('reportEndDate');
-                if (endDateInput) {
-                    if (yearEndDate) {
-                        endDateInput.value = yearEndDate.split('T')[0];
-                    } else {
-                        endDateInput.value = new Date().toISOString().split('T')[0];
-                    }
-                }
             } else {
-                console.error('reportsModal not found in DOM');
+                console.error('❌ Visual Report Builder modal not found!');
             }
         });
 
-        console.log('✅ Reports button fixed - modal listener added');
+        console.log('✅ Reports button wired successfully');
     }
 })();
