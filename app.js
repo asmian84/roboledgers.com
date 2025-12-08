@@ -702,16 +702,18 @@ const App = {
                     txn.status = 'matched';
                     allocated++;
 
-                    // Auto-learn: Add to vendor dictionary
-                    VendorMatcher.addVendor({
-                        name: vendorName,
-                        defaultAccount: suggestedAccount.code,
-                        defaultAccountName: suggestedAccount.name,
-                        category: category || 'General',
-                        notes: `AI-generated (${accountType})`,
-                        patterns: [vendorName.toLowerCase()]
-                    });
-                    learned++;
+                    // Auto-learn: Add to vendors array WITHOUT saving (batch save at end)
+                    if (!VendorMatcher.vendors.find(v => v.name.toLowerCase() === vendorName.toLowerCase())) {
+                        VendorMatcher.vendors.push(new Vendor({
+                            name: vendorName,
+                            defaultAccount: suggestedAccount.code,
+                            defaultAccountName: suggestedAccount.name,
+                            category: category || 'General',
+                            notes: `AI-generated (${accountType})`,
+                            patterns: [vendorName.toLowerCase()]
+                        }));
+                        learned++;
+                    }
                 }
             } else if (vendor) {
                 // Apply existing vendor mapping
@@ -733,6 +735,12 @@ const App = {
             if (processed % 50 === 0 || processed === this.transactions.length) {
                 updateProgress();
             }
+        }
+
+        // Save all learned vendors ONCE at the end (not during loop!)
+        if (learned > 0) {
+            VendorMatcher.saveVendors();
+            console.log(`💾 Saved ${learned} new vendors to dictionary`);
         }
 
         // Remove progress modal
