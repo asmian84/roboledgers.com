@@ -4,18 +4,8 @@ const ReportsModal = {
     },
 
     setupEventListeners() {
-        // Reports button - FORCE OVERRIDE old listener
-        const reportsBtn = document.getElementById('reportsBtn');
-        if (reportsBtn) {
-            // Clone button to remove ALL existing event listeners
-            const newBtn = reportsBtn.cloneNode(true);
-            reportsBtn.parentNode.replaceChild(newBtn, reportsBtn);
-
-            // Now add OUR listener to the fresh button
-            newBtn.addEventListener('click', () => {
-                this.show();
-            });
-        }
+        // Reports button is handled by reports-button-fix.js
+        // This module just handles modal interior controls
 
         // Close button
         const closeBtn = document.getElementById('closeReportsModal');

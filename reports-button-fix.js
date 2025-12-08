@@ -1,5 +1,5 @@
-// Reports Button Fix - Removes old "coming soon" listener
-// This script runs AFTER app.js to clean up the Reports button
+// Reports Button Fix - Removes old "coming soon" listener and adds modal handler
+// This script runs AFTER app.js to override the Reports button
 
 (function () {
     // Wait for DOM to be ready
@@ -22,12 +22,25 @@
         const cleanBtn = reportsBtn.cloneNode(true);
         reportsBtn.parentNode.replaceChild(cleanBtn, reportsBtn);
 
-        // Re-add the CORRECT listener (open Reports modal)
+        // Add the CORRECT listener (open Reports modal)
         cleanBtn.addEventListener('click', () => {
-            if (window.ReportsModal && typeof ReportsModal.show === 'function') {
-                ReportsModal.show();
+            console.log('📊 Reports button clicked - opening modal');
+            const modal = document.getElementById('reportsModal');
+            if (modal) {
+                modal.classList.add('active');
+
+                // Set default end date
+                const yearEndDate = localStorage.getItem('yearEndDate');
+                const endDateInput = document.getElementById('reportEndDate');
+                if (endDateInput) {
+                    if (yearEndDate) {
+                        endDateInput.value = yearEndDate.split('T')[0];
+                    } else {
+                        endDateInput.value = new Date().toISOString().split('T')[0];
+                    }
+                }
             } else {
-                console.error('ReportsModal not available');
+                console.error('reportsModal not found in DOM');
             }
         });
 
