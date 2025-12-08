@@ -720,15 +720,17 @@ const App = {
                 txn.category = vendor.category;
                 txn.status = 'matched';
                 allocated++;
+            } else {
+                // No match found - mark as "To Be Sorted"
+                txn.allocatedAccount = '9970';
+                txn.allocatedAccountName = 'To Be Sorted';
+                txn.status = 'unallocated';
             }
 
             processed++;
             updateProgress();
 
-            // Small delay to make progress visible
-            if (processed % 5 === 0) {
-                await this.delay(10);
-            }
+            // No delay - just blaze through!
         }
 
         // Remove progress modal
