@@ -207,25 +207,10 @@ const ExcelExporter = {
             // Separate into Debit or Credit based on original amount
             // Positive amounts = Debits (payments/expenses)
             // Negative amounts = Credits (deposits/income) - show as positive
-            let debit = 0;
-            let credit = 0;
-
-            // All amounts are stored in txn.debits field
-            // Positive = Debit column, Negative = Credit column (show as positive)
-            if (txn.debits) {
-                if (txn.debits > 0) {
-                    debit = txn.debits;  // Positive = Debit
-                } else if (txn.debits < 0) {
-                    credit = Math.abs(txn.debits);  // Negative = Credit (as positive)
-                }
-            } else if (txn.amount) {
-                // Fallback to amount field
-                if (txn.amount > 0) {
-                    debit = txn.amount;
-                } else if (txn.amount < 0) {
-                    credit = Math.abs(txn.amount);
-                }
-            }
+            // Use the same debits and credits values that the grid displays
+            // These come directly from the CSV import
+            let debit = txn.debits || 0;
+            let credit = txn.credits || 0;
 
             // Calculate running balance: Balance = Balance + Debit - Credit
             runningBalance += debit;
@@ -259,7 +244,7 @@ const ExcelExporter = {
                 'Date': dateStr,
                 'Description': txn.description || txn.payee || '',
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
-                'Credits': credit > 0 ? credit.toFixed(2) : '',  // Already positive
+                'Credits': credit > 0 ? credit.toFixed(2) : '',
                 'Balance': runningBalance.toFixed(2),
                 'Account #': accountNumber,
                 'Account Name': accountName
