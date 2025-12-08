@@ -451,5 +451,141 @@ const ReportsEngine = {
         `;
 
         return html;
+    },
+
+    // COMPARATIVE REPORTS: Render Income Statement with multiple period columns
+    renderComparativeIncomeStatement(periods, allTransactions) {
+        const header = this.formatReportHeader('Income Statement');
+
+        // Generate data for each period
+        const periodsData = periods.map(period => {
+            const periodTrans = this.getTransactionsForPeriod(
+                allTransactions,
+                period.startDate,
+                period.endDate
+            );
+            return {
+                label: period.label,
+                data: this.generateIncomeStatement(periodTrans)
+            };
+        });
+
+        // Collect all unique accounts across all periods
+        const allRevenue = new Set();
+        const allExpenses = new Set();
+
+        periodsData.forEach(pd => {
+            pd.data.revenue.forEach(r => allRevenue.add(r.account));
+            pd.data.expenses.forEach(e => allExpenses.add(e.account));
+        });
+
+        // Build table HTML
+        let html = `
+            <div class="report-container comparative-report">
+                ${header}
+                
+                <div class="report-section">
+                    <h4>Revenue</h4>
+                    <div class="table-scroll">
+                        <table class="report-table comparative-table">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col">Account</th>
+                                    ${periodsData.map(pd => `<th>${pd.label}</th>`).join('')}
+                                    <th><strong>Total</strong></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+
+        // Revenue rows
+        Array.from(allRevenue).sort().forEach(accountCode => {
+            const accountName = periodsData.find(pd =>
+                pd.data.revenue.find(r => r.account === accountCode)
+            )?.data.revenue.find(r => r.account === accountCode)?.accountName || 'Unknown';
+
+            html += `<tr class="clickable-row" data-account="${accountCode}">
+                <td class="sticky-col">${accountName}</td>`;
+
+            let rowTotal = 0;
+            periodsData.forEach(pd => {
+                const rev = pd.data.revenue.find(r => r.account === accountCode);
+                const amount = rev ? rev.balance : 0;
+                rowTotal += amount;
+                html += `<td style="text-align: right;">${amount > 0 ? this.formatCurrency(amount) : ''}</td>`;
+            });
+
+            html += `<td style="text-align: right;"><strong>${this.formatCurrency(rowTotal)}</strong></td></tr>`;
+        });
+
+        // Total Revenue row
+        html += `<tr class="total-row">
+            <td class="sticky-col"><strong>Total Revenue</strong></td>`;
+
+        let grandTotalRevenue = 0;
+        periodsData.forEach(pd => {
+            grandTotalRevenue += pd.data.totalRevenue;
+            html += `<td style="text-align: right;"><strong>${this.formatCurrency(pd.data.totalRevenue)}</strong></td>`;
+        });
+        html += `<td style="text-align: right;"><strong>${this.formatCurrency(grandTotalRevenue)}</strong></td></tr>`;
+
+        html += `</tbody></table></div></div>`;
+
+        // Expenses section
+        html += `<div class="report-section">
+            <h4>Expenses</h4>
+            <div class="table-scroll">
+                <table class="report-table comparative-table">
+                    <tbody>`;
+
+        Array.from(allExpenses).sort().forEach(accountCode => {
+            const accountName = periodsData.find(pd =>
+                pd.data.expenses.find(e => e.account === accountCode)
+            )?.data.expenses.find(e => e.account === accountCode)?.accountName || 'Unknown';
+
+            html += `<tr class="clickable-row" data-account="${accountCode}">
+                <td class="sticky-col">${accountName}</td>`;
+
+            let rowTotal = 0;
+            periodsData.forEach(pd => {
+                const exp = pd.data.expenses.find(e => e.account === accountCode);
+                const amount = exp ? exp.balance : 0;
+                rowTotal += amount;
+                html += `<td style="text-align: right;">${amount > 0 ? this.formatCurrency(amount) : ''}</td>`;
+            });
+
+            html += "<td style=\"text-align: right;\"><strong>${this.formatCurrency(rowTotal)}</strong></td></tr>";
+        });
+
+        // Total Expenses
+        html += `<tr class="total-row">
+            <td class="sticky-col"><strong>Total Expenses</strong></td>`;
+
+        let grandTotalExpenses = 0;
+        periodsData.forEach(pd => {
+            grandTotalExpenses += pd.data.totalExpenses;
+            html += `<td style="text-align: right;"><strong>${this.formatCurrency(pd.data.totalExpenses)}</strong></td>`;
+        });
+        html += `<td style="text-align: right;"><strong>${this.formatCurrency(grandTotalExpenses)}</strong></td></tr>`;
+
+        html += `</tbody></table></div></div>`;
+
+        // Net Income
+        html += `<div class="report-section" style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid var(--border-color);">
+            <table class="report-table comparative-table">
+                <tr class="net-income-row" style="font-size: 1.1rem;">
+                    <td class="sticky-col"><strong>Net Income</strong></td>`;
+
+        const grandNetIncome = grandTotalRevenue - grandTotalExpenses;
+        periodsData.forEach(pd => {
+            const netIncome = pd.data.netIncome;
+            const color = netIncome >= 0 ? '#22c55e' : '#ef4444';
+            html += `<td style="text-align: right; color: ${color};"><strong>${this.formatCurrency(netIncome)}</strong></td>`;
+        });
+        const finalColor = grandNetIncome >= 0 ? '#22c55e' : '#ef4444';
+        html += `<td style="text-align: right; color: ${finalColor};"><strong>${this.formatCurrency(grandNetIncome)}</strong></td>`;
+        html += `</tr></table></div></div>`;
+
+        return html;
     }
 };
