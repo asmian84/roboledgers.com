@@ -255,7 +255,7 @@ const ExcelExporter = {
                 'Date': dateStr,
                 'Description': txn.description || txn.payee || '',
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
-                'Credits': credit > 0 ? credit.toFixed(2) : '',
+                'Credits': credit !== 0 ? credit.toFixed(2) : '',  // Show with negative sign
                 'Balance': runningBalance.toFixed(2),
                 'Account #': accountNumber,
                 'Account Name': accountName
