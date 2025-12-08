@@ -70,6 +70,46 @@ const VendorManager = {
             });
         }
 
+        // Save to File button
+        const saveVendorFileBtn = document.getElementById('saveVendorFileBtn');
+        if (saveVendorFileBtn) {
+            saveVendorFileBtn.addEventListener('click', () => {
+                const count = Storage.exportVendorDictionary();
+                const notice = document.getElementById('gitBackupNotice');
+                if (notice) {
+                    notice.style.display = 'block';
+                    setTimeout(() => notice.style.display = 'none', 10000);
+                }
+                alert(`✅ Saved ${count} vendors to vendor-dictionary.json\n\n💡 Don't forget to:\n1. Move file to your project directory\n2. git add vendor-dictionary.json\n3. git commit -m "Update vendor dictionary"`);
+            });
+        }
+
+        // Load from File button
+        const loadVendorFileBtn = document.getElementById('loadVendorFileBtn');
+        const loadVendorFileInput = document.getElementById('loadVendorFileInput');
+
+        if (loadVendorFileBtn && loadVendorFileInput) {
+            loadVendorFileBtn.addEventListener('click', () => {
+                loadVendorFileInput.click();
+            });
+
+            loadVendorFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const vendors = await Storage.importVendorDictionary(file);
+                    VendorMatcher.vendors = vendors;
+                    VendorGrid.loadVendors();
+                    alert(`✅ Loaded ${vendors.length} vendors from ${file.name}`);
+                } catch (error) {
+                    alert('❌ Error loading vendor dictionary: ' + error.message);
+                }
+
+                loadVendorFileInput.value = '';
+            });
+        }
+
         const addVendorBtn = document.getElementById('addVendorBtn');
         if (addVendorBtn) {
             addVendorBtn.addEventListener('click', () => {

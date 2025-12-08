@@ -173,13 +173,29 @@ const Storage = {
     // Export/Import functionality
     exportVendorDictionary() {
         const vendors = this.loadVendors();
-        const blob = new Blob([JSON.stringify(vendors, null, 2)], { type: 'application/json' });
+        const data = vendors.map(v => ({
+            id: v.id,
+            name: v.name,
+            patterns: v.patterns,
+            defaultAccount: v.defaultAccount,
+            defaultAccountName: v.defaultAccountName,
+            category: v.category,
+            notes: v.notes,
+            matchCount: v.matchCount,
+            lastMatched: v.lastMatched
+        }));
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `vendor-dictionary-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = 'vendor-dictionary.json';  // Standard filename for Git
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        return data.length;  // Return count for UI feedback
     },
 
     importVendorDictionary(file) {

@@ -289,58 +289,36 @@
                         </div>
                     </div>
                 </div>
-            </section>
-        </main>
+    </div>
+    </div>
 
-        <!-- Vendor Dictionary Modal -->
-        <div id="vendorModal" class="modal">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>Vendor Dictionary</h2>
-                    <button class="modal-close" id="closeVendorModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="vendor-controls">
-                        <button id="vendorIndexBtn" class="btn-primary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            Vendor Indexing
-                        </button>
-                        <button id="addVendorBtn" class="btn-secondary">Add Vendor</button>
-                        <input type="file" id="vendorIndexInput" accept=".csv" multiple style="display: none;">
-                    </div>
-                </div>
-
-                <!-- Bulk Indexing Info Panel -->
-                <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
-                    <h3>📚 Bulk Dictionary Indexing</h3>
-                    <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
-                        system will:</p>
-                    <ul>
-                        <li>Extract vendor names from all transactions</li>
-                        <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
-                        <li>Consolidate duplicate vendors</li>
-                        <li>Learn account mappings from your historical data</li>
-                    </ul>
-                    <div class="bulk-upload-zone" id="bulkUploadZone">
-                        <p>Drop multiple CSV files here or click to browse</p>
-                        <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
-                    </div>
-                    <div id="bulkProgress" style="display: none;">
-                        <p id="bulkProgressText">Processing files...</p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="bulkProgressFill"></div>
-                        </div>
-                    </div>
-                    <div id="bulkResults" style="display: none;"></div>
-                </div>
-
-                <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+    <!-- Bulk Indexing Info Panel -->
+    <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
+        <h3>📚 Bulk Dictionary Indexing</h3>
+        <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
+            system will:</p>
+        <ul>
+            <li>Extract vendor names from all transactions</li>
+            <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
+            <li>Consolidate duplicate vendors</li>
+            <li>Learn account mappings from your historical data</li>
+        </ul>
+        <div class="bulk-upload-zone" id="bulkUploadZone">
+            <p>Drop multiple CSV files here or click to browse</p>
+            <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
+        </div>
+        <div id="bulkProgress" style="display: none;">
+            <p id="bulkProgressText">Processing files...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="bulkProgressFill"></div>
             </div>
         </div>
+        <div id="bulkResults" style="display: none;"></div>
+    </div>
+
+    <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+    </div>
+    </div>
     </div>
 
     <!-- Accounts Modal -->
