@@ -29,6 +29,19 @@ const VendorManager = {
             });
         }
 
+        // Vendor Indexing button
+        const vendorIndexBtn = document.getElementById('vendorIndexBtn');
+        if (vendorIndexBtn) {
+            vendorIndexBtn.addEventListener('click', () => {
+                if (typeof VendorIndexer !== 'undefined') {
+                    this.hideModal();
+                    VendorIndexer.showIndexingDialog();
+                } else {
+                    console.error('VendorIndexer not loaded');
+                }
+            });
+        }
+
         const addVendorBtn = document.getElementById('addVendorBtn');
         if (addVendorBtn) {
             addVendorBtn.addEventListener('click', () => {
