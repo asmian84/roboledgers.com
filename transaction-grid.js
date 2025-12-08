@@ -374,6 +374,7 @@ const TransactionGrid = {
             shouldRecalculateBalance = true;
         }
 
+
         // Handle account selection
         if (field === 'allocatedAccountName') {
             const accountName = event.newValue;
@@ -389,8 +390,38 @@ const TransactionGrid = {
                 // Learn from this manual categorization
                 VendorMatcher.learnFromTransaction(transaction);
 
-                // Refresh the row to update status
-                this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+                // Check if there are other transactions with the same payee/description
+                const payee = transaction.payee || transaction.description;
+                const matchingTransactions = this.transactions.filter(t =>
+                    t !== transaction && // Exclude current transaction
+                    (t.payee === payee || t.description === payee) &&
+                    t.allocatedAccount !== account.code // Only different account
+                );
+
+                if (matchingTransactions.length > 0) {
+                    // Prompt user to apply to all matching
+                    const message = `Found ${matchingTransactions.length} other transaction(s) with the same description:\n\n"${payee}"\n\nDo you want to apply account "${account.fullName}" to all of them?`;
+
+                    if (confirm(message)) {
+                        // Apply to all matching transactions
+                        matchingTransactions.forEach(t => {
+                            t.allocatedAccount = account.code;
+                            t.allocatedAccountName = account.name;
+                            t.status = 'manual';
+                        });
+
+                        // Refresh entire grid
+                        this.gridApi.refreshCells({ force: true });
+
+                        console.log(`✅ Applied account ${account.code} to ${matchingTransactions.length} matching transactions`);
+                    } else {
+                        // Just refresh the current row
+                        this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+                    }
+                } else {
+                    // No matching transactions, just refresh current row
+                    this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+                }
 
                 // Update statistics
                 App.updateStatistics();
