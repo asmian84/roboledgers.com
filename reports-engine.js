@@ -16,24 +16,25 @@ const ReportsEngine = {
 
         switch (periodType) {
             case 'monthly':
-                // Last month before year-end
+                // One month period ending on selected date
                 startDate.setMonth(startDate.getMonth() - 1);
-                startDate.setDate(startDate.getDate() + 1);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
                 break;
 
             case 'quarterly':
-                // Last 3 months before year-end
+                // Three month period ending on selected date
                 startDate.setMonth(startDate.getMonth() - 3);
-                startDate.setDate(startDate.getDate() + 1);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
                 break;
 
             case 'yearly':
-                // Full fiscal year
+                // One year period ending on selected date
                 startDate.setFullYear(startDate.getFullYear() - 1);
-                startDate.setDate(startDate.getDate() + 1);
+                startDate.setDate(startDate.getDate() + 1); // Day after start
                 break;
         }
 
+        console.log(`📊 Period: ${periodType}, Range: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
         return { startDate, endDate };
     },
 
