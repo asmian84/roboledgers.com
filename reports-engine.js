@@ -230,7 +230,6 @@ const ReportsEngine = {
                     <table class="report-table">
                         <thead>
                             <tr>
-                                <th>Account</th>
                                 <th>Description</th>
                                 <th style="text-align: right;">Amount</th>
                             </tr>
@@ -238,13 +237,12 @@ const ReportsEngine = {
                         <tbody>
                             ${data.revenue.map(r => `
                                 <tr class="clickable-row" data-account="${r.account}">
-                                    <td>${r.account}</td>
                                     <td>${r.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(r.balance)}</td>
                                 </tr>
                             `).join('')}
                             <tr class="total-row">
-                                <td colspan="2"><strong>Total Revenue</strong></td>
+                                <td><strong>Total Revenue</strong></td>
                                 <td style="text-align: right;"><strong>${this.formatCurrency(data.totalRevenue)}</strong></td>
                             </tr>
                         </tbody>
@@ -257,13 +255,12 @@ const ReportsEngine = {
                         <tbody>
                             ${data.expenses.map(e => `
                                 <tr class="clickable-row" data-account="${e.account}">
-                                    <td>${e.account}</td>
                                     <td>${e.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(e.balance)}</td>
                                 </tr>
                             `).join('')}
                             <tr class="total-row">
-                                <td colspan="2"><strong>Total Expenses</strong></td>
+                                <td><strong>Total Expenses</strong></td>
                                 <td style="text-align: right;"><strong>${this.formatCurrency(data.totalExpenses)}</strong></td>
                             </tr>
                         </tbody>
@@ -273,7 +270,7 @@ const ReportsEngine = {
                 <div class="report-section" style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid var(--border-color);">
                     <table class="report-table">
                         <tr class="net-income-row" style="font-size: 1.1rem;">
-                            <td colspan="2"><strong>Net ${data.netIncome >= 0 ? 'Income' : 'Loss'}</strong></td>
+                            <td><strong>Net ${data.netIncome >= 0 ? 'Income' : 'Loss'}</strong></td>
                             <td style="text-align: right; color: ${data.netIncome >= 0 ? '#22c55e' : '#ef4444'};"><strong>${this.formatCurrency(data.netIncome)}</strong></td>
                         </tr>
                     </table>
@@ -298,13 +295,12 @@ const ReportsEngine = {
                         <tbody>
                             ${data.assets.map(a => `
                                 <tr class="clickable-row" data-account="${a.account}">
-                                    <td>${a.account}</td>
                                     <td>${a.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(a.balance)}</td>
                                 </tr>
                             `).join('')}
                             <tr class="total-row">
-                                <td colspan="2"><strong>Total Assets</strong></td>
+                                <td><strong>Total Assets</strong></td>
                                 <td style="text-align: right;"><strong>${this.formatCurrency(data.totalAssets)}</strong></td>
                             </tr>
                         </tbody>
@@ -317,13 +313,12 @@ const ReportsEngine = {
                         <tbody>
                             ${data.liabilities.map(l => `
                                 <tr class="clickable-row" data-account="${l.account}">
-                                    <td>${l.account}</td>
                                     <td>${l.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(l.balance)}</td>
                                 </tr>
                             `).join('')}
                             <tr class="total-row">
-                                <td colspan="2"><strong>Total Liabilities</strong></td>
+                                <td><strong>Total Liabilities</strong></td>
                                 <td style="text-align: right;"><strong>${this.formatCurrency(data.totalLiabilities)}</strong></td>
                             </tr>
                         </tbody>
@@ -336,13 +331,12 @@ const ReportsEngine = {
                         <tbody>
                             ${data.equity.map(e => `
                                 <tr class="clickable-row" data-account="${e.account}">
-                                    <td>${e.account}</td>
                                     <td>${e.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(e.balance)}</td>
                                 </tr>
                             `).join('')}
                             <tr class="total-row">
-                                <td colspan="2"><strong>Total Equity</strong></td>
+                                <td><strong>Total Equity</strong></td>
                                 <td style="text-align: right;"><strong>${this.formatCurrency(data.totalEquity)}</strong></td>
                             </tr>
                         </tbody>
