@@ -210,7 +210,9 @@ const ExcelExporter = {
 
             if (txn.debits && txn.debits > 0) {
                 debit = txn.debits;
-            } else if (txn.credits && txn.credits > 0) {
+            }
+
+            if (txn.credits && txn.credits > 0) {
                 credit = txn.credits;
             } else if (txn.amount) {
                 // Fallback to amount field if debits/credits not set
