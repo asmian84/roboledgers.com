@@ -1,0 +1,8 @@
+name = "roboledgers"
+compatibility_date = "2024-12-08"
+
+# This is a static site - deploy all files as assets
+pages_build_output_dir = "."
+
+[site]
+bucket = "."
