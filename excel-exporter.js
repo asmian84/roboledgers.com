@@ -210,17 +210,19 @@ const ExcelExporter = {
             let debit = 0;
             let credit = 0;
 
+            // All amounts are stored in txn.debits field
+            // Positive = Debit column, Negative = Credit column (show as positive)
             if (txn.debits) {
                 if (txn.debits > 0) {
-                    debit = txn.debits;  // Positive = Debit column
-                } else {
-                    credit = Math.abs(txn.debits);  // Negative = Credit column (as positive)
+                    debit = txn.debits;  // Positive = Debit
+                } else if (txn.debits < 0) {
+                    credit = Math.abs(txn.debits);  // Negative = Credit (as positive)
                 }
             } else if (txn.amount) {
                 // Fallback to amount field
                 if (txn.amount > 0) {
                     debit = txn.amount;
-                } else {
+                } else if (txn.amount < 0) {
                     credit = Math.abs(txn.amount);
                 }
             }
