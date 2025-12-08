@@ -245,9 +245,12 @@ const ExcelExporter = {
                 accountName = 'Unallocated';
             }
 
+            // Format date as short date string (M/D/YY format)
+            const dateStr = txn.date ? Utils.formatDate(txn.date, 'M/D/YY') : '';
+
             glData.push({
                 'Ref#': refNum,
-                'Date': txn.date || '',
+                'Date': dateStr,
                 'Description': txn.description || txn.payee || '',
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
                 'Credits': credit > 0 ? credit.toFixed(2) : '',
