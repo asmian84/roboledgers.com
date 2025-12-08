@@ -208,9 +208,9 @@ const ExcelExporter = {
             // Positive amounts = Debits (payments/expenses)
             // Negative amounts = Credits (deposits/income) - show as positive
             // Use the same debits and credits values that the grid displays
-            // These come directly from the CSV import
+            // Note: CSV parser stores debits in txn.debits and credits in txn.amount
             let debit = txn.debits || 0;
-            let credit = txn.credits || 0;
+            let credit = txn.amount || 0;  // CSV parser puts credits in 'amount' field
 
             // Calculate running balance: Balance = Balance + Debit - Credit
             runningBalance += debit;
