@@ -1,5 +1,49 @@
 // Data Models for AutoBookkeeping
 
+// BankAccount class for multi-account support
+class BankAccount {
+    constructor(data = {}) {
+        this.id = data.id || `acc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        this.name = data.name || '';
+        this.type = data.type || 'CHECKING'; // CHECKING, SAVINGS, CREDIT_CARD, LINE_OF_CREDIT
+        this.description = data.description || '';
+        this.openingBalance = parseFloat(data.openingBalance) || 0;
+        this.currency = data.currency || 'CAD';
+        this.isActive = data.isActive !== undefined ? data.isActive : true;
+        this.createdAt = data.createdAt || new Date().toISOString();
+        this.lastModified = new Date().toISOString();
+
+        // Display preferences
+        this.color = data.color || null;
+        this.icon = data.icon || this.getDefaultIcon();
+    }
+
+    getDefaultIcon() {
+        const icons = {
+            'CHECKING': '🏦',
+            'SAVINGS': '💰',
+            'CREDIT_CARD': '💳',
+            'LINE_OF_CREDIT': '📊'
+        };
+        return icons[this.type] || '🏦';
+    }
+
+    getTypeLabel() {
+        const labels = {
+            'CHECKING': 'Checking Account',
+            'SAVINGS': 'Savings Account',
+            'CREDIT_CARD': 'Credit Card',
+            'LINE_OF_CREDIT': 'Line of Credit'
+        };
+        return labels[this.type] || this.type;
+    }
+
+    // Check if debit/credit logic is reversed for this account type
+    isReversedLogic() {
+        return this.type === 'CREDIT_CARD' || this.type === 'LINE_OF_CREDIT';
+    }
+}
+
 class Transaction {
     constructor(data) {
         this.id = data.id || this.generateId();
@@ -19,6 +63,9 @@ class Transaction {
         this.category = data.category || '';
         this.notes = data.notes || '';
         this.status = data.status || 'unmatched'; // unmatched, matched, manual, reviewed
+
+        // NEW: Multi-account support
+        this.accountId = data.accountId || null; // Links to BankAccount.id
     }
 
     generateId() {
@@ -181,5 +228,5 @@ class TrialBalance {
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Transaction, Vendor, Account, TrialBalance };
+    module.exports = { BankAccount, Transaction, Vendor, Account, TrialBalance };
 }
