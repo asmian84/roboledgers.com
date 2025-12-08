@@ -310,84 +310,84 @@
                             Vendor Indexing
                         </button>
                         <button id="addVendorBtn" class="btn-secondary">Add Vendor</button>
-                        <button id="importDictBtn" class="btn-secondary">Import</button>
-                        <button id="exportDictBtn" class="btn-secondary">Export</button>
+                        <input type="file" id="vendorIndexInput" accept=".csv" multiple style="display: none;">
                     </div>
+                </div>
 
-                    <!-- Bulk Indexing Info Panel -->
-                    <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
-                        <h3>📚 Bulk Dictionary Indexing</h3>
-                        <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
-                            system will:</p>
-                        <ul>
-                            <li>Extract vendor names from all transactions</li>
-                            <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
-                            <li>Consolidate duplicate vendors</li>
-                            <li>Learn account mappings from your historical data</li>
-                        </ul>
-                        <div class="bulk-upload-zone" id="bulkUploadZone">
-                            <p>Drop multiple CSV files here or click to browse</p>
-                            <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
+                <!-- Bulk Indexing Info Panel -->
+                <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
+                    <h3>📚 Bulk Dictionary Indexing</h3>
+                    <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
+                        system will:</p>
+                    <ul>
+                        <li>Extract vendor names from all transactions</li>
+                        <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
+                        <li>Consolidate duplicate vendors</li>
+                        <li>Learn account mappings from your historical data</li>
+                    </ul>
+                    <div class="bulk-upload-zone" id="bulkUploadZone">
+                        <p>Drop multiple CSV files here or click to browse</p>
+                        <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
+                    </div>
+                    <div id="bulkProgress" style="display: none;">
+                        <p id="bulkProgressText">Processing files...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="bulkProgressFill"></div>
                         </div>
-                        <div id="bulkProgress" style="display: none;">
-                            <p id="bulkProgressText">Processing files...</p>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="bulkProgressFill"></div>
-                            </div>
-                        </div>
-                        <div id="bulkResults" style="display: none;"></div>
                     </div>
+                    <div id="bulkResults" style="display: none;"></div>
+                </div>
 
-                    <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounts Modal -->
+    <div id="accountsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Chart of Accounts</h2>
+                <button class="modal-close" id="closeAccountsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="accounts-info">
+                    <p>Standard chart of accounts loaded. You can search and filter below.</p>
+                </div>
+                <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Options</h2>
+                <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="export-description">Choose your export format:</p>
+                <div class="export-options">
+                    <button class="export-option-card" data-format="quickbooks">
+                        <div class="export-icon">📗</div>
+                        <h3>QuickBooks</h3>
+                        <p>IIF format for QuickBooks Desktop import</p>
+                    </button>
+                    <button class="export-option-card" data-format="caseware">
+                        <div class="export-icon">📘</div>
+                        <h3>CASEWARE</h3>
+                        <p>Trial balance format for CASEWARE</p>
+                    </button>
+                    <button class="export-option-card" data-format="general">
+                        <div class="export-icon">📊</div>
+                        <h3>General Ledger</h3>
+                        <p>Detailed transaction listing with all fields</p>
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Accounts Modal -->
-        <div id="accountsModal" class="modal">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>Chart of Accounts</h2>
-                    <button class="modal-close" id="closeAccountsModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="accounts-info">
-                        <p>Standard chart of accounts loaded. You can search and filter below.</p>
-                    </div>
-                    <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Options Modal -->
-        <div id="exportModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Export Options</h2>
-                    <button class="modal-close" id="closeExportModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="export-description">Choose your export format:</p>
-                    <div class="export-options">
-                        <button class="export-option-card" data-format="quickbooks">
-                            <div class="export-icon">📗</div>
-                            <h3>QuickBooks</h3>
-                            <p>IIF format for QuickBooks Desktop import</p>
-                        </button>
-                        <button class="export-option-card" data-format="caseware">
-                            <div class="export-icon">📘</div>
-                            <h3>CASEWARE</h3>
-                            <p>Trial balance format for CASEWARE</p>
-                        </button>
-                        <button class="export-option-card" data-format="general">
-                            <div class="export-icon">📊</div>
-                            <h3>General Ledger</h3>
-                            <p>Detailed transaction listing with all fields</p>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
     </div>
 
     <!-- Settings Modal -->

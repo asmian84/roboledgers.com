@@ -29,16 +29,44 @@ const VendorManager = {
             });
         }
 
-        // Vendor Indexing button
+        // Vendor Indexing button - directly trigger file selection
         const vendorIndexBtn = document.getElementById('vendorIndexBtn');
-        if (vendorIndexBtn) {
+        const vendorIndexInput = document.getElementById('vendorIndexInput');
+
+        if (vendorIndexBtn && vendorIndexInput) {
             vendorIndexBtn.addEventListener('click', () => {
-                if (typeof VendorIndexer !== 'undefined') {
-                    this.hideModal();
-                    VendorIndexer.showIndexingDialog();
-                } else {
-                    console.error('VendorIndexer not loaded');
+                vendorIndexInput.click();
+            });
+
+            vendorIndexInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                try {
+                    console.log(`📥 Processing ${files.length} CSV file(s) for vendor indexing...`);
+
+                    // Use VendorIndexer if available
+                    if (typeof VendorIndexer !== 'undefined') {
+                        const consolidated = await VendorIndexer.indexFromFiles(files);
+                        const results = await VendorIndexer.applyToVendorMatcher(consolidated);
+
+                        // Reload grid
+                        VendorGrid.loadVendors();
+
+                        alert(`✅ Vendor Indexing Complete!\n\n` +
+                            `✓ ${results.added} new vendors added\n` +
+                            `✓ ${results.updated} existing vendors updated\n` +
+                            `✓ Total vendors: ${VendorMatcher.getAllVendors().length}`);
+                    } else {
+                        alert('VendorIndexer module not loaded');
+                    }
+                } catch (error) {
+                    console.error('Vendor indexing error:', error);
+                    alert('Error indexing vendors: ' + error.message);
                 }
+
+                // Reset input
+                vendorIndexInput.value = '';
             });
         }
 
@@ -60,20 +88,6 @@ const VendorManager = {
         if (bulkIndexBtn) {
             bulkIndexBtn.addEventListener('click', () => {
                 this.toggleBulkIndex();
-            });
-        }
-
-        const exportDictBtn = document.getElementById('exportDictBtn');
-        if (exportDictBtn) {
-            exportDictBtn.addEventListener('click', () => {
-                VendorMatcher.exportVendors();
-            });
-        }
-
-        const importDictBtn = document.getElementById('importDictBtn');
-        if (importDictBtn) {
-            importDictBtn.addEventListener('click', () => {
-                this.showImportDialog();
             });
         }
 
