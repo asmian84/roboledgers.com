@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
 
-                    <!-- Period Configuration -->
                     <div class="vrb-section">
                         <div class="vrb-section-header">CONFIGURE PERIODS</div>
                         <div class="vrb-period-container">
@@ -43,11 +42,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div class="vrb-period-field">
                                     <label class="vrb-period-label">Primary Period</label>
                                     <select id="vrbPrimaryPeriod" class="vrb-period-select">
-                                        <option value="Q1_2024">Q1 2024 (Jan - Mar)</option>
-                                        <option value="Q2_2024">Q2 2024 (Apr - Jun)</option>
-                                        <option value="Q3_2024">Q3 2024 (Jul - Sep)</option>
-                                        <option value="Q4_2024" selected>Q4 2024 (Oct - Dec)</option>
-                                        <option value="FY_2024">Fiscal Year 2024</option>
+                                        <option value="Q1_2024">Q1 (Jan - Mar)</option>
+                                        <option value="Q2_2024">Q2 (Apr - Jun)</option>
+                                        <option value="Q3_2024">Q3 (Jul - Sep)</option>
+                                        <option value="Q4_2024" selected>Q4 (Oct - Dec)</option>
+                                        <option value="FY_2024">Fiscal Year</option>
                                         <option value="MTD">Month-to-Date</option>
                                         <option value="YTD">Year-to-Date</option>
                                     </select>
@@ -58,11 +57,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <label class="vrb-period-label">Comparison Period (Optional)</label>
                                     <select id="vrbComparisonPeriod" class="vrb-period-select">
                                         <option value="">None</option>
-                                        <option value="Q1_2024">Q1 2024 (Jan - Mar)</option>
-                                        <option value="Q2_2024">Q2 2024 (Apr - Jun)</option>
-                                        <option value="Q3_2024">Q3 2024 (Jul - Sep)</option>
-                                        <option value="Q4_2024">Q4 2024 (Oct - Dec)</option>
-                                        <option value="FY_2024">Fiscal Year 2024</option>
+                                        <option value="Q1_2024">Q1 (Jan - Mar)</option>
+                                        <option value="Q2_2024">Q2 (Apr - Jun)</option>
+                                        <option value="Q3_2024">Q3 (Jul - Sep)</option>
+                                        <option value="Q4_2024">Q4 (Oct - Dec)</option>
+                                        <option value="FY_2024">Fiscal Year</option>
                                     </select>
                                 </div>
                             </div>

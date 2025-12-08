@@ -53,10 +53,14 @@ const VisualReportBuilder = {
 
         // Generate button
         const generateBtn = document.getElementById('vrbGenerateBtn');
+        console.log('🔍 Generate button found:', !!generateBtn);
         if (generateBtn) {
             generateBtn.addEventListener('click', () => {
+                console.log('🎯 Generate button clicked!');
                 this.generateReport();
             });
+        } else {
+            console.error('❌ Generate button not found in DOM!');
         }
 
         // Close button
