@@ -165,48 +165,18 @@ const ReportsModal = {
         if (reportType === 'income') {
             const data = ReportsEngine.generateIncomeStatement(periodTransactions);
             html = ReportsEngine.renderIncomeStatement(data);
-        } else if (reportType === 'balance') {
-            const data = ReportsEngine.generateBalanceSheet(periodTransactions);
-            html = ReportsEngine.renderBalanceSheet(data);
-        } else if (reportType === 'trial') {
-            const data = ReportsEngine.generateTrialBalance(periodTransactions);
-            html = ReportsEngine.renderTrialBalance(data);
-        }
+            showAccountDrillDown(account, periodTransactions) {
+                const accountTransactions = periodTransactions.filter(t =>
+                    (t.allocatedAccount || '9970') === account
+                );
 
-        // Display report
-        const reportDisplay = document.getElementById('reportDisplay');
-        if (reportDisplay) {
-            reportDisplay.innerHTML = html;
+                if (accountTransactions.length === 0) {
+                    alert('No transactions found for this account.');
+                    return;
+                }
 
-            // Add click handlers for drill-down
-            const clickableRows = reportDisplay.querySelectorAll('.clickable-row');
-            clickableRows.forEach(row => {
-                row.style.cursor = 'pointer';
-                row.addEventListener('click', (e) => {
-                    const account = e.currentTarget.dataset.account;
-                    this.showAccountDrillDown(account, periodTransactions);
-                });
-            });
-        }
-    } catch (error) {
-        console.error('Error generating report:', error);
-        alert('Error generating report. Check console for details.');
-    }
-}
-    },
-
-showAccountDrillDown(account, periodTransactions) {
-    const accountTransactions = periodTransactions.filter(t =>
-        (t.allocatedAccount || '9970') === account
-    );
-
-    if (accountTransactions.length === 0) {
-        alert('No transactions found for this account.');
-        return;
-    }
-
-    const accountName = accountTransactions[0].allocatedAccountName || 'Unallocated';
-    const html = `
+                const accountName = accountTransactions[0].allocatedAccountName || 'Unallocated';
+                const html = `
             <div class="modal active" id="drillDownModal" style="z-index: 1001;">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -239,15 +209,15 @@ showAccountDrillDown(account, periodTransactions) {
             </div>
         `;
 
-    document.body.insertAdjacentHTML('beforeend', html);
-}
-};
+                document.body.insertAdjacentHTML('beforeend', html);
+            }
+        };
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        ReportsModal.initialize();
-    });
-} else {
-    ReportsModal.initialize();
-}
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                ReportsModal.initialize();
+            });
+        } else {
+            ReportsModal.initialize();
+        }
