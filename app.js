@@ -957,6 +957,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Company Name Input
+    const companyNameInput = document.getElementById('companyNameInput');
+    if (companyNameInput && typeof Settings !== 'undefined') {
+        // Set initial value from settings
+        companyNameInput.value = Settings.current.companyName || '';
+
+        // Save on change
+        companyNameInput.addEventListener('blur', () => {
+            Settings.current.companyName = companyNameInput.value;
+            Storage.saveSettings(Settings.current);
+            console.log('💾 Company name saved:', companyNameInput.value);
+        });
+    }
+
+    // Year End Date Input
+    const yearEndDateInput = document.getElementById('yearEndDate');
+    if (yearEndDateInput) {
+        // Set initial value from localStorage
+        const savedYearEnd = localStorage.getItem('yearEndDate');
+        if (savedYearEnd) {
+            yearEndDateInput.value = savedYearEnd.split('T')[0];
+        }
+
+        // Save on change
+        yearEndDateInput.addEventListener('change', () => {
+            localStorage.setItem('yearEndDate', yearEndDateInput.value);
+            console.log('💾 Year-end date saved:', yearEndDateInput.value);
+        });
+    }
+
     if (settingsAccountsBtn) {
         settingsAccountsBtn.addEventListener('click', () => {
             App.showAccountsModal();
