@@ -49,6 +49,57 @@ const ReportsEngine = {
         return { startDate, endDate };
     },
 
+    // Generate multiple periods for comparative reports
+    generateComparativePeriods(periodType, yearEndDate) {
+        const periods = [];
+        const endDate = new Date(yearEndDate);
+
+        if (periodType === 'monthly') {
+            // Generate 12 months ending on year-end
+            for (let i = 11; i >= 0; i--) {
+                const periodEnd = new Date(endDate);
+                periodEnd.setMonth(endDate.getMonth() - i);
+
+                const periodStart = new Date(periodEnd);
+                periodStart.setMonth(periodStart.getMonth() - 1);
+                periodStart.setDate(periodStart.getDate() + 1);
+
+                // Format: "Jan/31/24"
+                const label = periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '');
+
+                periods.push({ startDate: periodStart, endDate: periodEnd, label });
+                console.log(`📊 Period: ${label}, Range: ${periodStart.toLocaleDateString()} to ${periodEnd.toLocaleDateString()}`);
+            }
+        } else if (periodType === 'quarterly') {
+            // Generate 4 quarters ending on year-end
+            for (let i = 3; i >= 0; i--) {
+                const periodEnd = new Date(endDate);
+                periodEnd.setMonth(endDate.getMonth() - (i * 3));
+
+                const periodStart = new Date(periodEnd);
+                periodStart.setMonth(periodStart.getMonth() - 3);
+                periodStart.setDate(periodStart.getDate() + 1);
+
+                const quarter = 4 - i;
+                const label = `Q${quarter} ${periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '')}`;
+
+                periods.push({ startDate: periodStart, endDate: periodEnd, label });
+                console.log(`📊 Period: ${label}, Range: ${periodStart.toLocaleDateString()} to ${periodEnd.toLocaleDateString()}`);
+            }
+        } else {
+            // Yearly - single period
+            const periodStart = new Date(endDate);
+            periodStart.setFullYear(periodStart.getFullYear() - 1);
+            periodStart.setDate(periodStart.getDate() + 1);
+
+            const label = 'Year Ended';
+            periods.push({ startDate: periodStart, endDate: endDate, label });
+        }
+
+        console.log(`📊 Generated ${periods.length} periods for ${periodType}`);
+        return periods;
+    },
+
     // Group transactions by account
     groupByAccount(transactions) {
         const grouped = {};
