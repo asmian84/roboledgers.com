@@ -1,0 +1,89 @@
+/* ========================================
+   COMPARATIVE REPORTS - MULTI-COLUMN STYLING
+   ======================================== */
+
+.comparative-report {
+    overflow-x: auto;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+}
+
+.comparative-table {
+    min-width: 1200px;
+    width: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.comparative-table th,
+.comparative-table td {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.comparative-table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Sticky first column (account names) */
+.comparative-table .sticky-col {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+    font-weight: 500;
+    min-width: 250px;
+    max-width: 350px;
+}
+
+.comparative-table thead .sticky-col {
+    z-index: 3;
+    /* Above both sticky header and sticky column */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.comparative-table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.comparative-table tbody tr:hover .sticky-col {
+    background: rgba(102, 126, 234, 0.05);
+}
+
+/* Total row styling */
+.comparative-table .total-row td {
+    background: rgba(102, 126, 234, 0.1);
+    font-weight: 600;
+    border-top: 2px solid var(--border-color);
+}
+
+.comparative-table .total-row .sticky-col {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+/* Net Income row */
+.comparative-table .net-income-row td {
+    padding: 1rem;
+    font-size: 1.1rem;
+    border-top: 3px double var(--border-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .comparative-table {
+        font-size: 0.9rem;
+    }
+
+    .comparative-table .sticky-col {
+        min-width: 200px;
+    }
+}
