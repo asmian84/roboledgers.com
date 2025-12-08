@@ -199,60 +199,94 @@
                                     <option value="loan">Loan</option>
                                     <option value="investment">Investment</option>
                                 </select>
-                                <h3>🏦 Bank Reconciliation</h3>
-                                <div class="reconciliation-grid">
-                                    <div class="reconciliation-section">
-                                        <h4>Opening Balance</h4>
-                                        <div class="reconciliation-input-group">
-                                            <label>Expected</label>
-                                            <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
-                                                class="currency-input">
-                                        </div>
-                                        <div class="reconciliation-value">
-                                            <label>Calculated</label>
-                                            <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
-                                        </div>
-                                    </div>
-                                    <div class="reconciliation-section">
-                                        <h4>Ending Balance</h4>
-                                        <div class="reconciliation-input-group">
-                                            <label>Expected</label>
-                                            <input type="text" id="expectedEndingBalance" placeholder="$0.00"
-                                                class="currency-input">
-                                        </div>
-                                        <div class="reconciliation-value">
-                                            <label>Calculated</label>
-                                            <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
-                                        </div>
-                                    </div>
-                                    <div class="reconciliation-section">
-                                        <h4>Transaction Totals</h4>
-                                        <div class="status-item">
-                                            <label>Total Credits</label>
-                                            <span id="totalCredits" class="calculated-value">$0.00</span>
-                                        </div>
-                                        <div class="status-item">
-                                            <label>Total Debits</label>
-                                            <span id="totalDebits" class="calculated-value">$0.00</span>
-                                        </div>
-                                    </div>
-                                    <div class="reconciliation-section">
-                                        <h4>Discrepancy</h4>
-                                        <div class="status-item">
-                                            <label>Opening</label>
-                                            <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
-                                        </div>
-                                        <div class="status-item">
-                                            <label>Ending</label>
-                                            <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
-                                        </div>
-                                        <div class="status-indicator" id="statusIndicator">
-                                            <span class="status-icon">⚪</span>
-                                            <span class="status-text">Enter expected balances</span>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Bar (appears when rows selected) -->
+                <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+                    <div class="bulk-actions-content">
+                        <span class="selection-count">
+                            <strong id="selectedCount">0</strong> transactions selected
+                        </span>
+
+                        <div class="bulk-actions-controls">
+                            <select id="bulkAccountSelect" class="bulk-account-dropdown">
+                                <option value="">Assign Account...</option>
+                            </select>
+
+                            <button id="applyBulkAccount" class="bulk-action-btn primary">
+                                Apply to Selected
+                            </button>
+
+                            <button id="clearSelection" class="bulk-action-btn secondary">
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-container">
+                    <div id="transactionGrid" class="ag-theme-alpine"></div>
+                </div>
+
+                <!-- Bank Reconciliation Panel -->
+                <div id="reconciliationPanel" class="reconciliation-panel">
+                    <h3>🏦 Bank Reconciliation</h3>
+                    <div class="reconciliation-grid">
+                        <div class="reconciliation-section">
+                            <h4>Opening Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
+                                    class="currency-input">
+                            </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Ending Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="text" id="expectedEndingBalance" placeholder="$0.00"
+                                    class="currency-input">
+                            </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Transaction Totals</h4>
+                            <div class="status-item">
+                                <label>Total Credits</label>
+                                <span id="totalCredits" class="calculated-value">$0.00</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Total Debits</label>
+                                <span id="totalDebits" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Discrepancy</h4>
+                            <div class="status-item">
+                                <label>Opening</label>
+                                <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Ending</label>
+                                <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-indicator" id="statusIndicator">
+                                <span class="status-icon">⚪</span>
+                                <span class="status-text">Enter expected balances</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
 
