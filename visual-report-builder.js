@@ -170,25 +170,18 @@ const VisualReportBuilder = {
 
             switch (this.selectedTemplate) {
                 case 'balance':
-                    reportHTML = ReportsEngine.generateBalanceSheet(
-                        transactions,
-                        periodDates.end
-                    );
+                    const balanceData = ReportsEngine.generateBalanceSheet(transactions);
+                    reportHTML = ReportsEngine.renderBalanceSheet(balanceData);
                     break;
 
                 case 'income':
-                    reportHTML = ReportsEngine.generateIncomeStatement(
-                        transactions,
-                        periodDates.start,
-                        periodDates.end
-                    );
+                    const incomeData = ReportsEngine.generateIncomeStatement(transactions);
+                    reportHTML = ReportsEngine.renderIncomeStatement(incomeData);
                     break;
 
                 case 'trial':
-                    reportHTML = ReportsEngine.generateTrialBalance(
-                        transactions,
-                        periodDates.end
-                    );
+                    const trialData = ReportsEngine.generateTrialBalance(transactions);
+                    reportHTML = ReportsEngine.renderTrialBalance(trialData);
                     break;
 
                 default:

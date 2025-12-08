@@ -122,14 +122,16 @@
     background: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: var(--text-primary);
+    color: #ffffff !important;
+    /* Force white text */
     padding: 0 16px;
     font-size: 14px;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.2s ease;
-    /* Force text visibility */
-    -webkit-text-fill-color: var(--text-primary);
+    /* Multiple approaches to force text visibility */
+    -webkit-text-fill-color: #ffffff !important;
+    -moz-text-fill-color: #ffffff !important;
 }
 
 .vrb-period-select:focus {
@@ -140,7 +142,7 @@
 
 .vrb-period-select option {
     background: var(--card-bg);
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
 /* Dimensions */
