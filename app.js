@@ -606,14 +606,10 @@ const App = {
     async rethinkTransactions() {
         console.log('🤔 AI Re-think: Starting batch optimization...');
 
-        // Confirm with user that this will override ALL categorizations
+        // Confirm with user
         const confirmed = confirm(
-            `⚠️ AI Re-think will re-analyze ALL ${this.transactions.length} transactions.\n\n` +
-            `This will OVERRIDE any manual categorizations you've made.\n\n` +
-            `This is useful for:\n` +
-            `• Fixing bulk categorization errors\n` +
-            `• Resetting incorrect manual assignments\n` +
-            `• Getting fresh AI suggestions\n\n` +
+            `🪄 AI Re-think will re-categorize all ${this.transactions.length} transactions.\n\n` +
+            `This will override any manual changes.\n\n` +
             `Continue?`
         );
 
