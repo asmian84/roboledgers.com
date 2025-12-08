@@ -919,8 +919,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Settings Data tab buttons
+    const settingsVendorIndexBtn = document.getElementById('settingsVendorIndexBtn');
     const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
     const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
+
+    if (settingsVendorIndexBtn) {
+        settingsVendorIndexBtn.addEventListener('click', () => {
+            closeModal('settingsModal');
+            VendorIndexer.showIndexingDialog();
+        });
+    }
 
     if (settingsVendorDictBtn) {
         settingsVendorDictBtn.addEventListener('click', () => {
