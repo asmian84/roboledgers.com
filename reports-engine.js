@@ -195,44 +195,27 @@ const ReportsEngine = {
         };
     },
 
-    // Format currency
-    formatCurrency(amount) {
-        return '$' + Math.abs(amount).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-                `;
-    },
-
-    // Render Income Statement HTML
-    renderIncomeStatement(data) {
-        const header = this.formatReportHeader('Income Statement', data.netIncome);
-
-        let html = `
-                < div class= "report-container" >
-                    ${ header }
-
-        < div class= "report-section" >
-                    <h4>Revenue</h4>
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th style="text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.revenue.map(r => `
+                    < h4 > Revenue</h4>
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${data.revenue.map(r => `
                                 <tr class="clickable-row" data-account="${r.account}">
                                     <td>${r.accountName}</td>
                                     <td style="text-align: right;">${this.formatCurrency(r.balance)}</td>
                                 </tr>
                             `).join('')}
-                            <tr class="total-row">
-                                <td><strong>Total Revenue</strong></td>
-                                <td style="text-align: right;"><strong>${this.formatCurrency(data.totalRevenue)}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <tr class="total-row">
+                <td><strong>Total Revenue</strong></td>
+                <td style="text-align: right;"><strong>${this.formatCurrency(data.totalRevenue)}</strong></td>
+            </tr>
+        </tbody>
+    </table>
                 </div >
 
                 <div class="report-section">
