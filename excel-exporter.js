@@ -212,7 +212,7 @@ const ExcelExporter = {
                 debit = txn.debits;
             }
 
-            if (txn.credits && txn.credits > 0) {
+            if (txn.credits) {
                 credit = txn.credits;
             } else if (txn.amount) {
                 // Fallback to amount field if debits/credits not set
@@ -223,9 +223,9 @@ const ExcelExporter = {
                 }
             }
 
-            // Calculate running balance (Bank Account logic: Credits add, Debits subtract)
-            runningBalance += credit;
-            runningBalance -= debit;
+            // Calculate running balance: Balance = Balance + Debit + Credit (credit is negative)
+            runningBalance += debit;
+            runningBalance += credit;  // Credit is negative, so adding it subtracts
 
             // Generate Ref# with leading zeros and optional prefix
             const prefix = TransactionGrid.refPrefix || '';
