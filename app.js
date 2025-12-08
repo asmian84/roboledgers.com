@@ -606,10 +606,19 @@ const App = {
     async rethinkTransactions() {
         console.log('🤔 AI Re-think: Starting batch optimization...');
 
-        const unallocated = this.transactions.filter(t => !t.allocatedAccount || t.allocatedAccount === 'UNALLOCATED' || t.allocatedAccount === '9970');
+        // Confirm with user that this will override ALL categorizations
+        const confirmed = confirm(
+            `⚠️ AI Re-think will re-analyze ALL ${this.transactions.length} transactions.\n\n` +
+            `This will OVERRIDE any manual categorizations you've made.\n\n` +
+            `This is useful for:\n` +
+            `• Fixing bulk categorization errors\n` +
+            `• Resetting incorrect manual assignments\n` +
+            `• Getting fresh AI suggestions\n\n` +
+            `Continue?`
+        );
 
-        if (unallocated.length === 0) {
-            alert('✅ All transactions are already allocated!');
+        if (!confirmed) {
+            console.log('❌ AI Re-think cancelled by user');
             return;
         }
 
@@ -625,7 +634,7 @@ const App = {
                     </div>
                     <h2 style="margin-bottom: 1rem;">AI Re-think in Progress</h2>
                     <p id="aiProgressText" style="color: var(--text-secondary); margin-bottom: 1rem;">
-                        Processing <span id="aiCurrentCount">0</span> of <span id="aiTotalCount">${unallocated.length}</span> transactions...
+                        Processing <span id="aiCurrentCount">0</span> of <span id="aiTotalCount">${this.transactions.length}</span> transactions...
                     </p>
                     <div class="progress-bar" style="width: 100%; max-width: 400px; margin: 0 auto;">
                         <div id="aiProgressFill" class="progress-fill" style="width: 0%;"></div>
@@ -661,10 +670,11 @@ const App = {
             const progressText = document.getElementById('aiCurrentCount');
             const progressFill = document.getElementById('aiProgressFill');
             if (progressText) progressText.textContent = processed;
-            if (progressFill) progressFill.style.width = ((processed / unallocated.length) * 100) + '%';
+            if (progressFill) progressFill.style.width = ((processed / this.transactions.length) * 100) + '%';
         };
 
-        for (const txn of unallocated) {
+        // Process ALL transactions (not just unallocated)
+        for (const txn of this.transactions) {
             // Use both vendor and payee for matching
             const vendorName = txn.vendor || txn.payee || txn.description;
             if (!vendorName) {
