@@ -966,5 +966,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Keyboard Shortcuts Help
+    const keyboardShortcutsBtn = document.getElementById('showKeyboardShortcuts');
+    if (keyboardShortcutsBtn) {
+        keyboardShortcutsBtn.addEventListener('click', () => {
+            showKeyboardShortcutsModal();
+        });
+    }
+
     console.log('✅ App.js loaded and event listeners set up');
 });
+
+// Keyboard Shortcuts Modal
+function showKeyboardShortcutsModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.style.zIndex = '10000';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>⌨️ Keyboard Shortcuts</h2>
+                <button class="close-modal" onclick="this.closest('.modal').remove()">×</button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; line-height: 2;">
+                    <div style="grid-column: 1 / -1; font-weight: bold; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        Grid Navigation
+                    </div>
+                    <kbd>Arrow Keys</kbd><span>Navigate between cells</span>
+                    <kbd>Tab</kbd><span>Move to next cell</span>
+                    <kbd>Shift + Tab</kbd><span>Move to previous cell</span>
+                    
+                    <div style="grid-column: 1 / -1; font-weight: bold; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        Editing
+                    </div>
+                    <kbd>Enter</kbd><span>Start editing selected cell</span>
+                    <kbd>Esc</kbd><span>Cancel edit</span>
+                    <kbd>Delete</kbd><span>Clear cell value</span>
+                    
+                    <div style="grid-column: 1 / -1; font-weight: bold; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        Undo/Redo
+                    </div>
+                    <kbd>Ctrl + Z</kbd><span>Undo last action</span>
+                    <kbd>Ctrl + Y</kbd><span>Redo last undone action</span>
+                    <kbd>Ctrl + Shift + Z</kbd><span>Redo (alternative)</span>
+                </div>
+                <p style="margin-top: 2rem; padding: 1rem; background: var(--surface-color); border-radius: 8px; font-size: 0.9em; color: var(--text-secondary);">
+                    💡 <strong>Tip:</strong> Click on any cell in the grid to activate keyboard navigation. The selected cell will have a blue outline.
+                </p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Add kbd styling if not exists
+    if (!document.getElementById('kbdStyle')) {
+        const style = document.createElement('style');
+        style.id = 'kbdStyle';
+        style.textContent = `
+            kbd {
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 0.2rem 0.5rem;
+                font-family: monospace;
+                font-size: 0.9em;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}

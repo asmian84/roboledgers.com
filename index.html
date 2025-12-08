@@ -453,86 +453,70 @@
                         </div>
                     </div>
 
-                    <!-- Grid Settings Panel -->
-                    <div class="settings-panel" data-panel="grid">
-                        <h3>📊 Grid Settings</h3>
-
-                        <div class="settings-section">
-                            <label class="settings-label">Color Scheme</label>
-                            <select id="gridColorScheme" class="settings-select">
-                                <option value="rainbow">🌈 Rainbow - Pastel colors</option>
-                                <option value="classic">📋 Classic - White/gray alternating</option>
-                                <option value="default">⚪ Default - Grid default</option>
-                                <option value="ledger">📗 Ledger Pad - Green accounting paper</option>
-                                <option value="postit">📝 Post-it Note - Yellow sticky notes</option>
-                                <option value="pastel">🎨 Pastel - Soft alternating</option>
-                                <option value="professional">💼 Professional - Corporate blue/white</option>
-                                <option value="highcontrast">🔲 High Contrast - Strong borders</option>
-                            </select>
-                        </div>
-
-                        <div class="settings-section">
-                            <label class="settings-label">Font Family</label>
-                            <select id="gridFontFamily" class="settings-select">
-                                <option value="Arial">Arial</option>
-                                <option value="'Times New Roman'">Times New Roman</option>
-                                <option value="'Courier New'">Courier New</option>
-                                <option value="Verdana">Verdana</option>
-                                <option value="Georgia">Georgia</option>
-                                <option value="'Segoe UI'">Segoe UI</option>
-                            </select>
-                        </div>
-
-                        <div class="settings-section">
-                            <label class="settings-label">Font Size: <span id="fontSizeValue">12px</span></label>
-                            <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-panel" data-panel="company">
-                    <div class="settings-section">
-                        <label class="settings-label">Company Name</label>
-                        <input type="text" id="companyNameInput" class="settings-input"
-                            placeholder="Enter company name (optional)">
-                        <p class="settings-hint">Will be displayed above Transaction Review</p>
-                    </div>
-
-                    <div class="settings-section">
-                        <label class="settings-label">Fiscal Year-End Date</label>
-                        <input type="date" id="yearEndDate" class="settings-input">
-                        <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-panel" data-panel="data">
-                <div class="settings-section">
-                    <div class="button-group">
-                        <button id="settingsVendorDictBtn" class="btn-secondary full-width">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
-                                <path d="M12 6v6l4 2" />
-                            </svg>
-                            Manage Vendor Dictionary
-                        </button>
-                    </div>
                 </div>
 
                 <div class="settings-section">
-                    <div class="button-group">
-                        <button id="settingsAccountsBtn" class="btn-secondary full-width">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <path d="M3 9h18" />
-                                <path d="M9 21V9" />
-                            </svg>
-                            View Chart of Accounts
-                        </button>
-                    </div>
+                    <label class="settings-label">Font Family</label>
+                    <select id="gridFontFamily" class="settings-select">
+                        <option value="Arial">Arial</option>
+                        <option value="'Times New Roman'">Times New Roman</option>
+                        <option value="'Courier New'">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="'Segoe UI'">Segoe UI</option>
+                    </select>
+                </div>
+
+                <div class="settings-section">
+                    <label class="settings-label">Font Size: <span id="fontSizeValue">12px</span></label>
+                    <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
                 </div>
             </div>
         </div>
+
+        <div class="settings-panel" data-panel="company">
+            <div class="settings-section">
+                <label class="settings-label">Company Name</label>
+                <input type="text" id="companyNameInput" class="settings-input"
+                    placeholder="Enter company name (optional)">
+                <p class="settings-hint">Will be displayed above Transaction Review</p>
+            </div>
+
+            <div class="settings-section">
+                <label class="settings-label">Fiscal Year-End Date</label>
+                <input type="date" id="yearEndDate" class="settings-input">
+                <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-panel" data-panel="data">
+        <div class="settings-section">
+            <div class="button-group">
+                <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                    Manage Vendor Dictionary
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="button-group">
+                <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18" />
+                        <path d="M9 21V9" />
+                    </svg>
+                    View Chart of Accounts
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
     </div>
     </div>
     </div>
