@@ -20,33 +20,53 @@ const ReportsEngine = {
         return filtered;
     },
 
-    // Calculate period dates based on year-end
-    calculatePeriodDates(periodType, yearEndDate) {
+    // Generate multiple periods for comparative reports
+    generateComparativePeriods(periodType, yearEndDate) {
+        const periods = [];
         const endDate = new Date(yearEndDate);
-        let startDate = new Date(endDate);
 
-        switch (periodType) {
-            case 'monthly':
-                // One month period ending on selected date
-                startDate.setMonth(startDate.getMonth() - 1);
-                startDate.setDate(startDate.getDate() + 1); // Day after start
-                break;
+        if (periodType === 'monthly') {
+            // Generate 12 months ending on year-end
+            for (let i = 11; i >= 0; i--) {
+                const periodEnd = new Date(endDate);
+                periodEnd.setMonth(endDate.getMonth() - i);
 
-            case 'quarterly':
-                // Three month period ending on selected date
-                startDate.setMonth(startDate.getMonth() - 3);
-                startDate.setDate(startDate.getDate() + 1); // Day after start
-                break;
+                const periodStart = new Date(periodEnd);
+                periodStart.setMonth(periodStart.getMonth() - 1);
+                periodStart.setDate(periodStart.getDate() + 1);
 
-            case 'yearly':
-                // One year period ending on selected date
-                startDate.setFullYear(startDate.getFullYear() - 1);
-                startDate.setDate(startDate.getDate() + 1); // Day after start
-                break;
+                // Format: "Jan/31/24"
+                const label = periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '');
+
+                periods.push({ startDate: periodStart, endDate: periodEnd, label });
+            }
+        } else if (periodType === 'quarterly') {
+            // Generate 4 quarters ending on year-end
+            for (let i = 3; i >= 0; i--) {
+                const periodEnd = new Date(endDate);
+                periodEnd.setMonth(endDate.getMonth() - (i * 3));
+
+                const periodStart = new Date(periodEnd);
+                periodStart.setMonth(periodStart.getMonth() - 3);
+                periodStart.setDate(periodStart.getDate() + 1);
+
+                const quarter = 4 - i;
+                const label = `Q${quarter} ${periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).replace(',', '')}`;
+
+                periods.push({ startDate: periodStart, endDate: periodEnd, label });
+            }
+        } else {
+            // Yearly - single period
+            const periodStart = new Date(endDate);
+            periodStart.setFullYear(periodStart.getFullYear() - 1);
+            periodStart.setDate(periodStart.getDate() + 1);
+
+            const label = 'Year Ended';
+            periods.push({ startDate: periodStart, endDate: endDate, label });
         }
 
-        console.log(`📊 Period: ${periodType}, Range: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`);
-        return { startDate, endDate };
+        console.log(`📊 Generated ${periods.length} periods for ${periodType}`);
+        return periods;
     },
 
     // Group transactions by account
