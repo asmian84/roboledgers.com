@@ -728,9 +728,11 @@ const App = {
             }
 
             processed++;
-            updateProgress();
 
-            // No delay - just blaze through!
+            // Only update progress every 50 transactions for performance
+            if (processed % 50 === 0 || processed === this.transactions.length) {
+                updateProgress();
+            }
         }
 
         // Remove progress modal
@@ -739,7 +741,7 @@ const App = {
         // Save updated transactions
         Storage.saveTransactions(this.transactions);
 
-        // Refresh the grid
+        // Refresh the grid ONCE at the end (not during loop)
         TransactionGrid.loadTransactions(this.transactions);
 
         // Update statistics
