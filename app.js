@@ -308,6 +308,11 @@ const App = {
             this.transactions = matchResult.transactions;
             Storage.saveTransactions(this.transactions);
 
+            // Save session for Continue/Start Over
+            if (typeof SessionManager !== 'undefined') {
+                SessionManager.saveSession(file.name, this.transactions);
+            }
+
             await this.delay(500);
 
             // Show review section
