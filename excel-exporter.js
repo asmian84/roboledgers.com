@@ -204,18 +204,20 @@ const ExcelExporter = {
 
         // Process each transaction
         sortedTransactions.forEach((txn, index) => {
-            // Determine debit and credit amounts
+            // Separate into Debit or Credit based on original amount
+            // Positive amounts = Debits (payments/expenses)
+            // Negative amounts = Credits (deposits/income) - show as positive
             let debit = 0;
             let credit = 0;
 
-            if (txn.debits && txn.debits > 0) {
-                debit = txn.debits;
-            }
-
-            if (txn.credits) {
-                credit = txn.credits;
+            if (txn.debits) {
+                if (txn.debits > 0) {
+                    debit = txn.debits;  // Positive = Debit column
+                } else {
+                    credit = Math.abs(txn.debits);  // Negative = Credit column (as positive)
+                }
             } else if (txn.amount) {
-                // Fallback to amount field if debits/credits not set
+                // Fallback to amount field
                 if (txn.amount > 0) {
                     debit = txn.amount;
                 } else {
@@ -223,9 +225,9 @@ const ExcelExporter = {
                 }
             }
 
-            // Calculate running balance: Balance = Balance + Debit + Credit (credit is negative)
+            // Calculate running balance: Balance = Balance + Debit - Credit
             runningBalance += debit;
-            runningBalance += credit;  // Credit is negative, so adding it subtracts
+            runningBalance -= credit;
 
             // Generate Ref# with leading zeros and optional prefix
             const prefix = TransactionGrid.refPrefix || '';
@@ -255,7 +257,7 @@ const ExcelExporter = {
                 'Date': dateStr,
                 'Description': txn.description || txn.payee || '',
                 'Debits': debit > 0 ? debit.toFixed(2) : '',
-                'Credits': credit !== 0 ? credit.toFixed(2) : '',  // Show with negative sign
+                'Credits': credit > 0 ? credit.toFixed(2) : '',  // Already positive
                 'Balance': runningBalance.toFixed(2),
                 'Account #': accountNumber,
                 'Account Name': accountName
