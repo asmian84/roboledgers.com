@@ -3,10 +3,7 @@
 
 const VisualReportBuilder = {
     selectedTemplate: 'balance',
-    periods: {
-        primary: 'Q4_2024',
-        comparison: null
-    },
+    period: 'QUARTERLY',
     dimensions: {
         bySegment: false,
         byGeography: false
@@ -27,19 +24,12 @@ const VisualReportBuilder = {
             });
         });
 
-        // Period dropdowns
-        const primaryPeriod = document.getElementById('vrbPrimaryPeriod');
-        const comparisonPeriod = document.getElementById('vrbComparisonPeriod');
-
-        if (primaryPeriod) {
-            primaryPeriod.addEventListener('change', (e) => {
-                this.periods.primary = e.target.value;
-            });
-        }
-
-        if (comparisonPeriod) {
-            comparisonPeriod.addEventListener('change', (e) => {
-                this.periods.comparison = e.target.value || null;
+        // Period dropdown
+        const periodSelect = document.getElementById('vrbPrimaryPeriod');
+        if (periodSelect) {
+            periodSelect.addEventListener('change', (e) => {
+                this.period = e.target.value;
+                console.log('📊 Period changed to:', this.period);
             });
         }
 
@@ -119,23 +109,46 @@ const VisualReportBuilder = {
     },
 
     getPeriodDates(periodCode) {
-        const periods = {
-            'Q1_2024': { start: new Date(2024, 0, 1), end: new Date(2024, 2, 31) },
-            'Q2_2024': { start: new Date(2024, 3, 1), end: new Date(2024, 5, 30) },
-            'Q3_2024': { start: new Date(2024, 6, 1), end: new Date(2024, 8, 30) },
-            'Q4_2024': { start: new Date(2024, 9, 1), end: new Date(2024, 11, 31) },
-            'FY_2024': { start: new Date(2024, 0, 1), end: new Date(2024, 11, 31) },
-            'MTD': (() => {
-                const now = new Date();
-                return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: now };
-            })(),
-            'YTD': (() => {
-                const now = new Date();
-                return { start: new Date(now.getFullYear(), 0, 1), end: now };
-            })()
-        };
+        const now = new Date();
+        const currentYear = now.getFullYear();
 
-        return periods[periodCode] || periods['Q4_2024'];
+        // Get year-end date from settings, default to Dec 31
+        const yearEndSetting = localStorage.getItem('yearEndDate');
+        const yearEnd = yearEndSetting ? new Date(yearEndSetting) : new Date(currentYear, 11, 31);
+
+        let start, end;
+
+        switch (periodCode) {
+            case 'YEARLY':
+                // Full fiscal year
+                start = new Date(yearEnd);
+                start.setFullYear(start.getFullYear() - 1);
+                start.setDate(start.getDate() + 1);
+                end = new Date(yearEnd);
+                break;
+
+            case 'QUARTERLY':
+                // Last complete quarter
+                const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+                end = new Date(currentYear, quarterMonth + 3, 0); // Last day of quarter
+                start = new Date(currentYear, quarterMonth, 1); // First day of quarter
+                break;
+
+            case 'MONTHLY':
+                // Current month-to-date
+                start = new Date(currentYear, now.getMonth(), 1);
+                end = now;
+                break;
+
+            default:
+                // Default to quarterly
+                const qMonth = Math.floor(now.getMonth() / 3) * 3;
+                end = new Date(currentYear, qMonth + 3, 0);
+                start = new Date(currentYear, qMonth, 1);
+        }
+
+        console.log(`📅 Period ${periodCode}: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}`);
+        return { start, end };
     },
 
     async generateReport() {
@@ -155,11 +168,11 @@ const VisualReportBuilder = {
             }
 
             // Get period dates
-            const periodDates = this.getPeriodDates(this.periods.primary);
+            const periodDates = this.getPeriodDates(this.period);
 
             console.log('📊 Generating report:', {
                 template: this.selectedTemplate,
-                period: this.periods.primary,
+                period: this.period,
                 dates: periodDates,
                 totalTransactions: transactions.length
             });
