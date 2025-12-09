@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="comparative-reports.css">
     <link rel="stylesheet" href="visual-report-builder.css">
     <link rel="stylesheet" href="vrb-dropdown-fix.css">
+    <link rel="stylesheet" href="dashboard.css">
 
     <!-- SheetJS for Excel/CSV processing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -71,6 +72,66 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="section">
+                <div class="dashboard-container">
+                    <!-- Metrics Cards -->
+                    <div class="metrics-grid">
+                        <div class="metric-card revenue-card">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-content">
+                                <div class="metric-label">Total Revenue</div>
+                                <div class="metric-value" id="dashRevenue">$0.00</div>
+                                <div class="metric-trend" id="dashRevenueTrend"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card expense-card">
+                            <div class="metric-icon">📉</div>
+                            <div class="metric-content">
+                                <div class="metric-label">Total Expenses</div>
+                                <div class="metric-value" id="dashExpenses">$0.00</div>
+                                <div class="metric-trend" id="dashExpensesTrend"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card profit-card">
+                            <div class="metric-icon">✅</div>
+                            <div class="metric-content">
+                                <div class="metric-label">Net Profit</div>
+                                <div class="metric-value" id="dashProfit">$0.00</div>
+                                <div class="metric-trend" id="dashProfitTrend"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="dashboard-actions">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button onclick="navigateToUpload()" class="action-card">
+                                <span class="action-icon">📥</span>
+                                <span class="action-label">Upload CSV</span>
+                            </button>
+                            <button onclick="openReportsModal()" class="action-card">
+                                <span class="action-icon">📊</span>
+                                <span class="action-label">View Reports</span>
+                            </button>
+                            <button onclick="exportDataQuick()" class="action-card">
+                                <span class="action-icon">⚡</span>
+                                <span class="action-label">Export Excel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="dashboard-activity">
+                        <h3>Recent Activity</h3>
+                        <div id="activityList" class="activity-list"></div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Step 1: Upload Zone -->
             <section id="uploadSection" class="section active">
                 <div class="upload-container">
@@ -704,6 +765,7 @@
     <script src="settings-manager.js"></script>
     <script src="theme-manager.js"></script>
     <script src="theme-radio-handler.js"></script>
+    <script src="dashboard-stats.js"></script>
     <script>
         // Debug test - verify JavaScript works
         console.log('?? TEST: JavaScript is executing!');
