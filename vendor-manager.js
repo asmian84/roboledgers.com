@@ -126,19 +126,62 @@ const VendorManager = {
             const handleFiles = async (files) => {
                 if (files.length === 0) return;
 
-                let totalVendors = 0;
+                let totalVendorsAdded = 0;
+                let totalVendorsUpdated = 0;
+
                 for (const file of files) {
                     try {
-                        const vendors = await Storage.importVendorDictionary(file);
-                        totalVendors += vendors.length;
+                        const fileName = file.name.toLowerCase();
+
+                        // Check file type
+                        if (fileName.endsWith('.json')) {
+                            // Import vendor dictionary JSON
+                            const vendors = await Storage.importVendorDictionary(file);
+                            totalVendorsAdded += vendors.length;
+                        } else if (fileName.endsWith('.csv') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                            // Parse transactions and extract vendors
+                            const transactions = await CSVParser.parseFile(file);
+
+                            if (transactions && transactions.length > 0) {
+                                // Extract unique vendors from transactions
+                                const vendorNames = new Set();
+                                transactions.forEach(tx => {
+                                    if (tx.payee || tx.description) {
+                                        const vendorName = VendorNameUtils.cleanVendorName(tx.payee || tx.description);
+                                        if (vendorName) {
+                                            vendorNames.add(vendorName);
+                                        }
+                                    }
+                                });
+
+                                // Add vendors to dictionary
+                                vendorNames.forEach(name => {
+                                    const existing = VendorMatcher.findVendor(name);
+                                    if (!existing) {
+                                        VendorMatcher.addVendor({
+                                            name: name,
+                                            defaultAccount: '9970',
+                                            category: 'General'
+                                        });
+                                        totalVendorsAdded++;
+                                    } else {
+                                        totalVendorsUpdated++;
+                                    }
+                                });
+                            }
+                        }
                     } catch (error) {
-                        console.error(`Failed to import ${file.name}:`, error);
+                        console.error(`Failed to process ${file.name}:`, error);
                     }
                 }
 
                 VendorMatcher.initialize();
                 VendorGrid.loadVendors();
-                alert(`✅ Successfully imported ${totalVendors} vendors`);
+
+                alert(`✅ Vendor Re-indexing Complete!\n\n` +
+                    `${totalVendorsAdded} new vendors added\n` +
+                    `${totalVendorsUpdated} vendors already exist\n` +
+                    `Total: ${VendorMatcher.getAllVendors().length} vendors`);
             };
 
             dropInput.onchange = (e) => handleFiles(Array.from(e.target.files));
