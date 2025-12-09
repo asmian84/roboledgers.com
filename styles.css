@@ -483,11 +483,11 @@ body {
     transition: all var(--transition-normal);
 }
 
-.info-card:hover {
+/* .info-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
     border-color: var(--primary-color);
-}
+} */
 
 .info-icon {
     font-size: 2rem;
