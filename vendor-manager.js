@@ -117,6 +117,20 @@ const VendorManager = {
             });
         }
 
+        const importVendorBtn = document.getElementById('importVendorBtn');
+        if (importVendorBtn) {
+            importVendorBtn.addEventListener('click', () => {
+                this.showImportDialog();
+            });
+        }
+
+        const exportVendorBtn = document.getElementById('exportVendorBtn');
+        if (exportVendorBtn) {
+            exportVendorBtn.addEventListener('click', () => {
+                this.exportVendorDictionary();
+            });
+        }
+
         const rethinkVendorsBtn = document.getElementById('rethinkVendorsBtn');
         if (rethinkVendorsBtn) {
             rethinkVendorsBtn.addEventListener('click', () => {
@@ -437,6 +451,27 @@ const VendorManager = {
             alert('Error during AI re-think: ' + error.message);
             console.error(error);
         }
+    },
+
+    exportVendorDictionary() {
+        const vendors = VendorMatcher.getAllVendors();
+
+        if (vendors.length === 0) {
+            alert('No vendors to export');
+            return;
+        }
+
+        const data = JSON.stringify(vendors, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `vendor-dictionary-${timestamp}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        console.log(`✅ Exported ${vendors.length} vendors`);
     }
 };
 
