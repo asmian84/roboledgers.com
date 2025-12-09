@@ -451,6 +451,38 @@
         </div>
     </div>
 
+    <!-- Vendor Import Modal -->
+    <div id="vendorImportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📥 Import Vendor Dictionary</h2>
+                <button class="modal-close" id="closeVendorImportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-zone" id="vendorImportZone">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2>Drop vendor files here</h2>
+                    <p class="upload-subtitle">or click to browse</p>
+                    <p class="upload-hint">Supports CSV and JSON files (single or multiple)</p>
+                    <input type="file" id="vendorImportInput" accept=".csv,.json" multiple hidden>
+                </div>
+                <div id="vendorImportProgress" style="display: none; margin-top: 1rem;">
+                    <p id="vendorImportProgressText">Processing files...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vendorImportProgressFill"></div>
+                    </div>
+                </div>
+                <div id="vendorImportResults" style="display: none; margin-top: 1rem;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Options Modal -->
     <div id="exportModal" class="modal">
         <div class="modal-content">

@@ -303,25 +303,84 @@ const VendorManager = {
     },
 
     showImportDialog() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
+        const modal = document.getElementById('vendorImportModal');
+        const closeBtn = document.getElementById('closeVendorImportModal');
+        const uploadZone = document.getElementById('vendorImportZone');
+        const fileInput = document.getElementById('vendorImportInput');
+        const progress = document.getElementById('vendorImportProgress');
+        const progressText = document.getElementById('vendorImportProgressText');
+        const progressFill = document.getElementById('vendorImportProgressFill');
+        const results = document.getElementById('vendorImportResults');
 
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                try {
-                    const vendors = await Storage.importVendorDictionary(file);
-                    VendorMatcher.initialize();
-                    VendorGrid.loadVendors();
-                    alert(`Successfully imported ${vendors.length} vendors`);
-                } catch (error) {
-                    alert('Failed to import vendor dictionary: ' + error.message);
-                }
-            }
+        if (!modal) return;
+
+        // Show modal
+        modal.style.display = 'flex';
+
+        // Close handlers
+        const closeModal = () => {
+            modal.style.display = 'none';
+            progress.style.display = 'none';
+            results.style.display = 'none';
         };
 
-        input.click();
+        closeBtn.onclick = closeModal;
+        modal.onclick = (e) => e.target === modal && closeModal();
+
+        // File input handler
+        const handleFiles = async (files) => {
+            if (files.length === 0) return;
+
+            progress.style.display = 'block';
+            results.style.display = 'none';
+
+            let totalVendors = 0;
+            let processedFiles = 0;
+
+            for (const file of files) {
+                progressText.textContent = `Processing ${file.name}...`;
+                progressFill.style.width = `${(processedFiles / files.length) * 100}%`;
+
+                try {
+                    const vendors = await Storage.importVendorDictionary(file);
+                    totalVendors += vendors.length;
+                } catch (error) {
+                    console.error(`Failed to import ${file.name}:`, error);
+                }
+
+                processedFiles++;
+            }
+
+            progressFill.style.width = '100%';
+            VendorMatcher.initialize();
+            VendorGrid.loadVendors();
+
+            results.innerHTML = `<p style="color: var(--success-color);">✅ Successfully imported ${totalVendors} vendors from ${processedFiles} file(s)</p>`;
+            results.style.display = 'block';
+            progress.style.display = 'none';
+        };
+
+        fileInput.onchange = (e) => handleFiles(Array.from(e.target.files));
+        uploadZone.onclick = () => fileInput.click();
+
+        // Drag and drop
+        uploadZone.ondragover = (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = 'var(--primary-color)';
+            uploadZone.style.backgroundColor = 'var(--hover-bg)';
+        };
+
+        uploadZone.ondragleave = () => {
+            uploadZone.style.borderColor = '';
+            uploadZone.style.backgroundColor = '';
+        };
+
+        uploadZone.ondrop = (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '';
+            uploadZone.style.backgroundColor = '';
+            handleFiles(Array.from(e.dataTransfer.files));
+        };
     },
 
     async rethinkVendors() {
