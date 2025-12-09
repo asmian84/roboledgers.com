@@ -263,9 +263,10 @@ body {
     font-size: calc(16px * var(--font-scale));
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     color: var(--text-primary);
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
     line-height: 1.6;
-    overflow-x: hidden;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
