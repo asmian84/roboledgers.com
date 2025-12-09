@@ -52,6 +52,14 @@ const Storage = {
                 }
             }
 
+            // SEED DEFAULT VENDORS if empty
+            if (!data && typeof DefaultVendors !== 'undefined') {
+                console.log('🌱 Seeding default vendor dictionary...');
+                const defaultVendors = DefaultVendors.map(v => new Vendor(v));
+                this.saveVendors(defaultVendors);
+                return defaultVendors;
+            }
+
             if (!data) return [];
             const parsed = JSON.parse(data);
             return parsed.map(v => new Vendor(v));
