@@ -436,17 +436,35 @@
     <div id="vendorModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>📚 Manage Vendor Dictionary</h2>
+                <h2>📚 Vendor Dictionary</h2>
                 <button class="modal-close" id="closeVendorModal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="vendor-actions" style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <!-- Drop Bucket Area -->
+                <div class="upload-zone" id="vendorDropZone" style="margin-bottom: 1.5rem; text-align: center;">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            style="width: 48px; height: 48px; margin: 0 auto;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 style="margin: 0.5rem 0;">Drop vendor files to import</h3>
+                    <p class="upload-subtitle">or click to browse</p>
+                    <p class="upload-hint">Supports CSV and JSON files</p>
+                    <input type="file" id="vendorDropInput" accept=".csv,.json" multiple hidden>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="vendor-actions"
+                    style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
                     <button id="addVendorBtn" class="btn-primary">+ Add Vendor</button>
-                    <button id="importVendorBtn" class="btn-secondary">Import Dictionary</button>
-                    <button id="exportVendorBtn" class="btn-secondary">Export Dictionary</button>
                     <button id="rethinkVendorsBtn" class="btn-secondary">AI Re-think All</button>
                 </div>
-                <div id="vendorGrid" class="ag-theme-alpine" style="height: 600px;"></div>
+
+                <!-- Vendor Grid -->
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px;"></div>
             </div>
         </div>
     </div>

@@ -117,18 +117,51 @@ const VendorManager = {
             });
         }
 
-        const importVendorBtn = document.getElementById('importVendorBtn');
-        if (importVendorBtn) {
-            importVendorBtn.addEventListener('click', () => {
-                this.showImportDialog();
-            });
-        }
+        // Drag & Drop Zone
+        const dropZone = document.getElementById('vendorDropZone');
+        const dropInput = document.getElementById('vendorDropInput');
 
-        const exportVendorBtn = document.getElementById('exportVendorBtn');
-        if (exportVendorBtn) {
-            exportVendorBtn.addEventListener('click', () => {
-                this.exportVendorDictionary();
-            });
+        if (dropZone && dropInput) {
+            // File import handler
+            const handleFiles = async (files) => {
+                if (files.length === 0) return;
+
+                let totalVendors = 0;
+                for (const file of files) {
+                    try {
+                        const vendors = await Storage.importVendorDictionary(file);
+                        totalVendors += vendors.length;
+                    } catch (error) {
+                        console.error(`Failed to import ${file.name}:`, error);
+                    }
+                }
+
+                VendorMatcher.initialize();
+                VendorGrid.loadVendors();
+                alert(`✅ Successfully imported ${totalVendors} vendors`);
+            };
+
+            dropInput.onchange = (e) => handleFiles(Array.from(e.target.files));
+            dropZone.onclick = () => dropInput.click();
+
+            // Drag and drop
+            dropZone.ondragover = (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'var(--primary-color)';
+                dropZone.style.backgroundColor = 'var(--hover-bg)';
+            };
+
+            dropZone.ondragleave = () => {
+                dropZone.style.borderColor = '';
+                dropZone.style.backgroundColor = '';
+            };
+
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '';
+                dropZone.style.backgroundColor = '';
+                handleFiles(Array.from(e.dataTransfer.files));
+            };
         }
 
         const rethinkVendorsBtn = document.getElementById('rethinkVendorsBtn');
