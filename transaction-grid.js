@@ -792,23 +792,15 @@ const VendorGrid = {
 
     getColumnDefs() {
         const accounts = AccountAllocator.getAllAccounts();
-        const accountOptions = accounts.map(a => a.fullName);
         const accountCodes = accounts.map(a => a.code);
 
         return [
             {
-                headerName: 'Vendor Name',
-                field: 'name',
-                width: 250,
-                pinned: 'left',
-                editable: true,  // Now editable!
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
-            },
-            {
                 headerName: 'Account #',
                 field: 'defaultAccount',
                 width: 120,
-                editable: true,  // Now editable!
+                pinned: 'left',
+                editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
                     values: accountCodes
@@ -821,48 +813,49 @@ const VendorGrid = {
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
-                headerName: 'Account Name',
-                field: 'defaultAccountName',
-                width: 250,
+                headerName: 'Description',
+                field: 'name',
+                width: 350,
                 editable: true,
-                cellEditor: 'agSelectCellEditor',
-                cellEditorParams: {
-                    values: accountOptions
-                },
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
+            },
+            {
+                headerName: '# of instances',
+                field: 'matchCount',
+                width: 130,
+                editable: false,
+                type: 'numericColumn',
+                valueFormatter: (params) => {
+                    return params.value || 0;
+                }
             },
             {
                 headerName: 'Category',
                 field: 'category',
-                width: 150,
+                width: 180,
                 editable: true,
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
-                headerName: 'Match Count',
-                field: 'matchCount',
-                width: 120,
-                editable: false,
-                type: 'numericColumn'
-            },
-            {
-                headerName: 'Notes',
-                field: 'notes',
-                width: 200,
-                editable: true,
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
-            },
-            {
-                headerName: 'Actions',
-                width: 120,
+                headerName: 'Delete',
+                width: 100,
+                pinned: 'right',
+                lockPosition: true,
+                suppressMenu: true,
+                filter: false,
+                resizable: false,
                 editable: false,
                 cellRenderer: (params) => {
-                    return '<button class="delete-vendor-btn" style="padding: 4px 8px; cursor: pointer;">Delete</button>';
-                },
-                onCellClicked: (params) => {
-                    if (params.event.target.classList.contains('delete-vendor-btn')) {
-                        this.deleteVendor(params.data.id);
-                    }
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-danger';
+                    btn.innerHTML = '🗑️';
+                    btn.style.cssText = 'padding: 4px 12px; font-size: 14px; cursor: pointer; border: none; background: #ef4444; color: white; border-radius: 4px;';
+                    btn.onclick = () => {
+                        if (confirm(`Delete vendor "${params.data.name}"?`)) {
+                            this.deleteVendor(params.data.id);
+                        }
+                    };
+                    return btn;
                 }
             }
         ];
