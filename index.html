@@ -432,6 +432,25 @@
         </div>
     </div>
 
+    <!-- Vendor Management Modal -->
+    <div id="vendorModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📚 Manage Vendor Dictionary</h2>
+                <button class="modal-close" id="closeVendorModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="vendor-actions" style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                    <button id="addVendorBtn" class="btn-primary">+ Add Vendor</button>
+                    <button id="importVendorBtn" class="btn-secondary">Import Dictionary</button>
+                    <button id="exportVendorBtn" class="btn-secondary">Export Dictionary</button>
+                    <button id="rethinkVendorsBtn" class="btn-secondary">AI Re-think All</button>
+                </div>
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Options Modal -->
     <div id="exportModal" class="modal">
         <div class="modal-content">
