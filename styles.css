@@ -1606,7 +1606,24 @@ textarea:focus {
     font-weight: 600;
 }
 
-color: var(--text-tertiary);
+/* Settings Section & Label */
+.settings-section {
+    display: block;
+    margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
 }
 
 /* Modular Settings Buttons */
