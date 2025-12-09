@@ -159,10 +159,15 @@
 
                 <!-- Section 3: Account Management -->
                 <section id="accountSection" class="section">
-                    <h2>Account Management</h2>
-                    <p>Manage your chart of accounts and bank connections here.</p>
-                    <div style="padding: 2rem; background: white; border-radius: 12px; margin-top: 1rem;">
-                        <p>This section will contain account management features.</p>
+                    <div class="review-header">
+                        <div class="review-title-center">
+                            <h2>Chart of Accounts</h2>
+                            <p class="review-stats">Standard accounting categories</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-container">
+                        <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
                     </div>
                 </section>
 
@@ -254,69 +259,35 @@
     <script src="models.js"></script>
     <script src="storage.js"></script>
     <script src="utils.js"></script>
+    <script src="vendor-name-utils.js"></script>
+    <script src="csv-parser.js"></script>
+    <script src="vendor-matcher.js"></script>
+    <script src="account-allocator.js"></script>
+    <script src="excel-exporter.js"></script>
+    <script src="bulk-indexer.js"></script>
+    <script src="transaction-grid.js"></script>
+    <script src="vendor-ai.js"></script>
+    <script src="vendor-manager.js"></script>
+    <script src="account-chart.js"></script>
+    <script src="reconciliation.js"></script>
+    <script src="reports-engine.js"></script>
+    <script src="reports-modal.js"></script>
+    <script src="visual-report-builder.js"></script>
+    <script src="visual-report-builder-integration.js"></script>
+    <script src="account-manager-enhanced.js"></script>
+    <script src="settings-manager.js"></script>
     <script src="theme-manager.js"></script>
+    <script src="theme-radio-handler.js"></script>
+    <script src="keyboard-handler.js"></script>
+    <script src="undo-manager.js"></script>
+    <script src="account-ui.js"></script>
 
-    <!-- NEW: Navigation Controller -->
+    <!-- NEW: Navigation Controller (loaded before app.js) -->
     <script src="navigation.js"></script>
 
-    <script>
-        // Initialize modals
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Frappe Demo Loaded!');
+    <!-- Main App Controller -->
+    <script src="app.js"></script>
 
-            // Modal close handlers
-            const settingsModal = document.getElementById('settingsModal');
-            const reportsModal = document.getElementById('reportsModal');
-
-            document.getElementById('closeSettingsModal')?.addEventListener('click', () => {
-                settingsModal.style.display = 'none';
-            });
-
-            document.getElementById('closeReportsModal')?.addEventListener('click', () => {
-                reportsModal.style.display = 'none';
-            });
-
-            // Settings tab switching
-            document.querySelectorAll('.settings-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetPanel = tab.dataset.tab;
-
-                    // Update active states
-                    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-
-                    tab.classList.add('active');
-                    document.querySelector(`[data-panel="${targetPanel}"]`)?.classList.add('active');
-                });
-            });
-
-            // Demo transaction grid
-            const gridDiv = document.getElementById('transactionGrid');
-            if (gridDiv && typeof agGrid !== 'undefined') {
-                const gridOptions = {
-                    columnDefs: [
-                        { field: 'date', headerName: 'Date', sortable: true, filter: true },
-                        { field: 'description', headerName: 'Description', sortable: true, filter: true },
-                        { field: 'debit', headerName: 'Debit', sortable: true, filter: true },
-                        { field: 'credit', headerName: 'Credit', sortable: true, filter: true },
-                        { field: 'balance', headerName: 'Balance', sortable: true, filter: true },
-                        { field: 'account', headerName: 'Account', sortable: true, filter: true }
-                    ],
-                    rowData: [
-                        { date: '2024-12-08', description: 'Sample Transaction', debit: '100.00', credit: '', balance: '1,200.00', account: 'Operating' },
-                        { date: '2024-12-07', description: 'Another Transaction', debit: '', credit: '50.00', balance: '1,100.00', account: 'Revenue' }
-                    ],
-                    defaultColDef: {
-                        resizable: true,
-                        sortable: true,
-                        filter: true
-                    }
-                };
-
-                agGrid.createGrid(gridDiv, gridOptions);
-            }
-        });
-    </script>
 </body>
 
 </html>
