@@ -440,8 +440,16 @@
                 <button class="modal-close" id="closeVendorModal">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Drop Bucket Area -->
-                <div class="upload-zone" id="vendorDropZone" style="margin-bottom: 1.5rem; text-align: center;">
+                <!-- Action Buttons -->
+                <div class="vendor-actions"
+                    style="margin-bottom: 2rem; display: flex; gap: 0.5rem; justify-content: center;">
+                    <button id="addVendorBtn" class="btn-primary">+ Add Vendor</button>
+                    <button id="rethinkVendorsBtn" class="btn-secondary">AI Re-think</button>
+                </div>
+
+                <!-- Drop Bucket Area (1x2 grid size) -->
+                <div class="upload-zone" id="vendorDropZone"
+                    style="margin: 0 auto 1.5rem auto; text-align: center; max-width: 50%;">
                     <div class="upload-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             style="width: 48px; height: 48px; margin: 0 auto;">
@@ -450,17 +458,10 @@
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                     </div>
-                    <h3 style="margin: 0.5rem 0;">Drop vendor files to import</h3>
-                    <p class="upload-subtitle">or click to browse</p>
-                    <p class="upload-hint">Supports CSV and JSON files</p>
+                    <h3 style="margin: 0.5rem 0;">Vendor Re-indexing</h3>
+                    <p class="upload-subtitle">Drop files or click to browse</p>
+                    <p class="upload-hint">CSV/JSON files</p>
                     <input type="file" id="vendorDropInput" accept=".csv,.json" multiple hidden>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="vendor-actions"
-                    style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
-                    <button id="addVendorBtn" class="btn-primary">+ Add Vendor</button>
-                    <button id="rethinkVendorsBtn" class="btn-secondary">AI Re-think All</button>
                 </div>
 
                 <!-- Vendor Grid -->
