@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoboLedgers - Frappe Layout Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Existing Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="report-styles.css">
+    <link rel="stylesheet" href="bulk-actions.css">
+    <link rel="stylesheet" href="comparative-reports.css">
+    <link rel="stylesheet" href="visual-report-builder.css">
+    <link rel="stylesheet" href="vrb-dropdown-fix.css">
+
+    <!-- NEW: Frappe Layout -->
+    <link rel="stylesheet" href="frappe-layout.css">
+
+    <!-- SheetJS for Excel/CSV processing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- AG Grid for interactive spreadsheet -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
+</head>
+
+<body>
+    <!-- NEW: Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <div class="logo-text">🤖 RoboLedgers</div>
+        </div>
+
+        <nav class="nav-container">
+            <div class="nav-section">
+                <div class="nav-section-title">Finance</div>
+                <div class="nav-item" data-target="uploadSection">
+                    <span class="nav-icon">📥</span>
+                    <span class="nav-label">Upload CSV</span>
+                </div>
+                <div class="nav-item active" data-target="transactionSection">
+                    <span class="nav-icon">💳</span>
+                    <span class="nav-label">Transactions</span>
+                </div>
+                <div class="nav-item" data-target="accountSection">
+                    <span class="nav-icon">🏦</span>
+                    <span class="nav-label">Accounts</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Reports</div>
+                <div class="nav-item" data-action="open-reports">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">All Reports</span>
+                </div>
+                <div class="nav-item" data-target="balanceSheet">
+                    <span class="nav-icon">⚖️</span>
+                    <span class="nav-label">Balance Sheet</span>
+                </div>
+                <div class="nav-item" data-target="incomeStatement">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-label">Income Statement</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Setup</div>
+                <div class="nav-item" data-action="open-settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </div>
+                <div class="nav-item" data-action="open-roadmap">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-label">Roadmap</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="sidebar-toggle" id="sidebarToggleBtn">←</button>
+        </div>
+    </aside>
+
+    <!-- NEW: Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- NEW: Top Bar -->
+        <header class="topbar">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search transactions, accounts, or reports...">
+                <span class="shortcut-hint">Ctrl+K</span>
+            </div>
+
+            <div class="user-actions">
+                <button class="action-btn theme-toggle" title="Change Theme">🌙</button>
+                <div class="user-avatar" title="User Settings">RL</div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <main class="main-content">
+                <!-- Section 1: Upload Zone -->
+                <section id="uploadSection" class="section">
+                    <div class="upload-container">
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h2>Drop your CSV file here</h2>
+                            <p class="upload-subtitle">or click to browse</p>
+                            <p class="upload-hint">Supports CSV bank statement files</p>
+                            <input type="file" id="fileInput" accept=".csv" hidden>
+                        </div>
+
+                        <div class="upload-info">
+                            <div class="info-card">
+                                <div class="info-icon">📊</div>
+                                <h3>Smart Categorization</h3>
+                                <p>Automatically matches vendors to your dictionary and assigns accounts</p>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-icon">✏️</div>
+                                <h3>Interactive Review</h3>
+                                <p>Edit transactions in a spreadsheet-like interface with real-time updates</p>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-icon">⚡</div>
+                                <h3>Export Ready</h3>
+                                <p>Generate Excel files formatted for QuickBooks and CASEWARE import</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Transaction Grid -->
+                <section id="transactionSection" class="section active">
+                    <div class="review-header">
+                        <div class="review-title-center">
+                            <h2>Transaction Review</h2>
+                            <p id="reviewStats" class="review-stats">Demo Mode - Load a CSV to see your data</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-container">
+                        <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Account Management -->
+                <section id="accountSection" class="section">
+                    <h2>Account Management</h2>
+                    <p>Manage your chart of accounts and bank connections here.</p>
+                    <div style="padding: 2rem; background: white; border-radius: 12px; margin-top: 1rem;">
+                        <p>This section will contain account management features.</p>
+                    </div>
+                </section>
+
+                <!-- Section 4: Balance Sheet (placeholder) -->
+                <section id="balanceSheet" class="section">
+                    <h2>Balance Sheet</h2>
+                    <p>Balance Sheet report will be displayed here.</p>
+                </section>
+
+                <!-- Section 5: Income Statement (placeholder) -->
+                <section id="incomeStatement" class="section">
+                    <h2>Income Statement</h2>
+                    <p>Income Statement report will be displayed here.</p>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals from original (Settings, Reports, etc.) -->
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content modal-large settings-modal">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <button class="modal-close" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body settings-body">
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="appearance">Appearance</button>
+                    <button class="settings-tab" data-tab="company">Company</button>
+                    <button class="settings-tab" data-tab="data">Data</button>
+                </div>
+
+                <div class="settings-panel active" data-panel="appearance">
+                    <div class="settings-section">
+                        <label class="settings-label">Color Theme</label>
+                        <div class="theme-radio-group">
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="cyber-night" checked>
+                                <div class="theme-content">
+                                    <span class="theme-icon">🌙</span>
+                                    <span class="theme-name">Cyber Night</span>
+                                </div>
+                            </label>
+                            <label class="theme-radio-option">
+                                <input type="radio" name="theme" value="arctic-dawn">
+                                <div class="theme-content">
+                                    <span class="theme-icon">🌅</span>
+                                    <span class="theme-name">Arctic Dawn</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-panel" data-panel="company">
+                    <div class="settings-section">
+                        <label class="settings-label">Company Name</label>
+                        <input type="text" id="companyNameInput" class="settings-input"
+                            placeholder="Enter company name (optional)">
+                        <p class="settings-hint">Will be displayed above Transaction Review</p>
+                    </div>
+                </div>
+
+                <div class="settings-panel" data-panel="data">
+                    <div class="settings-section">
+                        <label class="settings-label">Data Management</label>
+                        <p>Data management options will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Modal -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📊 Financial Reports</h2>
+                <button class="modal-close" id="closeReportsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Visual Report Builder will be integrated here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="models.js"></script>
+    <script src="storage.js"></script>
+    <script src="utils.js"></script>
+    <script src="theme-manager.js"></script>
+
+    <!-- NEW: Navigation Controller -->
+    <script src="navigation.js"></script>
+
+    <script>
+        // Initialize modals
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Frappe Demo Loaded!');
+
+            // Modal close handlers
+            const settingsModal = document.getElementById('settingsModal');
+            const reportsModal = document.getElementById('reportsModal');
+
+            document.getElementById('closeSettingsModal')?.addEventListener('click', () => {
+                settingsModal.style.display = 'none';
+            });
+
+            document.getElementById('closeReportsModal')?.addEventListener('click', () => {
+                reportsModal.style.display = 'none';
+            });
+
+            // Settings tab switching
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetPanel = tab.dataset.tab;
+
+                    // Update active states
+                    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.querySelector(`[data-panel="${targetPanel}"]`)?.classList.add('active');
+                });
+            });
+
+            // Demo transaction grid
+            const gridDiv = document.getElementById('transactionGrid');
+            if (gridDiv && typeof agGrid !== 'undefined') {
+                const gridOptions = {
+                    columnDefs: [
+                        { field: 'date', headerName: 'Date', sortable: true, filter: true },
+                        { field: 'description', headerName: 'Description', sortable: true, filter: true },
+                        { field: 'debit', headerName: 'Debit', sortable: true, filter: true },
+                        { field: 'credit', headerName: 'Credit', sortable: true, filter: true },
+                        { field: 'balance', headerName: 'Balance', sortable: true, filter: true },
+                        { field: 'account', headerName: 'Account', sortable: true, filter: true }
+                    ],
+                    rowData: [
+                        { date: '2024-12-08', description: 'Sample Transaction', debit: '100.00', credit: '', balance: '1,200.00', account: 'Operating' },
+                        { date: '2024-12-07', description: 'Another Transaction', debit: '', credit: '50.00', balance: '1,100.00', account: 'Revenue' }
+                    ],
+                    defaultColDef: {
+                        resizable: true,
+                        sortable: true,
+                        filter: true
+                    }
+                };
+
+                agGrid.createGrid(gridDiv, gridOptions);
+            }
+        });
+    </script>
+</body>
+
+</html>
