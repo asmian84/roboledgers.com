@@ -191,8 +191,6 @@ const VisualReportBuilder = {
             console.log(`✅ Filtered to ${filteredTransactions.length} transactions in period`);
 
             // Generate report based on template using FILTERED transactions
-            let reportHTML = '';
-
             switch (this.selectedTemplate) {
                 case 'balance':
                     const balanceData = ReportsEngine.generateBalanceSheet(filteredTransactions);
