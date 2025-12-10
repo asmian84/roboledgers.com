@@ -35,6 +35,73 @@ const App = {
         }
     },
 
+    // Unified AI Re-think: Optimize vendors + Categorize transactions
+    async unifiedAIRethink() {
+        console.log('🧠 Starting Unified AI Re-think...');
+
+        // Step 1: Optimize vendors
+        const vendorResult = await VendorAI.rethinkVendors((msg, percent) => {
+            console.log(`${percent}% - ${msg}`);
+        });
+
+        if (!vendorResult.success) {
+            alert('❌ Vendor optimization failed: ' + vendorResult.message);
+            return;
+        }
+
+        // Step 2: Apply vendor matching to ALL transactions
+        let categorized = 0;
+        let errors = 0;
+
+        for (const tx of this.transactions) {
+            try {
+                const match = VendorMatcher.matchPayee(tx.payee);
+                if (match && match.vendor) {
+                    tx.vendor = match.vendor.name;
+                    tx.vendorId = match.vendor.id;
+                    tx.allocatedAccount = match.vendor.defaultAccount;
+                    tx.allocatedAccountName = match.vendor.defaultAccountName;
+                    tx.category = match.vendor.category;
+                    tx.status = 'matched';
+                    categorized++;
+                }
+            } catch (error) {
+                console.error('Error categorizing transaction:', tx, error);
+                errors++;
+            }
+        }
+
+        // Step 3: Refresh all grids
+        if (typeof TransactionGrid !== 'undefined' && TransactionGrid.gridApi) {
+            TransactionGrid.gridApi.setRowData(this.transactions);
+            TransactionGrid.gridApi.refreshCells({ force: true });
+        }
+
+        if (typeof VendorGrid !== 'undefined' && VendorGrid.gridApi) {
+            VendorGrid.loadVendors();
+        }
+
+        // Step 4: Save session
+        if (typeof SessionManager !== 'undefined') {
+            SessionManager.saveSession(this.transactions);
+        }
+
+        // Step 5: Show results
+        const message = `✨ Unified AI Re-think Complete!\n\n` +
+            `📖 VENDOR OPTIMIZATION:\n` +
+            `  ✅ Names normalized: ${vendorResult.results.normalized}\n` +
+            `  ✅ Categories assigned: ${vendorResult.results.categorized}\n` +
+            `  ✅ Accounts allocated: ${vendorResult.results.allocated}\n` +
+            `  ✅ Duplicates merged: ${vendorResult.results.merged}\n\n` +
+            `📊 TRANSACTION CATEGORIZATION:\n` +
+            `  ✅ Transactions categorized: ${categorized}/${this.transactions.length}\n` +
+            `  ${errors > 0 ? `⚠️ Errors: ${errors}\n` : ''}` +
+            `\n💡 All changes saved!`;
+
+        alert(message);
+        console.log('✅ Unified AI Re-think complete:', { vendorResult, categorized, errors });
+    },
+
     setupEventListeners() {
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -138,11 +205,11 @@ const App = {
             });
         }
 
-        // AI Re-think button
+        // AI Re-think button (Unified: Optimizes vendors + categorizes transactions)
         const rethinkBtn = document.getElementById('rethinkTransactionsBtn');
         if (rethinkBtn) {
-            rethinkBtn.addEventListener('click', () => {
-                this.rethinkTransactions();
+            rethinkBtn.addEventListener('click', async () => {
+                await this.unifiedAIRethink();
             });
         }
 

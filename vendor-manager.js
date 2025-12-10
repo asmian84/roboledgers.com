@@ -42,31 +42,11 @@ window.VendorManager = {
         const rethinkVendorsBtn = document.getElementById('rethinkVendorsBtn');
         if (rethinkVendorsBtn) {
             rethinkVendorsBtn.addEventListener('click', async () => {
-                const result = await VendorAI.rethinkVendors((msg, percent) => {
-                    console.log(`${percent}% - ${msg}`);
-                });
-
-                if (result.success) {
-                    // Force complete grid refresh
-                    VendorGrid.loadVendors();
-
-                    // Give grid moment to refresh, then force cell update
-                    setTimeout(() => {
-                        if (VendorGrid.gridApi) {
-                            VendorGrid.gridApi.refreshCells({ force: true });
-                        }
-                    }, 100);
-
-                    alert(`✨ AI Re-think Complete!\n\n` +
-                        `✅ Names normalized: ${result.results.normalized}\n` +
-                        `✅ Categories assigned: ${result.results.categorized}\n` +
-                        `✅ New accounts allocated: ${result.results.allocated}\n` +
-                        `✅ Existing accounts updated: ${result.results.overridden}\n` +
-                        `✅ Duplicates auto-merged: ${result.results.merged}\n` +
-                        `✅ Patterns generated: ${result.results.patterns}\n\n` +
-                        `🔍 Suggestions: ${result.results.suggestions.length}`);
+                // Use unified AI Re-think (optimizes vendors + categorizes transactions)
+                if (typeof App !== 'undefined' && App.unifiedAIRethink) {
+                    await App.unifiedAIRethink();
                 } else {
-                    alert(result.message);
+                    alert('❌ AI Re-think function not available');
                 }
             });
         }
