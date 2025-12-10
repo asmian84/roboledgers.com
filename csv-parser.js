@@ -1,6 +1,8 @@
 // CSV Parser for bank statement files
 
-const CSVParser = {
+// CSV Parser for bank statement files
+
+window.CSVParser = {
     // Parse CSV file and return array of transactions
     parseFile(file) {
         return new Promise((resolve, reject) => {

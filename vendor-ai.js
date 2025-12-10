@@ -1,6 +1,8 @@
 // AI-Powered Vendor Optimizer
 
-const VendorAI = {
+// Vendor AI Logic
+
+window.VendorAI = {
     // AI-powered vendor re-categorization and optimization with progress feedback
     async rethinkVendors(progressCallback = null) {
         const vendors = VendorMatcher.getAllVendors();

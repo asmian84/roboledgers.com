@@ -1,6 +1,8 @@
 // Utility functions for AutoBookkeeping
 
-const Utils = {
+// Utility helper functions
+
+window.Utils = {
     // Date parsing and formatting
     parseDate(dateString) {
         if (!dateString) return null;
