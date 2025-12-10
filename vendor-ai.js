@@ -55,6 +55,12 @@ const VendorAI = {
                 if (suggestedAccount) {
                     vendor.defaultAccount = suggestedAccount.code;
                     vendor.defaultAccountName = suggestedAccount.name;
+
+                    // CRITICAL: Also set category based on account
+                    if (typeof VendorGrid !== 'undefined' && VendorGrid.getCategoryFromAccount) {
+                        vendor.category = VendorGrid.getCategoryFromAccount(suggestedAccount.code, suggestedAccount.name);
+                    }
+
                     results.allocated++;
                 }
             }
