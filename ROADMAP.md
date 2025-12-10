@@ -1,6 +1,30 @@
-# AutoBookkeeping - Product Roadmap (Dec 2025)
+# AutoBookkeeping - Product Roadmap
 
-**Last Updated:** December 8, 2025
+## ✅ v1.2 - MVP Complete (December 9, 2025)
+
+### Vendor Management Enhancement
+- ✅ **Simplified Vendor Grid**: Combined "Account #" and "Category" into single column
+- ✅ **AI Re-think Full Control**: 4 new automation capabilities
+  - Name normalization (removes #, locations, special chars)
+  - Pattern generation for fuzzy matching
+  - Override ALL vendor accounts (not just unallocated)
+  - Auto-merge duplicates (>85% similarity)
+- ✅ **Bank Fee Priority Fix**: Ensures bank fees → 7700 (not 4001)
+- ✅ **Enhanced Results Display**: Shows 5 metrics (normalized, categorized, allocated, overridden, merged, patterns)
+
+### Settings UI Cleanup
+- ✅ **Removed Grid Settings**: Cleaned up Appearance tab
+- ✅ **Fixed Data Tab**: Proper positioning and padding
+- ✅ **Standardized Styling**: Uniform margins across all tabs
+
+### App Optimization
+- ✅ **Debloated Codebase**: Removed 33 unused files (45% reduction from 74 → 41 files)
+- ✅ **Eliminated Backups**: Cleaned up .backup, .broken, test files
+- ✅ **Removed Unused Modules**: Dashboard, visual report builder, bulk actions CSS
+
+---
+
+## v1.1 - Enhanced User Experience (Completed):** December 8, 2025
 
 ---
 
