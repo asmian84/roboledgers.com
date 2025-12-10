@@ -886,19 +886,6 @@ const VendorGrid = {
                 }
             },
             {
-                headerName: 'Category',
-                field: 'category',
-                width: 200,
-                editable: true,
-                cellEditor: 'agSelectCellEditor',
-                cellEditorParams: {
-                    values: categoryOptions
-                },
-                sortable: true,
-                filter: true,
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
-            },
-            {
                 headerName: 'Delete',
                 width: 100,
                 pinned: 'right',

@@ -148,7 +148,11 @@ const VendorAI = {
 
         // Comprehensive account mapping based on keywords and categories
         // ALL CODES MATCH THE ACTUAL CHART OF ACCOUNTS
+        // CRITICAL: Bank fees FIRST - highest priority to prevent matching 'sales'
         const accountMappings = [
+            // Bank Fees & Charges (MUST BE FIRST!)
+            { keywords: ['fee chargeback', 'chargeback cheque', 'chargeback', 'bank draft', 'fee service', 'monthly maintenance', 'reverse deposit', 'deposit mixed', 'bank fee', 'service charge', 'transaction fee', 'bank charge', 'account fee'], code: '7700' },
+
             // Revenue Accounts (4xxx)
             { keywords: ['sales', 'revenue'], code: '4001' },
             { keywords: ['consulting fee', 'professional service'], code: '4002' },
