@@ -299,7 +299,7 @@
                     <h2>Vendor Dictionary</h2>
                     <button class="modal-close" id="closeVendorModal">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="overflow: hidden;">
                     <div class="vendor-controls">
                         <button id="addVendorBtn" class="btn-primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -317,14 +317,6 @@
                             </svg>
                             Import
                         </button>
-                        <button id="exportVendorBtn" class="btn-secondary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Export
-                        </button>
                         <button id="rethinkVendorsBtn" class="btn-secondary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
@@ -336,7 +328,8 @@
                     </div>
 
                     <!-- Inline Drop Bucket (hidden by default, shown when Import clicked) -->
-                    <div id="vendorImportDropZone" style="display: none; margin: 1rem 0;">
+                    <div id="vendorImportDropZone"
+                        style="display: none; margin: 1rem auto; max-width: 60%; text-align: center;">
                         <div class="upload-zone" style="padding: 1rem;">
                             <div class="upload-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -361,7 +354,7 @@
                     <div id="bulkResults" style="display: none;"></div>
                 </div>
 
-                <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 450px; width: 100%;"></div>
             </div>
         </div>
     </div>
