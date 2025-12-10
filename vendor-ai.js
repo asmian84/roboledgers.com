@@ -13,9 +13,12 @@ const VendorAI = {
         }
 
         const results = {
+            normalized: 0,
             categorized: 0,
-            merged: 0,
             allocated: 0,
+            overridden: 0,
+            merged: 0,
+            patterns: 0,
             suggestions: []
         };
 
@@ -29,8 +32,25 @@ const VendorAI = {
         updateProgress('🔍 Analyzing vendors...', 10);
         await this.delay(300);
 
-        // Step 1: Auto-categorize vendors
-        updateProgress('📋 Categorizing vendors...', 30);
+        // Step 1: Normalize vendor names
+        updateProgress('🔧 Normalizing names...', 20);
+        for (let i = 0; i < vendors.length; i++) {
+            const original = vendors[i].name;
+            const normalized = this.normalizeVendorName(original);
+            if (normalized !== original) {
+                vendors[i].name = normalized;
+                results.normalized++;
+            }
+
+            if (i % 10 === 0) {
+                const progress = 20 + (i / vendors.length) * 10;
+                updateProgress(`🔧 Normalizing names... (${i}/${vendors.length})`, progress);
+                await this.delay(10);
+            }
+        }
+
+        // Step 2: Auto-categorize vendors
+        updateProgress('📋 Categorizing vendors...', 35);
         for (let i = 0; i < vendors.length; i++) {
             const vendor = vendors[i];
             const category = this.suggestCategory(vendor.name);
@@ -40,51 +60,74 @@ const VendorAI = {
             }
 
             if (i % 10 === 0) {
-                const progress = 30 + (i / vendors.length) * 20;
+                const progress = 35 + (i / vendors.length) * 15;
                 updateProgress(`📋 Categorizing vendors... (${i}/${vendors.length})`, progress);
                 await this.delay(10);
             }
         }
 
-        // Step 2: Smart account allocation
-        updateProgress('💰 Allocating account numbers...', 60);
+        // Step 3: Smart account allocation - OVERRIDE ALL (not just 9970)
+        updateProgress('💰 Allocating account numbers...', 55);
         for (let i = 0; i < vendors.length; i++) {
             const vendor = vendors[i];
-            if (!vendor.defaultAccount || vendor.defaultAccount === '9970') {
-                const suggestedAccount = this.suggestAccount(vendor.name, vendor.category);
-                if (suggestedAccount) {
-                    vendor.defaultAccount = suggestedAccount.code;
-                    vendor.defaultAccountName = suggestedAccount.name;
+            const suggestedAccount = this.suggestAccount(vendor.name, vendor.category);
 
-                    // CRITICAL: Also set category based on account
-                    if (typeof VendorGrid !== 'undefined' && VendorGrid.getCategoryFromAccount) {
-                        vendor.category = VendorGrid.getCategoryFromAccount(suggestedAccount.code, suggestedAccount.name);
-                    }
+            if (suggestedAccount) {
+                const oldAccount = vendor.defaultAccount;
 
-                    results.allocated++;
+                // ALWAYS update account (full control)
+                vendor.defaultAccount = suggestedAccount.code;
+                vendor.defaultAccountName = suggestedAccount.name;
+
+                if (oldAccount && oldAccount !== '9970' && oldAccount !== suggestedAccount.code) {
+                    results.overridden++;  // Track overrides
+                } else if (!oldAccount || oldAccount === '9970') {
+                    results.allocated++;   // Track new allocations
                 }
             }
 
             if (i % 10 === 0) {
-                const progress = 60 + (i / vendors.length) * 15;
+                const progress = 55 + (i / vendors.length) * 20;
                 updateProgress(`💰 Allocating accounts... (${i}/${vendors.length})`, progress);
                 await this.delay(10);
             }
         }
 
-        // Step 3: Find similar vendors
-        updateProgress('🔎 Finding similar vendors...', 80);
+        // Step 4: Auto-merge duplicate vendors
+        updateProgress('🔀 Merging duplicates...', 80);
         const merges = this.findSimilarVendors(vendors);
         for (const merge of merges) {
-            results.suggestions.push({
-                type: 'merge',
-                vendor1: merge.vendor1.name,
-                vendor2: merge.vendor2.name,
-                similarity: merge.similarity,
-                action: () => this.mergeVendors(merge.vendor1, merge.vendor2)
-            });
+            if (merge.similarity > 0.85) {  // High threshold for auto-merge
+                this.mergeVendors(merge.vendor1, merge.vendor2);
+                results.merged++;
+            } else {
+                // Still suggest lower similarity merges
+                results.suggestions.push({
+                    type: 'merge',
+                    vendor1: merge.vendor1.name,
+                    vendor2: merge.vendor2.name,
+                    similarity: merge.similarity,
+                    action: () => this.mergeVendors(merge.vendor1, merge.vendor2)
+                });
+            }
         }
-        results.merged = merges.length;
+
+        // Step 5: Auto-generate patterns
+        updateProgress('🎯 Creating patterns...', 90);
+        for (let i = 0; i < vendors.length; i++) {
+            const vendor = vendors[i];
+            const patterns = this.generatePatterns(vendor.name);
+            if (patterns.length > 0) {
+                vendor.patterns = patterns;
+                results.patterns++;
+            }
+
+            if (i % 10 === 0) {
+                const progress = 90 + (i / vendors.length) * 5;
+                updateProgress(`🎯 Creating patterns... (${i}/${vendors.length})`, progress);
+                await this.delay(10);
+            }
+        }
 
         updateProgress('💾 Saving changes...', 95);
         VendorMatcher.saveVendors();
@@ -385,5 +428,83 @@ const VendorAI = {
         VendorMatcher.deleteVendor(remove.id);
 
         return keeper;
+    },
+
+    // Helper: Normalize vendor names (clean up messy CSV imports)
+    normalizeVendorName(rawName) {
+        if (!rawName) return rawName;
+
+        let cleaned = rawName;
+
+        // Remove trailing location codes (AB, BC, ON, etc.)
+        cleaned = cleaned.replace(/\b[A-Z]{2}\b\s*$/g, '');
+
+        // Remove location names at end
+        cleaned = cleaned.replace(/\b(CALGARY|EDMONTON|VANCOUVER|TORONTO|OTTAWA|MONTREAL)\b\s*$/gi, '');
+
+        // Remove numbers with # prefix (#1234, #456)
+        cleaned = cleaned.replace(/#\d+/g, '');
+
+        // Remove standalone numbers at end
+        cleaned = cleaned.replace(/\s+\d+\s*$/g, '');
+
+        // Replace special characters with spaces
+        cleaned = cleaned.replace(/[#_-]+/g, ' ');
+
+        // Remove extra whitespace
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+        // Title case
+        cleaned = this.toTitleCase(cleaned);
+
+        return cleaned;
+    },
+
+    // Helper: Convert to title case
+    toTitleCase(str) {
+        return str.toLowerCase().split(' ').map(word => {
+            if (word.length === 0) return word;
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    },
+
+    // Helper: Auto-generate pattern keywords for fuzzy matching
+    generatePatterns(vendorName) {
+        if (!vendorName) return [];
+
+        const patterns = new Set();
+        const lowerName = vendorName.toLowerCase();
+
+        // Add full name
+        patterns.add(lowerName);
+
+        // Add individual words (min 3 chars)
+        const words = lowerName.split(' ').filter(w => w.length >= 3);
+        words.forEach(word => patterns.add(word));
+
+        // Add common abbreviations
+        const abbrevMap = {
+            'starbucks': ['sbux'],
+            'starbucks coffee': ['sbux'],
+            'mcdonalds': ['mcd', 'mcdo'],
+            'tim hortons': ['tims', 'timmy'],
+            'canadian tire': ['can tire', 'cantire'],
+            'home depot': ['depot'],
+            'shell': ['gas', 'fuel'],
+            'chevron': ['gas', 'fuel'],
+            'esso': ['gas', 'fuel'],
+            'petro canada': ['petro', 'gas'],
+            'bank': ['fee', 'charge'],
+            'fee': ['bank', 'charge'],
+            'chargeback': ['fee', 'bank']
+        };
+
+        for (const [key, abbrevs] of Object.entries(abbrevMap)) {
+            if (lowerName.includes(key)) {
+                abbrevs.forEach(abbrev => patterns.add(abbrev));
+            }
+        }
+
+        return Array.from(patterns);
     }
 };
