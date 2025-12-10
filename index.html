@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -14,9 +14,6 @@
     <link rel="stylesheet" href="report-styles.css">
     <link rel="stylesheet" href="bulk-actions.css">
     <link rel="stylesheet" href="comparative-reports.css">
-    <link rel="stylesheet" href="visual-report-builder.css">
-    <link rel="stylesheet" href="vrb-dropdown-fix.css">
-    <link rel="stylesheet" href="dashboard.css">
 
     <!-- SheetJS for Excel/CSV processing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -72,66 +69,6 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Dashboard Section -->
-            <section id="dashboardSection" class="section">
-                <div class="dashboard-container">
-                    <!-- Metrics Cards -->
-                    <div class="metrics-grid">
-                        <div class="metric-card revenue-card">
-                            <div class="metric-icon">💰</div>
-                            <div class="metric-content">
-                                <div class="metric-label">Total Revenue</div>
-                                <div class="metric-value" id="dashRevenue">$0.00</div>
-                                <div class="metric-trend" id="dashRevenueTrend"></div>
-                            </div>
-                        </div>
-
-                        <div class="metric-card expense-card">
-                            <div class="metric-icon">📉</div>
-                            <div class="metric-content">
-                                <div class="metric-label">Total Expenses</div>
-                                <div class="metric-value" id="dashExpenses">$0.00</div>
-                                <div class="metric-trend" id="dashExpensesTrend"></div>
-                            </div>
-                        </div>
-
-                        <div class="metric-card profit-card">
-                            <div class="metric-icon">✅</div>
-                            <div class="metric-content">
-                                <div class="metric-label">Net Profit</div>
-                                <div class="metric-value" id="dashProfit">$0.00</div>
-                                <div class="metric-trend" id="dashProfitTrend"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div class="dashboard-actions">
-                        <h3>Quick Actions</h3>
-                        <div class="action-buttons">
-                            <button onclick="navigateToUpload()" class="action-card">
-                                <span class="action-icon">📥</span>
-                                <span class="action-label">Upload CSV</span>
-                            </button>
-                            <button onclick="openReportsModal()" class="action-card">
-                                <span class="action-icon">📊</span>
-                                <span class="action-label">View Reports</span>
-                            </button>
-                            <button onclick="exportDataQuick()" class="action-card">
-                                <span class="action-icon">⚡</span>
-                                <span class="action-label">Export Excel</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="dashboard-activity">
-                        <h3>Recent Activity</h3>
-                        <div id="activityList" class="activity-list"></div>
-                    </div>
-                </div>
-            </section>
-
             <!-- Step 1: Upload Zone -->
             <section id="uploadSection" class="section active">
                 <div class="upload-container">
@@ -147,38 +84,6 @@
                         <p class="upload-subtitle">or click to browse</p>
                         <p class="upload-hint">Supports CSV bank statement files</p>
                         <input type="file" id="fileInput" accept=".csv" hidden>
-                    </div>
-
-                    <!-- Recent File Area (Hidden by default) -->
-                    <div id="recentFileArea" class="recent-file-container" style="display: none;">
-                        <div class="recent-header">
-                            <span>Previously Opened</span>
-                        </div>
-                        <div class="recent-file-card" id="restoreSessionBtn">
-                            <div class="recent-file-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                            </div>
-                            <div class="recent-file-info">
-                                <h3 id="recentFileName">filename.csv</h3>
-                                <p id="recentFileTime">Last modified...</p>
-                            </div>
-                            <div class="recent-file-action">
-                                <div class="recent-action-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M2 12h10"></path>
-                                        <path d="M9 5l7 7-7 7"></path>
-                                        <path d="M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5"></path>
-                                    </svg>
-                                    Restore
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="upload-info">
@@ -232,7 +137,7 @@
                                     <path d="M2 17l10 5 10-5"></path>
                                     <path d="M2 12l10 5 10-5"></path>
                                 </svg>
-                                ? AI Re-think
+                                ✨ AI Re-think
                             </button>
                             <button id="exportBtn" class="btn-primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -330,7 +235,7 @@
 
                 <!-- Bank Reconciliation Panel -->
                 <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>?? Bank Reconciliation</h3>
+                    <h3>🏦 Bank Reconciliation</h3>
                     <div class="reconciliation-grid">
                         <div class="reconciliation-section">
                             <h4>Opening Balance</h4>
@@ -378,163 +283,111 @@
                                 <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
                             </div>
                             <div class="status-indicator" id="statusIndicator">
-                                <span class="status-icon">?</span>
+                                <span class="status-icon">⚪</span>
                                 <span class="status-text">Enter expected balances</span>
                             </div>
                         </div>
                     </div>
                 </div>
-    </div>
-    </div>
+            </section>
+        </main>
 
-    <!-- Bulk Indexing Info Panel -->
-    <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
-        <h3>?? Bulk Dictionary Indexing</h3>
-        <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
-            system will:</p>
-        <ul>
-            <li>Extract vendor names from all transactions</li>
-            <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
-            <li>Consolidate duplicate vendors</li>
-            <li>Learn account mappings from your historical data</li>
-        </ul>
-        <div class="bulk-upload-zone" id="bulkUploadZone">
-            <p>Drop multiple CSV files here or click to browse</p>
-            <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
-        </div>
-        <div id="bulkProgress" style="display: none;">
-            <p id="bulkProgressText">Processing files...</p>
-            <div class="progress-bar">
-                <div class="progress-fill" id="bulkProgressFill"></div>
-            </div>
-        </div>
-        <div id="bulkResults" style="display: none;"></div>
-    </div>
-
-    <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
-    </div>
-    </div>
-    </div>
-
-    <!-- Accounts Modal -->
-    <div id="accountsModal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h2>Chart of Accounts</h2>
-                <button class="modal-close" id="closeAccountsModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="accounts-info">
-                    <p>Standard chart of accounts loaded. You can search and filter below.</p>
+        <!-- Vendor Dictionary Modal -->
+        <div id="vendorModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Vendor Dictionary</h2>
+                    <button class="modal-close" id="closeVendorModal">&times;</button>
                 </div>
-                <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Vendor Management Modal -->
-    <div id="vendorModal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h2>📚 Vendor Dictionary</h2>
-                <button class="modal-close" id="closeVendorModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- Action Buttons -->
-                <div class="vendor-actions"
-                    style="margin-bottom: 2rem; display: flex; gap: 0.5rem; justify-content: center;">
-                    <button id="addVendorBtn" class="btn-primary">+ Add Vendor</button>
-                    <button id="rethinkVendorsBtn" class="btn-secondary">AI Re-think</button>
-                </div>
-
-                <!-- Drop Bucket Area (1x2 grid size) -->
-                <div class="upload-zone" id="vendorDropZone"
-                    style="margin: 0 auto 1.5rem auto; text-align: center; max-width: 50%;">
-                    <div class="upload-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            style="width: 48px; height: 48px; margin: 0 auto;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
+                <div class="modal-body">
+                    <div class="vendor-controls">
+                        <button id="addVendorBtn" class="btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                Bulk Index
+                        </button>
+                        <button id="importDictBtn" class="btn-secondary">Import</button>
+                        <button id="exportDictBtn" class="btn-secondary">Export</button>
                     </div>
-                    <h3 style="margin: 0.5rem 0;">Vendor Re-indexing</h3>
-                    <p class="upload-subtitle">Drop files or click to browse</p>
-                    <p class="upload-hint">CSV/JSON files</p>
-                    <input type="file" id="vendorDropInput" accept=".csv,.json" multiple hidden>
-                </div>
 
-                <!-- Vendor Grid -->
-                <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px;"></div>
+                    <!-- Bulk Indexing Info Panel -->
+                    <div id="bulkIndexInfo" class="bulk-index-info" style="display: none;">
+                        <h3>📚 Bulk Dictionary Indexing</h3>
+                        <p>Upload previously allocated CSV files to automatically build your vendor dictionary. The
+                            system will:</p>
+                        <ul>
+                            <li>Extract vendor names from all transactions</li>
+                            <li>Clean up variations and remove garbage (IDs, transaction codes)</li>
+                            <li>Consolidate duplicate vendors</li>
+                            <li>Learn account mappings from your historical data</li>
+                        </ul>
+                        <div class="bulk-upload-zone" id="bulkUploadZone">
+                            <p>Drop multiple CSV files here or click to browse</p>
+                            <input type="file" id="bulkFileInput" accept=".csv" multiple hidden>
+                        </div>
+                        <div id="bulkProgress" style="display: none;">
+                            <p id="bulkProgressText">Processing files...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="bulkProgressFill"></div>
+                            </div>
+                        </div>
+                        <div id="bulkResults" style="display: none;"></div>
+                    </div>
+
+                    <div id="vendorGrid" class="ag-theme-alpine" style="height: 400px;"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Vendor Import Modal -->
-    <div id="vendorImportModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📥 Import Vendor Dictionary</h2>
-                <button class="modal-close" id="closeVendorImportModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="upload-zone" id="vendorImportZone">
-                    <div class="upload-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                    </div>
-                    <h2>Drop vendor files here</h2>
-                    <p class="upload-subtitle">or click to browse</p>
-                    <p class="upload-hint">Supports CSV and JSON files (single or multiple)</p>
-                    <input type="file" id="vendorImportInput" accept=".csv,.json" multiple hidden>
+        <!-- Accounts Modal -->
+        <div id="accountsModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Chart of Accounts</h2>
+                    <button class="modal-close" id="closeAccountsModal">&times;</button>
                 </div>
-                <div id="vendorImportProgress" style="display: none; margin-top: 1rem;">
-                    <p id="vendorImportProgressText">Processing files...</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="vendorImportProgressFill"></div>
+                <div class="modal-body">
+                    <div class="accounts-info">
+                        <p>Standard chart of accounts loaded. You can search and filter below.</p>
+                    </div>
+                    <div id="accountsGrid" class="ag-theme-alpine" style="height: 600px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Options Modal -->
+        <div id="exportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Export Options</h2>
+                    <button class="modal-close" id="closeExportModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="export-description">Choose your export format:</p>
+                    <div class="export-options">
+                        <button class="export-option-card" data-format="quickbooks">
+                            <div class="export-icon">📗</div>
+                            <h3>QuickBooks</h3>
+                            <p>IIF format for QuickBooks Desktop import</p>
+                        </button>
+                        <button class="export-option-card" data-format="caseware">
+                            <div class="export-icon">📘</div>
+                            <h3>CASEWARE</h3>
+                            <p>Trial balance format for CASEWARE</p>
+                        </button>
+                        <button class="export-option-card" data-format="general">
+                            <div class="export-icon">📊</div>
+                            <h3>General Ledger</h3>
+                            <p>Detailed transaction listing with all fields</p>
+                        </button>
                     </div>
                 </div>
-                <div id="vendorImportResults" style="display: none; margin-top: 1rem;"></div>
             </div>
         </div>
-    </div>
-
-    <!-- Export Options Modal -->
-    <div id="exportModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Export Options</h2>
-                <button class="modal-close" id="closeExportModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="export-description">Choose your export format:</p>
-                <div class="export-options">
-                    <button class="export-option-card" data-format="quickbooks">
-                        <div class="export-icon">??</div>
-                        <h3>QuickBooks</h3>
-                        <p>IIF format for QuickBooks Desktop import</p>
-                    </button>
-                    <button class="export-option-card" data-format="caseware">
-                        <div class="export-icon">??</div>
-                        <h3>CASEWARE</h3>
-                        <p>Trial balance format for CASEWARE</p>
-                    </button>
-                    <button class="export-option-card" data-format="general">
-                        <div class="export-icon">??</div>
-                        <h3>General Ledger</h3>
-                        <p>Detailed transaction listing with all fields</p>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     </div>
 
     <!-- Settings Modal -->
-    <!-- Settings Modal - Refactored for modularity and consistency -->
     <div id="settingsModal" class="modal">
         <div class="modal-content modal-large settings-modal">
             <div class="modal-header">
@@ -547,26 +400,25 @@
                     <button class="settings-tab active" data-tab="appearance">Appearance</button>
                     <button class="settings-tab" data-tab="company">Company</button>
                     <button class="settings-tab" data-tab="data">Data</button>
-                    <!-- Future tab placeholders (hidden until ready) -->
-                    <!-- <button class="settings-tab" data-tab="advanced" style="display:none;">Advanced</button> -->
                 </div>
 
-                <!-- Appearance Tab -->
+                <!-- Appearance Settings -->
                 <div class="settings-panel active" data-panel="appearance">
+
                     <div class="settings-section">
                         <label class="settings-label">Color Theme</label>
                         <div class="theme-radio-group">
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="cyber-night" checked>
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌙</span>
+                                    <span class="theme-icon">🌃</span>
                                     <span class="theme-name">Cyber Night</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="arctic-dawn">
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌅</span>
+                                    <span class="theme-icon">❄️</span>
                                     <span class="theme-name">Arctic Dawn</span>
                                 </div>
                             </label>
@@ -587,7 +439,7 @@
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="sunset-horizon">
                                 <div class="theme-content">
-                                    <span class="theme-icon">🌇</span>
+                                    <span class="theme-icon">🌅</span>
                                     <span class="theme-name">Sunset Horizon</span>
                                 </div>
                             </label>
@@ -600,9 +452,44 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- Grid Settings Panel -->
+                    <div class="settings-panel" data-panel="grid">
+                        <h3>📊 Grid Settings</h3>
+
+                        <div class="settings-section">
+                            <label class="settings-label">Color Scheme</label>
+                            <select id="gridColorScheme" class="settings-select">
+                                <option value="rainbow">🌈 Rainbow - Pastel colors</option>
+                                <option value="classic">📋 Classic - White/gray alternating</option>
+                                <option value="default">⚪ Default - Grid default</option>
+                                <option value="ledger">📗 Ledger Pad - Green accounting paper</option>
+                                <option value="postit">📝 Post-it Note - Yellow sticky notes</option>
+                                <option value="pastel">🎨 Pastel - Soft alternating</option>
+                                <option value="professional">💼 Professional - Corporate blue/white</option>
+                                <option value="highcontrast">🔲 High Contrast - Strong borders</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-section">
+                            <label class="settings-label">Font Family</label>
+                            <select id="gridFontFamily" class="settings-select">
+                                <option value="Arial">Arial</option>
+                                <option value="'Times New Roman'">Times New Roman</option>
+                                <option value="'Courier New'">Courier New</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="'Segoe UI'">Segoe UI</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-section">
+                            <label class="settings-label">Font Size: <span id="fontSizeValue">12px</span></label>
+                            <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Company Tab -->
                 <div class="settings-panel" data-panel="company">
                     <div class="settings-section">
                         <label class="settings-label">Company Name</label>
@@ -617,27 +504,25 @@
                         <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
                     </div>
                 </div>
+            </div>
 
-
-                <!-- Data Tab -->
-                <div class="settings-panel" data-panel="data">
-                    <div class="settings-section">
-                        <label class="settings-label">Vendor Management</label>
-                        <button id="settingsVendorDictBtn" class="settings-btn settings-btn-secondary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                style="width: 20px; height: 20px;">
+            <div class="settings-panel" data-panel="data">
+                <div class="settings-section">
+                    <div class="button-group">
+                        <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
                                 <path d="M12 6v6l4 2" />
                             </svg>
                             Manage Vendor Dictionary
                         </button>
                     </div>
+                </div>
 
-                    <div class="settings-section">
-                        <label class="settings-label">Chart of Accounts</label>
-                        <button id="settingsAccountsBtn" class="settings-btn settings-btn-secondary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                style="width: 20px; height: 20px;">
+                <div class="settings-section">
+                    <div class="button-group">
+                        <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2" />
                                 <path d="M3 9h18" />
                                 <path d="M9 21V9" />
@@ -645,52 +530,18 @@
                             View Chart of Accounts
                         </button>
                     </div>
-
-                    <!-- Future sections (hidden until ready) -->
-                    <!-- 
-                    <div class="settings-section" style="display:none;">
-                        <label class="settings-label">Import/Export</label>
-                        <button id="settingsImportBtn" class="settings-btn settings-btn-secondary">
-                            ?? Import Data
-                        </button>
-                        <button id="settingsExportBtn" class="settings-btn settings-btn-secondary">
-                            ?? Export Data
-                        </button>
-                    </div>
-                    -->
                 </div>
-
-                <!-- Advanced Tab (hidden for future) -->
-                <!-- 
-                <div class="settings-panel" data-panel="advanced" style="display:none;">
-                    <div class="settings-section">
-                        <label class="settings-label">Keyboard Shortcuts</label>
-                        <button id="showKeyboardShortcuts" class="settings-btn settings-btn-secondary">
-                            ?? View Keyboard Shortcuts
-                        </button>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <label class="settings-label">Backup & Restore</label>
-                        <button id="backupDataBtn" class="settings-btn settings-btn-secondary">
-                            ?? Backup All Data
-                        </button>
-                        <button id="restoreDataBtn" class="settings-btn settings-btn-secondary">
-                            ?? Restore from Backup
-                        </button>
-                    </div>
-                </div>
-                -->
             </div>
         </div>
     </div>
-
+    </div>
+    </div>
 
     <!-- Manage Accounts Modal -->
     <div id="manageAccountsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Manage Accounts</h2>
+                <h2>🏦 Manage Accounts</h2>
                 <button class="modal-close" id="closeManageAccountsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -763,9 +614,9 @@
     <div id="reportsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Financial Reports</h2>
+                <h2>📊 Financial Reports</h2>
                 <button class="export-pdf-btn" id="exportReportPDF">
-                    <span>??</span>
+                    <span>📄</span>
                     <span>Export PDF</span>
                 </button>
                 <button class="modal-close" id="closeReportsModal">&times;</button>
@@ -814,7 +665,6 @@
 
     <!-- Scripts -->
     <script src="models.js"></script>
-    <script src="default-vendors.js"></script>
     <script src="storage.js"></script>
     <script src="utils.js"></script>
     <script src="vendor-name-utils.js"></script>
@@ -830,73 +680,62 @@
     <script src="reconciliation.js"></script>
     <script src="reports-engine.js"></script>
     <script src="reports-modal.js"></script>
-    <script src="visual-report-builder.js"></script>
-    <script src="visual-report-builder-integration.js"></script>
-    <script src="account-manager-enhanced.js"></script>
-    <script src="settings-manager.js"></script>
-    <script src="theme-manager.js"></script>
-    <script src="theme-radio-handler.js"></script>
-    <script src="dashboard-stats.js"></script>
-    <script>
-        // Debug test - verify JavaScript works
-        console.log('?? TEST: JavaScript is executing!');
-        console.log('?? TEST: About to load app.js...');
-        <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
+    <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
+    </div>
+    </div>
+    </div>
+
+    <div class="settings-panel" data-panel="company">
+        <div class="settings-section">
+            <label class="settings-label">Company Name</label>
+            <input type="text" id="companyNameInput" class="settings-input" placeholder="Enter company name (optional)">
+            <p class="settings-hint">Will be displayed above Transaction Review</p>
         </div>
-    </div >
-    </div >
 
-            <div class="settings-panel" data-panel="company">
-                <div class="settings-section">
-                    <label class="settings-label">Company Name</label>
-                    <input type="text" id="companyNameInput" class="settings-input" placeholder="Enter company name (optional)">
-                        <p class="settings-hint">Will be displayed above Transaction Review</p>
-                </div>
+        <div class="settings-section">
+            <label class="settings-label">Fiscal Year-End Date</label>
+            <input type="date" id="yearEndDate" class="settings-input">
+            <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
+        </div>
+    </div>
+    </div>
 
-                <div class="settings-section">
-                    <label class="settings-label">Fiscal Year-End Date</label>
-                    <input type="date" id="yearEndDate" class="settings-input">
-                        <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
-                </div>
+    <div class="settings-panel" data-panel="data">
+        <div class="settings-section">
+            <div class="button-group">
+                <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+                        <path d="M12 6v6l4 2" />
+                    </svg>
+                    Manage Vendor Dictionary
+                </button>
             </div>
-    </div >
+        </div>
 
-            <div class="settings-panel" data-panel="data">
-                <div class="settings-section">
-                    <div class="button-group">
-                        <button id="settingsVendorDictBtn" class="btn-secondary full-width">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
-                                <path d="M12 6v6l4 2" />
-                            </svg>
-                            Manage Vendor Dictionary
-                        </button>
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <div class="button-group">
-                        <button id="settingsAccountsBtn" class="btn-secondary full-width">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <path d="M3 9h18" />
-                                <path d="M9 21V9" />
-                            </svg>
-                            View Chart of Accounts
-                        </button>
-                    </div>
-                </div>
+        <div class="settings-section">
+            <div class="button-group">
+                <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18" />
+                        <path d="M9 21V9" />
+                    </svg>
+                    View Chart of Accounts
+                </button>
             </div>
-    </div >
-    </div >
-    </div >
-    </div >
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
 
     <!-- Manage Accounts Modal -->
     <div id="manageAccountsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Manage Accounts</h2>
+                <h2>🏦 Manage Accounts</h2>
                 <button class="modal-close" id="closeManageAccountsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -917,7 +756,7 @@
         </div>
     </div>
 
-    <!--Add / Edit Account Modal-- >
+    <!-- Add/Edit Account Modal -->
     <div id="accountFormModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -965,65 +804,61 @@
         </div>
     </div>
 
-
-    <!--OLD REPORTS MODAL(BACKUP - Replaced by Visual Report Builder)-- >
-    < !--
-    < div id = "reportsModal_OLD" class="modal" >
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2>?? Financial Reports</h2>
-                    <button class="export-pdf-btn" id="exportReportPDF">
-                        <span>??</span>
-                        <span>Export PDF</span>
-                    </button>
-                    <button class="modal-close" id="closeReportsModal">&times;</button>
+    <!-- Reports Modal -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📊 Financial Reports</h2>
+                <button class="export-pdf-btn" id="exportReportPDF">
+                    <span>📄</span>
+                    <span>Export PDF</span>
+                </button>
+                <button class="modal-close" id="closeReportsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Report Tabs -->
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-report="income">Income Statement</button>
+                    <button class="settings-tab" data-report="balance">Balance Sheet</button>
+                    <button class="settings-tab" data-report="trial">Trial Balance</button>
                 </div>
-                <div class="modal-body">
-                    <div class="settings-tabs">
-                        <button class="settings-tab active" data-report="income">Income Statement</button>
-                        <button class="settings-tab" data-report="balance">Balance Sheet</button>
-                        <button class="settings-tab" data-report="trial">Trial Balance</button>
-                    </div>
 
-                    <div class="report-controls"
-                        style="margin: 1rem 0; padding: 1rem; background: var(--panel-bg); border-radius: 8px;">
-                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                            <div>
-                                <label
-                                    style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Period:</label>
-                                <select id="reportPeriod" class="settings-select" style="padding: 0.5rem;">
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="yearly" selected>Yearly</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">End
-                                    Date:</label>
-                                <input type="date" id="reportEndDate" class="settings-input"
-                                    style="padding: 0.5rem; width: auto;">
-                            </div>
-                            <button id="generateReportBtn" class="btn-primary">Generate Report</button>
+                <!-- Period Selector -->
+                <div class="report-controls"
+                    style="margin: 1rem 0; padding: 1rem; background: var(--panel-bg); border-radius: 8px;">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <label
+                                style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Period:</label>
+                            <select id="reportPeriod" class="settings-select" style="padding: 0.5rem;">
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="yearly" selected>Yearly</option>
+                            </select>
                         </div>
+                        <div>
+                            <label style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">End
+                                Date:</label>
+                            <input type="date" id="reportEndDate" class="settings-input"
+                                style="padding: 0.5rem; width: auto;">
+                        </div>
+                        <button id="generateReportBtn" class="btn-primary">Generate Report</button>
                     </div>
+                </div>
 
-                    <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
-                        <div class="report-placeholder"
-                            style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                            <p>Select a period and click "Generate Report" to view financial data</p>
-                        </div>
+                <!-- Report Display Area -->
+                <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
+                    <div class="report-placeholder"
+                        style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        <p>Select a period and click "Generate Report" to view financial data</p>
                     </div>
                 </div>
             </div>
-    </div >
-            -->
-    < !--END OLD REPORTS MODAL BACKUP-- >
-            </div >
-        </div >
-    </div >
+        </div>
+    </div>
 
-    < !--Scripts -->
-            <script src="models.js"></script>
+    <!-- Scripts -->
+    <script src="models.js"></script>
     <script src="storage.js"></script>
     <script src="utils.js"></script>
     <script src="vendor-name-utils.js"></script>
@@ -1032,10 +867,20 @@
     <script src="account-allocator.js"></script>
     <script src="excel-exporter.js"></script>
     <script src="bulk-indexer.js"></script>
-    <script src="vendor-indexer.js"></script>
     <script src="transaction-grid.js"></script>
     <script src="vendor-ai.js"></script>
     <script src="vendor-manager.js"></script>
+    <script src="account-chart.js"></script>
+    <script src="reconciliation.js"></script>
+    <script src="reports-engine.js"></script>
+    <script src="reports-modal.js"></script>
+    <script src="settings-manager.js"></script>
+    <script src="theme-manager.js"></script>
+    <script src="theme-radio-handler.js"></script>
+    <script>
+        // Debug test - verify JavaScript works
+        console.log('🔍 TEST: JavaScript is executing!');
+        console.log('🔍 TEST: About to load app.js...');
     </script>
     <script src="session-manager.js"></script>
     <script src="undo-manager.js"></script>

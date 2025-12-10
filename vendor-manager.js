@@ -29,87 +29,6 @@ const VendorManager = {
             });
         }
 
-        // Vendor Indexing button - directly trigger file selection
-        const vendorIndexBtn = document.getElementById('vendorIndexBtn');
-        const vendorIndexInput = document.getElementById('vendorIndexInput');
-
-        if (vendorIndexBtn && vendorIndexInput) {
-            vendorIndexBtn.addEventListener('click', () => {
-                vendorIndexInput.click();
-            });
-
-            vendorIndexInput.addEventListener('change', async (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length === 0) return;
-
-                try {
-                    console.log(`📥 Processing ${files.length} CSV file(s) for vendor indexing...`);
-
-                    // Use VendorIndexer if available
-                    if (typeof VendorIndexer !== 'undefined') {
-                        const consolidated = await VendorIndexer.indexFromFiles(files);
-                        const results = await VendorIndexer.applyToVendorMatcher(consolidated);
-
-                        // Reload grid
-                        VendorGrid.loadVendors();
-
-                        alert(`✅ Vendor Indexing Complete!\n\n` +
-                            `✓ ${results.added} new vendors added\n` +
-                            `✓ ${results.updated} existing vendors updated\n` +
-                            `✓ Total vendors: ${VendorMatcher.getAllVendors().length}`);
-                    } else {
-                        alert('VendorIndexer module not loaded');
-                    }
-                } catch (error) {
-                    console.error('Vendor indexing error:', error);
-                    alert('Error indexing vendors: ' + error.message);
-                }
-
-                // Reset input
-                vendorIndexInput.value = '';
-            });
-        }
-
-        // Save to File button
-        const saveVendorFileBtn = document.getElementById('saveVendorFileBtn');
-        if (saveVendorFileBtn) {
-            saveVendorFileBtn.addEventListener('click', () => {
-                const count = Storage.exportVendorDictionary();
-                const notice = document.getElementById('gitBackupNotice');
-                if (notice) {
-                    notice.style.display = 'block';
-                    setTimeout(() => notice.style.display = 'none', 10000);
-                }
-                alert(`✅ Saved ${count} vendors to vendor-dictionary.json\n\n💡 Don't forget to:\n1. Move file to your project directory\n2. git add vendor-dictionary.json\n3. git commit -m "Update vendor dictionary"`);
-            });
-        }
-
-        // Load from File button
-        const loadVendorFileBtn = document.getElementById('loadVendorFileBtn');
-        const loadVendorFileInput = document.getElementById('loadVendorFileInput');
-
-        if (loadVendorFileBtn && loadVendorFileInput) {
-            loadVendorFileBtn.addEventListener('click', () => {
-                loadVendorFileInput.click();
-            });
-
-            loadVendorFileInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                try {
-                    const vendors = await Storage.importVendorDictionary(file);
-                    VendorMatcher.vendors = vendors;
-                    VendorGrid.loadVendors();
-                    alert(`✅ Loaded ${vendors.length} vendors from ${file.name}`);
-                } catch (error) {
-                    alert('❌ Error loading vendor dictionary: ' + error.message);
-                }
-
-                loadVendorFileInput.value = '';
-            });
-        }
-
         const addVendorBtn = document.getElementById('addVendorBtn');
         if (addVendorBtn) {
             addVendorBtn.addEventListener('click', () => {
@@ -128,6 +47,20 @@ const VendorManager = {
         if (bulkIndexBtn) {
             bulkIndexBtn.addEventListener('click', () => {
                 this.toggleBulkIndex();
+            });
+        }
+
+        const exportDictBtn = document.getElementById('exportDictBtn');
+        if (exportDictBtn) {
+            exportDictBtn.addEventListener('click', () => {
+                VendorMatcher.exportVendors();
+            });
+        }
+
+        const importDictBtn = document.getElementById('importDictBtn');
+        if (importDictBtn) {
+            importDictBtn.addEventListener('click', () => {
+                this.showImportDialog();
             });
         }
 
