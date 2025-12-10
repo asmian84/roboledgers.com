@@ -498,11 +498,6 @@
                             <option value="'Segoe UI'">Segoe UI</option>
                         </select>
                     </div>
-
-                    <div class="settings-section">
-                        <label class="settings-label">Font Size: <span id="fontSizeValue">12px</span></label>
-                        <input type="range" id="gridFontSize" min="10" max="16" value="12" class="settings-slider">
-                    </div>
                 </div>
             </div>
 
@@ -541,6 +536,27 @@
                         View Chart of Accounts
                     </button>
                 </div>
+            </div>
+
+            <div class="settings-section" style="margin-top: 1.5rem;">
+                <h4 style="margin-bottom: 0.75rem;">Export Data</h4>
+                <div class="button-group">
+                    <button id="exportDataBtn" class="btn-secondary full-width">
+                        Export All Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-section" style="margin-top: 1.5rem;">
+                <h4 style="margin-bottom: 0.75rem; color: var(--danger);">⚠️ Danger Zone</h4>
+                <div class="button-group">
+                    <button id="clearDataBtn" class="btn-danger full-width">
+                        Clear All Data
+                    </button>
+                </div>
+                <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                    This will permanently delete all transactions, vendors, and settings.
+                </p>
             </div>
         </div>
     </div>
