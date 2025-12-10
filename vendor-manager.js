@@ -108,15 +108,29 @@ const VendorManager = {
 
                                 if (transactions && transactions.length > 0) {
                                     // Extract unique vendors from transactions
+                                    console.log(`🔍 Processing ${transactions.length} transactions for vendors...`);
+                                    console.log('   First transaction sample:', transactions[0]);
+
                                     const vendorNames = new Set();
-                                    transactions.forEach(tx => {
-                                        if (tx.payee || tx.description) {
-                                            const vendorName = VendorNameUtils.extractVendorName(tx.payee || tx.description);
-                                            if (vendorName) {
+                                    transactions.forEach((tx, index) => {
+                                        // Debug first 3 transactions
+                                        if (index < 3) console.log(`   Rx ${index}: Payee="${tx.payee}", Desc="${tx.description}"`);
+
+                                        const rawName = tx.payee || tx.description || tx.vendor || '';
+
+                                        if (rawName) {
+                                            const vendorName = VendorNameUtils.extractVendorName(rawName);
+
+                                            // Debug name extraction
+                                            if (index < 3) console.log(`      -> Extracted: "${vendorName}"`);
+
+                                            if (vendorName && vendorName.length >= 2) {
                                                 vendorNames.add(vendorName);
                                             }
                                         }
                                     });
+
+                                    console.log(`✅ Found ${vendorNames.size} unique potential vendors`);
 
                                     // Add vendors to dictionary
                                     vendorNames.forEach(name => {
