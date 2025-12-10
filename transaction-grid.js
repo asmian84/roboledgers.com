@@ -831,10 +831,18 @@ const VendorGrid = {
 
         return [
             {
+                headerName: 'Description',
+                field: 'name',
+                width: 300,
+                pinned: 'left',
+                editable: false,
+                sortable: true,
+                filter: true
+            },
+            {
                 headerName: 'Account #',
                 field: 'defaultAccount',
-                width: 250,
-                pinned: 'left',
+                width: 300,
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
@@ -855,12 +863,17 @@ const VendorGrid = {
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
-                headerName: 'Description',
-                field: 'name',
-                width: 300,
-                editable: false,
+                headerName: 'Category',
+                field: 'category',
+                width: 200,
+                editable: true,
+                cellEditor: 'agSelectCellEditor',
+                cellEditorParams: {
+                    values: categoryOptions
+                },
                 sortable: true,
-                filter: true
+                filter: true,
+                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
                 headerName: '# of instances',
