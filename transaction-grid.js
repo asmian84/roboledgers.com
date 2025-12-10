@@ -772,15 +772,38 @@ const VendorGrid = {
 
         const gridOptions = {
             columnDefs: this.getColumnDefs(),
+            rowData: [],
             defaultColDef: {
                 sortable: true,
                 filter: true,
                 resizable: true,
                 editable: true
             },
-            rowData: [],
             animateRows: true,
-            onCellValueChanged: this.onCellValueChanged.bind(this),
+            onCellValueChanged: (event) => {
+                const vendor = event.data;
+                const field = event.colDef.field;
+
+                // Two-way sync: Account # ↔ Category
+                if (field === 'defaultAccount') {
+                    // Account changed → Update category based on account
+                    const account = AccountAllocator.getAllAccounts().find(a => a.code === vendor.defaultAccount);
+                    if (account) {
+                        vendor.category = this.getCategoryFromAccount(account.code, account.name);
+                        event.api.refreshCells({ rowNodes: [event.node], force: true });
+                    }
+                } else if (field === 'category') {
+                    // Category changed → Update account based on category
+                    const suggestedAccount = this.getAccountFromCategory(vendor.category);
+                    if (suggestedAccount) {
+                        vendor.defaultAccount = suggestedAccount;
+                        event.api.refreshCells({ rowNodes: [event.node], force: true });
+                    }
+                }
+
+                // Save vendor changes
+                VendorMatcher.updateVendor(vendor);
+            },
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.loadVendors();
