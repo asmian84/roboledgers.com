@@ -842,19 +842,18 @@ const VendorGrid = {
             {
                 headerName: 'Account #',
                 field: 'defaultAccount',
-                width: 300,
+                width: 120,
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
-                    values: accountOptions
+                    values: accountOptions  // Dropdown still shows "CODE - NAME"
                 },
                 valueFormatter: (params) => {
-                    if (!params.value) return '9970';
-                    const account = accounts.find(a => a.code === params.value);
-                    return account ? `${account.code} - ${account.name}` : params.value;
+                    // Display ONLY the code, not the name
+                    return params.value || '9970';
                 },
                 valueParser: (params) => {
-                    // Extract code from "CODE - NAME" format
+                    // Extract code from "CODE - NAME" format when selected from dropdown
                     const match = params.newValue.match(/^(\d+)/);
                     return match ? match[1] : params.newValue;
                 },
