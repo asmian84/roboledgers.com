@@ -782,6 +782,7 @@ const VendorGrid = {
             // Pagination settings
             pagination: true,
             paginationPageSize: 1000,
+            paginationPageSizeSelector: [100, 500, 1000, 5000],
             paginationAutoPageSize: false,
             suppressPaginationPanel: false, // Show controls
 

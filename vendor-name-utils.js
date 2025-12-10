@@ -1,6 +1,8 @@
 // Enhanced vendor name utilities
 
-const VendorNameUtils = {
+// Enhanced vendor name utilities
+
+window.VendorNameUtils = {
     // Extract clean vendor name from payee with intelligent garbage removal
     extractVendorName(payee) {
         if (!payee) return '';

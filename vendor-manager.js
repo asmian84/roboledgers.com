@@ -1,6 +1,9 @@
 // Vendor Manager UI Controller with Bulk Indexing
 
-const VendorManager = {
+// Vendor Manager UI Controller with Bulk Indexing
+
+console.log('🔄 Loading VendorManager (New Version)...');
+window.VendorManager = {
     modal: null,
     bulkIndexActive: false,
 
