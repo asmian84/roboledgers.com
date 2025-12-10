@@ -1,6 +1,8 @@
 // Account Allocation Engine
 
-const AccountAllocator = {
+// Account Allocator
+
+window.AccountAllocator = {
     accounts: [],
 
     initialize() {

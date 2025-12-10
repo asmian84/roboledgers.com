@@ -764,7 +764,7 @@ const TransactionGrid = {
 };
 
 // Vendor Dictionary Grid
-const VendorGrid = {
+window.VendorGrid = {
     gridApi: null,
 
     initialize(containerId) {

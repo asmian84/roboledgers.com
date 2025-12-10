@@ -1,6 +1,8 @@
 // Vendor Matching Engine
 
-const VendorMatcher = {
+// Vendor Matching Engine
+
+window.VendorMatcher = {
     vendors: [],
 
     initialize() {
