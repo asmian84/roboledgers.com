@@ -350,6 +350,9 @@ body {
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
+    overflow-y: auto;
+    max-height: calc(100vh - 70px);
+    /* Account for header height */
 }
 
 .section {
