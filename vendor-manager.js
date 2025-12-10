@@ -137,7 +137,7 @@ window.VendorManager = {
 
                                     // Add vendors to dictionary
                                     vendorNames.forEach(name => {
-                                        const existing = VendorMatcher.findVendor(name);
+                                        const existing = VendorMatcher.getVendorByName(name);
                                         if (!existing) {
                                             VendorMatcher.addVendor({
                                                 name: name,
