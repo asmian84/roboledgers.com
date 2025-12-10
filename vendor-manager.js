@@ -111,7 +111,7 @@ const VendorManager = {
                                     const vendorNames = new Set();
                                     transactions.forEach(tx => {
                                         if (tx.payee || tx.description) {
-                                            const vendorName = VendorNameUtils.cleanVendorName(tx.payee || tx.description);
+                                            const vendorName = VendorNameUtils.extractVendorName(tx.payee || tx.description);
                                             if (vendorName) {
                                                 vendorNames.add(vendorName);
                                             }
