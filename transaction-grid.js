@@ -816,8 +816,8 @@ const VendorGrid = {
     getColumnDefs() {
         const accounts = AccountAllocator.getAllAccounts();
 
-        // Create account dropdown options as "CODE - NAME"
-        const accountOptions = accounts.map(a => `${a.code} - ${a.name}`);
+        // Account dropdown: ONLY codes (no names)
+        const accountCodes = accounts.map(a => a.code);
 
         // Derive unique categories from account names
         const categorySet = new Set();
@@ -846,16 +846,10 @@ const VendorGrid = {
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
-                    values: accountOptions  // Dropdown still shows "CODE - NAME"
+                    values: accountCodes  // ONLY numbers
                 },
                 valueFormatter: (params) => {
-                    // Display ONLY the code, not the name
                     return params.value || '9970';
-                },
-                valueParser: (params) => {
-                    // Extract code from "CODE - NAME" format when selected from dropdown
-                    const match = params.newValue.match(/^(\d+)/);
-                    return match ? match[1] : params.newValue;
                 },
                 sortable: true,
                 filter: true,
