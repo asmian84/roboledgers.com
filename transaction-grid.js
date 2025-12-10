@@ -847,9 +847,9 @@ const VendorGrid = {
                 editable: false,
                 cellRenderer: (params) => {
                     const btn = document.createElement('button');
-                    btn.className = 'btn-danger';
+                    btn.className = 'btn-secondary';
                     btn.innerHTML = '🗑️';
-                    btn.style.cssText = 'padding: 4px 12px; font-size: 14px; cursor: pointer; border: none; background: #ef4444; color: white; border-radius: 4px;';
+                    btn.style.cssText = 'padding: 4px 12px; font-size: 14px; cursor: pointer;';
                     btn.onclick = () => {
                         if (confirm(`Delete vendor "${params.data.name}"?`)) {
                             this.deleteVendor(params.data.id);

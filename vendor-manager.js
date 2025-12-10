@@ -50,17 +50,129 @@ const VendorManager = {
             });
         }
 
-        const exportDictBtn = document.getElementById('exportDictBtn');
-        if (exportDictBtn) {
-            exportDictBtn.addEventListener('click', () => {
-                VendorMatcher.exportVendors();
+        // Import Vendor Button - Toggle drop bucket
+        const importVendorBtn = document.getElementById('importVendorBtn');
+        const vendorImportDropZone = document.getElementById('vendorImportDropZone');
+        const vendorImportInput = document.getElementById('vendorImportInput');
+
+        if (importVendorBtn && vendorImportDropZone) {
+            importVendorBtn.addEventListener('click', () => {
+                // Toggle drop bucket visibility
+                if (vendorImportDropZone.style.display === 'none') {
+                    vendorImportDropZone.style.display = 'block';
+                } else {
+                    vendorImportDropZone.style.display = 'none';
+                }
             });
+
+            // Handle file selection and drag/drop
+            if (vendorImportInput) {
+                const handleFiles = async (files) => {
+                    if (files.length === 0) return;
+
+                    let totalVendorsAdded = 0;
+                    let totalVendorsUpdated = 0;
+
+                    for (const file of files) {
+                        try {
+                            const fileName = file.name.toLowerCase();
+
+                            if (fileName.endsWith('.csv') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                                // Parse transactions and extract vendors
+                                const transactions = await CSVParser.parseFile(file);
+
+                                if (transactions && transactions.length > 0) {
+                                    // Extract unique vendors from transactions
+                                    const vendorNames = new Set();
+                                    transactions.forEach(tx => {
+                                        if (tx.payee || tx.description) {
+                                            const vendorName = VendorNameUtils.cleanVendorName(tx.payee || tx.description);
+                                            if (vendorName) {
+                                                vendorNames.add(vendorName);
+                                            }
+                                        }
+                                    });
+
+                                    // Add vendors to dictionary
+                                    vendorNames.forEach(name => {
+                                        const existing = VendorMatcher.findVendor(name);
+                                        if (!existing) {
+                                            VendorMatcher.addVendor({
+                                                name: name,
+                                                defaultAccount: '9970',
+                                                category: 'General'
+                                            });
+                                            totalVendorsAdded++;
+                                        } else {
+                                            totalVendorsUpdated++;
+                                        }
+                                    });
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Failed to process ${file.name}:`, error);
+                        }
+                    }
+
+                    VendorMatcher.initialize();
+                    VendorGrid.loadVendors();
+
+                    vendorImportDropZone.style.display = 'none';
+                    alert(`\u2705 Vendor Indexing Complete!\n\n` +
+                        `${totalVendorsAdded} new vendors added\n` +
+                        `${totalVendorsUpdated} vendors already exist\n` +
+                        `Total: ${VendorMatcher.getAllVendors().length} vendors`);
+                };
+
+                vendorImportInput.onchange = (e) => handleFiles(Array.from(e.target.files));
+
+                const uploadZone = vendorImportDropZone.querySelector('.upload-zone');
+                if (uploadZone) {
+                    uploadZone.onclick = () => vendorImportInput.click();
+
+                    uploadZone.ondragover = (e) => {
+                        e.preventDefault();
+                        uploadZone.style.borderColor = 'var(--primary-color)';
+                        uploadZone.style.backgroundColor = 'var(--hover-bg)';
+                    };
+
+                    uploadZone.ondragleave = () => {
+                        uploadZone.style.borderColor = '';
+                        uploadZone.style.backgroundColor = '';
+                    };
+
+                    uploadZone.ondrop = (e) => {
+                        e.preventDefault();
+                        uploadZone.style.borderColor = '';
+                        uploadZone.style.backgroundColor = '';
+                        handleFiles(Array.from(e.dataTransfer.files));
+                    };
+                }
+            }
         }
 
-        const importDictBtn = document.getElementById('importDictBtn');
-        if (importDictBtn) {
-            importDictBtn.addEventListener('click', () => {
-                this.showImportDialog();
+        // Export Vendor Button
+        const exportVendorBtn = document.getElementById('exportVendorBtn');
+        if (exportVendorBtn) {
+            exportVendorBtn.addEventListener('click', () => {
+                const vendors = VendorMatcher.getAllVendors();
+
+                if (vendors.length === 0) {
+                    alert('No vendors to export');
+                    return;
+                }
+
+                const data = JSON.stringify(vendors, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const timestamp = new Date().toISOString().split('T')[0];
+                a.href = url;
+                a.download = `vendor-dictionary-${timestamp}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                console.log(`\u2705 Exported ${vendors.length} vendors`);
             });
         }
 
