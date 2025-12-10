@@ -55,9 +55,13 @@ const VendorManager = {
                     }, 100);
 
                     alert(`✨ AI Re-think Complete!\n\n` +
-                        `✅ Categorized: ${result.results.categorized} vendors\n` +
-                        `✅ Allocated: ${result.results.allocated} accounts\n` +
-                        `🔍 Similar vendors found: ${result.results.merged}`);
+                        `✅ Names normalized: ${result.results.normalized}\n` +
+                        `✅ Categories assigned: ${result.results.categorized}\n` +
+                        `✅ New accounts allocated: ${result.results.allocated}\n` +
+                        `✅ Existing accounts updated: ${result.results.overridden}\n` +
+                        `✅ Duplicates auto-merged: ${result.results.merged}\n` +
+                        `✅ Patterns generated: ${result.results.patterns}\n\n` +
+                        `🔍 Suggestions: ${result.results.suggestions.length}`);
                 } else {
                     alert(result.message);
                 }
