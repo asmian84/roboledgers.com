@@ -137,47 +137,120 @@ const VendorAI = {
         const name = vendorName.toLowerCase();
 
         // Account type influences suggestions
-        // Credit cards: favor expense accounts (8xxx)
-        // Income/Revenue accounts: favor 4xxx
         const isCreditCard = accountType === 'credit';
         const isIncome = accountType === 'savings' || accountType === 'investment';
 
-        if (category === 'Office Supplies' || name.includes('office')) {
-            return accounts.find(a => a.code === '7710');
-        }
-        if (category === 'Meals & Entertainment' || name.includes('restaurant') || name.includes('coffee')) {
-            return accounts.find(a => a.code === '8600');
-        }
-        if (category === 'Technology' || name.includes('software') || name.includes('tech')) {
-            return accounts.find(a => a.code === '7700');
-        }
-        if (category === 'Utilities' || name.includes('electric') || name.includes('internet')) {
-            return accounts.find(a => a.code === '8520');
-        }
-        if (category === 'Auto & Fuel' || name.includes('gas') || name.includes('fuel')) {
-            return accounts.find(a => a.code === '8610');
-        }
-        if (category === 'General Merchandise') {
-            return accounts.find(a => a.code === '7700');
-        }
-        if (category === 'Insurance' || name.includes('insurance')) {
-            return accounts.find(a => a.code === '8100');
-        }
-        if (category === 'Bank Fees' || name.includes('fee')) {
-            return accounts.find(a => a.code === '8390');
+        // Comprehensive account mapping based on keywords and categories
+        const accountMappings = [
+            // Revenue Accounts (4xxx)
+            { keywords: ['revenue', 'sales', 'income', 'client payment', 'invoice', 'billing'], code: '4000' },
+            { keywords: ['service revenue', 'consulting', 'professional service'], code: '4100' },
+            { keywords: ['product sales', 'merchandise', 'goods sold'], code: '4200' },
+            { keywords: ['interest income', 'dividend', 'investment income'], code: '4500' },
+
+            // Current Assets (1xxx)
+            { keywords: ['petty cash', 'cash on hand'], code: '1010' },
+            { keywords: ['bank', 'checking', 'chequing'], code: '1020' },
+            { keywords: ['savings account'], code: '1030' },
+            { keywords: ['accounts receivable', 'ar', 'receivables'], code: '1200' },
+            { keywords: ['inventory', 'stock'], code: '1300' },
+            { keywords: ['prepaid expense', 'prepaid'], code: '1400' },
+
+            // Fixed Assets (1xxx)
+            { keywords: ['equipment', 'machinery', 'furniture', 'fixtures'], code: '1600' },
+            { keywords: ['vehicle', 'car', 'truck', 'auto purchase'], code: '1620' },
+            { keywords: ['building', 'property', 'real estate'], code: '1640' },
+            { keywords: ['computer', 'laptop', 'hardware'], code: '1660' },
+
+            // Liabilities (2xxx)
+            { keywords: ['accounts payable', 'ap', 'payables'], code: '2000' },
+            { keywords: ['credit card', 'mastercard', 'visa', 'amex'], code: '2100' },
+            { keywords: ['loan', 'mortgage', 'line of credit'], code: '2300' },
+            { keywords: ['payroll tax', 'withholding', 'cpp', 'ei'], code: '2400' },
+
+            // Operating Expenses (7xxx)
+            { keywords: ['advertising', 'marketing', 'promotion', 'ads'], code: '7100' },
+            { keywords: ['bad debt', 'uncollectible'], code: '7200' },
+            { keywords: ['commission', 'referral fee'], code: '7300' },
+            { keywords: ['delivery', 'courier', 'shipping', 'freight'], code: '7400' },
+            { keywords: ['dues', 'membership', 'subscription', 'association'], code: '7500' },
+            { keywords: ['license', 'permit', 'registration'], code: '7600' },
+            { keywords: ['office supplies', 'stationery', 'supplies', 'staples', 'depot'], code: '7710' },
+            { keywords: ['computer supplies', 'software', 'tech', 'saas', 'cloud'], code: '7700' },
+            { keywords: ['postage', 'mail', 'stamp'], code: '7800' },
+            { keywords: ['rent', 'lease'], code: '7900' },
+
+            // Professional Expenses (8xxx)
+            { keywords: ['accounting', 'bookkeeping', 'accountant'], code: '8000' },
+            { keywords: ['legal', 'lawyer', 'attorney'], code: '8010' },
+            { keywords: ['consulting', 'consultant', 'advisor'], code: '8020' },
+            { keywords: ['insurance', 'liability insurance', 'policy'], code: '8100' },
+            { keywords: ['bank fee', 'service charge', 'transaction fee'], code: '8390' },
+            { keywords: ['interest expense', 'finance charge'], code: '8400' },
+            { keywords: ['depreciation'], code: '8500' },
+            { keywords: ['telephone', 'phone', 'mobile', 'cell'], code: '8510' },
+            { keywords: ['utilities', 'electric', 'gas', 'water', 'power', 'hydro'], code: '8520' },
+            { keywords: ['internet', 'wifi', 'broadband', 'isp'], code: '8530' },
+            { keywords: ['meals', 'restaurant', 'coffee', 'lunch', 'dinner', 'starbucks'], code: '8600' },
+            { keywords: ['entertainment', 'event', 'conference'], code: '8610' },
+            { keywords: ['fuel', 'gas', 'gasoline', 'diesel', 'shell', 'chevron'], code: '8620' },
+            { keywords: ['vehicle maintenance', 'auto repair', 'oil change', 'tire'], code: '8630' },
+            { keywords: ['parking', 'toll'], code: '8640' },
+            { keywords: ['training', 'education', 'course', 'seminar'], code: '8700' },
+            { keywords: ['travel', 'hotel', 'airfare', 'flight', 'accommodation'], code: '8710' },
+            { keywords: ['wages', 'salary', 'payroll'], code: '8800' },
+            { keywords: ['contract labor', 'contractor', 'freelancer'], code: '8810' },
+            { keywords: ['employee benefit', 'health insurance', 'dental'], code: '8820' },
+
+            // Other Expenses (9xxx)
+            { keywords: ['donation', 'charity', 'contribution'], code: '9100' },
+            { keywords: ['income tax', 'corporate tax'], code: '9200' },
+            { keywords: ['penalty', 'fine', 'late fee'], code: '9300' },
+            { keywords: ['miscellaneous', 'other', 'general'], code: '9970' }
+        ];
+
+        // Try to find best match based on vendor name and category
+        for (const mapping of accountMappings) {
+            for (const keyword of mapping.keywords) {
+                if (name.includes(keyword) || (category && category.toLowerCase().includes(keyword))) {
+                    const account = accounts.find(a => a.code === mapping.code);
+                    if (account) return account;
+                }
+            }
         }
 
-        // Check for income indicators
+        // Category-based fallback
+        if (category) {
+            const categoryMap = {
+                'Office Supplies': '7710',
+                'Meals & Entertainment': '8600',
+                'Technology': '7700',
+                'Utilities': '8520',
+                'Auto & Fuel': '8620',
+                'Insurance': '8100',
+                'Bank Fees': '8390',
+                'Professional Services': '8000',
+                'Travel': '8710'
+            };
+
+            if (categoryMap[category]) {
+                const account = accounts.find(a => a.code === categoryMap[category]);
+                if (account) return account;
+            }
+        }
+
+        // Income detection
         if (name.includes('payment') || name.includes('deposit') || name.includes('client') || name.includes('revenue')) {
             return accounts.find(a => a.code === '4000') || accounts.find(a => a.code === '4100');
         }
 
-        // For credit cards, default to expense accounts
+        // Credit card default
         if (isCreditCard) {
             return accounts.find(a => a.code === '8000') || accounts.find(a => a.code === '7700');
         }
 
-        return accounts.find(a => a.code === '7700');
+        // Final fallback
+        return accounts.find(a => a.code === '7700') || accounts.find(a => a.code === '9970');
     },
 
     findSimilarVendors(vendors) {
