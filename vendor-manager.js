@@ -38,8 +38,29 @@ const VendorManager = {
 
         const rethinkVendorsBtn = document.getElementById('rethinkVendorsBtn');
         if (rethinkVendorsBtn) {
-            rethinkVendorsBtn.addEventListener('click', () => {
-                this.rethinkVendors();
+            rethinkVendorsBtn.addEventListener('click', async () => {
+                const result = await VendorAI.rethinkVendors((msg, percent) => {
+                    console.log(`${percent}% - ${msg}`);
+                });
+
+                if (result.success) {
+                    // Force complete grid refresh
+                    VendorGrid.loadVendors();
+
+                    // Give grid moment to refresh, then force cell update
+                    setTimeout(() => {
+                        if (VendorGrid.gridApi) {
+                            VendorGrid.gridApi.refreshCells({ force: true });
+                        }
+                    }, 100);
+
+                    alert(`✨ AI Re-think Complete!\n\n` +
+                        `✅ Categorized: ${result.results.categorized} vendors\n` +
+                        `✅ Allocated: ${result.results.allocated} accounts\n` +
+                        `🔍 Similar vendors found: ${result.results.merged}`);
+                } else {
+                    alert(result.message);
+                }
             });
         }
 
