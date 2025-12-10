@@ -779,11 +779,15 @@ const VendorGrid = {
                 resizable: true,
                 editable: true
             },
+            // Pagination settings
+            pagination: true,
+            paginationPageSize: 1000,
+            paginationAutoPageSize: false,
+            suppressPaginationPanel: false, // Show controls
+
             animateRows: true,
             onCellValueChanged: (event) => {
                 const vendor = event.data;
-
-                // Just save vendor changes (no need for sync anymore)
                 VendorMatcher.updateVendor(vendor);
             },
             onGridReady: (params) => {
