@@ -782,26 +782,8 @@ const VendorGrid = {
             animateRows: true,
             onCellValueChanged: (event) => {
                 const vendor = event.data;
-                const field = event.colDef.field;
 
-                // Two-way sync: Account # ↔ Category
-                if (field === 'defaultAccount') {
-                    // Account changed → Update category based on account
-                    const account = AccountAllocator.getAllAccounts().find(a => a.code === vendor.defaultAccount);
-                    if (account) {
-                        vendor.category = this.getCategoryFromAccount(account.code, account.name);
-                        event.api.refreshCells({ rowNodes: [event.node], force: true });
-                    }
-                } else if (field === 'category') {
-                    // Category changed → Update account based on category
-                    const suggestedAccount = this.getAccountFromCategory(vendor.category);
-                    if (suggestedAccount) {
-                        vendor.defaultAccount = suggestedAccount;
-                        event.api.refreshCells({ rowNodes: [event.node], force: true });
-                    }
-                }
-
-                // Save vendor changes
+                // Just save vendor changes (no need for sync anymore)
                 VendorMatcher.updateVendor(vendor);
             },
             onGridReady: (params) => {
@@ -816,19 +798,6 @@ const VendorGrid = {
     getColumnDefs() {
         const accounts = AccountAllocator.getAllAccounts();
 
-        // Account dropdown: ONLY codes (no names)
-        const accountCodes = accounts.map(a => a.code);
-
-        // Derive unique categories from account names
-        const categorySet = new Set();
-        accounts.forEach(account => {
-            const category = this.getCategoryFromAccount(account.code, account.name);
-            if (category && category !== 'General') {
-                categorySet.add(category);
-            }
-        });
-        const categoryOptions = ['General', ...Array.from(categorySet).sort()];
-
         return [
             {
                 headerName: 'Description',
@@ -840,29 +809,26 @@ const VendorGrid = {
                 filter: true
             },
             {
-                headerName: 'Account #',
+                headerName: 'Account # - Category',
                 field: 'defaultAccount',
-                width: 120,
+                width: 350,
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
-                    values: accountCodes  // ONLY numbers
+                    values: accounts.map(a => `${a.code} - ${a.name}`)
                 },
                 valueFormatter: (params) => {
-                    return params.value || '9970';
+                    if (!params.value) return '9970 - Unusual item';
+                    const account = accounts.find(a => a.code === params.value);
+                    if (account) {
+                        return `${account.code} - ${account.name}`;
+                    }
+                    return params.value;
                 },
-                sortable: true,
-                filter: true,
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
-            },
-            {
-                headerName: 'Category',
-                field: 'category',
-                width: 200,
-                editable: true,
-                cellEditor: 'agSelectCellEditor',
-                cellEditorParams: {
-                    values: categoryOptions
+                valueParser: (params) => {
+                    // Extract code from "CODE - NAME" format
+                    const match = params.newValue.match(/^(\d+)/);
+                    return match ? match[1] : params.newValue;
                 },
                 sortable: true,
                 filter: true,
