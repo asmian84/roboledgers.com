@@ -815,39 +815,60 @@ const VendorGrid = {
 
     getColumnDefs() {
         const accounts = AccountAllocator.getAllAccounts();
-        const accountCodes = accounts.map(a => a.code);
+
+        // Create account dropdown options as "CODE - NAME"
+        const accountOptions = accounts.map(a => `${a.code} - ${a.name}`);
+
+        // Derive unique categories from account names
+        const categorySet = new Set();
+        accounts.forEach(account => {
+            const category = this.getCategoryFromAccount(account.code, account.name);
+            if (category && category !== 'General') {
+                categorySet.add(category);
+            }
+        });
+        const categoryOptions = ['General', ...Array.from(categorySet).sort()];
 
         return [
             {
                 headerName: 'Account #',
                 field: 'defaultAccount',
-                width: 120,
+                width: 250,
                 pinned: 'left',
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
-                    values: accountCodes
+                    values: accountOptions
+                },
+                valueFormatter: (params) => {
+                    if (!params.value) return '9970';
+                    const account = accounts.find(a => a.code === params.value);
+                    return account ? `${account.code} - ${account.name}` : params.value;
+                },
+                valueParser: (params) => {
+                    // Extract code from "CODE - NAME" format
+                    const match = params.newValue.match(/^(\d+)/);
+                    return match ? match[1] : params.newValue;
                 },
                 sortable: true,
                 filter: true,
-                valueFormatter: (params) => {
-                    return params.value || '9970';
-                },
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
                 headerName: 'Description',
                 field: 'name',
-                width: 350,
-                editable: true,
-                cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
+                width: 300,
+                editable: false,
+                sortable: true,
+                filter: true
             },
             {
                 headerName: '# of instances',
                 field: 'matchCount',
                 width: 130,
                 editable: false,
-                type: 'numericColumn',
+                sortable: true,
+                filter: true,
                 valueFormatter: (params) => {
                     return params.value || 0;
                 }
@@ -855,8 +876,14 @@ const VendorGrid = {
             {
                 headerName: 'Category',
                 field: 'category',
-                width: 180,
+                width: 200,
                 editable: true,
+                cellEditor: 'agSelectCellEditor',
+                cellEditorParams: {
+                    values: categoryOptions
+                },
+                sortable: true,
+                filter: true,
                 cellStyle: { background: 'rgba(99, 102, 241, 0.05)' }
             },
             {
