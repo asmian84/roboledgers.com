@@ -430,7 +430,6 @@ body {
     width: 48px;
     height: 48px;
     color: var(--primary-color);
-    animation: float 3s ease-in-out infinite;
 }
 
 @keyframes float {
