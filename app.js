@@ -450,6 +450,25 @@ const App = {
 
             // Show review section
             this.showSection('review');
+            // Update session
+            SessionManager.saveSession();
+
+            // FORCE GRID REFRESH - Push updated data to AG Grid
+            if (TransactionGrid.gridApi) {
+                console.log('🔄 Forcing grid refresh with updated transaction accounts...');
+
+                // Method 1: Update row data completely
+                TransactionGrid.gridApi.setRowData(this.transactions);
+
+                // Method 2: Force refresh all cells
+                TransactionGrid.gridApi.refreshCells({ force: true });
+
+                // Method 3: Redraw all rows
+                TransactionGrid.gridApi.redrawRows();
+
+                console.log('✅ Grid forcefully refreshed with categorized data');
+            }
+
             this.loadReviewSection();
 
             console.log('✅ File processing complete!');
