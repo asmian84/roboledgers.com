@@ -81,6 +81,8 @@ window.VendorAI = {
                 vendor.defaultAccount = suggestedAccount.code;
                 vendor.defaultAccountName = suggestedAccount.name;
 
+                console.log(`✅ VENDOR: "${vendor.name}" → ${suggestedAccount.code} (${suggestedAccount.name})`);
+
                 if (oldAccount && oldAccount !== '9970' && oldAccount !== suggestedAccount.code) {
                     results.overridden++;  // Track overrides
                 } else if (!oldAccount || oldAccount === '9970') {
