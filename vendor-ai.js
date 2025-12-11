@@ -344,7 +344,9 @@ window.VendorAI = {
 
         // PAY-FILE FEES → Bank Charges (7700)
         if (/pay[-\s]?file|file\s*fee/i.test(name)) {
+            console.log('✅ PAY-FILE pattern matched for:', vendorName);
             const account = accounts.find(a => a.code === '7700');
+            console.log('   Account lookup result:', account ? account.code + ' - ' + account.name : 'NOT FOUND');
             if (account) return account;
         }
 
