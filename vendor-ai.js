@@ -187,6 +187,10 @@ window.VendorAI = {
         const accounts = AccountAllocator.getAllAccounts();
         const name = vendorName.toLowerCase();
 
+        // DEBUG: Log vendor name being processed
+        console.log('🔍 suggestAccount called with:', vendorName, '| category:', category);
+
+
         // Account type influences suggestions
         const isCreditCard = accountType === 'credit';
         const isIncome = accountType === 'savings' || accountType === 'investment';
