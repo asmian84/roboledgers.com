@@ -328,14 +328,63 @@ window.VendorAI = {
             }
         }
 
-        // CRITICAL: Expense detection FIRST (most payments are expenses, not income)
-        // Loan payments
-        if (name.includes('loan payment') || name.includes('loan') || name.includes('principal') || name.includes('lien') || name.includes('ppsa') || name.includes('finance charge')) {
-            return accounts.find(a => a.code === '7700') || accounts.find(a => a.code === '9970');
+        // ========================================
+        // BUSINESS-SPECIFIC RULES (HIGHEST PRIORITY)
+        // ========================================
+
+        // LOAN PAYMENTS → Bank Loan Liability (2710)
+        if (name.includes('loan payment') || name.includes('loan credit')) {
+            return accounts.find(a => a.code === '2710');
         }
 
-        // Misc payments, fees, filings (almost always expenses)
-        if (name.includes('misc payment') || name.includes('payment *') || name.includes('pay-file') || name.includes('filing') || name.includes('registration')) {
+        // LOAN INTEREST → Interest & Bank Charges (7700)
+        if (name.includes('loan interest') || name.includes('interest on loan')) {
+            return accounts.find(a => a.code === '7700');
+        }
+
+        // MOBILE CHEQUE DEPOSIT → Sales Revenue (4001)
+        if (name.includes('mobile cheque deposit') || name.includes('mobile deposit')) {
+            return accounts.find(a => a.code === '4001');
+        }
+
+        // E-TRANSFER RECEIVED → Sales Revenue (4001)
+        if (name.includes('e-transfer received') || name.includes('e-transfer rcvd') ||
+            name.includes('interac received')) {
+            return accounts.find(a => a.code === '4001');
+        }
+
+        // E-TRANSFER SENT → Subcontractor (8950)
+        if (name.includes('e-transfer sent') || name.includes('e-transfer') ||
+            name.includes('interac transfer')) {
+            return accounts.find(a => a.code === '8950');
+        }
+
+        // ONLINE BANKING TRANSFER → Credit Card Payment (paying down liability)
+        if (name.includes('online banking transfer') || name.includes('online transfer')) {
+            return accounts.find(a => a.code === '2101'); // Visa payable
+        }
+
+        // LIEN SEARCH / PPSA → Dues & Memberships (6800)
+        if (name.includes('lien search') || name.includes('ppsa')) {
+            return accounts.find(a => a.code === '6800');
+        }
+
+        // MISC PAYMENT → Subcontractor (8950)
+        if (name.includes('misc payment')) {
+            return accounts.find(a => a.code === '8950');
+        }
+
+        // ========================================
+        // GENERIC EXPENSE DETECTION (LOWER PRIORITY)
+        // ========================================
+
+        // Generic loan (fallback if not caught above)
+        if (name.includes('loan') || name.includes('principal') || name.includes('finance charge')) {
+            return accounts.find(a => a.code === '2710') || accounts.find(a => a.code === '7700');
+        }
+
+        // Generic fees, filings (fallback)
+        if (name.includes('pay-file') || name.includes('filing') || name.includes('registration')) {
             return accounts.find(a => a.code === '8700') || accounts.find(a => a.code === '9970');
         }
 
@@ -344,8 +393,9 @@ window.VendorAI = {
             return accounts.find(a => a.code === '7700');
         }
 
-        // Income detection (ONLY for clear income indicators)
-        if ((name.includes('e-transfer received') || name.includes('deposit') || name.includes('revenue') || name.includes('sale ') || name.includes('invoice received')) &&
+        // Generic income detection (ONLY for clear income indicators)
+        if ((name.includes('deposit') || name.includes('revenue') || name.includes('sale ') ||
+            name.includes('invoice received')) &&
             !name.includes('payment') && !name.includes('misc') && !name.includes('fee')) {
             return accounts.find(a => a.code === '4001') || accounts.find(a => a.code === '4100');
         }
