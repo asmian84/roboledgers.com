@@ -51,7 +51,7 @@ window.CSVParser = {
     },
 
     // Parse transaction data from JSON array
-    parseTransactions(data) {
+    async parseTransactions(data) {
         const transactions = [];
 
         for (let i = 0; i < data.length; i++) {
@@ -60,7 +60,9 @@ window.CSVParser = {
             try {
                 const transaction = this.parseRow(row);
                 if (transaction) {
-                    transactions.push(transaction);
+                    // Process through AI pipeline for immediate categorization
+                    const processedTx = await TransactionPipeline.process(transaction);
+                    transactions.push(processedTx);
                 }
             } catch (error) {
                 console.warn(`Error parsing row ${i + 1}:`, error);
