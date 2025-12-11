@@ -247,6 +247,9 @@ window.VendorAI = {
         // COMMERCIAL TAX → 2600
         if (/commercial\s*tax/i.test(name)) return accounts.find(a => a.code === '2600');
 
+        // DEBUG: Log if patterns didn't match
+        console.log('⚠️ No pattern matched for:', vendorName);
+
         // ========================================
         // FALLBACK: KEYWORD MAPPINGS
         // ========================================

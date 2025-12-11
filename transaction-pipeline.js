@@ -26,6 +26,8 @@ window.TransactionPipeline = {
                 'chequing'
             );
 
+            console.log(`💡 Pipeline: "${transaction.payee}" → ${account ? account.code + ' (' + account.name + ')' : 'NULL (will use 9970)'}`);
+
             // Step 4: Assign account to transaction
             if (account) {
                 transaction.account = account.code;
