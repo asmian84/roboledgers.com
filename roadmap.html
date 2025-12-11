@@ -277,6 +277,8 @@
 
         <!-- CHANGELOG TAB -->
         <div id="changelog" class="tab-content active">
+
+            <!-- December 11, 2024 -->
             <div class="card">
                 <div style="margin-bottom: 30px;">
                     <span class="version-badge" style="font-size: 1.1rem; padding: 10px 25px;">v2.0.0 - The Intelligence
@@ -437,6 +439,105 @@
                         </div>
                     </li>
                 </ul>
+            </div>
+
+            <!-- December 10, 2024 -->
+            <div class="card">
+                <span class="version-badge" style="background: #3B82F6;">v1.2 - Pattern Refinement</span>
+                <div class="date">📅 December 10, 2024</div>
+                <h2>🎯 AI Pattern Improvements & Debugging</h2>
+
+                <p style="color: #666; line-height: 1.8; margin: 20px 0;">
+                    Intensive debugging session to refine pattern matching accuracy. Added logging, fixed vendor
+                    caching, and implemented business-specific categorization rules.
+                </p>
+
+                <h3>✨ Improvements</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="icon">🔧</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Pattern Priority Reordering</div>
+                            <div class="feature-desc">Moved specific patterns (WCB, PAY-FILE, SEC REG) before fallback
+                                logic</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">💼</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Business-Specific Rules</div>
+                            <div class="feature-desc">Added pattern logic for taxes (GST-*, ABCIT), loan interest vs
+                                payment, e-transfers</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">🔄</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Unified AI Re-think</div>
+                            <div class="feature-desc">Single button optimizes vendors AND categorizes transactions</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <h3>🐛 Fixes</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="icon">💾</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Vendor Cache Issues</div>
+                            <div class="feature-desc">Fixed save/reload timing, added emergency reset script</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">🔤</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Script Redeclaration Errors</div>
+                            <div class="feature-desc">Converted modules to window properties with cache busters</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <p style="color: #888; margin-top: 20px;"><strong>27 commits</strong> • Heavy debugging • Pattern
+                    refinement</p>
+            </div>
+
+            <!-- December 9, 2024 -->
+            <div class="card">
+                <span class="version-badge" style="background: #10B981;">v1.1 - UI Polish & Cleanup</span>
+                <div class="date">📅 December 9, 2024</div>
+                <h2>🎨 Settings Reorganization & Codebase Cleanup</h2>
+
+                <h3>✨ Improvements</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="icon">⚙️</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Settings Modal Redesign</div>
+                            <div class="feature-desc">Reorganized Company and Data tabs with better spacing and layout
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="icon">🗑️</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Codebase Debloat (45% reduction)</div>
+                            <div class="feature-desc">Removed 33 unused files including backups and test files</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <h3>🐛 Fixes</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="icon">📖</span>
+                        <div class="feature-content">
+                            <div class="feature-title">Vendor Dictionary Fixes</div>
+                            <div class="feature-desc">Fixed 15-item display limit, improved import functionality</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <p style="color: #888; margin-top: 20px;"><strong>12 commits</strong> • UI polish • Major cleanup</p>
             </div>
         </div>
 
