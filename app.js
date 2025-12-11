@@ -4,6 +4,7 @@
 const App = {
     currentSection: 'upload',
     transactions: [],
+    currentFileName: null,
 
     async initialize() {
         console.log('🚀 Initializing AutoBookkeeping v1.03...');
@@ -83,7 +84,7 @@ const App = {
 
         // Step 4: Save session
         if (typeof SessionManager !== 'undefined') {
-            SessionManager.saveSession('Manual Save', this.transactions);
+            SessionManager.saveSession(this.currentFileName || 'Manual Save', this.transactions);
         }
 
         // Step 5: Show results
@@ -333,6 +334,9 @@ const App = {
 
     async handleFile(file) {
         console.log('📄 Processing file:', file.name);
+
+        // Store filename for session management
+        this.currentFileName = file.name;
 
         if (!file.name.endsWith('.csv')) {
             alert('Please upload a CSV file');

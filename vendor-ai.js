@@ -354,7 +354,8 @@ window.VendorAI = {
         // ========================================
 
         // LOAN PAYMENTS → Bank Loan Liability (2710)
-        if (name.includes('loan payment') || name.includes('loan credit')) {
+        // Pattern: "loan" + ("payment" OR "credit" OR "pmt")
+        if (/loan\s*(payment|credit|pmt)/i.test(name)) {
             return accounts.find(a => a.code === '2710');
         }
 
