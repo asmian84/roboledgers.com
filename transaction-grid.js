@@ -1,6 +1,6 @@
 // Transaction Grid using AG Grid
 
-const TransactionGrid = {
+window.TransactionGrid = {
     gridApi: null,
     transactions: [],
     refPrefix: '',
@@ -732,25 +732,25 @@ const TransactionGrid = {
 
     // Get row style based on selected color scheme
     getRowStyle(params) {
-        const scheme = Settings.current.gridColorScheme || 'rainbow';
-        const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
-        const colorIndex = params.node.rowIndex % colors.length;
+    const scheme = Settings.current.gridColorScheme || 'rainbow';
+    const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
+    const colorIndex = params.node.rowIndex % colors.length;
 
-        const style = { background: colors[colorIndex] };
+    const style = { background: colors[colorIndex] };
 
-        // Apply font customization if set
-        if (Settings.current.gridFontFamily) {
-            style.fontFamily = Settings.current.gridFontFamily;
-        }
-        if (Settings.current.gridFontSize) {
-            style.fontSize = Settings.current.gridFontSize + 'px';
-        }
+    // Apply font customization if set
+    if (Settings.current.gridFontFamily) {
+        style.fontFamily = Settings.current.gridFontFamily;
+    }
+    if (Settings.current.gridFontSize) {
+        style.fontSize = Settings.current.gridFontSize + 'px';
+    }
 
-        return style;
-    },
+    return style;
+},
 
-        // Apply grid customization
-        applyGridCustomization() {
+// Apply grid customization
+applyGridCustomization() {
     if (this.gridApi) {
         this.gridApi.redrawRows();
     }
