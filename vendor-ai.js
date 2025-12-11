@@ -229,14 +229,26 @@ window.VendorAI = {
         // MOBILE DEPOSIT → 4001
         if (/mobile\s*.*\s*deposit/i.test(name)) return accounts.find(a => a.code === '4001');
 
-        // E-TRANSFER RECEIVED → 4001
-        if (/(received|rcvd).*(e-transfer|interac)/i.test(name)) return accounts.find(a => a.code === '4001');
+        // E-TRANSFER RECEIVED (IMPROVED PATTERN) → 4001
+        // Matches both "received e-transfer" and "e-transfer received PERSON"
+        if (/(e-transfer|interac)\s+(received|from)/i.test(name) ||
+            /(received|rcvd).*(e-transfer|interac)/i.test(name)) {
+            return accounts.find(a => a.code === '4001');
+        }
 
         // E-TRANSFER SENT → 8950
         if (/(sent|transfer).*(e-transfer|interac)/i.test(name)) return accounts.find(a => a.code === '8950');
 
-        // ONLINE BANKING TRANSFER → 2101
+        // SHAREHOLDER'S LOAN/DRAW - Matthew McKinnon → 2650
+        if (/online\s+transfer\s+sent.*matthew\s+mckinnon/i.test(name)) {
+            return accounts.find(a => a.code === '2650');
+        }
+
+        // ONLINE BANKING TRANSFER → 2101 (Credit card payments)
         if (/online\s*.*\s*transfer/i.test(name)) return accounts.find(a => a.code === '2101');
+
+        // MONUMENT DEVELO → 9970 (Unusual item)
+        if (/monument\s*develo/i.test(name)) return accounts.find(a => a.code === '9970');
 
         // GST-P, GST-R → 2170
         if (/gst[-\s]?[a-z]/i.test(name)) return accounts.find(a => a.code === '2170');
