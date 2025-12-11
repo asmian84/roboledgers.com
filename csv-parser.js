@@ -8,7 +8,7 @@ window.CSVParser = {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
 
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = e.target.result;
                     const workbook = XLSX.read(data, { type: 'binary' });
@@ -28,8 +28,8 @@ window.CSVParser = {
                         return;
                     }
 
-                    // Parse transactions
-                    const transactions = this.parseTransactions(jsonData);
+                    // Parse transactions (now async with AI pipeline)
+                    const transactions = await this.parseTransactions(jsonData);
 
                     if (transactions.length === 0) {
                         reject(new Error('No valid transactions found in CSV'));
