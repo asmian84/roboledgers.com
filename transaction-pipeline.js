@@ -18,9 +18,10 @@ window.TransactionPipeline = {
             transaction.category = vendor.category;
             transaction.status = 'matched';
 
-            // Step 3: AI categorization (use existing vendor-ai logic)
+            // Step 3: AI categorization - USE ORIGINAL PAYEE, NOT NORMALIZED NAME!
+            // Pattern matching needs the original text to match properly
             const account = VendorAI.suggestAccount(
-                vendor.name,
+                transaction.payee,  // ← USE ORIGINAL PAYEE!
                 vendor.category,
                 'chequing'
             );
