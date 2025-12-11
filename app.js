@@ -83,7 +83,7 @@ const App = {
 
         // Step 4: Save session
         if (typeof SessionManager !== 'undefined') {
-            SessionManager.saveSession(this.transactions);
+            SessionManager.saveSession('Manual Save', this.transactions);
         }
 
         // Step 5: Show results
