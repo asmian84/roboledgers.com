@@ -64,7 +64,7 @@ const App = {
             console.log('✅ VendorMatcher reloaded with fresh vendor data');
         }
 
-        // Step 2: Apply vendor matching to ALL transactions
+        // Step 2: Apply vendor matching AND account assignment to ALL transactions
         let categorized = 0;
         let errors = 0;
 
@@ -74,11 +74,56 @@ const App = {
                 if (match && match.vendor) {
                     tx.vendor = match.vendor.name;
                     tx.vendorId = match.vendor.id;
-                    tx.account = match.vendor.defaultAccount;  // THIS IS WHAT GRID DISPLAYS!
-                    tx.allocatedAccount = match.vendor.defaultAccount;
-                    tx.allocatedAccountName = match.vendor.defaultAccountName;
                     tx.category = match.vendor.category;
                     tx.status = 'matched';
+
+                    // DIRECTLY apply account logic based on vendor name (bypass cache)
+                    const vendorName = match.vendor.name.toLowerCase();
+                    const accounts = AccountAllocator.getAllAccounts();
+                    let assignedAccount = null;
+
+                    // Apply patterns (same as in vendor-ai.js)
+                    if (/wcb|workers comp/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '9750');
+                    } else if (/pay[-\s]?file|file\s*fee/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '7700');
+                    } else if (/sec\s*reg|lien/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '6800');
+                    } else if (/loan\s*(payment|credit|pmt)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2710');
+                    } else if ((vendorName.includes('loan') && vendorName.includes('interest'))) {
+                        assignedAccount = accounts.find(a => a.code === '7700');
+                    } else if (/mobile\s*.*\s*deposit/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '4001');
+                    } else if (/(received|rcvd).*(e-transfer|interac)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '4001');
+                    } else if (/(sent|transfer).*(e-transfer|interac)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '8950');
+                    } else if (/online\s*.*\s*transfer/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2101');
+                    } else if (/gst[-\s]?[a-z]/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2170');
+                    } else if (/abcit/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2620');
+                    } else if (/commercial\s*tax/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2600');
+                    } else {
+                        // Use vendor's default account if no pattern matches
+                        assignedAccount = match.vendor.defaultAccount ?
+                            accounts.find(a => a.code === match.vendor.defaultAccount) : null;
+                    }
+
+                    if (assignedAccount) {
+                        tx.account = assignedAccount.code;
+                        tx.allocatedAccount = assignedAccount.code;
+                        tx.allocatedAccountName = assignedAccount.name;
+                    } else {
+                        // Fallback to vendor default or 9970
+                        tx.account = match.vendor.defaultAccount || '9970';
+                        tx.allocatedAccount = match.vendor.defaultAccount || '9970';
+                        tx.allocatedAccountName = match.vendor.defaultAccountName || 'Unusual item';
+                    }
+
                     categorized++;
                 }
             } catch (error) {
