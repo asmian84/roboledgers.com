@@ -50,6 +50,16 @@ const App = {
             return;
         }
 
+        // Step 1.5: FORCE SAVE vendors to storage so transactions get fresh data
+        console.log('💾 Saving updated vendors to storage...');
+        if (typeof VendorMatcher !== 'undefined') {
+            // VendorMatcher already has the updated vendors in memory from rethinkVendors
+            // Force save them to localStorage
+            const allVendors = VendorMatcher.getAllVendors();
+            Storage.saveVendors(allVendors);
+            console.log(`✅ Saved ${allVendors.length} vendors with updated accounts`);
+        }
+
         // Step 2: Apply vendor matching to ALL transactions
         let categorized = 0;
         let errors = 0;
