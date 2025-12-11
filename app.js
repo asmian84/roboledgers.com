@@ -117,11 +117,13 @@ const App = {
                         tx.account = assignedAccount.code;
                         tx.allocatedAccount = assignedAccount.code;
                         tx.allocatedAccountName = assignedAccount.name;
+                        console.log(`📊 TX: "${tx.payee}" → ${assignedAccount.code} (${assignedAccount.name})`);
                     } else {
                         // Fallback to vendor default or 9970
                         tx.account = match.vendor.defaultAccount || '9970';
                         tx.allocatedAccount = match.vendor.defaultAccount || '9970';
-                        tx.allocatedAccountName = match.vendor.defaultAccountName || 'Unusual item';
+                        tx.allocatedAccountName = match.vendor.defaultAccountName || 'Un usual item';
+                        console.log(`📊 TX: "${tx.payee}" → ${tx.account} (fallback)`);
                     }
 
                     categorized++;
