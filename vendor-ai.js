@@ -210,11 +210,21 @@ window.VendorAI = {
         // SEC REG FEE / LIEN → 6800
         if (/sec\s*reg|lien/i.test(name)) return accounts.find(a => a.code === '6800');
 
-        // LOAN PAYMENT/CREDIT → 2710
-        if (/loan\s*(payment|credit|pmt)/i.test(name)) return accounts.find(a => a.code === '2710');
+        // ========================================
+        // LOAN LOGIC: CHECK INTEREST FIRST (more specific)
+        // ========================================
 
-        // LOAN INTEREST → 7700
-        if ((name.includes('loan') && name.includes('interest'))) return accounts.find(a => a.code === '7700');
+        // LOAN INTEREST → EXPENSE (7700) - CHECK THIS FIRST!
+        if (/loan.*interest|interest.*loan|interest\s+no/i.test(name)) {
+            return accounts.find(a => a.code === '7700');
+        }
+
+        // LOAN PAYMENT/CREDIT → LIABILITY (2710) - CHECK THIS SECOND
+        if (/loan\s*(payment|credit|pmt)/i.test(name)) {
+            return accounts.find(a => a.code === '2710');
+        }
+
+        // ========================================
 
         // MOBILE DEPOSIT → 4001
         if (/mobile\s*.*\s*deposit/i.test(name)) return accounts.find(a => a.code === '4001');
