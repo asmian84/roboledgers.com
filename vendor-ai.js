@@ -332,6 +332,24 @@ window.VendorAI = {
         // PATTERN-BASED AI LOGIC
         // ========================================
 
+        // WCB (Workers Compensation) → 9750
+        if (/wcb|workers comp|worker comp/i.test(name)) {
+            const account = accounts.find(a => a.code === '9750');
+            if (account) return account;
+        }
+
+        // PAY-FILE FEES → Bank Charges (7700)
+        if (/pay[-\s]?file|file\s*fee/i.test(name)) {
+            const account = accounts.find(a => a.code === '7700');
+            if (account) return account;
+        }
+
+        // SEC REG FEE / LIEN SEARCH → Dues & Memberships (6800)
+        if (/sec\s*reg|security\s*reg|lien/i.test(name)) {
+            const account = accounts.find(a => a.code === '6800');
+            if (account) return account;
+        }
+
         // TAX PATTERN RECOGNITION
         // GST-P, GST-R, GST-* → GST Payable (2170)
         if (/gst[-\s]?[a-z]/i.test(name)) {
