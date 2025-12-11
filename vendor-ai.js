@@ -328,9 +328,26 @@ window.VendorAI = {
             }
         }
 
-        // Income detection
-        if (name.includes('payment') || name.includes('deposit') || name.includes('client') || name.includes('revenue')) {
-            return accounts.find(a => a.code === '4000') || accounts.find(a => a.code === '4100');
+        // CRITICAL: Expense detection FIRST (most payments are expenses, not income)
+        // Loan payments
+        if (name.includes('loan payment') || name.includes('loan') || name.includes('principal') || name.includes('lien') || name.includes('ppsa') || name.includes('finance charge')) {
+            return accounts.find(a => a.code === '7700') || accounts.find(a => a.code === '9970');
+        }
+
+        // Misc payments, fees, filings (almost always expenses)
+        if (name.includes('misc payment') || name.includes('payment *') || name.includes('pay-file') || name.includes('filing') || name.includes('registration')) {
+            return accounts.find(a => a.code === '8700') || accounts.find(a => a.code === '9970');
+        }
+
+        // Bank fees, service charges
+        if (name.includes('fee') || name.includes('service charge') || name.includes('bank charge')) {
+            return accounts.find(a => a.code === '7700');
+        }
+
+        // Income detection (ONLY for clear income indicators)
+        if ((name.includes('e-transfer received') || name.includes('deposit') || name.includes('revenue') || name.includes('sale ') || name.includes('invoice received')) &&
+            !name.includes('payment') && !name.includes('misc') && !name.includes('fee')) {
+            return accounts.find(a => a.code === '4001') || accounts.find(a => a.code === '4100');
         }
 
         // Credit card default
@@ -338,8 +355,8 @@ window.VendorAI = {
             return accounts.find(a => a.code === '8000') || accounts.find(a => a.code === '7700');
         }
 
-        // Final fallback
-        return accounts.find(a => a.code === '7700') || accounts.find(a => a.code === '9970');
+        // Final fallback: General expense (NOT sales!)
+        return accounts.find(a => a.code === '9970') || accounts.find(a => a.code === '7700');
     },
 
     findSimilarVendors(vendors) {
