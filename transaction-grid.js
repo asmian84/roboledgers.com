@@ -1,5 +1,5 @@
 // Transaction Grid using AG Grid
-
+console.log('📊 Loading TransactionGrid...');
 window.TransactionGrid = {
     gridApi: null,
     transactions: [],
