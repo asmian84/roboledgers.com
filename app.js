@@ -15,8 +15,16 @@ const App = {
             VendorMatcher.initialize();
 
             // Initialize UI components  
+            if (typeof TransactionGrid === 'undefined') {
+                throw new Error('TransactionGrid not loaded. Check script order in index.html');
+            }
             TransactionGrid.initialize('transactionGrid');
-            VendorManager.initialize();
+
+            if (typeof VendorManager === 'undefined') {
+                console.warn('VendorManager not loaded yet');
+            } else {
+                VendorManager.initialize();
+            }
 
             // Initialize Settings
             if (typeof Settings !== 'undefined') {
