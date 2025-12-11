@@ -60,6 +60,7 @@ const App = {
                 if (match && match.vendor) {
                     tx.vendor = match.vendor.name;
                     tx.vendorId = match.vendor.id;
+                    tx.account = match.vendor.defaultAccount;  // THIS IS WHAT GRID DISPLAYS!
                     tx.allocatedAccount = match.vendor.defaultAccount;
                     tx.allocatedAccountName = match.vendor.defaultAccountName;
                     tx.category = match.vendor.category;
