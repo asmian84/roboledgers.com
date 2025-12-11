@@ -46,7 +46,11 @@ window.TransactionPipeline = {
 
             // Step 6: Update vendor in dictionary
             vendor.matchCount = (vendor.matchCount || 0) + 1;
-            VendorMatcher.updateVendor(vendor);
+            VendorMatcher.updateVendor(vendor.id, {
+                defaultAccount: vendor.defaultAccount,
+                defaultAccountName: vendor.defaultAccountName,
+                matchCount: vendor.matchCount
+            });
 
             return transaction;
 
