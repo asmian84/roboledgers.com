@@ -195,9 +195,49 @@ window.VendorAI = {
         const isCreditCard = accountType === 'credit';
         const isIncome = accountType === 'savings' || accountType === 'investment';
 
-        // Comprehensive account mapping based on keywords and categories
-        // ALL CODES MATCH THE ACTUAL CHART OF ACCOUNTS
-        // CRITICAL: Bank fees FIRST - highest priority to prevent matching 'sales'
+        // ========================================
+        // HIGHEST PRIORITY: SPECIFIC PATTERNS FIRST!!!
+        // ========================================
+
+        // WCB → 9750
+        if (/wcb|workers comp/i.test(name)) return accounts.find(a => a.code === '9750');
+
+        // PAY-FILE FEES → 7700
+        if (/pay[-\s]?file|file\s*fee/i.test(name)) return accounts.find(a => a.code === '7700');
+
+        // SEC REG FEE / LIEN → 6800
+        if (/sec\s*reg|lien/i.test(name)) return accounts.find(a => a.code === '6800');
+
+        // LOAN PAYMENT/CREDIT → 2710
+        if (/loan\s*(payment|credit|pmt)/i.test(name)) return accounts.find(a => a.code === '2710');
+
+        // LOAN INTEREST → 7700
+        if ((name.includes('loan') && name.includes('interest'))) return accounts.find(a => a.code === '7700');
+
+        // MOBILE DEPOSIT → 4001
+        if (/mobile\s*.*\s*deposit/i.test(name)) return accounts.find(a => a.code === '4001');
+
+        // E-TRANSFER RECEIVED → 4001
+        if (/(received|rcvd).*(e-transfer|interac)/i.test(name)) return accounts.find(a => a.code === '4001');
+
+        // E-TRANSFER SENT → 8950
+        if (/(sent|transfer).*(e-transfer|interac)/i.test(name)) return accounts.find(a => a.code === '8950');
+
+        // ONLINE BANKING TRANSFER → 2101
+        if (/online\s*.*\s*transfer/i.test(name)) return accounts.find(a => a.code === '2101');
+
+        // GST-P, GST-R → 2170
+        if (/gst[-\s]?[a-z]/i.test(name)) return accounts.find(a => a.code === '2170');
+
+        // ABCIT → 2620
+        if (/abcit/i.test(name)) return accounts.find(a => a.code === '2620');
+
+        // COMMERCIAL TAX → 2600
+        if (/commercial\s*tax/i.test(name)) return accounts.find(a => a.code === '2600');
+
+        // ========================================
+        // FALLBACK: KEYWORD MAPPINGS
+        // ========================================
         const accountMappings = [
             // Bank Fees & Charges (MUST BE FIRST!)
             { keywords: ['fee chargeback', 'chargeback cheque', 'chargeback', 'bank draft', 'fee service', 'monthly maintenance', 'reverse deposit', 'deposit mixed', 'bank fee', 'service charge', 'transaction fee', 'bank charge', 'account fee'], code: '7700' },
