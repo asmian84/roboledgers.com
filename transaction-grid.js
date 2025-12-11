@@ -958,3 +958,4 @@ window.VendorGrid = {
     }
 };
 
+console.log('✅ TransactionGrid loaded successfully');
