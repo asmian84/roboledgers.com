@@ -58,6 +58,10 @@ const App = {
             const allVendors = VendorMatcher.getAllVendors();
             Storage.saveVendors(allVendors);
             console.log(`✅ Saved ${allVendors.length} vendors with updated accounts`);
+
+            // CRITICAL: Force VendorMatcher to reload from storage to get fresh data
+            VendorMatcher.initialize();
+            console.log('✅ VendorMatcher reloaded with fresh vendor data');
         }
 
         // Step 2: Apply vendor matching to ALL transactions
