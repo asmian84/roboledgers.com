@@ -329,7 +329,28 @@ window.VendorAI = {
         }
 
         // ========================================
-        // BUSINESS-SPECIFIC RULES (HIGHEST PRIORITY)
+        // PATTERN-BASED AI LOGIC
+        // ========================================
+
+        // TAX PATTERN RECOGNITION
+        // GST-P, GST-R, GST-* → GST Payable (2170)
+        if (/gst[-\s]?[a-z]/i.test(name)) {
+            const account = accounts.find(a => a.code === '2170');
+            if (account) return account;
+        }
+
+        // ABCIT (Alberta Corporate Income Tax) → 2620
+        if (/abcit/i.test(name)) {
+            const account = accounts.find(a => a.code === '2620');
+            if (account) return account;
+        }
+
+        // Commercial Tax → 2600
+        if (/commercial\s*tax/i.test(name)) {
+            const account = accounts.find(a => a.code === '2600');
+            if (account) return account;
+        }
+
         // ========================================
 
         // LOAN PAYMENTS → Bank Loan Liability (2710)
@@ -337,40 +358,48 @@ window.VendorAI = {
             return accounts.find(a => a.code === '2710');
         }
 
-        // LOAN INTEREST → Interest & Bank Charges (7700)
-        if (name.includes('loan interest') || name.includes('interest on loan')) {
+        // LOAN INTEREST → Expense (7700)
+        // Pattern: Contains "interest" + "loan" OR "interest on"
+        if ((name.includes('loan') && name.includes('interest')) ||
+            name.includes('interest on loan') ||
+            name.includes('loan interest')) {
             return accounts.find(a => a.code === '7700');
         }
 
-        // MOBILE CHEQUE DEPOSIT → Sales Revenue (4001)
-        if (name.includes('mobile cheque deposit') || name.includes('mobile deposit')) {
+        // MOBILE CHEQUE DEPOSIT → Sales (4001)
+        if (/mobile\s*(cheque|check)?\s*deposit/i.test(name)) {
             return accounts.find(a => a.code === '4001');
         }
 
-        // E-TRANSFER RECEIVED → Sales Revenue (4001)
-        if (name.includes('e-transfer received') || name.includes('e-transfer rcvd') ||
-            name.includes('interac received')) {
+        // E-TRANSFER RECEIVED → Sales (4001)
+        // Pattern: "received" OR "rcvd" + "e-transfer/interac"
+        if (/(e-transfer|interac).*(received|rcvd)/i.test(name) ||
+            /(received|rcvd).*(e-transfer|interac)/i.test(name)) {
             return accounts.find(a => a.code === '4001');
         }
 
         // E-TRANSFER SENT → Subcontractor (8950)
-        if (name.includes('e-transfer sent') || name.includes('e-transfer') ||
-            name.includes('interac transfer')) {
+        // Pattern: "sent" + "e-transfer" OR just "e-transfer" (fallback)
+        if (/(e-transfer|interac).*(sent|transfer)/i.test(name) ||
+            (name.includes('e-transfer') && !name.includes('received'))) {
             return accounts.find(a => a.code === '8950');
         }
 
-        // ONLINE BANKING TRANSFER → Credit Card Payment (paying down liability)
-        if (name.includes('online banking transfer') || name.includes('online transfer')) {
-            return accounts.find(a => a.code === '2101'); // Visa payable
+        // ONLINE BANKING TRANSFER → Credit Card Payment (2101)
+        // Pattern: "online" + "transfer"
+        if (/online\s*(banking)?\s*transfer/i.test(name)) {
+            return accounts.find(a => a.code === '2101');
         }
 
         // LIEN SEARCH / PPSA → Dues & Memberships (6800)
-        if (name.includes('lien search') || name.includes('ppsa')) {
+        // Pattern: "lien" OR "ppsa"
+        if (/lien\s*search|ppsa/i.test(name)) {
             return accounts.find(a => a.code === '6800');
         }
 
         // MISC PAYMENT → Subcontractor (8950)
-        if (name.includes('misc payment')) {
+        // Pattern: "misc" + "payment"
+        if (/misc\s*payment/i.test(name)) {
             return accounts.find(a => a.code === '8950');
         }
 
