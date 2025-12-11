@@ -497,11 +497,11 @@ window.TransactionGrid = {
                             }
                         },
 
-                            getTransactions() {
+                        getTransactions() {
                             return this.transactions;
                         },
 
-                            updateTransaction(transactionId, updates) {
+                        updateTransaction(transactionId, updates) {
                             const transaction = this.transactions.find(t => t.id === transactionId);
                             if(transaction) {
                                 Object.assign(transaction, updates);
@@ -510,7 +510,7 @@ window.TransactionGrid = {
                             }
                         },
 
-                            exportToCsv() {
+                        exportToCsv() {
                             if(this.gridApi) {
                             this.gridApi.exportDataAsCsv({
                                 fileName: `transactions_${ExcelExporter.getDateString()}.csv`
