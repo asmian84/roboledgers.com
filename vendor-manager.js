@@ -189,6 +189,12 @@ window.VendorManager = {
                 exportVendorBtn.style.marginLeft = '0.5rem';
                 importBtn.parentNode.insertBefore(exportVendorBtn, importBtn.nextSibling);
             }
+        } else {
+            // FORCE VISIBILITY if it exists but is hidden
+            exportVendorBtn.style.display = 'inline-block';
+            exportVendorBtn.style.visibility = 'visible';
+            exportVendorBtn.style.opacity = '1';
+            exportVendorBtn.hidden = false;
         }
 
         if (exportVendorBtn) {
