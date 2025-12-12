@@ -2016,21 +2016,21 @@ textarea,
     border-radius: var(--radius-sm) !important;
     padding: 0.5rem !important;
     font-size: 14px !important;
-    line-height: 1.5 !important;
-    height: auto !important;
+    line-height: normal !important;
 }
 
-/* Styled Filter Inputs */
+/* Styled Filter Inputs - Explicit fix */
 .ag-floating-filter-input {
     background-color: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
     border: 1px solid var(--border-light) !important;
     border-radius: var(--radius-sm) !important;
-    padding: 2px 8px !important;
+    padding: 4px 8px !important;
     font-size: 13px !important;
-    height: 26px !important;
+    height: 28px !important;
     line-height: normal !important;
     width: 100% !important;
+    margin-top: 0 !important;
 }
 
 /* Specific Focus State */
@@ -2045,11 +2045,11 @@ textarea:focus,
 }
 
 .grid-container {
-    display: flex;
-    flex-direction: column;
+    display: block;
+    /* Flex can sometimes cause collapse issues with AG Grid */
     height: auto;
-    min-height: 650px;
-    /* Ensure container has room for 600px grid + padding */
+    width: 100%;
+    margin-bottom: 2rem;
 }
 
 /* Ensure no double borders in grid */
