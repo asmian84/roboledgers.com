@@ -1908,3 +1908,47 @@ textarea:focus {
     transition: background-color 1s;
 }
 
+
+/* AG Grid Floating Filter Customization */
+.ag-floating-filter-input {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    padding: 0.4rem !important;
+    height: 30px !important;
+    font-size: 0.9rem !important;
+}
+
+.ag-floating-filter-input:focus {
+    border-color: var(--primary-color) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--glow-color) !important;
+}
+
+.ag-header-cell-menu-button {
+    color: var(--text-secondary) !important;
+}
+
+.ag-header-cell-menu-button:hover {
+    color: var(--primary-color) !important;
+}
+
+.ag-floating-filter-input::placeholder {
+    color: var(--text-tertiary) !important;
+    opacity: 0.7;
+}
+
+.ag-header-row-floating-filter {
+    background: var(--bg-secondary) !important;
+}
+
+.ag-floating-filter-button {
+    display: none !important;
+}
+
+
+:root {
+    --input-bg: var(--bg-tertiary);
+}
+

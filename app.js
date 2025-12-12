@@ -1048,20 +1048,22 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔍 Debug: Searching for startOverBtn...', startOverBtn);
 
     if (startOverBtn) {
-        // Remove old listeners to be safe (by cloning) - optional but ensures clean slate
-        // const newBtn = startOverBtn.cloneNode(true);
-        // startOverBtn.parentNode.replaceChild(newBtn, startOverBtn);
-        // Note: cloning breaks other refs, better to just add listener.
+        // Remove old listeners by replacing the element
+        const newBtn = startOverBtn.cloneNode(true);
+        startOverBtn.parentNode.replaceChild(newBtn, startOverBtn);
+
+        // Update reference
+        const btn = newBtn;
 
         let resetTimeout;
-        startOverBtn.addEventListener('click', (e) => {
+        btn.addEventListener('click', (e) => {
             console.log('🖱️ Start Over Clicked!');
 
             // Check if already in confirmation state
-            if (startOverBtn.classList.contains('confirm-state')) {
+            if (btn.classList.contains('confirm-state')) {
                 // CONFIRMED Action
                 console.log('✅ Reset confirmed. Wiping data...');
-                startOverBtn.innerHTML = '♻️ Wiping Data...';
+                btn.innerHTML = '♻️ Wiping Data...';
                 localStorage.clear();
 
                 setTimeout(() => {
@@ -1069,124 +1071,156 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 500);
             } else {
                 // First Click: Ask for confirmation
-                const originalText = startOverBtn.innerHTML;
-                startOverBtn.innerHTML = '⚠️ Click to Confirm';
-                startOverBtn.classList.add('confirm-state');
-                startOverBtn.style.backgroundColor = '#ef4444'; // Force red for visibility
-                startOverBtn.style.color = 'white';
-                startOverBtn.style.borderColor = '#dc2626';
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '⚠️ Click to Confirm';
+                btn.classList.add('confirm-state');
+                btn.style.backgroundColor = '#ef4444'; // Force red for visibility
+                btn.style.color = 'white';
+                btn.style.borderColor = '#dc2626';
 
                 // Reset after 3 seconds if not confirmed
                 resetTimeout = setTimeout(() => {
-                    startOverBtn.innerHTML = originalText;
-                    startOverBtn.classList.remove('confirm-state');
-                    startOverBtn.style.backgroundColor = '';
-                    startOverBtn.style.color = '';
-                    startOverBtn.style.borderColor = '';
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('confirm-state');
+                    btn.style.backgroundColor = '';
+                    btn.style.color = '';
+                    btn.style.borderColor = '';
                 }, 3000);
             }
         });
     }
+    console.log('🖱️ Start Over Clicked!');
 
-    // Wire up Pop-out button (added dynamically)
-    const popoutBtn = document.getElementById('popoutBtn');
-    if (popoutBtn) {
-        popoutBtn.addEventListener('click', () => {
-            if (window.GridPopout) {
-                window.GridPopout.openPopout();
-            } else {
-                console.error('GridPopout module not loaded');
-                alert('Grid Pop-out module not loaded. Please refresh the page.');
-            }
-        });
+    // Check if already in confirmation state
+    if (startOverBtn.classList.contains('confirm-state')) {
+        // CONFIRMED Action
+        console.log('✅ Reset confirmed. Wiping data...');
+        startOverBtn.innerHTML = '♻️ Wiping Data...';
+        localStorage.clear();
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    } else {
+        // First Click: Ask for confirmation
+        const originalText = startOverBtn.innerHTML;
+        startOverBtn.innerHTML = '⚠️ Click to Confirm';
+        startOverBtn.classList.add('confirm-state');
+        startOverBtn.style.backgroundColor = '#ef4444'; // Force red for visibility
+        startOverBtn.style.color = 'white';
+        startOverBtn.style.borderColor = '#dc2626';
+
+        // Reset after 3 seconds if not confirmed
+        resetTimeout = setTimeout(() => {
+            startOverBtn.innerHTML = originalText;
+            startOverBtn.classList.remove('confirm-state');
+            startOverBtn.style.backgroundColor = '';
+            startOverBtn.style.color = '';
+            startOverBtn.style.borderColor = '';
+        }, 3000);
+    }
+});
     }
 
-    // Setup theme dropdown with live preview
-    const themeSelect = document.getElementById('themeSelect');
-    const themePreview = document.getElementById('themePreview');
-
-    const themePreviews = {
-        'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
-        'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
-        'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
-        'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
-        'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
-    };
-
-    function updateThemePreview(theme) {
-        if (themePreview && themePreviews[theme]) {
-            themePreview.style.background = themePreviews[theme];
+// Wire up Pop-out button (added dynamically)
+const popoutBtn = document.getElementById('popoutBtn');
+if (popoutBtn) {
+    popoutBtn.addEventListener('click', () => {
+        if (window.GridPopout) {
+            window.GridPopout.openPopout();
+        } else {
+            console.error('GridPopout module not loaded');
+            alert('Grid Pop-out module not loaded. Please refresh the page.');
         }
+    });
+}
+
+// Setup theme dropdown with live preview
+const themeSelect = document.getElementById('themeSelect');
+const themePreview = document.getElementById('themePreview');
+
+const themePreviews = {
+    'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
+    'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
+    'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
+    'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
+    'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
+};
+
+function updateThemePreview(theme) {
+    if (themePreview && themePreviews[theme]) {
+        themePreview.style.background = themePreviews[theme];
     }
+}
 
-    if (themeSelect && typeof Settings !== 'undefined') {
-        // Set initial preview
-        updateThemePreview(Settings.current.theme || 'cyber-night');
-        themeSelect.value = Settings.current.theme || 'cyber-night';
+if (themeSelect && typeof Settings !== 'undefined') {
+    // Set initial preview
+    updateThemePreview(Settings.current.theme || 'cyber-night');
+    themeSelect.value = Settings.current.theme || 'cyber-night';
 
-        // Handle theme changes
-        themeSelect.addEventListener('change', (e) => {
-            const theme = e.target.value;
-            Settings.setTheme(theme);
-            updateThemePreview(theme);
-        });
-    }
+    // Handle theme changes
+    themeSelect.addEventListener('change', (e) => {
+        const theme = e.target.value;
+        Settings.setTheme(theme);
+        updateThemePreview(theme);
+    });
+}
 
-    // Reports button (placeholder)
-    const reportsBtn = document.getElementById('reportsBtn');
-    if (reportsBtn) {
-        reportsBtn.addEventListener('click', () => {
-            alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
-        });
-    }
+// Reports button (placeholder)
+const reportsBtn = document.getElementById('reportsBtn');
+if (reportsBtn) {
+    reportsBtn.addEventListener('click', () => {
+        alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
+    });
+}
 
-    // Settings Data tab buttons
-    const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-    const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
+// Settings Data tab buttons
+const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
+const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
 
-    if (settingsVendorDictBtn) {
-        settingsVendorDictBtn.addEventListener('click', () => {
-            if (typeof VendorManager !== 'undefined') {
-                VendorManager.showModal();
-            }
-        });
-    }
-
-    // Company Name Input
-    const companyNameInput = document.getElementById('companyNameInput');
-    if (companyNameInput && typeof Settings !== 'undefined') {
-        // Set initial value from settings
-        companyNameInput.value = Settings.current.companyName || '';
-
-        // Save on change
-        companyNameInput.addEventListener('blur', () => {
-            Settings.current.companyName = companyNameInput.value;
-            Storage.saveSettings(Settings.current);
-            console.log('💾 Company name saved:', companyNameInput.value);
-        });
-    }
-
-    // Year End Date Input
-    const yearEndDateInput = document.getElementById('yearEndDate');
-    if (yearEndDateInput) {
-        // Set initial value from localStorage
-        const savedYearEnd = localStorage.getItem('yearEndDate');
-        if (savedYearEnd) {
-            yearEndDateInput.value = savedYearEnd.split('T')[0];
+if (settingsVendorDictBtn) {
+    settingsVendorDictBtn.addEventListener('click', () => {
+        if (typeof VendorManager !== 'undefined') {
+            VendorManager.showModal();
         }
+    });
+}
 
-        // Save on change
-        yearEndDateInput.addEventListener('change', () => {
-            localStorage.setItem('yearEndDate', yearEndDateInput.value);
-            console.log('💾 Year-end date saved:', yearEndDateInput.value);
-        });
+// Company Name Input
+const companyNameInput = document.getElementById('companyNameInput');
+if (companyNameInput && typeof Settings !== 'undefined') {
+    // Set initial value from settings
+    companyNameInput.value = Settings.current.companyName || '';
+
+    // Save on change
+    companyNameInput.addEventListener('blur', () => {
+        Settings.current.companyName = companyNameInput.value;
+        Storage.saveSettings(Settings.current);
+        console.log('💾 Company name saved:', companyNameInput.value);
+    });
+}
+
+// Year End Date Input
+const yearEndDateInput = document.getElementById('yearEndDate');
+if (yearEndDateInput) {
+    // Set initial value from localStorage
+    const savedYearEnd = localStorage.getItem('yearEndDate');
+    if (savedYearEnd) {
+        yearEndDateInput.value = savedYearEnd.split('T')[0];
     }
 
-    if (settingsAccountsBtn) {
-        settingsAccountsBtn.addEventListener('click', () => {
-            App.showAccountsModal();
-        });
-    }
+    // Save on change
+    yearEndDateInput.addEventListener('change', () => {
+        localStorage.setItem('yearEndDate', yearEndDateInput.value);
+        console.log('💾 Year-end date saved:', yearEndDateInput.value);
+    });
+}
 
-    console.log('✅ App.js loaded and event listeners set up');
+if (settingsAccountsBtn) {
+    settingsAccountsBtn.addEventListener('click', () => {
+        App.showAccountsModal();
+    });
+}
+
+console.log('✅ App.js loaded and event listeners set up');
 });
