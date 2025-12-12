@@ -2277,3 +2277,44 @@ input.currency-input,
     background: #ef4444 !important;
     color: white !important;
 }
+
+/* =========================================
+   MODAL LAYOUT FIXES
+   ========================================= */
+
+/* Constrain large modal width */
+.modal-content.large-modal {
+    width: 90% !important;
+    max-width: 1200px !important; /* Prevent it from being too wide */
+    height: 85vh !important;
+    max-height: 800px !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure body takes up remaining space (for grid) */
+.modal-body {
+    flex: 1;
+    overflow: hidden; /* Let grid handle scroll */
+    padding: 0 !important; /* Remove padding to let grid flush */
+}
+
+/* Ensure grid fits perfectly */
+#vendorGrid {
+    height: 100% !important;
+    width: 100% !important;
+}
+
+/* Adjust header actions spacing */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Add Vendor Button Icon alignment */
+#addVendorBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
