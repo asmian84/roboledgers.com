@@ -2072,37 +2072,43 @@ input.currency-input,
 .ag-cell {
     border: none !important;
 }
-/* AG GRID VISUAL POLISH */
 
-/* 1. Header & Filter Rows - Give them room to breathe */
+/* RESTORE CLEAN GRID STYLES */
+
+/* 1. Header Row - Standard Height */
 .ag-theme-alpine .ag-header-row {
-    height: 40px !important; /* Increase from default to prevent squashing */
+    height: 48px !important;
+    border-bottom: 1px solid var(--border-color) !important;
 }
 
+/* 2. Filter Row - Compact but accessible */
 .ag-theme-alpine .ag-header-row-column-filter {
-    height: 45px !important; /* Give filter row extra space */
+    height: 36px !important;
 }
 
-/* 2. Floating Filter Inputs - Clean, visible, centered */
+/* 3. Filter Inputs - Flat, Clean, Minimal */
 .ag-theme-alpine .ag-floating-filter-input {
-    background-color: var(--bg-elevated) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border-color) !important; /* Stronger border */
-    border-radius: 4px !important;
-    height: 28px !important;
-    line-height: 26px !important;
+    height: 26px !important;
+    line-height: normal !important;
     margin-top: 4px !important;
+    /* Vertical centering */
+    border-radius: 4px !important;
+    border: 1px solid var(--border-light) !important;
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
     padding: 0 8px !important;
-    width: 100% !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important; /* Subtle depth */
+    width: 95% !important;
+    box-shadow: none !important;
+    /* Remove dirty shadows */
 }
 
+/* Active State for Inputs */
 .ag-theme-alpine .ag-floating-filter-input:focus {
     border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+    background-color: var(--bg-elevated) !important;
 }
 
-/* 3. Cell Editors - Clean Look */
+/* 4. Cell Editors - Invisible match */
 .ag-theme-alpine .ag-cell-inline-editing,
 .ag-theme-alpine .ag-cell-editor,
 .ag-theme-alpine .ag-cell input,
@@ -2113,21 +2119,23 @@ input.currency-input,
     font-size: 14px;
     height: 100% !important;
     border: none !important;
-    padding: 0 10px !important;
+    padding: 0 12px !important;
 }
 
-/* 4. Column Headers - Vertically Align */
+/* 5. Header Labels - Cntral alignment */
 .ag-theme-alpine .ag-header-cell-label {
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
 }
 
-/* 5. ensure the grid container is robust */
+/* 6. Grid Container - Explicit Layout */
 .grid-container {
     display: block;
     width: 100%;
     margin-bottom: 2rem;
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
-    padding: 4px; /* Tiny padding for aesthetic border effect */
+    border: 1px solid var(--border-color);
+    /* Clean outer border */
 }
