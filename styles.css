@@ -2137,32 +2137,6 @@ input.currency-input,
     color: #ffffff !important;
 }
 
-/* 4. Sort Icons - Force White */
-.ag-theme-alpine .ag-icon {
-    color: #ffffff !important;
-}
-
-/* 5. Filter Inputs - Crisp White Box (High Contrast) */
-.ag-theme-alpine .ag-floating-filter-input {
-    height: 26px !important;
-    line-height: normal !important;
-    margin-top: 4px !important;
-    border-radius: 4px !important;
-    border: 1px solid #d1d5db !important;
-    /* Fixed Light Gray Border */
-    background-color: #ffffff !important;
-    /* Fixed White Background */
-    color: #000000 !important;
-    /* Fixed Black Text */
-    padding: 0 8px !important;
-    width: 95% !important;
-    box-shadow: none !important;
-}
-
-.ag-theme-alpine .ag-floating-filter-input:focus {
-    border-color: #3b82f6 !important;
-    /* Fixed Blue Focus */
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
 }
 
 /* 6. Grid Container Border - Clean Neutral */
@@ -2205,6 +2179,7 @@ input.currency-input,
 .ag-theme-alpine .ag-row-selected {
     border: 2px solid var(--primary-color) !important;
 }
+
 /* CRITICAL: RE-APPLY ROW TEXT COLOR (Overwritten by replacement) */
 .ag-theme-alpine .ag-row {
     color: #1f2937 !important;
