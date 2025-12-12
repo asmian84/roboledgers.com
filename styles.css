@@ -1888,3 +1888,23 @@ textarea:focus {
     font-weight: 500;
     line-height: 1.2;
 }
+/* --- AG Grid Flash Animation Overrides --- */
+/* Ensure the data change flash is Green (Success) instead of default opacity fade */
+
+/* Dark Theme Flash */
+.ag-theme-alpine-dark .ag-cell-data-changed {
+    background-color: rgba(16, 185, 129, 0.4) !important; /* Green with opacity */
+}
+
+/* Light Theme Flash */
+.ag-theme-alpine .ag-cell-data-changed {
+    background-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Ensure animation works smoothly */
+.ag-theme-alpine-dark .ag-cell-data-changed-animation,
+.ag-theme-alpine .ag-cell-data-changed-animation {
+    background-color: transparent;
+    transition: background-color 1s;
+}
+

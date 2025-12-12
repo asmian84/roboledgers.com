@@ -24,6 +24,9 @@ window.VendorNameUtils = {
         const commonPrefixes = [
             /^ONLINE BANKING TRANSFER\s*-?\s*/i,
             /^ONLINE BANKING\s*-?\s*/i,
+            /^ONLINE TRANSFER SENT\s*-?\s*([\d\s]+)?/i, // Remove "Online transfer sent - 1234"
+            /^ONLINE TRANSFER\s*-?\s*/i,
+            /^MISC PAYMENT\s*-?\s*/i,
             /^E-TRANSFER\s*-?\s*/i,
             /^DEBIT CARD\s*-?\s*/i,
             /^CREDIT CARD\s*-?\s*/i,

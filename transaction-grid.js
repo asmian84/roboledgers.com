@@ -10,6 +10,7 @@ window.TransactionGrid = {
 
         const gridOptions = {
             columnDefs: this.getColumnDefs(),
+            getRowId: (params) => params.data.id, // Critical for updates
             defaultColDef: {
                 sortable: true,
                 filter: true,
@@ -17,15 +18,15 @@ window.TransactionGrid = {
                 editable: false,
                 floatingFilter: true, // Enable floating filters for quick search
                 filterParams: {
-                    buttons: ['reset', 'apply'],
+                    buttons: ['clear'], // Removed 'apply' for live filtering
                     debounceMs: 200
                 }
             },
             rowData: [],
             animateRows: true,
             enableCellChangeFlash: true,
-            enableRangeSelection: true, // Allow selecting ranges
-            enableFillHandle: true, // Allow dragging to fill cells
+
+
             suppressRowClickSelection: true, // Only checkbox selects rows
             rowSelection: 'multiple',
             onCellValueChanged: this.onCellValueChanged.bind(this),
@@ -33,6 +34,33 @@ window.TransactionGrid = {
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.columnApi = params.columnApi;
+
+                // Subscribe to Real-Time Updates
+                if (window.GridStream) {
+                    GridStream.subscribe((event) => {
+                        if (event.type === 'UPDATE' && this.gridApi) {
+                            const transactions = event.payload.transactions;
+
+                            // 1. Update Grid Data
+                            this.gridApi.applyTransaction({ update: transactions });
+
+                            // 2. Flash Cells (Green = Success)
+                            this.gridApi.flashCells({
+                                rowNodes: transactions.map(t => this.gridApi.getRowNode(t.id)),
+                                flashDelay: 500,
+                                fadeDelay: 500
+                            });
+
+                            // 3. Update internal state
+                            transactions.forEach(updated => {
+                                const index = this.transactions.findIndex(t => t.id === updated.id);
+                                if (index !== -1) {
+                                    this.transactions[index] = updated;
+                                }
+                            });
+                        }
+                    });
+                }
 
                 // REMOVED: Duplicate grid toolbar with Quick Search
                 // Now using Quick Search from review header instead
@@ -59,7 +87,7 @@ window.TransactionGrid = {
             }
         };
 
-        new agGrid.Grid(container, gridOptions);
+        this.gridApi = agGrid.createGrid(container, gridOptions);
     },
 
     addGridToolbar(container) {
@@ -422,369 +450,371 @@ window.TransactionGrid = {
                         // Apply to all matching transactions
                         matchingTransactions.forEach(t => {
                             t.allocatedAccount = account.code;
-                            const transaction = event.data;
-                            const field = event.column.getColId();
-
-                            console.log(`📝 Cell changed: ${field} for transaction ${transaction.id}`);
-
-                            // GLOBAL AI LEARNING: When user changes account, update vendor dictionary
-                            if (field === 'allocatedAccountName' && transaction.vendorId) { // Changed 'account' to 'allocatedAccountName' to match existing field
-                                const newAccountName = event.newValue;
-                                const oldAccountName = event.oldValue;
-
-                                if (newAccountName !== oldAccountName) {
-                                    console.log(`🧠 AI LEARNING: User changed account from ${oldAccountName} to ${newAccountName} for vendor ${transaction.vendor}`);
-
-                                    // Find the account details
-                                    const account = AccountAllocator.getAllAccounts().find(a => a.fullName === newAccountName); // Find by fullName
-
-                                    if (account) {
-                                        // Update vendor's default account in dictionary
-                                        VendorMatcher.updateVendor(transaction.vendorId, {
-                                            defaultAccount: account.code,
-                                            defaultAccountName: account.name
-                                        });
-
-                                        // Update transaction's allocated account
-                                        transaction.allocatedAccount = account.code;
-                                        transaction.allocatedAccountName = account.name;
-
-                                        console.log(`✅ Vendor dictionary updated: "${transaction.vendor}" now defaults to ${account.code} (${account.name})`);
-                                        console.log(`💾 Future transactions with "${transaction.vendor}" will automatically use account ${account.code}`);
-
-                                        // Save vendor dictionary to storage
-                                        Storage.saveVendors(VendorMatcher.getAllVendors());
-                                    }
-                                }
-                            }
-
-                            // Update ref number if changed
-                            if (field === 'ref') {
-                                this.lastRefNumber = parseInt(event.newValue) || 0;
-                                this.gridApi.refreshCells({ columns: ['ref'], force: true });
-                            }
-
-                            // Recalculate balances when amounts change
-                            if (field === 'debits' || field === 'amount' || field === 'date') { // Changed 'credits' to 'amount' to match existing field
-                                console.log('💰 Amount or date changed, recalculating balances...');
-                                this.recalculateAllBalances(); // Changed 'calculateBalances' to 'recalculateAllBalances' to match existing method
-
-                                // Update both the changed row and all subsequent rows
-                                const allNodes = [];
-                                this.gridApi.forEachNode(node => allNodes.push(node));
-
-                                const changedIndex = allNodes.findIndex(node => node.data.id === transaction.id);
-                                if (changedIndex >= 0) {
-                                    const nodesToRefresh = allNodes.slice(changedIndex);
-                                    if (field === 'debits' || field === 'amount') { // Changed 'credits' to 'amount'
-                                        this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
-                                    } else {
-                                        this.gridApi.refreshCells({ force: true });
-                                    }
-                                } else {
-                                    this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
-                                }
-                            } else {
-                                this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
-                            }
-
-                            // Save to storage
-                            Storage.saveTransactions(this.transactions);
-
-                            // Update reconciliation
-                            if (typeof app !== 'undefined' && typeof app.updateReconciliation === 'function') {
-                                app.updateReconciliation();
-                            }
-                        },
-
-                        getTransactions() {
-                            return this.transactions;
-                        },
-
-                        updateTransaction(transactionId, updates) {
-                            const transaction = this.transactions.find(t => t.id === transactionId);
-                            if(transaction) {
-                                Object.assign(transaction, updates);
-                                this.gridApi.applyTransaction({ update: [transaction] });
-                                Storage.saveTransactions(this.transactions);
-                            }
-                        },
-
-                        exportToCsv() {
-                            if(this.gridApi) {
-                            this.gridApi.exportDataAsCsv({
-                                fileName: `transactions_${ExcelExporter.getDateString()}.csv`
-                            });
-                        }
-                    },
-
-                    // Helper method: Parse currency input (supports $1,234.56, 1234.56, etc.)
-                    parseCurrencyInput(value) {
-                        if (!value) return 0;
-
-                        // Remove currency symbols and commas
-                        const cleaned = String(value).replace(/[$,]/g, '');
-
-                        // Parse as float
-                        const parsed = parseFloat(cleaned);
-
-                        // Return 0 if invalid
-                        return isNaN(parsed) ? 0 : Math.max(0, parsed);
-                    },
-
-                    // Helper method: Parse and validate date input
-                    parseAndValidateDate(value) {
-                        if (!value) return null;
-
-                        // Try to parse the date
-                        const date = new Date(value);
-
-                        // Check if valid
-                        if (isNaN(date.getTime())) {
-                            console.warn('Invalid date input:', value);
-                            return null;
-                        }
-
-                        return date.toISOString();
-                    },
-
-                    // BATCH SELECTION: Handle selection changes
-                    onSelectionChanged() {
-                        const selectedRows = this.gridApi.getSelectedRows();
-                        const count = selectedRows.length;
-
-                        // Show/hide bulk actions bar
-                        const bulkBar = document.getElementById('bulkActionsBar');
-                        const countEl = document.getElementById('selectedCount');
-
-                        if (bulkBar && countEl) {
-                            if (count > 0) {
-                                bulkBar.style.display = 'flex';
-                                countEl.textContent = count;
-                            } else {
-                                bulkBar.style.display = 'none';
-                            }
-                        }
-
-                        console.log(`📋 ${count} rows selected`);
-                    },
-
-                    // BATCH SELECTION: Apply account to all selected transactions
-                    applyBulkAccount(accountCode, accountName) {
-                        const selectedRows = this.gridApi.getSelectedRows();
-
-                        if (selectedRows.length === 0) {
-                            alert('No transactions selected');
-                            return;
-                        }
-
-                        // Confirm bulk update
-                        const confirmMsg = `Assign "${accountName}" to ${selectedRows.length} selected transaction(s)?`;
-                        if (!confirm(confirmMsg)) return;
-
-                        // Update all selected transactions
-                        selectedRows.forEach(row => {
-                            row.allocatedAccount = accountCode;
-                            row.allocatedAccountName = accountName;
-                            row.status = 'manual';
-
-                            // Learn from each transaction
-                            VendorMatcher.learnFromTransaction(row);
+                            t.allocatedAccountName = account.name;
+                            t.status = 'manual';
                         });
-
-                        // Refresh grid
                         this.gridApi.refreshCells({ force: true });
+                    }
+                }
+            }
+        }
 
-                        // Clear selection
-                        this.gridApi.deselectAll();
+        console.log(`📝 Cell changed: ${field} for transaction ${transaction.id}`);
 
-                        // Save and update stats
-                        Storage.saveTransactions(this.transactions);
-                        App.updateStatistics();
+        // GLOBAL AI LEARNING: When user changes account, teach the AI
+        if (field === 'allocatedAccountName') {
+            const newAccountName = event.newValue;
+            const oldAccountName = event.oldValue;
 
-                        console.log(`✅ Bulk assigned ${accountCode} to ${selectedRows.length} transactions`);
-                    },
+            // Find the account details to get the Code
+            const account = AccountAllocator.getAllAccounts().find(a => a.fullName === newAccountName);
 
-                    // BATCH SELECTION: Initialize bulk actions toolbar
-                    initializeBulkActions() {
-                        const accountSelect = document.getElementById('bulkAccountSelect');
-                        const applyBtn = document.getElementById('applyBulkAccount');
-                        const clearBtn = document.getElementById('clearSelection');
+            if (account) {
+                // 1. Update the transaction object's code to match the new name
+                transaction.allocatedAccount = account.code;
 
-                        if (!accountSelect || !applyBtn || !clearBtn) {
-                            console.warn('⚠️ Bulk actions UI elements not found');
-                            return;
-                        }
+                // 2. Teach the AI (if actual change occurred)
+                if (newAccountName !== oldAccountName) {
+                    console.log(`🧠 AI LEARNING: User changed account to ${newAccountName} for "${transaction.payee}"`);
+                    if (typeof VendorMatcher !== 'undefined') {
+                        VendorMatcher.learnFromTransaction(transaction);
+                        console.log('✅ Vendor Dictionary updated with new rule.');
 
-                        // Populate account dropdown
-                        const accounts = AccountAllocator.getAllAccounts();
-                        accountSelect.innerHTML = '<option value="">Assign Account...</option>';
+                        // Save vendor dictionary
+                        Storage.saveVendors(VendorMatcher.getAllVendors());
+                    }
+                }
+            }
+        }
 
-                        accounts.forEach(account => {
-                            const option = document.createElement('option');
-                            option.value = account.code;
-                            option.textContent = `${account.code} - ${account.fullName}`;
-                            accountSelect.appendChild(option);
-                        });
+        // Update ref number if changed
+        if (field === 'ref') {
+            this.lastRefNumber = parseInt(event.newValue) || 0;
+            this.gridApi.refreshCells({ columns: ['ref'], force: true });
+        }
 
-                        // Apply button handler
-                        applyBtn.addEventListener('click', () => {
-                            const selectedAccount = accountSelect.value;
-                            if (!selectedAccount) {
-                                alert('Please select an account');
-                                return;
-                            }
+        // Recalculate balances when amounts change
+        if (field === 'debits' || field === 'amount' || field === 'date') { // Changed 'credits' to 'amount' to match existing field
+            console.log('💰 Amount or date changed, recalculating balances...');
+            this.recalculateAllBalances(); // Changed 'calculateBalances' to 'recalculateAllBalances' to match existing method
 
-                            const account = accounts.find(a => a.code === selectedAccount);
-                            if (account) {
-                                this.applyBulkAccount(account.code, account.fullName);
-                                accountSelect.value = ''; // Reset dropdown
-                            }
-                        });
+            // Update both the changed row and all subsequent rows
+            const allNodes = [];
+            this.gridApi.forEachNode(node => allNodes.push(node));
 
-                        // Clear selection button
-                        clearBtn.addEventListener('click', () => {
-                            this.gridApi.deselectAll();
-                        });
+            const changedIndex = allNodes.findIndex(node => node.data.id === transaction.id);
+            if (changedIndex >= 0) {
+                const nodesToRefresh = allNodes.slice(changedIndex);
+                if (field === 'debits' || field === 'amount') { // Changed 'credits' to 'amount'
+                    this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+                } else {
+                    this.gridApi.refreshCells({ force: true });
+                }
+            } else {
+                this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+            }
+        } else {
+            this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+        }
 
-                        console.log('✅ Bulk actions initialized');
-                    },
+        // Save to storage
+        Storage.saveTransactions(this.transactions);
 
-                    // Helper method: Recalculate all balances from opening balance
-                    recalculateAllBalances() {
-                        if (!this.transactions || this.transactions.length === 0) return;
+        // Update reconciliation
+        if (typeof app !== 'undefined' && typeof app.updateReconciliation === 'function') {
+            app.updateReconciliation();
+        }
+    },
 
-                        // Sort transactions by date
-                        const sortedTransactions = [...this.transactions].sort((a, b) => {
-                            const dateA = new Date(a.date);
-                            const dateB = new Date(b.date);
-                            return dateA.getTime() - dateB.getTime();
-                        });
+    getTransactions() {
+        return this.transactions;
+    },
 
-                        // Get opening balance from reconciliation panel or default to 0
-                        const openingBalanceInput = document.getElementById('expectedOpeningBalance');
-                        let runningBalance = 0;
+    updateTransaction(transactionId, updates) {
+        const transaction = this.transactions.find(t => t.id === transactionId);
+        if (transaction) {
+            Object.assign(transaction, updates);
+            this.gridApi.applyTransaction({ update: [transaction] });
+            Storage.saveTransactions(this.transactions);
+        }
+    },
 
-                        if (openingBalanceInput && openingBalanceInput.value) {
-                            runningBalance = parseFloat(openingBalanceInput.value) || 0;
-                        }
+    exportToCsv() {
+        if (this.gridApi) {
+            this.gridApi.exportDataAsCsv({
+                fileName: `transactions_${ExcelExporter.getDateString()}.csv`
+            });
+        }
+    },
 
-                        console.log('Starting balance calculation from opening:', runningBalance);
 
-                        // Recalculate each transaction balance
-                        for (let i = 0; i < sortedTransactions.length; i++) {
-                            const tx = sortedTransactions[i];
-                            const debit = parseFloat(tx.debits) || 0;
-                            const credit = parseFloat(tx.amount) || 0;
+    // Helper method: Parse currency input (supports $1,234.56, 1234.56, etc.)
+    parseCurrencyInput(value) {
+        if (!value) return 0;
 
-                            // Balance calculation: Opening Balance - Debit + Credit
-                            // Debits decrease balance (money out), Credits increase balance (money in)
-                            runningBalance = runningBalance - debit + credit;
-                            tx.balance = runningBalance;
+        // Remove currency symbols and commas
+        const cleaned = String(value).replace(/[$,]/g, '');
 
-                            // Debug first few transactions
-                            if (i < 3) {
-                                console.log(`Txn ${i + 1}: Debit=${debit}, Credit=${credit}, Balance=${runningBalance}`);
-                            }
-                        }
+        // Parse as float
+        const parsed = parseFloat(cleaned);
 
-                        // Update the actual transactions array with the sorted data
-                        this.transactions = sortedTransactions;
+        // Return 0 if invalid
+        return isNaN(parsed) ? 0 : Math.max(0, parsed);
+    },
 
-                        // Refresh the grid to show updated balances
-                        if (this.gridApi) {
-                            this.gridApi.setRowData(this.transactions);
-                            this.gridApi.refreshCells({ force: true });
-                        }
+    // Helper method: Parse and validate date input
+    parseAndValidateDate(value) {
+        if (!value) return null;
 
-                        // Update reconciliation if available
-                        if (typeof App !== 'undefined' && App.updateReconciliation) {
-                            App.updateReconciliation();
-                        }
+        // Try to parse the date
+        const date = new Date(value);
 
-                        console.log('Balance calculation complete. Final balance:', runningBalance);
-                    },
+        // Check if valid
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid date input:', value);
+            return null;
+        }
 
-                    // Rainbow row styling
-                    getRowStyle(params) {
-                        const rainbowColors = [
-                            { background: '#FFD1DC' },  // Pink
-                            { background: '#D1F2FF' },  // Cyan
-                            { background: '#D1FFD1' },  // Mint
-                            { background: '#FFFACD' },  // Yellow/Cream
-                            { background: '#FFDAB9' },  // Peach
-                            { background: '#E6E6FA' }   // Lavender
-                        ];
-                        return rainbowColors[params.node.rowIndex % 6];
-                    },
+        return date.toISOString();
+    },
 
-                    // Color schemes for grid rows
-                    colorSchemes: {
-                        rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],  // 6 pastel colors
-                            classic: ['#FFFFFF', '#F5F5F5'],  // White/light gray
+    // BATCH SELECTION: Handle selection changes
+    onSelectionChanged() {
+        const selectedRows = this.gridApi.getSelectedRows();
+        const count = selectedRows.length;
+
+        // Show/hide bulk actions bar
+        const bulkBar = document.getElementById('bulkActionsBar');
+        const countEl = document.getElementById('selectedCount');
+
+        if (bulkBar && countEl) {
+            if (count > 0) {
+                bulkBar.style.display = 'flex';
+                countEl.textContent = count;
+            } else {
+                bulkBar.style.display = 'none';
+            }
+        }
+
+        console.log(`📋 ${count} rows selected`);
+    },
+
+    // BATCH SELECTION: Apply account to all selected transactions
+    applyBulkAccount(accountCode, accountName) {
+        const selectedRows = this.gridApi.getSelectedRows();
+
+        if (selectedRows.length === 0) {
+            alert('No transactions selected');
+            return;
+        }
+
+        // Confirm bulk update
+        const confirmMsg = `Assign "${accountName}" to ${selectedRows.length} selected transaction(s)?`;
+        if (!confirm(confirmMsg)) return;
+
+        // Update all selected transactions
+        selectedRows.forEach(row => {
+            row.allocatedAccount = accountCode;
+            row.allocatedAccountName = accountName;
+            row.status = 'manual';
+
+            // Learn from each transaction
+            VendorMatcher.learnFromTransaction(row);
+        });
+
+        // Refresh grid
+        this.gridApi.refreshCells({ force: true });
+
+        // Clear selection
+        this.gridApi.deselectAll();
+
+        // Save and update stats
+        Storage.saveTransactions(this.transactions);
+        App.updateStatistics();
+
+        console.log(`✅ Bulk assigned ${accountCode} to ${selectedRows.length} transactions`);
+    },
+
+    // BATCH SELECTION: Initialize bulk actions toolbar
+    initializeBulkActions() {
+        const accountSelect = document.getElementById('bulkAccountSelect');
+        const applyBtn = document.getElementById('applyBulkAccount');
+        const clearBtn = document.getElementById('clearSelection');
+
+        if (!accountSelect || !applyBtn || !clearBtn) {
+            console.warn('⚠️ Bulk actions UI elements not found');
+            return;
+        }
+
+        // Populate account dropdown
+        const accounts = AccountAllocator.getAllAccounts();
+        accountSelect.innerHTML = '<option value="">Assign Account...</option>';
+
+        accounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.code;
+            option.textContent = `${account.code} - ${account.fullName}`;
+            accountSelect.appendChild(option);
+        });
+
+        // Apply button handler
+        applyBtn.addEventListener('click', () => {
+            const selectedAccount = accountSelect.value;
+            if (!selectedAccount) {
+                alert('Please select an account');
+                return;
+            }
+
+            const account = accounts.find(a => a.code === selectedAccount);
+            if (account) {
+                this.applyBulkAccount(account.code, account.fullName);
+                accountSelect.value = ''; // Reset dropdown
+            }
+        });
+
+        // Clear selection button
+        clearBtn.addEventListener('click', () => {
+            this.gridApi.deselectAll();
+        });
+
+        console.log('✅ Bulk actions initialized');
+    },
+
+    // Helper method: Recalculate all balances from opening balance
+    recalculateAllBalances() {
+        if (!this.transactions || this.transactions.length === 0) return;
+
+        // Sort transactions by date
+        const sortedTransactions = [...this.transactions].sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateA.getTime() - dateB.getTime();
+        });
+
+        // Get opening balance from reconciliation panel or default to 0
+        const openingBalanceInput = document.getElementById('expectedOpeningBalance');
+        let runningBalance = 0;
+
+        if (openingBalanceInput && openingBalanceInput.value) {
+            runningBalance = parseFloat(openingBalanceInput.value) || 0;
+        }
+
+        console.log('Starting balance calculation from opening:', runningBalance);
+
+        // Recalculate each transaction balance
+        for (let i = 0; i < sortedTransactions.length; i++) {
+            const tx = sortedTransactions[i];
+            const debit = parseFloat(tx.debits) || 0;
+            const credit = parseFloat(tx.amount) || 0;
+
+            // Balance calculation: Opening Balance - Debit + Credit
+            // Debits decrease balance (money out), Credits increase balance (money in)
+            runningBalance = runningBalance - debit + credit;
+            tx.balance = runningBalance;
+
+            // Debug first few transactions
+            if (i < 3) {
+                console.log(`Txn ${i + 1}: Debit=${debit}, Credit=${credit}, Balance=${runningBalance}`);
+            }
+        }
+
+        // Update the actual transactions array with the sorted data
+        this.transactions = sortedTransactions;
+
+        // Refresh the grid to show updated balances
+        if (this.gridApi) {
+            this.gridApi.setRowData(this.transactions);
+            this.gridApi.refreshCells({ force: true });
+        }
+
+        // Update reconciliation if available
+        if (typeof App !== 'undefined' && App.updateReconciliation) {
+            App.updateReconciliation();
+        }
+
+        console.log('Balance calculation complete. Final balance:', runningBalance);
+    },
+
+    // Rainbow row styling
+    getRowStyle(params) {
+        const rainbowColors = [
+            { background: '#FFD1DC' },  // Pink
+            { background: '#D1F2FF' },  // Cyan
+            { background: '#D1FFD1' },  // Mint
+            { background: '#FFFACD' },  // Yellow/Cream
+            { background: '#FFDAB9' },  // Peach
+            { background: '#E6E6FA' }   // Lavender
+        ];
+        return rainbowColors[params.node.rowIndex % 6];
+    },
+
+    // Color schemes for grid rows
+    colorSchemes: {
+        rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],  // 6 pastel colors
+        classic: ['#FFFFFF', '#F5F5F5'],  // White/light gray
         default: ['transparent', 'transparent'],  // Grid default
-    ledger: ['#E8F5E9', '#F1F8E9'],  // Green accounting
-    postit: ['#FFF9C4', '#FFEB3B'],  // Yellow sticky notes
-    pastel: ['#FFE4E1', '#E6F3FF', '#FFF0F5', '#F0FFF0'],  // Soft pastels
-    professional: ['#FFFFFF', '#E3F2FD'],  // Corporate blue/white
-    highcontrast: ['#FFFFFF', '#E0E0E0']  // Strong gray
-},
+        ledger: ['#E8F5E9', '#F1F8E9'],  // Green accounting
+        postit: ['#FFF9C4', '#FFEB3B'],  // Yellow sticky notes
+        pastel: ['#FFE4E1', '#E6F3FF', '#FFF0F5', '#F0FFF0'],  // Soft pastels
+        professional: ['#FFFFFF', '#E3F2FD'],  // Corporate blue/white
+        highcontrast: ['#FFFFFF', '#E0E0E0']  // Strong gray
+    },
 
     // Get row style based on selected color scheme
     getRowStyle(params) {
-    const scheme = Settings.current.gridColorScheme || 'rainbow';
-    const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
-    const colorIndex = params.node.rowIndex % colors.length;
+        const scheme = Settings.current.gridColorScheme || 'rainbow';
+        const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
+        const colorIndex = params.node.rowIndex % colors.length;
 
-    const style = { background: colors[colorIndex] };
+        const style = { background: colors[colorIndex] };
 
-    // Apply font customization if set
-    if (Settings.current.gridFontFamily) {
-        style.fontFamily = Settings.current.gridFontFamily;
+        // Apply font customization if set
+        if (Settings.current.gridFontFamily) {
+            style.fontFamily = Settings.current.gridFontFamily;
+        }
+        if (Settings.current.gridFontSize) {
+            style.fontSize = Settings.current.gridFontSize + 'px';
+        }
+
+        return style;
+    },
+
+    // Apply grid customization
+    applyGridCustomization() {
+        if (this.gridApi) {
+            this.gridApi.redrawRows();
+        }
+    },
+
+    // Helper method: Setup opening balance input changes
+    setupOpeningBalanceListener() {
+        const openingBalanceInput = document.getElementById('expectedOpeningBalance');
+        if (openingBalanceInput) {
+            openingBalanceInput.addEventListener('input', () => {
+                console.log('⚡ Opening balance changed, recalculating...');
+                this.recalculateAllBalances();
+            });
+            console.log('✅ Opening balance listener attached');
+        } else {
+            console.warn('⚠️ Opening balance input not found');
+        }
+    },
+
+    // Helper method: Setup window resize listener
+    setupResizeListener() {
+        let resizeTimer;
+
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (this.gridApi) {
+                    this.gridApi.sizeColumnsToFit();
+                }
+            }, 250); // Debounce resize events
+        };
+
+        window.addEventListener('resize', handleResize);
     }
-    if (Settings.current.gridFontSize) {
-        style.fontSize = Settings.current.gridFontSize + 'px';
-    }
-
-    return style;
-},
-
-// Apply grid customization
-applyGridCustomization() {
-    if (this.gridApi) {
-        this.gridApi.redrawRows();
-    }
-},
-
-// Helper method: Setup opening balance input changes
-setupOpeningBalanceListener() {
-    const openingBalanceInput = document.getElementById('expectedOpeningBalance');
-    if (openingBalanceInput) {
-        openingBalanceInput.addEventListener('input', () => {
-            console.log('⚡ Opening balance changed, recalculating...');
-            this.recalculateAllBalances();
-        });
-        console.log('✅ Opening balance listener attached');
-    } else {
-        console.warn('⚠️ Opening balance input not found');
-    }
-},
-
-// Helper method: Setup window resize listener
-setupResizeListener() {
-    let resizeTimer;
-
-    const handleResize = () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            if (this.gridApi) {
-                this.gridApi.sizeColumnsToFit();
-            }
-        }, 250); // Debounce resize events
-    };
-
-    window.addEventListener('resize', handleResize);
-}
 };
 
 // Vendor Dictionary Grid
@@ -821,7 +851,7 @@ window.VendorGrid = {
             }
         };
 
-        new agGrid.Grid(container, gridOptions);
+        this.gridApi = agGrid.createGrid(container, gridOptions);
     },
 
     getColumnDefs() {
@@ -945,17 +975,21 @@ window.VendorGrid = {
         VendorMatcher.updateVendor(vendor.id, vendor);
     },
 
+    // Delete vendor logic
     deleteVendor(vendorId) {
         if (confirm('Are you sure you want to delete this vendor?')) {
             VendorMatcher.deleteVendor(vendorId);
             this.loadVendors();
         }
-    },
-
-    addVendor(vendorData) {
-        VendorMatcher.addVendor(vendorData);
-        this.loadVendors();
     }
 };
+
+// Initialize if DOM loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => TransactionGrid.initialize());
+} else {
+    TransactionGrid.initialize();
+}
+
 
 console.log('✅ TransactionGrid loaded successfully');

@@ -25,8 +25,13 @@ const SessionManager = {
     getSavedSessionInfo() {
         const filename = localStorage.getItem('lastFileName');
         const time = localStorage.getItem('lastFileTime');
+        const transactionsStr = localStorage.getItem('lastTransactions');
 
-        if (!filename || !time) return null;
+        // Check for missing or corrupted data
+        if (!filename || !time || !transactionsStr ||
+            filename === 'undefined' || time === 'undefined' || transactionsStr === 'undefined') {
+            return null;
+        }
 
         const uploadTime = new Date(parseInt(time));
         const now = new Date();
@@ -55,13 +60,21 @@ const SessionManager = {
     restoreSession() {
         try {
             const saved = localStorage.getItem('lastTransactions');
-            if (!saved) return null;
+            if (!saved || saved === 'undefined') {
+                this.clearSession();
+                return null;
+            }
 
             const transactions = JSON.parse(saved);
+            if (!Array.isArray(transactions)) {
+                throw new Error('Saved data is not an array');
+            }
+
             console.log('📂 Restored session:', transactions.length, 'transactions');
             return transactions;
         } catch (error) {
             console.error('❌ Error restoring session:', error);
+            this.clearSession(); // Auto-clear corrupted session
             return null;
         }
     },

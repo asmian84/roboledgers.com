@@ -37,6 +37,11 @@ const App = {
             // Show upload section
             this.showSection('upload');
 
+            // Start Background AI Worker
+            if (window.AIWorker) {
+                AIWorker.start();
+            }
+
             console.log('✅ Application initialized successfully');
         } catch (error) {
             console.error('❌ INITIALIZATION ERROR:', error);
@@ -458,8 +463,7 @@ const App = {
 
             // Show review section
             this.showSection('review');
-            // Update session
-            SessionManager.saveSession();
+
 
             // FORCE GRID REFRESH - Push updated data to AG Grid
             if (TransactionGrid.gridApi) {
@@ -1038,6 +1042,64 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Start Over Button Logic
+    const startOverBtn = document.getElementById('startOverBtn');
+    console.log('🔍 Debug: Searching for startOverBtn...', startOverBtn);
+
+    if (startOverBtn) {
+        // Remove old listeners to be safe (by cloning) - optional but ensures clean slate
+        // const newBtn = startOverBtn.cloneNode(true);
+        // startOverBtn.parentNode.replaceChild(newBtn, startOverBtn);
+        // Note: cloning breaks other refs, better to just add listener.
+
+        let resetTimeout;
+        startOverBtn.addEventListener('click', (e) => {
+            console.log('🖱️ Start Over Clicked!');
+
+            // Check if already in confirmation state
+            if (startOverBtn.classList.contains('confirm-state')) {
+                // CONFIRMED Action
+                console.log('✅ Reset confirmed. Wiping data...');
+                startOverBtn.innerHTML = '♻️ Wiping Data...';
+                localStorage.clear();
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                // First Click: Ask for confirmation
+                const originalText = startOverBtn.innerHTML;
+                startOverBtn.innerHTML = '⚠️ Click to Confirm';
+                startOverBtn.classList.add('confirm-state');
+                startOverBtn.style.backgroundColor = '#ef4444'; // Force red for visibility
+                startOverBtn.style.color = 'white';
+                startOverBtn.style.borderColor = '#dc2626';
+
+                // Reset after 3 seconds if not confirmed
+                resetTimeout = setTimeout(() => {
+                    startOverBtn.innerHTML = originalText;
+                    startOverBtn.classList.remove('confirm-state');
+                    startOverBtn.style.backgroundColor = '';
+                    startOverBtn.style.color = '';
+                    startOverBtn.style.borderColor = '';
+                }, 3000);
+            }
+        });
+    }
+
+    // Wire up Pop-out button (added dynamically)
+    const popoutBtn = document.getElementById('popoutBtn');
+    if (popoutBtn) {
+        popoutBtn.addEventListener('click', () => {
+            if (window.GridPopout) {
+                window.GridPopout.openPopout();
+            } else {
+                console.error('GridPopout module not loaded');
+                alert('Grid Pop-out module not loaded. Please refresh the page.');
+            }
+        });
+    }
 
     // Setup theme dropdown with live preview
     const themeSelect = document.getElementById('themeSelect');
