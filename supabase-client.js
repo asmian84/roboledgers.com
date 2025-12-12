@@ -164,5 +164,24 @@ window.SupabaseClient = {
 
         console.log(`✅ Sync Complete: ${successCount} vendors synced.`);
         return true;
+    },
+
+    /**
+     * Get exact count of vendors in Supabase
+     */
+    async getVendorCount() {
+        if (!this.isConnected) return 0;
+
+        try {
+            const { count, error } = await this.client
+                .from('vendors')
+                .select('*', { count: 'exact', head: true });
+
+            if (error) throw error;
+            return count;
+        } catch (err) {
+            console.error('Error fetching vendor count:', err);
+            return 0;
+        }
     }
 };
