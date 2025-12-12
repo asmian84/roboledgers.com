@@ -866,9 +866,26 @@ window.VendorGrid = {
 
         return [
             {
+                headerName: 'Cloud',
+                width: 70,
+                pinned: 'left',
+                sortable: true,
+                cellRenderer: (params) => {
+                    // Check if vendor has a UUID (Supabase ID) or is marked synced
+                    const isSynced = params.data.id && params.data.id.length > 20 && !params.data.id.startsWith('vnd_');
+
+                    if (isSynced) {
+                        return '<span title="Synced to Cloud">☁️</span>';
+                    } else {
+                        return '<span title="Local Only" style="color: black; font-size: 20px;">●</span>'; // Small black dot
+                    }
+                },
+                cellStyle: { textAlign: 'center' }
+            },
+            {
                 headerName: 'Description',
                 field: 'name',
-                width: 300,
+                width: 250,
                 pinned: 'left',
                 editable: false,
                 sortable: true,

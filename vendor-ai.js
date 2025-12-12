@@ -3,6 +3,15 @@
 // Vendor AI Logic
 
 window.VendorAI = {
+    // Simple categorization based on name keywords
+    categorizeVendor(name) {
+        const n = name.toLowerCase();
+        if (n.includes('fee') || n.includes('charge') || n.includes('interest')) return 'Bank Fees';
+        if (n.includes('dep') || n.includes('deposit') || n.includes('transfer')) return 'Transfer';
+        if (n.includes('payroll') || n.includes('salary')) return 'Payroll';
+        return 'General'; // Default
+    },
+
     // AI-powered vendor re-categorization and optimization with progress feedback
     async rethinkVendors(progressCallback = null) {
         const vendors = VendorMatcher.getAllVendors();
