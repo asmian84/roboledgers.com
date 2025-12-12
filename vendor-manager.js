@@ -195,6 +195,18 @@ window.VendorManager = {
                 URL.revokeObjectURL(url);
 
                 console.log(`\u2705 Exported ${vendors.length} vendors`);
+
+                // Cloud Sync Trigger
+                if (window.SupabaseClient) {
+                    SupabaseClient.initialize().then(connected => {
+                        if (connected) {
+                            SupabaseClient.syncVendors(vendors);
+                        } else {
+                            console.log('☁️ Sync skipped (Not connected)');
+                            // Optional: Alert user to connect if they expect it
+                        }
+                    });
+                }
             });
         }
 
