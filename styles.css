@@ -2139,3 +2139,13 @@ input.currency-input,
     border: 1px solid var(--border-color);
     /* Clean outer border */
 }
+/* CRITICAL: Force Dark Text for Pastel Rainbow Rows (Matches Popup) */
+.ag-theme-alpine .ag-row {
+    color: #1f2937 !important; /* Dark text for contrast against pastel backgrounds */
+    font-weight: 500;
+}
+
+/* Ensure selected row looks good */
+.ag-theme-alpine .ag-row-selected {
+    border: 2px solid var(--primary-color) !important;
+}
