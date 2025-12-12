@@ -15,8 +15,16 @@ const App = {
             VendorMatcher.initialize();
 
             // Initialize UI components  
+            if (typeof TransactionGrid === 'undefined') {
+                throw new Error('TransactionGrid not loaded. Check script order in index.html');
+            }
             TransactionGrid.initialize('transactionGrid');
-            VendorManager.initialize();
+
+            if (typeof VendorManager === 'undefined') {
+                console.warn('VendorManager not loaded yet');
+            } else {
+                VendorManager.initialize();
+            }
 
             // Initialize Settings
             if (typeof Settings !== 'undefined') {
@@ -50,7 +58,21 @@ const App = {
             return;
         }
 
-        // Step 2: Apply vendor matching to ALL transactions
+        // Step 1.5: FORCE SAVE vendors to storage so transactions get fresh data
+        console.log('💾 Saving updated vendors to storage...');
+        if (typeof VendorMatcher !== 'undefined') {
+            // VendorMatcher already has the updated vendors in memory from rethinkVendors
+            // Force save them to localStorage
+            const allVendors = VendorMatcher.getAllVendors();
+            Storage.saveVendors(allVendors);
+            console.log(`✅ Saved ${allVendors.length} vendors with updated accounts`);
+
+            // CRITICAL: Force VendorMatcher to reload from storage to get fresh data
+            VendorMatcher.initialize();
+            console.log('✅ VendorMatcher reloaded with fresh vendor data');
+        }
+
+        // Step 2: Apply vendor matching AND account assignment to ALL transactions
         let categorized = 0;
         let errors = 0;
 
@@ -60,11 +82,58 @@ const App = {
                 if (match && match.vendor) {
                     tx.vendor = match.vendor.name;
                     tx.vendorId = match.vendor.id;
-                    tx.account = match.vendor.defaultAccount;  // THIS IS WHAT GRID DISPLAYS!
-                    tx.allocatedAccount = match.vendor.defaultAccount;
-                    tx.allocatedAccountName = match.vendor.defaultAccountName;
                     tx.category = match.vendor.category;
                     tx.status = 'matched';
+
+                    // DIRECTLY apply account logic based on vendor name (bypass cache)
+                    const vendorName = match.vendor.name.toLowerCase();
+                    const accounts = AccountAllocator.getAllAccounts();
+                    let assignedAccount = null;
+
+                    // Apply patterns (same as in vendor-ai.js)
+                    if (/wcb|workers comp/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '9750');
+                    } else if (/pay[-\s]?file|file\s*fee/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '7700');
+                    } else if (/sec\s*reg|lien/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '6800');
+                    } else if (/loan\s*(payment|credit|pmt)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2710');
+                    } else if ((vendorName.includes('loan') && vendorName.includes('interest'))) {
+                        assignedAccount = accounts.find(a => a.code === '7700');
+                    } else if (/mobile\s*.*\s*deposit/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '4001');
+                    } else if (/(received|rcvd).*(e-transfer|interac)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '4001');
+                    } else if (/(sent|transfer).*(e-transfer|interac)/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '8950');
+                    } else if (/online\s*.*\s*transfer/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2101');
+                    } else if (/gst[-\s]?[a-z]/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2170');
+                    } else if (/abcit/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2620');
+                    } else if (/commercial\s*tax/i.test(vendorName)) {
+                        assignedAccount = accounts.find(a => a.code === '2600');
+                    } else {
+                        // Use vendor's default account if no pattern matches
+                        assignedAccount = match.vendor.defaultAccount ?
+                            accounts.find(a => a.code === match.vendor.defaultAccount) : null;
+                    }
+
+                    if (assignedAccount) {
+                        tx.account = assignedAccount.code;
+                        tx.allocatedAccount = assignedAccount.code;
+                        tx.allocatedAccountName = assignedAccount.name;
+                        console.log(`📊 TX: "${tx.payee}" → ${assignedAccount.code} (${assignedAccount.name})`);
+                    } else {
+                        // Fallback to vendor default or 9970
+                        tx.account = match.vendor.defaultAccount || '9970';
+                        tx.allocatedAccount = match.vendor.defaultAccount || '9970';
+                        tx.allocatedAccountName = match.vendor.defaultAccountName || 'Un usual item';
+                        console.log(`📊 TX: "${tx.payee}" → ${tx.account} (fallback)`);
+                    }
+
                     categorized++;
                 }
             } catch (error) {
@@ -389,6 +458,25 @@ const App = {
 
             // Show review section
             this.showSection('review');
+            // Update session
+            SessionManager.saveSession();
+
+            // FORCE GRID REFRESH - Push updated data to AG Grid
+            if (TransactionGrid.gridApi) {
+                console.log('🔄 Forcing grid refresh with updated transaction accounts...');
+
+                // Method 1: Update row data completely
+                TransactionGrid.gridApi.setRowData(this.transactions);
+
+                // Method 2: Force refresh all cells
+                TransactionGrid.gridApi.refreshCells({ force: true });
+
+                // Method 3: Redraw all rows
+                TransactionGrid.gridApi.redrawRows();
+
+                console.log('✅ Grid forcefully refreshed with categorized data');
+            }
+
             this.loadReviewSection();
 
             console.log('✅ File processing complete!');
