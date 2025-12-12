@@ -2003,52 +2003,67 @@ textarea:focus {
     text-align: center !important;
 }
 
-/* FORCE Input Styling Override for Standards Mode */
-input[type="text"]:not(.ag-floating-filter-input),
-input[type="number"]:not(.ag-floating-filter-input),
-input[type="date"],
-select,
-textarea,
-.ag-cell-edit-input {
+/* AG GRID INPUT STYLING - TARGETED & SAFE */
+
+/* 1. Cell Editors (When typing in a cell) */
+.ag-theme-alpine .ag-cell-inline-editing,
+.ag-theme-alpine .ag-cell-editor,
+.ag-theme-alpine .ag-cell input,
+.ag-theme-alpine .ag-cell select {
     background-color: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
-    border: 1px solid var(--border-light) !important;
-    border-radius: var(--radius-sm) !important;
-    padding: 0.5rem !important;
-    font-size: 14px !important;
-    line-height: normal !important;
+    font-family: var(--font-family);
+    font-size: 14px;
+    height: 100% !important;
+    line-height: normal;
+    border: none !important;
+    /* Let AG Grid handle focus border */
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 8px !important;
 }
 
-/* Styled Filter Inputs - Explicit fix */
-.ag-floating-filter-input {
+/* 2. Floating Filters (The search boxes in headers) */
+.ag-theme-alpine .ag-header-row .ag-floating-filter-input {
     background-color: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
     border: 1px solid var(--border-light) !important;
-    border-radius: var(--radius-sm) !important;
-    padding: 4px 8px !important;
-    font-size: 13px !important;
-    height: 28px !important;
+    border-radius: 4px !important;
+    height: 24px !important;
+    /* Explicit small height for header */
     line-height: normal !important;
-    width: 100% !important;
     margin-top: 0 !important;
+    width: 100% !important;
+    padding: 0 4px !important;
+    box-shadow: none !important;
 }
 
-/* Specific Focus State */
-input:focus,
-select:focus,
-textarea:focus,
-.ag-floating-filter-input:focus,
-.ag-cell-edit-input:focus {
-    outline: none !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+/* 3. Focus States */
+.ag-theme-alpine .ag-cell-focus-within {
+    border: 2px solid var(--primary-color) !important;
+    z-index: 100;
+    /* Ensure focus border sits on top */
 }
 
+/* 4. Global Inputs (Outside Grid) - Keep these separate */
+input.currency-input,
+#gridQuickFilter,
+#refPrefixInput,
+#accountTypeSelect,
+.bulk-account-dropdown {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
+/* Grid Container Stability */
 .grid-container {
     display: block;
-    /* Flex can sometimes cause collapse issues with AG Grid */
-    height: auto;
     width: 100%;
+    height: 600px;
+    /* Explicit height to match grid */
     margin-bottom: 2rem;
 }
 
