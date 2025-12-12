@@ -184,28 +184,19 @@ window.VendorManager = {
                     return;
                 }
 
-                const data = JSON.stringify(vendors, null, 2);
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                const timestamp = new Date().toISOString().split('T')[0];
-                a.href = url;
-                a.download = `vendor-dictionary-${timestamp}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-
-                console.log(`\u2705 Exported ${vendors.length} vendors`);
-
-                // Cloud Sync Trigger
+                // Cloud Sync Only (User Requested: "no local download")
                 if (window.SupabaseClient) {
+                    exportVendorBtn.innerHTML = '⏳ Syncing...';
                     SupabaseClient.initialize().then(connected => {
+                        exportVendorBtn.innerHTML = 'Export'; // Reset label
                         if (connected) {
                             SupabaseClient.syncVendors(vendors);
                         } else {
-                            console.log('☁️ Sync skipped (Not connected)');
-                            // Optional: Alert user to connect if they expect it
+                            alert('⚠️ Cloud connection unavailable.');
                         }
                     });
+                } else {
+                    alert('Supabase Client not loaded.');
                 }
             });
         }
