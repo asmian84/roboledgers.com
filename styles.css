@@ -1952,3 +1952,10 @@ textarea:focus {
     --input-bg: var(--bg-tertiary);
 }
 
+
+/* Fix: Soften filter borders */
+.ag-floating-filter-input {
+    border-color: var(--border-light) !important;
+    border-width: 1px !important;
+}
+
