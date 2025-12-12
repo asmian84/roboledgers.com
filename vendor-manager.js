@@ -173,30 +173,8 @@ window.VendorManager = {
             }
         }
 
-        // Export Vendor Button
-        let exportVendorBtn = document.getElementById('exportVendorBtn');
-
-        // FAIL-SAFE: Inject if missing
-        if (!exportVendorBtn) {
-            console.warn('⚠️ Export button missing from HTML, injecting programmatically...');
-            const importBtn = document.getElementById('importVendorBtn');
-            if (importBtn && importBtn.parentNode) {
-                exportVendorBtn = document.createElement('button');
-                exportVendorBtn.id = 'exportVendorBtn';
-                exportVendorBtn.className = 'btn-secondary';
-                exportVendorBtn.textContent = 'Export / Sync';
-                exportVendorBtn.style.display = 'inline-block';
-                exportVendorBtn.style.marginLeft = '0.5rem';
-                importBtn.parentNode.insertBefore(exportVendorBtn, importBtn.nextSibling);
-            }
-        } else {
-            // FORCE VISIBILITY if it exists but is hidden
-            exportVendorBtn.style.display = 'inline-block';
-            exportVendorBtn.style.visibility = 'visible';
-            exportVendorBtn.style.opacity = '1';
-            exportVendorBtn.hidden = false;
-        }
-
+        // Export / Sync Button
+        const exportVendorBtn = document.getElementById('exportVendorBtn');
         if (exportVendorBtn) {
             exportVendorBtn.addEventListener('click', () => {
                 const vendors = VendorMatcher.getAllVendors();
@@ -206,11 +184,16 @@ window.VendorManager = {
                     return;
                 }
 
-                // Cloud Sync Only (User Requested: "no local download")
+                // Cloud Sync Only
                 if (window.SupabaseClient) {
-                    exportVendorBtn.innerHTML = '⏳ Syncing...';
+                    const originalText = exportVendorBtn.textContent;
+                    exportVendorBtn.textContent = '⏳ Syncing...';
+                    exportVendorBtn.disabled = true;
+
                     SupabaseClient.initialize().then(connected => {
-                        exportVendorBtn.innerHTML = 'Export'; // Reset label
+                        exportVendorBtn.textContent = originalText;
+                        exportVendorBtn.disabled = false;
+
                         if (connected) {
                             SupabaseClient.syncVendors(vendors);
                         } else {
