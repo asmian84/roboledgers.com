@@ -2072,3 +2072,62 @@ input.currency-input,
 .ag-cell {
     border: none !important;
 }
+/* AG GRID VISUAL POLISH */
+
+/* 1. Header & Filter Rows - Give them room to breathe */
+.ag-theme-alpine .ag-header-row {
+    height: 40px !important; /* Increase from default to prevent squashing */
+}
+
+.ag-theme-alpine .ag-header-row-column-filter {
+    height: 45px !important; /* Give filter row extra space */
+}
+
+/* 2. Floating Filter Inputs - Clean, visible, centered */
+.ag-theme-alpine .ag-floating-filter-input {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important; /* Stronger border */
+    border-radius: 4px !important;
+    height: 28px !important;
+    line-height: 26px !important;
+    margin-top: 4px !important;
+    padding: 0 8px !important;
+    width: 100% !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important; /* Subtle depth */
+}
+
+.ag-theme-alpine .ag-floating-filter-input:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* 3. Cell Editors - Clean Look */
+.ag-theme-alpine .ag-cell-inline-editing,
+.ag-theme-alpine .ag-cell-editor,
+.ag-theme-alpine .ag-cell input,
+.ag-theme-alpine .ag-cell select {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    font-family: var(--font-family);
+    font-size: 14px;
+    height: 100% !important;
+    border: none !important;
+    padding: 0 10px !important;
+}
+
+/* 4. Column Headers - Vertically Align */
+.ag-theme-alpine .ag-header-cell-label {
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 5. ensure the grid container is robust */
+.grid-container {
+    display: block;
+    width: 100%;
+    margin-bottom: 2rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 4px; /* Tiny padding for aesthetic border effect */
+}
