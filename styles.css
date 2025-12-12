@@ -2106,6 +2106,83 @@ input.currency-input,
     justify-content: center !important;
 }
 
+/* FIXED GRID HEADER STYLES - THEME INDEPENDENT */
+/* User Request: "Crisp and clear, easy to read... should not change with color theme" */
+
+/* 1. Main Header Container - Fixed Dark Slate */
+.ag-theme-alpine .ag-header {
+    background-color: #1f2937 !important;
+    /* Fixed Slate-800 */
+    border-bottom: 1px solid #374151 !important;
+    /* Fixed Slate-700 */
+}
+
+/* 2. Header Rows - Inherit Fixed Background */
+.ag-theme-alpine .ag-header-row {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    /* Fixed White Text */
+}
+
+/* 3. Header Text - Crisp White & Centered */
+.ag-theme-alpine .ag-header-cell-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.ag-theme-alpine .ag-header-cell-text {
+    color: #ffffff !important;
+}
+
+/* 4. Sort Icons - Force White */
+.ag-theme-alpine .ag-icon {
+    color: #ffffff !important;
+}
+
+/* 5. Filter Inputs - Crisp White Box (High Contrast) */
+.ag-theme-alpine .ag-floating-filter-input {
+    height: 26px !important;
+    line-height: normal !important;
+    margin-top: 4px !important;
+    border-radius: 4px !important;
+    border: 1px solid #d1d5db !important;
+    /* Fixed Light Gray Border */
+    background-color: #ffffff !important;
+    /* Fixed White Background */
+    color: #000000 !important;
+    /* Fixed Black Text */
+    padding: 0 8px !important;
+    width: 95% !important;
+    box-shadow: none !important;
+}
+
+.ag-theme-alpine .ag-floating-filter-input:focus {
+    border-color: #3b82f6 !important;
+    /* Fixed Blue Focus */
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 6. Grid Container Border - Clean Neutral */
+.grid-container {
+    border: 1px solid #374151 !important;
+    /* Match header border */
+}
+
+/* 7. Scrollbars - Neutral Gray */
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
+.ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+    border-radius: 4px;
+}
+
 /* 6. Grid Container - Explicit Layout */
 .grid-container {
     display: block;
@@ -2127,4 +2204,9 @@ input.currency-input,
 /* Ensure selected row looks good */
 .ag-theme-alpine .ag-row-selected {
     border: 2px solid var(--primary-color) !important;
+}
+/* CRITICAL: RE-APPLY ROW TEXT COLOR (Overwritten by replacement) */
+.ag-theme-alpine .ag-row {
+    color: #1f2937 !important;
+    font-weight: 500;
 }
