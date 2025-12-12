@@ -2238,3 +2238,42 @@ input.currency-input,
     border-right: none !important;
     /* Removed per user request */
 }
+/* =========================================
+   VENDOR GRID OVERRIDES (Fix Dark Modal Issue)
+   ========================================= */
+#vendorGrid.ag-theme-alpine {
+    /* Force Light Theme Background inside the Dark Modal */
+    --ag-background-color: #ffffff !important;
+    --ag-foreground-color: #0f172a !important;
+    --ag-header-background-color: #f1f5f9 !important; /* Light Slate Header */
+    --ag-header-foreground-color: #1e293b !important;
+    --ag-row-hover-color: #e2e8f0 !important;
+    --ag-odd-row-background-color: #f8fafc !important;
+    --ag-border-color: #cbd5e1 !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+#vendorGrid .ag-header-cell-text {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+
+#vendorGrid .ag-row {
+    color: #334155 !important; /* Dark Slate Text */
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Fix delete button in vendor grid */
+#vendorGrid .delete-btn {
+    color: #ef4444 !important;
+    background: transparent !important;
+    border: 1px solid #ef4444 !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+#vendorGrid .delete-btn:hover {
+    background: #ef4444 !important;
+    color: white !important;
+}
