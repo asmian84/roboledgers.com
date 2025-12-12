@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -127,15 +127,11 @@
                     </div>
                     <div class="review-actions-wrapper">
                         <!-- Top Row: Buttons -->
-                        <div class="review-buttons">
-                            <button id="reconciliationShortcutBtn" class="btn-secondary"
-                                onclick="document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})"
                                 title="Jump to Reconciliation">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                                     <path d="M2 17l10 5 10-5"></path>
                                     <path d="M2 12l10 5 10-5"></path>
-                                </svg>
                                 Reconciliation
                             </button>
                             <button id="popoutBtn" class="btn-secondary" title="Open grid in new window">
@@ -239,35 +235,24 @@
                 <div class="grid-container">
                     <div id="transactionGrid" class="ag-theme-alpine"></div>
                 </div>
-
-                <!-- Bank Reconciliation Panel -->
-                <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>🏦 Bank Reconciliation</h3>
-                    <div class="reconciliation-grid">
                         <div class="reconciliation-section">
-                            <h4>Opening Balance</h4>
                             <div class="reconciliation-input-group">
                                 <label>Expected</label>
                                 <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
                                     class="currency-input">
-                            </div>
                             <div class="reconciliation-value">
                                 <label>Calculated</label>
                                 <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
                             </div>
-                        </div>
                         <div class="reconciliation-section">
-                            <h4>Ending Balance</h4>
                             <div class="reconciliation-input-group">
                                 <label>Expected</label>
                                 <input type="text" id="expectedEndingBalance" placeholder="$0.00"
                                     class="currency-input">
-                            </div>
                             <div class="reconciliation-value">
                                 <label>Calculated</label>
                                 <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
                             </div>
-                        </div>
                         <div class="reconciliation-section">
                             <h4>Transaction Totals</h4>
                             <div class="status-item">
@@ -278,7 +263,6 @@
                                 <label>Total Debits</label>
                                 <span id="totalDebits" class="calculated-value">$0.00</span>
                             </div>
-                        </div>
                         <div class="reconciliation-section">
                             <h4>Discrepancy</h4>
                             <div class="status-item">
@@ -380,8 +364,6 @@
                     <button id="importVendorBtn" class="btn-secondary">Import</button>
                     <button id="exportVendorBtn" class="btn-secondary" style="display: inline-block !important;">Export
                         / Sync</button>
-                    <button class="btn-secondary"
-                        onclick="document.querySelectorAll('.modal').forEach(m => m.style.display='none'); document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})">
                         Reconciliation
                     </button>
                 </div>
@@ -650,7 +632,6 @@
     <script src="transaction-pipeline.js"></script>
     <script src="ai-worker.js"></script>
     <script src="vendor-manager.js"></script>
-    <script src="account-chart.js"></script>
     <script src="reconciliation.js"></script>
     <script src="reports-engine.js"></script>
     <script src="reports-modal.js"></script>
