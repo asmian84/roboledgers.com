@@ -423,12 +423,15 @@
             </div>
             <div class="modal-body">
                 <!-- Action Buttons -->
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;">
                     <button id="addVendorBtn" class="btn-primary">Add Vendor</button>
                     <button id="importVendorBtn" class="btn-secondary">Import</button>
-                    <button id="exportVendorBtn" class="btn-secondary">Export</button>
+                    <button id="exportVendorBtn" class="btn-secondary" style="display: inline-block !important;">Export
+                        / Sync</button>
                     <button class="btn-secondary"
-                        onclick="document.querySelectorAll('.modal').forEach(m => m.style.display='none'); document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})">Reconciliation</button>
+                        onclick="document.querySelectorAll('.modal').forEach(m => m.style.display='none'); document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})">
+                        Reconciliation
+                    </button>
                 </div>
 
                 <!-- Import Drop Zone -->

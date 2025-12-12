@@ -174,7 +174,23 @@ window.VendorManager = {
         }
 
         // Export Vendor Button
-        const exportVendorBtn = document.getElementById('exportVendorBtn');
+        let exportVendorBtn = document.getElementById('exportVendorBtn');
+
+        // FAIL-SAFE: Inject if missing
+        if (!exportVendorBtn) {
+            console.warn('⚠️ Export button missing from HTML, injecting programmatically...');
+            const importBtn = document.getElementById('importVendorBtn');
+            if (importBtn && importBtn.parentNode) {
+                exportVendorBtn = document.createElement('button');
+                exportVendorBtn.id = 'exportVendorBtn';
+                exportVendorBtn.className = 'btn-secondary';
+                exportVendorBtn.textContent = 'Export / Sync';
+                exportVendorBtn.style.display = 'inline-block';
+                exportVendorBtn.style.marginLeft = '0.5rem';
+                importBtn.parentNode.insertBefore(exportVendorBtn, importBtn.nextSibling);
+            }
+        }
+
         if (exportVendorBtn) {
             exportVendorBtn.addEventListener('click', () => {
                 const vendors = VendorMatcher.getAllVendors();
