@@ -1,0 +1,41 @@
+/* AG Grid Input Visibility & Sizing Fix */
+
+/* 1. Ensure Floating Filter Inputs have height and color */
+.ag-theme-alpine .ag-floating-filter-input {
+    height: 26px !important;
+    color: var(--text-primary) !important;
+    background-color: var(--bg-elevated) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: 4px !important;
+    padding: 0 5px !important;
+    line-height: 24px !important;
+    margin-top: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Cell Editors - Full height and visible text */
+.ag-theme-alpine .ag-cell-inline-editing,
+.ag-theme-alpine .ag-cell input,
+.ag-theme-alpine .ag-cell select,
+.ag-theme-alpine .ag-cell-editor {
+    height: 100% !important;
+    color: var(--text-primary) !important;
+    background-color: var(--bg-secondary) !important;
+    padding-left: 10px !important;
+    border: none !important;
+    font-size: 14px !important;
+}
+
+/* 3. Reset stupid global overrides that might still be leaking */
+.ag-theme-alpine input[type="text"],
+.ag-theme-alpine input[type="number"],
+.ag-theme-alpine input[type="date"] {
+    height: auto;
+}
+
+/* 4. Fix row height if squashed */
+.ag-theme-alpine .ag-header-row {
+    min-height: 32px !important;
+}
