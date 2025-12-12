@@ -2081,37 +2081,6 @@ input.currency-input,
     border-bottom: 1px solid var(--border-color) !important;
 }
 
-/* 2. Filter Row - Compact but accessible */
-.ag-theme-alpine .ag-header-row-column-filter {
-    height: 36px !important;
-}
-
-/* 3. Filter Inputs - Flat, Clean, Minimal */
-.ag-theme-alpine .ag-floating-filter-input {
-    height: 26px !important;
-    line-height: normal !important;
-    margin-top: 4px !important;
-    /* Vertical centering */
-    border-radius: 4px !important;
-    border: 1px solid var(--border-light) !important;
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    padding: 0 8px !important;
-    width: 95% !important;
-    box-shadow: none !important;
-    /* Remove dirty shadows */
-}
-
-/* Active State for Inputs */
-.ag-theme-alpine .ag-floating-filter-input:focus {
-    border-color: var(--primary-color) !important;
-    background-color: var(--bg-elevated) !important;
-}
-
-/* 4. Cell Editors - Invisible match */
-.ag-theme-alpine .ag-cell-inline-editing,
-.ag-theme-alpine .ag-cell-editor,
-.ag-theme-alpine .ag-cell input,
 .ag-theme-alpine .ag-cell select {
     background-color: var(--bg-elevated) !important;
     color: var(--text-primary) !important;
@@ -2139,9 +2108,11 @@ input.currency-input,
     border: 1px solid var(--border-color);
     /* Clean outer border */
 }
+
 /* CRITICAL: Force Dark Text for Pastel Rainbow Rows (Matches Popup) */
 .ag-theme-alpine .ag-row {
-    color: #1f2937 !important; /* Dark text for contrast against pastel backgrounds */
+    color: #1f2937 !important;
+    /* Dark text for contrast against pastel backgrounds */
     font-weight: 500;
 }
 
