@@ -1,45 +1,4 @@
-<!DOCTY
-
-    <!-- Vendor Dictionary Modal -->
-<div id="vendorModal" class="modal">
-    <div class="modal-content modal-large">
-        <div class="modal-header">
-            <h2>📖 Vendor Dictionary</h2>
-            <button class="modal-close" id="closeVendorModal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;">
-                <button id="addVendorBtn" class="btn-primary">Add Vendor</button>
-                <button id="importVendorBtn" class="btn-secondary">Import</button>
-                <button id="exportVendorBtn" class="btn-secondary">Export / Sync</button>
-            </div>
-
-            <!-- Import Drop Zone -->
-            <div id="vendorImportDropZone"
-                style="display: none; margin-bottom: 1rem; padding: 2rem; border: 2px dashed var(--primary-color); border-radius: 8px; text-align: center; background: var(--panel-bg); cursor: pointer;">
-                <div class="upload-zone">
-                    <h3>Drop XLS/CSV Files Here</h3>
-                    <p>Supports multiple files • Learns from 'Account' column</p>
-                </div>
-                <input type="file" id="vendorImportInput" accept=".csv,.xls,.xlsx" multiple style="display: none;">
-            </div>
-
-            <!-- Bulk Progress -->
-            <div id="bulkProgress" style="display: none; margin: 1rem 0;">
-                <p id="bulkProgressText">Processing files...</p>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="bulkProgressFill"></div>
-                </div>
-            </div>
-            <div id="bulkResults" style="display: none;"></div>
-
-            <!-- Vendor Grid -->
-            <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
-        </div>
-    </div>
-</div>PE html>
-<html lang="en">
+<!DOCTYPE html>`r`n<html lang="en">
 
 <head>
     <meta charset="UTF-8">
