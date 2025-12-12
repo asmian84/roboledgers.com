@@ -553,6 +553,12 @@
             <div class="modal-header">
                 <h2>Vendor Dictionary</h2>
                 <div class="header-actions">
+                    <button id="addVendorBtn" class="btn-primary" title="Add New Vendor">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                        Add Vendor
+                    </button>
                     <button id="importVendorBtn" class="btn-secondary" title="Import Dictionary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -631,9 +637,7 @@
                 <!-- Vendor Grid -->
                 <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
             </div>
-            <div class="modal-footer">
-                <button id="addVendorBtn" class="btn-primary">Add Vendor</button>
-            </div>
+            <!-- Footer removed -->
         </div>
     </div>
     <script src="reports-modal.js"></script>
