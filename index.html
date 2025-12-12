@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -86,17 +86,17 @@
 
                     <div class="upload-info">
                         <div class="info-card">
-                            <div class="info-icon">??</div>
+                            <div class="info-icon">📊</div>
                             <h3>Smart Categorization</h3>
                             <p>Automatically matches vendors to your dictionary and assigns accounts</p>
                         </div>
                         <div class="info-card">
-                            <div class="info-icon">??</div>
+                            <div class="info-icon">✏️</div>
                             <h3>Interactive Review</h3>
                             <p>Edit transactions in a spreadsheet-like interface with real-time updates</p>
                         </div>
                         <div class="info-card">
-                            <div class="info-icon">?</div>
+                            <div class="info-icon">⚡</div>
                             <h3>Export Ready</h3>
                             <p>Generate Excel files formatted for QuickBooks and CASEWARE import</p>
                         </div>
@@ -242,7 +242,7 @@
 
                 <!-- Bank Reconciliation Panel -->
                 <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>?? Bank Reconciliation</h3>
+                    <h3>🏦 Bank Reconciliation</h3>
                     <div class="reconciliation-grid">
                         <div class="reconciliation-section">
                             <h4>Opening Balance</h4>
@@ -290,7 +290,7 @@
                                 <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
                             </div>
                             <div class="status-indicator" id="statusIndicator">
-                                <span class="status-icon">?</span>
+                                <span class="status-icon">⚪</span>
                                 <span class="status-text">Enter expected balances</span>
                             </div>
                         </div>
@@ -298,6 +298,67 @@
                 </div>
             </section>
         </main>
+
+        <!-- Vendor Dictionary Modal -->
+        <div id="vendorModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Vendor Dictionary</h2>
+                    <button class="modal-close" id="closeVendorModal">&times;</button>
+                </div>
+                <div class="modal-body" style="overflow: hidden;">
+                    <div class="vendor-controls">
+                        <button id="addVendorBtn" class="btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Add Vendor
+                        </button>
+                        <button id="importVendorBtn" class="btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Import
+                        </button>
+                        <button class="btn-secondary"
+                            onclick="document.querySelectorAll('.modal').forEach(m => m.style.display='none'); document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            Reconciliation
+                        </button>
+                    </div>
+
+                    <!-- Inline Drop Bucket (hidden by default, shown when Import clicked) -->
+                    <div id="vendorImportDropZone"
+                        style="display: none; margin: 1rem auto; max-width: 60%; text-align: center;">
+                        <div class="upload-zone" style="padding: 1rem;">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    style="width: 40px; height: 40px; margin: 0 auto;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h3 style="margin: 0.5rem 0; font-size: 14px;">Drop CSV/Excel files to index vendors</h3>
+                            <p class="upload-subtitle" style="margin: 0; font-size: 12px;">or click to browse</p>
+                            <input type="file" id="vendorImportInput" accept=".csv,.xls,.xlsx" multiple hidden>
+                        </div>
+                    </div>
+
+                    <div id="bulkProgress" style="display: none; margin: 1rem 0;">
+                        <p id="bulkProgressText">Processing files...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="bulkProgressFill"></div>
+                        </div>
+                    </div>
                     <div id="bulkResults" style="display: none;"></div>
                 </div>
 
@@ -333,17 +394,17 @@
                 <p class="export-description">Choose your export format:</p>
                 <div class="export-options">
                     <button class="export-option-card" data-format="quickbooks">
-                        <div class="export-icon">??</div>
+                        <div class="export-icon">📗</div>
                         <h3>QuickBooks</h3>
                         <p>IIF format for QuickBooks Desktop import</p>
                     </button>
                     <button class="export-option-card" data-format="caseware">
-                        <div class="export-icon">??</div>
+                        <div class="export-icon">📘</div>
                         <h3>CASEWARE</h3>
                         <p>Trial balance format for CASEWARE</p>
                     </button>
                     <button class="export-option-card" data-format="general">
-                        <div class="export-icon">??</div>
+                        <div class="export-icon">📊</div>
                         <h3>General Ledger</h3>
                         <p>Detailed transaction listing with all fields</p>
                     </button>
@@ -357,7 +418,7 @@
     <div id="vendorModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Vendor Dictionary</h2>
+                <h2>📖 Vendor Dictionary</h2>
                 <button class="modal-close" id="closeVendorModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -365,7 +426,12 @@
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;">
                     <button id="addVendorBtn" class="btn-primary">Add Vendor</button>
                     <button id="importVendorBtn" class="btn-secondary">Import</button>
-                    <button id="exportVendorBtn" class="btn-secondary">Export / Sync</button>
+                    <button id="exportVendorBtn" class="btn-secondary" style="display: inline-block !important;">Export
+                        / Sync</button>
+                    <button class="btn-secondary"
+                        onclick="document.querySelectorAll('.modal').forEach(m => m.style.display='none'); document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})">
+                        Reconciliation
+                    </button>
                 </div>
 
                 <!-- Import Drop Zone -->
@@ -373,7 +439,7 @@
                     style="display: none; margin-bottom: 1rem; padding: 2rem; border: 2px dashed var(--primary-color); border-radius: 8px; text-align: center; background: var(--panel-bg); cursor: pointer;">
                     <div class="upload-zone">
                         <h3>Drop XLS/CSV Files Here</h3>
-                        <p>Supports multiple files � Learns from 'Account' column</p>
+                        <p>Supports multiple files • Learns from 'Account' column</p>
                     </div>
                     <input type="file" id="vendorImportInput" accept=".csv,.xls,.xlsx" multiple style="display: none;">
                 </div>
@@ -388,7 +454,7 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content modal-large settings-modal">
             <div class="modal-header">
-                <h2>?? Settings</h2>
+                <h2>⚙️ Settings</h2>
                 <button class="modal-close" id="closeSettingsModal">&times;</button>
             </div>
             <div class="modal-body settings-body">
@@ -408,42 +474,42 @@
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="cyber-night" checked>
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">🌃</span>
                                     <span class="theme-name">Cyber Night</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="arctic-dawn">
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">❄️</span>
                                     <span class="theme-name">Arctic Dawn</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="neon-forest">
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">🌲</span>
                                     <span class="theme-name">Neon Forest</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="royal-amethyst">
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">💎</span>
                                     <span class="theme-name">Royal Amethyst</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="sunset-horizon">
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">🌅</span>
                                     <span class="theme-name">Sunset Horizon</span>
                                 </div>
                             </label>
                             <label class="theme-radio-option">
                                 <input type="radio" name="theme" value="ocean-depths">
                                 <div class="theme-content">
-                                    <span class="theme-icon">??</span>
+                                    <span class="theme-icon">🌊</span>
                                     <span class="theme-name">Ocean Depths</span>
                                 </div>
                             </label>
@@ -492,7 +558,7 @@
     <div id="manageAccountsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Manage Accounts</h2>
+                <h2>🏦 Manage Accounts</h2>
                 <button class="modal-close" id="closeManageAccountsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -565,9 +631,9 @@
     <div id="reportsModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2>?? Financial Reports</h2>
+                <h2>📊 Financial Reports</h2>
                 <button class="export-pdf-btn" id="exportReportPDF">
-                    <span>??</span>
+                    <span>📄</span>
                     <span>Export PDF</span>
                 </button>
                 <button class="modal-close" id="closeReportsModal">&times;</button>
@@ -641,8 +707,8 @@
     <script src="theme-radio-handler.js"></script>
     <script>
         // Debug test - verify JavaScript works
-        console.log('?? TEST: JavaScript is executing!');
-        console.log('?? TEST: About to load app.j');
+        console.log('🔍 TEST: JavaScript is executing!');
+        console.log('🔍 TEST: About to load app.j');
     </script>
     <script src="session-manager.js"></script>
     <script src="undo-manager.js"></script>
