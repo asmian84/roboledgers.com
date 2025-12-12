@@ -801,19 +801,25 @@ window.TransactionGrid = {
     },
 
     // Helper method: Setup window resize listener
+    // Helper method: Setup robust resize listener
     setupResizeListener() {
-        let resizeTimer;
+        // Use ResizeObserver to track container size changes (more robust than window.resize)
+        const gridDiv = document.getElementById('transactionGrid');
+        if (!gridDiv) return;
 
-        const handleResize = () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
                 if (this.gridApi) {
-                    this.gridApi.sizeColumnsToFit();
+                    // Debounce to prevent thrashing
+                    clearTimeout(this._resizeTimer);
+                    this._resizeTimer = setTimeout(() => {
+                        this.gridApi.sizeColumnsToFit();
+                    }, 50);
                 }
-            }, 250); // Debounce resize events
-        };
+            }
+        });
 
-        window.addEventListener('resize', handleResize);
+        resizeObserver.observe(gridDiv);
     }
 };
 
