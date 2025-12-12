@@ -212,7 +212,8 @@ window.TransactionGrid = {
                 lockPosition: true,
                 suppressMenu: true,
                 filter: false,
-                resizable: false
+                resizable: false,
+                cellClass: 'checkbox-cell' // Targeted class for styling
             },
             {
                 headerName: 'Ref #',

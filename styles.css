@@ -2230,3 +2230,8 @@ input.currency-input,
     color: #1f2937 !important;
     font-weight: 500;
 }
+/* Checkbox Column - Light Grey Background (Independent of row color) */
+.ag-theme-alpine .checkbox-cell {
+    background-color: #f8fafc !important; /* Slate-50 */
+    border-right: 1px solid #e2e8f0 !important; /* Subtle separator */
+}
