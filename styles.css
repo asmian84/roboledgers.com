@@ -1959,3 +1959,37 @@ textarea:focus {
     border-width: 1px !important;
 }
 
+
+/* AG Grid Cell Editor Styling - Clean and Centered */
+.ag-cell-inline-editing,
+.ag-cell-editor input,
+.ag-cell-editor textarea {
+    color: var(--text-primary) !important;
+    background: var(--bg-elevated) !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 0.5rem !important;
+    text-align: center !important;
+    font-family: var(--font-family) !important;
+    font-size: 14px !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1) !important;
+}
+
+.ag-cell-inline-editing input:focus,
+.ag-cell-editor input:focus,
+.ag-cell-editor textarea:focus {
+    outline: none !important;
+    border-color: var(--primary-light) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Remove harsh borders from cells when editing */
+.ag-cell-inline-editing {
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Center text in editable cells */
+.ag-cell-edit-input {
+    text-align: center !important;
+}
