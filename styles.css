@@ -2152,27 +2152,37 @@ input.currency-input,
     height: 100% !important;
 }
 
-/* 6. Filter Inputs - Crisp White Box & Centered */
-.ag-theme-alpine .ag-floating-filter-input {
+/* 6. Filter Inputs - Force Light Grey & Clean */
+/* Specificity Boost: Target input element directly within the theme and header */
+.ag-theme-alpine .ag-header-row .ag-floating-filter-body input,
+.ag-theme-alpine .ag-floating-filter-input,
+.ag-theme-alpine input.ag-floating-filter-input {
     height: 24px !important;
-    line-height: normal !important;
+    line-height: 24px !important;
     margin: 0 !important;
-    /* Reset margins, let flexbox center */
     border-radius: 4px !important;
     border: 1px solid #cbd5e1 !important;
     /* Slate-300 */
-    background-color: #ffffff !important;
+    background-color: #f8fafc !important;
+    /* Very Light Grey (Slate-50) */
     color: #0f172a !important;
-    /* Dark Text */
+    /* Dark Slate Text (Force it) */
     padding: 0 8px !important;
     width: 90% !important;
     box-shadow: none !important;
+    -webkit-appearance: none !important;
+    /* Remove browser default styling */
+    appearance: none !important;
 }
 
+.ag-theme-alpine .ag-header-row .ag-floating-filter-body input:focus,
 .ag-theme-alpine .ag-floating-filter-input:focus {
     border-color: #0ea5e9 !important;
     /* Sky-500 */
+    background-color: #ffffff !important;
+    /* White on focus */
     box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+    outline: none !important;
 }
 
 /* 7. Grid Container Border - Match Header */
