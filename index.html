@@ -1,4 +1,4 @@
-<!DOCTYPE html>`r`n<html lang="en">
+﻿<!DOCTYPE html>`r`n<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -9,9 +9,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-
-
     <!-- SheetJS for Excel/CSV processing -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
@@ -19,6 +16,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -296,108 +295,108 @@
                     </div>
                 </div>
             </section>
-        
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content modal-large settings-modal">
-            <div class="modal-header">
-                <h2>⚙️ Settings</h2>
-                <button class="modal-close" id="closeSettingsModal">&times;</button>
-            </div>
-            <div class="modal-body settings-body">
-                <!-- Settings Tabs -->
-                <div class="settings-tabs">
-                    <button class="settings-tab active" data-tab="appearance">Appearance</button>
-                    <button class="settings-tab" data-tab="company">Company</button>
-                    <button class="settings-tab" data-tab="data">Data</button>
-                </div>
 
-                <!-- Appearance Settings -->
-                <div class="settings-panel active" data-panel="appearance">
+            <!-- Settings Modal -->
+            <div id="settingsModal" class="modal">
+                <div class="modal-content modal-large settings-modal">
+                    <div class="modal-header">
+                        <h2>⚙️ Settings</h2>
+                        <button class="modal-close" id="closeSettingsModal">&times;</button>
+                    </div>
+                    <div class="modal-body settings-body">
+                        <!-- Settings Tabs -->
+                        <div class="settings-tabs">
+                            <button class="settings-tab active" data-tab="appearance">Appearance</button>
+                            <button class="settings-tab" data-tab="company">Company</button>
+                            <button class="settings-tab" data-tab="data">Data</button>
+                        </div>
 
-                    <div class="settings-section">
-                        <label class="settings-label">Color Theme</label>
-                        <div class="theme-radio-group">
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="cyber-night" checked>
-                                <div class="theme-content">
-                                    <span class="theme-icon">🌃</span>
-                                    <span class="theme-name">Cyber Night</span>
+                        <!-- Appearance Settings -->
+                        <div class="settings-panel active" data-panel="appearance">
+
+                            <div class="settings-section">
+                                <label class="settings-label">Color Theme</label>
+                                <div class="theme-radio-group">
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="cyber-night" checked>
+                                        <div class="theme-content">
+                                            <span class="theme-icon">🌃</span>
+                                            <span class="theme-name">Cyber Night</span>
+                                        </div>
+                                    </label>
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="arctic-dawn">
+                                        <div class="theme-content">
+                                            <span class="theme-icon">❄️</span>
+                                            <span class="theme-name">Arctic Dawn</span>
+                                        </div>
+                                    </label>
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="neon-forest">
+                                        <div class="theme-content">
+                                            <span class="theme-icon">🌲</span>
+                                            <span class="theme-name">Neon Forest</span>
+                                        </div>
+                                    </label>
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="royal-amethyst">
+                                        <div class="theme-content">
+                                            <span class="theme-icon">💎</span>
+                                            <span class="theme-name">Royal Amethyst</span>
+                                        </div>
+                                    </label>
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="sunset-horizon">
+                                        <div class="theme-content">
+                                            <span class="theme-icon">🌅</span>
+                                            <span class="theme-name">Sunset Horizon</span>
+                                        </div>
+                                    </label>
+                                    <label class="theme-radio-option">
+                                        <input type="radio" name="theme" value="ocean-depths">
+                                        <div class="theme-content">
+                                            <span class="theme-icon">🌊</span>
+                                            <span class="theme-name">Ocean Depths</span>
+                                        </div>
+                                    </label>
                                 </div>
-                            </label>
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="arctic-dawn">
-                                <div class="theme-content">
-                                    <span class="theme-icon">❄️</span>
-                                    <span class="theme-name">Arctic Dawn</span>
-                                </div>
-                            </label>
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="neon-forest">
-                                <div class="theme-content">
-                                    <span class="theme-icon">🌲</span>
-                                    <span class="theme-name">Neon Forest</span>
-                                </div>
-                            </label>
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="royal-amethyst">
-                                <div class="theme-content">
-                                    <span class="theme-icon">💎</span>
-                                    <span class="theme-name">Royal Amethyst</span>
-                                </div>
-                            </label>
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="sunset-horizon">
-                                <div class="theme-content">
-                                    <span class="theme-icon">🌅</span>
-                                    <span class="theme-name">Sunset Horizon</span>
-                                </div>
-                            </label>
-                            <label class="theme-radio-option">
-                                <input type="radio" name="theme" value="ocean-depths">
-                                <div class="theme-content">
-                                    <span class="theme-icon">🌊</span>
-                                    <span class="theme-name">Ocean Depths</span>
-                                </div>
-                            </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel" data-panel="company" style="padding: 0 2rem 2rem 2rem;">
+                        <div class="settings-section">
+                            <label class="settings-label">Company Name</label>
+                            <input type="text" id="companyNameInput" class="settings-input"
+                                placeholder="Enter company name (optional)">
+                            <p class="settings-hint">Will be displayed above Transaction Review</p>
+                        </div>
+
+                        <div class="settings-section">
+                            <label class="settings-label">Fiscal Year-End Date</label>
+                            <input type="date" id="yearEndDate" class="settings-input">
+                            <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel" data-panel="data" style="padding: 0 2rem 2rem 2rem;">
+                        <div class="settings-section">
+                            <label class="settings-label">Vendor Dictionary</label>
+                            <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                                Manage Vendor Dictionary
+                            </button>
+                        </div>
+
+                        <div class="settings-section">
+                            <label class="settings-label">Chart of Accounts</label>
+                            <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                                View Chart of Accounts
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="settings-panel" data-panel="company" style="padding: 0 2rem 2rem 2rem;">
-                <div class="settings-section">
-                    <label class="settings-label">Company Name</label>
-                    <input type="text" id="companyNameInput" class="settings-input"
-                        placeholder="Enter company name (optional)">
-                    <p class="settings-hint">Will be displayed above Transaction Review</p>
-                </div>
-
-                <div class="settings-section">
-                    <label class="settings-label">Fiscal Year-End Date</label>
-                    <input type="date" id="yearEndDate" class="settings-input">
-                    <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
-                </div>
-            </div>
-
-            <div class="settings-panel" data-panel="data" style="padding: 0 2rem 2rem 2rem;">
-                <div class="settings-section">
-                    <label class="settings-label">Vendor Dictionary</label>
-                    <button id="settingsVendorDictBtn" class="btn-secondary full-width">
-                        Manage Vendor Dictionary
-                    </button>
-                </div>
-
-                <div class="settings-section">
-                    <label class="settings-label">Chart of Accounts</label>
-                    <button id="settingsAccountsBtn" class="btn-secondary full-width">
-                        View Chart of Accounts
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     </div>
     </div>
     </div>
