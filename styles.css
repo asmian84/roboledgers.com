@@ -2002,3 +2002,44 @@ textarea:focus {
 .ag-cell-edit-input {
     text-align: center !important;
 }
+/* FORCE Input Styling Override for Standards Mode */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea,
+.ag-floating-filter-input,
+.ag-cell-edit-input {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 0.5rem !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+}
+
+/* Specific Focus State */
+input:focus,
+select:focus,
+textarea:focus,
+.ag-floating-filter-input:focus,
+.ag-cell-edit-input:focus {
+    outline: none !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Fix Filter Inputs specifically */
+.ag-header-row .ag-floating-filter-input {
+    margin-top: 4px;
+    height: 30px !important; /* Force explicit height for filters */
+    padding: 2px 8px !important;
+}
+
+/* Ensure no double borders in grid */
+.ag-cell-focus,
+.ag-cell {
+    border: none !important;
+}
