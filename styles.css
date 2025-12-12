@@ -1919,20 +1919,28 @@ textarea:focus {
 
 
 /* AG Grid Floating Filter Customization */
-.ag-floating-filter-input {
-    background: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border-color) !important;
+/* 3. Filter Inputs - Flat, Clean, Minimal */
+.ag-theme-alpine .ag-floating-filter-input {
+    height: 26px !important;
+    line-height: normal !important;
+    margin-top: 4px !important;
+    /* Vertical centering */
     border-radius: 4px !important;
-    padding: 0.4rem !important;
-    height: 30px !important;
-    font-size: 0.9rem !important;
+    border: 1px solid #e5e7eb !important;
+    /* Ultra-thin light gray */
+    background-color: #ffffff !important;
+    /* Clean white background */
+    color: #1f2937 !important;
+    /* Dark text */
+    padding: 0 8px !important;
+    width: 95% !important;
+    box-shadow: none !important;
 }
 
-.ag-floating-filter-input:focus {
+/* Active State for Inputs */
+.ag-theme-alpine .ag-floating-filter-input:focus {
     border-color: var(--primary-color) !important;
-    outline: none !important;
-    box-shadow: 0 0 0 2px var(--glow-color) !important;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2) !important;
 }
 
 .ag-header-cell-menu-button {
