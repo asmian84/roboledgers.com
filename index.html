@@ -547,7 +547,95 @@
     <script src="vendor-manager.js"></script>
     <script src="account-chart.js"></script>
     <script src="reconciliation.js"></script>
-    <script src="reports-engine.js"></script>
+    <!-- Vendor Manager Modal (Restored) -->
+    <div id="vendorModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2>Vendor Dictionary</h2>
+                <div class="header-actions">
+                    <button id="importVendorBtn" class="btn-secondary" title="Import Dictionary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Import
+                    </button>
+                    <!-- Enhanced Export Button for Cloud Sync -->
+                    <button id="exportVendorBtn" class="btn-secondary" title="Sync to Cloud">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Sync / Export
+                    </button>
+                    <button id="bulkIndexBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Bulk Index
+                    </button>
+                    <button id="rethinkVendorsBtn" class="btn-primary" title="AI Re-think">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z">
+                            </path>
+                            <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        AI Re-think
+                    </button>
+                    <button id="closeVendorModal" class="modal-close">&times;</button>
+                </div>
+            </div>
+
+            <!-- Import Drop Zone (Hidden by default) -->
+            <div id="vendorImportDropZone" class="import-drop-zone" style="display: none;">
+                <div class="upload-zone">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3>Drop CSV/Excel Files Here</h3>
+                    <p>to build vendor dictionary</p>
+                    <input type="file" id="vendorImportInput" accept=".csv,.xlsx,.xls" multiple hidden>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <!-- Bulk Index Layout -->
+                <div id="bulkIndexInfo" class="bulk-index-panel" style="display: none;">
+                    <div class="bulk-upload-zone" id="bulkUploadZone">
+                        <div class="icon">📂</div>
+                        <h3>Drop Historical Files Here</h3>
+                        <p>Process years of data to build a master vendor list</p>
+                        <input type="file" id="bulkFileInput" multiple hidden>
+                    </div>
+
+                    <div id="bulkProgress" class="progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div id="bulkProgressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p id="bulkProgressText">Processing...</p>
+                    </div>
+
+                    <div id="bulkResults" class="results-panel" style="display: none;">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+
+                <!-- Vendor Grid -->
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="addVendorBtn" class="btn-primary">Add Vendor</button>
+            </div>
+        </div>
+    </div>
     <script src="reports-modal.js"></script>
     <script src="settings-manager.js"></script>
     <script src="theme-manager.js"></script>
