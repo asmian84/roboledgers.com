@@ -2106,54 +2106,89 @@ input.currency-input,
     justify-content: center !important;
 }
 
-/* FIXED GRID HEADER STYLES - THEME INDEPENDENT */
-/* User Request: "Crisp and clear, easy to read... should not change with color theme" */
+/* FIXED GRID HEADER STYLES - LIGHT BLUE THEME */
+/* User Request: "Very light blue... Text in Dark" */
 
-/* 1. Main Header Container - Fixed Dark Slate */
+/* 1. Main Header Container - Light Blue */
 .ag-theme-alpine .ag-header {
-    background-color: #1f2937 !important;
-    /* Fixed Slate-800 */
-    border-bottom: 1px solid #374151 !important;
-    /* Fixed Slate-700 */
+    background-color: #f0f9ff !important;
+    /* Sky-50 */
+    border-bottom: 1px solid #bae6fd !important;
+    /* Sky-200 */
 }
 
-/* 2. Header Rows - Inherit Fixed Background */
+/* 2. Header Rows - Inherit Background */
 .ag-theme-alpine .ag-header-row {
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
-    /* Fixed White Text */
+    background-color: #f0f9ff !important;
+    color: #0f172a !important;
+    /* Slate-900 (Dark text) */
 }
 
-/* 3. Header Text - Crisp White & Centered */
+/* 3. Header Text - Dark, Bold & Centered */
 .ag-theme-alpine .ag-header-cell-label {
-    color: #ffffff !important;
-    font-weight: 600 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    /* Slightly bolder for visibility */
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
 }
 
 .ag-theme-alpine .ag-header-cell-text {
-    color: #ffffff !important;
+    color: #0f172a !important;
 }
 
+/* 4. Sort Icons - Force Dark Blue */
+.ag-theme-alpine .ag-icon {
+    color: #0369a1 !important;
+    /* Sky-700 */
 }
 
-/* 6. Grid Container Border - Clean Neutral */
+/* 5. Filter Inputs Container - Flexbox Centering (Robust) */
+.ag-theme-alpine .ag-floating-filter-body {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+}
+
+/* 6. Filter Inputs - Crisp White Box & Centered */
+.ag-theme-alpine .ag-floating-filter-input {
+    height: 24px !important;
+    line-height: normal !important;
+    margin: 0 !important;
+    /* Reset margins, let flexbox center */
+    border-radius: 4px !important;
+    border: 1px solid #cbd5e1 !important;
+    /* Slate-300 */
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    /* Dark Text */
+    padding: 0 8px !important;
+    width: 90% !important;
+    box-shadow: none !important;
+}
+
+.ag-theme-alpine .ag-floating-filter-input:focus {
+    border-color: #0ea5e9 !important;
+    /* Sky-500 */
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* 7. Grid Container Border - Match Header */
 .grid-container {
-    border: 1px solid #374151 !important;
-    /* Match header border */
+    border: 1px solid #bae6fd !important;
 }
 
-/* 7. Scrollbars - Neutral Gray */
+/* 8. Scrollbars - Light/Neutral */
 .ag-body-vertical-scroll-viewport::-webkit-scrollbar-track,
 .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: #f1f5f9;
 }
 
 .ag-body-vertical-scroll-viewport::-webkit-scrollbar-thumb,
 .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: #cbd5e1;
     border-radius: 4px;
 }
 
