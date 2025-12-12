@@ -2002,13 +2002,13 @@ textarea:focus {
 .ag-cell-edit-input {
     text-align: center !important;
 }
+
 /* FORCE Input Styling Override for Standards Mode */
-input[type="text"],
-input[type="number"],
+input[type="text"]:not(.ag-floating-filter-input),
+input[type="number"]:not(.ag-floating-filter-input),
 input[type="date"],
 select,
 textarea,
-.ag-floating-filter-input,
 .ag-cell-edit-input {
     background-color: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
@@ -2018,6 +2018,19 @@ textarea,
     font-size: 14px !important;
     line-height: 1.5 !important;
     height: auto !important;
+}
+
+/* Styled Filter Inputs */
+.ag-floating-filter-input {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 2px 8px !important;
+    font-size: 13px !important;
+    height: 26px !important;
+    line-height: normal !important;
+    width: 100% !important;
 }
 
 /* Specific Focus State */
@@ -2031,11 +2044,12 @@ textarea:focus,
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
 }
 
-/* Fix Filter Inputs specifically */
-.ag-header-row .ag-floating-filter-input {
-    margin-top: 4px;
-    height: 30px !important; /* Force explicit height for filters */
-    padding: 2px 8px !important;
+.grid-container {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 650px;
+    /* Ensure container has room for 600px grid + padding */
 }
 
 /* Ensure no double borders in grid */
