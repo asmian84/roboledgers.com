@@ -29,6 +29,8 @@ const App = {
             // Initialize Settings
             if (typeof Settings !== 'undefined') {
                 Settings.initialize();
+            } else {
+                console.warn('Settings module not loaded');
             }
 
             // Set up event listeners
@@ -601,6 +603,7 @@ const App = {
             });
 
             // Update calculated values
+
             const calcOpening = document.getElementById('calculatedOpeningBalance');
             const calcEnding = document.getElementById('calculatedEndingBalance');
 
@@ -696,6 +699,66 @@ const App = {
         }
 
         summaryElement.innerHTML = summaryHtml.join('');
+    },
+
+    // 🔄 LIVE UPDATE LOGIC
+    // Called by VendorMatcher when a vendor is optimized/updated
+    updateTransactionsForVendor(vendor) {
+        if (!vendor || !this.transactions) return;
+
+        console.log(`🔄 App: Syncing transactions for vendor: ${vendor.name}`);
+        const normalizedVendorName = Utils.normalizeString(vendor.name);
+        const relevantPatterns = vendor.patterns || [];
+
+        let updateCount = 0;
+
+        this.transactions.forEach(tx => {
+            let isMatch = false;
+
+            // 1. Direct ID match (if we linked them)
+            if (tx.vendorId === vendor.id) {
+                isMatch = true;
+            }
+            // 2. Name / Pattern Match
+            else {
+                const normDesc = Utils.normalizeString(tx.description);
+                // Check if description contains vendor name or matches patterns
+                if (normDesc.includes(normalizedVendorName) ||
+                    relevantPatterns.some(p => normDesc.includes(Utils.normalizeString(p)))) {
+                    isMatch = true;
+                }
+            }
+
+            if (isMatch) {
+                // UPDATE THE TRANSACTION
+                tx.vendor = vendor.name;
+                tx.vendorId = vendor.id;
+
+                // Only override if currently Unallocated or using generic/wrong account
+                if (!tx.allocatedAccount || tx.allocatedAccount === '9970' || tx.allocatedAccount === '') {
+                    tx.allocatedAccount = vendor.defaultAccount;
+                    tx.allocatedAccountName = vendor.defaultAccountName;
+                    tx.category = vendor.category;
+
+                    // Trigger Grid Refresh for this row
+                    if (window.TransactionGrid) {
+                        if (TransactionGrid.refreshRow) {
+                            // 🚀 Pass full object so grid updates its internal data!
+                            TransactionGrid.refreshRow(tx);
+                        } else {
+                            // Fallback if refreshRow missing
+                            TransactionGrid.updateTransaction(tx);
+                        }
+                    }
+                    updateCount++;
+                }
+            }
+        });
+
+        if (updateCount > 0) {
+            console.log(`✅ Synced ${updateCount} transactions for ${vendor.name}`);
+            this.updateStatistics(); // Refresh stats at top
+        }
     },
 
     updateProcessing(message, progress) {

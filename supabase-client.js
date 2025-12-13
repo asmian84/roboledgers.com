@@ -59,7 +59,8 @@ window.SupabaseClient = {
                 defaultAccountName: row.sources?.default_account_name || 'To Be Sorted',
                 patterns: row.patterns || [],
                 matchCount: row.times_referenced || 0,
-                lastMatched: row.updated_at
+                lastMatched: row.updated_at,
+                _synced: true // Mark as from cloud
             }));
         } catch (err) {
             console.error('❌ Failed to fetch vendors:', err);
@@ -223,5 +224,27 @@ window.SupabaseClient = {
             console.error('Error fetching vendor count:', err);
             return 0;
         }
+    },
+
+    /**
+     * Subscribe to Real-Time Vendor Updates
+     * @param {Function} onUpdate - Callback function (payload) => void
+     */
+    subscribeToVendors(onUpdate) {
+        if (!this.isConnected) return;
+
+        console.log('📡 Subscribing to real-time vendor updates...');
+
+        this.client
+            .channel('public:vendors')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, (payload) => {
+                console.log('📡 Real-time Vendor Update:', payload);
+                if (onUpdate) onUpdate(payload);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ Real-time subscription active');
+                }
+            });
     }
 };

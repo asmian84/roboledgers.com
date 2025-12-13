@@ -69,48 +69,66 @@ window.AccountAllocator = {
     // Suggest account based on transaction details
     suggestAccount(transaction) {
         const payee = Utils.normalizeString(transaction.payee);
+        // Also check any available vendor category/notes if available
+        const context = transaction.category ? `${payee} ${transaction.category}` : payee;
 
-        // Common patterns for auto-allocation
-        const patterns = [
-            // Bank fees
-            { keywords: ['monthly fee', 'service charge', 'bank fee'], account: '7700' },
-            // Interest
-            { keywords: ['interest income', 'interest earned'], account: '4860' },
-            { keywords: ['interest charge', 'interest on'], account: '7700' },
-            // Payroll
-            { keywords: ['wages', 'salary', 'payroll'], account: '9800' },
-            // Rent
-            { keywords: ['rent payment', 'lease payment'], account: '8720' },
-            // Utilities
-            { keywords: ['electric', 'gas', 'water', 'utility', 'hydro'], account: '9500' },
-            // Insurance
-            { keywords: ['insurance'], account: '7600' },
-            // Telephone
-            { keywords: ['phone', 'telephone', 'mobile', 'cell'], account: '9100' },
-            // Vehicle
-            { keywords: ['fuel', 'gas station', 'auto', 'vehicle'], account: '9700' },
-            // Office
-            { keywords: ['office', 'staples', 'supplies'], account: '8600' },
-            // Professional fees
-            { keywords: ['legal', 'accounting', 'consultant'], account: '8700' }
+        return this.suggestAccountFromText(context, transaction.isDebit);
+    },
+
+    // 🧠 CORE LOGIC: Text-based Account Mapping (Internal Knowledge Base)
+    suggestAccountFromText(text, isDebit = true) {
+        if (!text) return null;
+        const normalized = Utils.normalizeString(text);
+
+        // Precise Industry Mappings - The "Common Sense" Layer
+        const industryMap = [
+            // 🍔 Meals & Entertainment
+            { keywords: ['doughnut', 'donut', 'tim hortons', 'starbucks', 'coffee', 'cafe', 'mcdonalds', 'burger', 'pizza', 'subway', 'restaurant', 'bistro', 'grill', 'pub', 'bar', 'diner', 'wendys', 'kfc', 'taco', 'sushi', 'bakery', 'food', 'sweets', 'ice cream', 'dessert', 'catering', 'lilac festival', 'festival', 'anime milwaukee', '7-eleven', '7eleven', 'macs conv', 'convenience'], account: '8550' },
+
+            // 🚗 Vehicles & Transport
+            { keywords: ['gas station', 'fuel', 'petro', 'shell', 'esso', 'chevron', 'husky', 'oil change', 'lube', 'auto parts', 'mechanic', 'tire', 'parking', 'impark', 'indigo', 'co-op gas'], account: '9700' },
+            { keywords: ['uber', 'lyft', 'taxi', 'cab', 'transit', 'bus', 'alaska air', 'air canada', 'westjet', 'fly', 'airline', 'flight', 'expedia', 'booking.com'], account: '9200' }, // Travel
+
+            // 🛠️ Purchaes / Materials
+            { keywords: ['home depot', 'lowes', 'rona', 'building supply', 'hardware', 'lumber', 'steel', 'concrete', 'tool', 'paint', 'alibaba'], account: '5000' },
+
+            // 💡 Utilities
+            { keywords: ['hydro', 'electricity', 'power', 'water', 'gas utility', 'enmax', 'epcor', 'fortis'], account: '9500' },
+            { keywords: ['internet', 'telecom', 'bell', 'rogers', 'telus', 'shaw', 'mobile', 'phone', 'wireless', 'data'], account: '9100' },
+
+            // ⚖️ Professional Services
+            { keywords: ['law', 'legal', 'attorney', 'barrister', 'notary'], account: '8700' },
+            { keywords: ['cpa', 'accountant', 'bookkeeping', 'tax', 'audit'], account: '8700' },
+            { keywords: ['consulting', 'consultant', 'agency', 'marketing', 'design'], account: '8700' },
+
+            // 📎 Office & Admin
+            { keywords: ['staples', 'office depot', 'paper', 'supplies', 'stationery', 'printer', 'ink', 'ikea', 'amazon', 'amzn'], account: '8600' },
+            { keywords: ['software', 'adobe', 'microsoft', 'google', 'aws', 'subscription', 'saas', 'hosting', 'domain'], account: '8600' },
+            { keywords: ['post', 'shipping', 'courier', 'fedex', 'ups', 'dhl', 'canada post', 'purolator', 'shippo', 'cpc scp', 'cpc'], account: '8600' },
+
+            // 🏢 Rent & Lease
+            { keywords: ['property management', 'storage', 'rent', 'lease', 'tenant'], account: '8720' },
+
+            // 🛡️ Insurance
+            { keywords: ['insurance', 'assurance', 'underwriting', 'broker', 'policy'], account: '7600' },
+
+            // 🏦 Bank Charges & Transfers
+            { keywords: ['bank', 'credit union', 'finance', 'fee', 'charge', 'interest', 'overdraft', 'affirm', 'afterpay', 'klarna', 'sezzle'], account: '7700' },
+            { keywords: ['payment - thank you', 'transfer', 'sent to', 'etransfer', 'rbc pyt', 'payment'], account: '2100' }, // Accounts Payable / Transfers
         ];
 
-        for (const pattern of patterns) {
-            if (pattern.keywords.some(keyword => payee.includes(keyword))) {
-                return this.getAccountByCode(pattern.account);
+        for (const mapping of industryMap) {
+            if (mapping.keywords.some(k => normalized.includes(k))) {
+                return this.getAccountByCode(mapping.account);
             }
         }
 
-        // Default suggestions based on transaction type
-        if (transaction.isDebit) {
-            // Debits are typically expenses from a bank account
-            return this.getAccountByCode('8500'); // Miscellaneous
+        // Generic fallback based on debit/credit
+        if (isDebit) {
+            return null; // Don't guess 'Misc' too aggressively
         } else {
-            // Credits are deposits/revenues
             return this.getAccountByCode('4001'); // Sales
         }
-
-        return null;
     },
 
     // Calculate trial balance

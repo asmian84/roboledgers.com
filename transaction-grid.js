@@ -787,6 +787,38 @@ window.TransactionGrid = {
         }
     },
 
+    // Helper: Refresh a single row by ID (for live updates)
+    // 🔄 UPDATED: Now accepts full transaction object to ensure grid data is up-to-date
+    refreshRow(transaction) {
+        if (!this.gridApi || !transaction) return;
+
+        // 1. PUSH new data into the grid (Critical for "Static" fix)
+        // applyTransaction updates the internal rowData AND triggers a redraw
+        const res = this.gridApi.applyTransaction({ update: [transaction] });
+
+        if (res && res.updated.length > 0) {
+            const rowNode = res.updated[0];
+
+            // 2. Flash the row to show the user "I did something!" 📸
+            this.gridApi.flashCells({
+                rowNodes: [rowNode],
+                flashDelay: 500,
+                fadeDelay: 500
+            });
+        } else {
+            // Fallback: If ID not found or update failed, try manual lookup via getRowNode 
+            // (Only works if getRowId is set correctly)
+            const id = transaction.id || transaction;
+            const node = this.gridApi.getRowNode(id);
+            if (node) {
+                if (typeof transaction === 'object') {
+                    node.setData(transaction); // Manual update
+                }
+                this.gridApi.flashCells({ rowNodes: [node] });
+            }
+        }
+    },
+
     // Helper method: Setup opening balance input changes
     setupOpeningBalanceListener() {
         const openingBalanceInput = document.getElementById('expectedOpeningBalance');
@@ -848,6 +880,11 @@ window.VendorGrid = {
             suppressPaginationPanel: false, // Show controls
 
             animateRows: true,
+            // 🔑 CRITICAL: Use transaction ID as the Row ID
+            // This allows getRowNode(id) to work for live updates!
+            getRowId: (params) => {
+                return params.data.id;
+            },
             onCellValueChanged: (event) => {
                 const vendor = event.data;
                 VendorMatcher.updateVendor(vendor);
@@ -855,10 +892,22 @@ window.VendorGrid = {
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.loadVendors();
+            },
+            // 🌈 Apply Rainbow Theme (Shared with TransactionGrid)
+            getRowStyle: (params) => {
+                return TransactionGrid.getRowStyle ? TransactionGrid.getRowStyle(params) : {};
             }
         };
 
         this.gridApi = agGrid.createGrid(container, gridOptions);
+
+        // Auto-resize columns on window resize
+        const resizeObserver = new ResizeObserver(() => {
+            if (this.gridApi && !this.gridApi.destroyCalled) {
+                this.gridApi.sizeColumnsToFit();
+            }
+        });
+        resizeObserver.observe(container);
     },
 
     getColumnDefs() {
@@ -866,18 +915,18 @@ window.VendorGrid = {
 
         return [
             {
-                headerName: 'Cloud',
-                width: 70,
+                headerName: 'Status', // 🟢 Renamed from 'Cloud'
+                width: 100,
                 pinned: 'left',
                 sortable: true,
                 cellRenderer: (params) => {
-                    // Check if vendor has a UUID (Supabase ID) or is marked synced
-                    const isSynced = params.data.id && params.data.id.length > 20 && !params.data.id.startsWith('vnd_');
+                    // Check if vendor has a Cloud Sync Flag or a UUID (Retroactive check)
+                    const isSynced = params.data._synced || (params.data.id && params.data.id.length > 20 && !params.data.id.startsWith('vnd_'));
 
                     if (isSynced) {
-                        return '<span title="Synced to Cloud">☁️</span>';
+                        return '<span title="Synced to Cloud" style="color: #10b981; font-weight: 500;">☁️ Cloud</span>';
                     } else {
-                        return '<span title="Local Only" style="color: black; font-size: 20px;">●</span>'; // Small black dot
+                        return '<span title="Local Only" style="color: #6b7280;">💾 Offline</span>';
                     }
                 },
                 cellStyle: { textAlign: 'center' }
@@ -889,7 +938,13 @@ window.VendorGrid = {
                 pinned: 'left',
                 editable: false,
                 sortable: true,
-                filter: true
+                filter: true,
+                // 🧹 Clean and Format Name (Sentence Case + No Garbage)
+                valueFormatter: (params) => {
+                    if (!params.value) return '';
+                    let cleanName = VendorAI.cleanGarbage(params.value);
+                    return VendorAI.toTitleCase(cleanName);
+                }
             },
             {
                 headerName: 'Account # - Category',

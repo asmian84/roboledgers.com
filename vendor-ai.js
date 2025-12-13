@@ -604,40 +604,174 @@ window.VendorAI = {
         return keeper;
     },
 
+    /**
+     * Single-pass optimization for a vendor (The "Ticker" Logic)
+     * @param {Object} vendor - The vendor object to optimize
+     * @returns {Object} - The optimized vendor object
+     */
+    async optimizeVendor(vendor) {
+        if (!vendor || !vendor.name) return vendor;
+
+        const originalName = vendor.name;
+
+        // 1. Clean & Normalize Name
+        const normalized = this.normalizeVendorName(originalName);
+        vendor.name = normalized;
+
+        // 2. Auto-Categorize (if missing or simple)
+        const category = this.suggestCategory(normalized);
+        if (category && (!vendor.category || vendor.category === 'General')) {
+            vendor.category = category;
+        }
+
+        // 3. Allocat Account (Always check for better match)
+        // 🧠 COMMON SENSE FIRST: Check internal knowledge base
+        const internalMatch = AccountAllocator.suggestAccountFromText(normalized);
+        if (internalMatch) {
+            vendor.defaultAccount = internalMatch.code;
+            vendor.defaultAccountName = internalMatch.name;
+            vendor.category = internalMatch.type === 'Expense' ? 'Expense' : 'Revenue';
+            this.updateTicker(`🧠 Known Item: ${normalized} -> ${internalMatch.name}`, 'success');
+        } else {
+            // Fallback to pattern matching
+            const suggestedAccount = this.suggestAccount(normalized, vendor.category);
+            if (suggestedAccount) {
+                if (!vendor.defaultAccount || vendor.defaultAccount === '9970' ||
+                    (vendor.defaultAccount !== suggestedAccount.code)) {
+                    vendor.defaultAccount = suggestedAccount.code;
+                    vendor.defaultAccountName = suggestedAccount.name;
+                }
+            }
+        }
+
+        // 4. Generate Patterns
+
+        // 4. Generate Patterns
+        const patterns = this.generatePatterns(normalized);
+        if (patterns.length > vendor.patterns.length) {
+            vendor.patterns = [...new Set([...vendor.patterns, ...patterns])];
+        }
+
+        // 5. 🤖 Google Search Enrichment (Async, for Mystery Vendors)
+        // Only if category is still General/Unknown AND hasn't been searched yet
+        // AND we have the service available.
+        if (window.GoogleSearchService &&
+            (vendor.category === 'General' || vendor.defaultAccount === '9970') &&
+            !vendor._googleSearched) {
+
+            this.updateTicker(`🔍 Searching clues for: ${normalized}...`, 'processing');
+            console.log(`🔍 Searching Google for mystery vendor: ${normalized}`);
+            const searchResult = await GoogleSearchService.searchVendor(normalized);
+            vendor._googleSearched = true; // Mark as searched to prevent quota drain
+
+            if (searchResult) {
+                console.log('✨ Google found:', searchResult);
+
+                // Enhance Name
+                const betterName = GoogleSearchService.suggestName(searchResult);
+                if (betterName && betterName.length > normalized.length && betterName.length < 50) {
+                    vendor.name = betterName;
+                    const newPatterns = this.generatePatterns(betterName);
+                    vendor.patterns = [...new Set([...vendor.patterns, ...newPatterns])];
+                }
+
+                return vendor;
+            }
+        }
+
+        return vendor;
+    },
+
+    updateTicker(msg, type = 'normal') {
+        const ticker = document.getElementById('activityTicker');
+        if (ticker) {
+            ticker.innerHTML = `<span class="ticker-item ${type}">${msg}</span>`;
+        }
+    },
+
     // Helper: Normalize vendor names (clean up messy CSV imports)
     normalizeVendorName(rawName) {
         if (!rawName) return rawName;
 
-        let cleaned = rawName;
+        let cleaned = rawName.trim();
+        const lower = cleaned.toLowerCase();
 
-        // Remove trailing location codes (AB, BC, ON, etc.)
-        cleaned = cleaned.replace(/\b[A-Z]{2}\b\s*$/g, '');
+        // 0. 🚨 GLOBAL LOGIC: Detect Transfers/Payments 🚨
+        // Collapse all variations of transfers into single recognized entities
+        if (/tfrto|tfrfr|transfer|etransfer|e-transfer|sent to|received from/i.test(cleaned)) return 'Transfer';
+        if (/pyt|payment|bill payment|pre-authorized debit/i.test(cleaned)) return 'Payment';
+        if (/deposit/i.test(cleaned) && !/check|cheque/i.test(cleaned)) return 'Deposit';
+        if (/fee|charge/i.test(cleaned) && /bank|overdraft|service/i.test(cleaned)) return 'Bank Fee';
 
-        // Remove location names at end
-        cleaned = cleaned.replace(/\b(CALGARY|EDMONTON|VANCOUVER|TORONTO|OTTAWA|MONTREAL)\b\s*$/gi, '');
+        // 1. Remove Garbage (Store IDs, Dates, Codes, Tokens)
+        cleaned = this.cleanGarbage(cleaned);
 
-        // Remove numbers with # prefix (#1234, #456)
-        cleaned = cleaned.replace(/#\d+/g, '');
-
-        // Remove standalone numbers at end
-        cleaned = cleaned.replace(/\s+\d+\s*$/g, '');
-
-        // Replace special characters with spaces
-        cleaned = cleaned.replace(/[#_-]+/g, ' ');
-
-        // Remove extra whitespace
+        // 2. Remove extra whitespace
         cleaned = cleaned.replace(/\s+/g, ' ').trim();
 
-        // Title case
+        // 3. Title Case (Sentence Case)
         cleaned = this.toTitleCase(cleaned);
 
+        // 4. 🧠 SMART ALIAS EXPANSION 🧠
+        // Map common abbreviations to full brand names
+        const ALIASES = {
+            'Amzn': 'Amazon',
+            'Amz': 'Amazon',
+            'Amz*': 'Amazon',
+            'Mcd': 'McDonalds',
+            'Mcdo': 'McDonalds',
+            'Tims': 'Tim Hortons',
+            'Cdn Tire': 'Canadian Tire',
+            'Wal-mart': 'Walmart',
+            'Alibabacom': 'Alibaba'
+        };
+
+        // Check if the cleaned name IS an alias or STARTS with an alias
+        for (const [alias, full] of Object.entries(ALIASES)) {
+            if (cleaned === alias || cleaned.startsWith(alias + ' ')) {
+                cleaned = cleaned.replace(alias, full);
+                break; // One expansion matches
+            }
+        }
+
         return cleaned;
+    },
+
+    // Aggressive Garbage Removal - The "Smart System" Core
+    cleanGarbage(name) {
+        let n = name;
+
+        // 1. Remove obvious IDs and Hashes (e.g., Cann00r9yi1, 0272398307815)
+        n = n.replace(/\b[A-Za-z0-9]{8,}\b/g, ''); // Long mixed hashes
+        n = n.replace(/\b\d{5,}\b/g, '');           // Long number sequences
+        n = n.replace(/\b[A-Za-z]{2}\d{3,}\w*\b/g, ''); // Mixed IDs like "Wu523" or "Wq270"
+
+        // 2. Remove Generic Suffixes & Noise Words
+        // "Mktp" (Marketplace), "Store", "Stn" (Station), "On" (Online/Ontario), "Ca" (Canada)
+        const noiseWords = [
+            'mktp', 'marketplace', 'store', 'shop', 'unit', 'stn', '#'
+        ];
+        // Create regex for noise words
+        const noiseRegex = new RegExp(`\\b(${noiseWords.join('|')})\\b`, 'gi');
+        n = n.replace(noiseRegex, ' ');
+
+        // 3. Remove Location/Entity Suffixes (end of string)
+        // e.g. "Toronto On", "Vancouver Bc", "LTD", "INC"
+        n = n.replace(/\s+(on|bc|ab|mb|nb|nl|ns|nt|nu|pe|qc|sk|yt|ca|usa|ltd|inc|corp|co)\s*$/gi, '');
+
+        // 4. Remove Dates (YYYY-MM-DD, MM/DD)
+        n = n.replace(/\d{4}-\d{2}-\d{2}/g, '');
+        n = n.replace(/\d{2}\/\d{2}/g, '');
+        n = n.replace(/[*_]+/g, ' ');
+
+        return n;
     },
 
     // Helper: Convert to title case
     toTitleCase(str) {
         return str.toLowerCase().split(' ').map(word => {
             if (word.length === 0) return word;
+            // Handle special acronyms if needed, otherwise standard sentence case
             return word.charAt(0).toUpperCase() + word.slice(1);
         }).join(' ');
     },

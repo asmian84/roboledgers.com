@@ -5,8 +5,10 @@ const Settings = {
         companyName: '',
         fontSize: 'medium',
         fontFamily: 'Inter',
-        theme: 'cyber-night',  // Updated default
-        accentColor: 'blue'
+        theme: 'cyber-night',
+        accentColor: 'blue',
+        googleApiKey: 'AIzaSyDNWQtND6ISB_LFyoOQbAycGzFdSPFN604',
+        googleSearchCx: '61ed0fb52fe154bcf'
     },
 
     current: {
@@ -14,7 +16,9 @@ const Settings = {
         companyName: '',
         gridColorScheme: 'rainbow',
         gridFontFamily: 'Arial',
-        gridFontSize: 12
+        gridFontSize: 12,
+        googleApiKey: 'AIzaSyDNWQtND6ISB_LFyoOQbAycGzFdSPFN604',
+        googleSearchCx: '61ed0fb52fe154bcf'
     },
 
     initialize() {
@@ -23,6 +27,7 @@ const Settings = {
         this.current = { ...this.defaults, ...saved };
         this.apply();
         this.updateThemePicker();
+        this.bindEvents();
     },
 
     apply() {
@@ -97,6 +102,8 @@ const Settings = {
 
     updateCompanyName() {
         const companyNameEl = document.getElementById('companyName');
+        const companyInput = document.getElementById('companyNameInput');
+
         if (companyNameEl) {
             if (this.current.companyName) {
                 companyNameEl.textContent = this.current.companyName;
@@ -105,6 +112,12 @@ const Settings = {
                 companyNameEl.style.display = 'none';
             }
         }
+        if (companyInput) companyInput.value = this.current.companyName || '';
+
+        if (companyInput) companyInput.value = this.current.companyName || '';
+    },
+
+    bindEvents() {
     },
 
     set(key, value) {

@@ -39,17 +39,7 @@ window.VendorManager = {
             });
         }
 
-        const rethinkVendorsBtn = document.getElementById('rethinkVendorsBtn');
-        if (rethinkVendorsBtn) {
-            rethinkVendorsBtn.addEventListener('click', async () => {
-                // Use unified AI Re-think (optimizes vendors + categorizes transactions)
-                if (typeof App !== 'undefined' && App.unifiedAIRethink) {
-                    await App.unifiedAIRethink();
-                } else {
-                    alert('❌ AI Re-think function not available');
-                }
-            });
-        }
+
 
         const bulkIndexBtn = document.getElementById('bulkIndexBtn');
         if (bulkIndexBtn) {
@@ -59,7 +49,7 @@ window.VendorManager = {
         }
 
         // Import Vendor Button - Toggle drop bucket
-        const importVendorBtn = document.getElementById('importVendorBtn');
+
         const vendorImportDropZone = document.getElementById('vendorImportDropZone');
         const vendorImportInput = document.getElementById('vendorImportInput');
 
@@ -71,153 +61,125 @@ window.VendorManager = {
                 badge.id = 'cloudCountBadge';
                 badge.className = 'status-badge';
                 badge.style.cssText = 'padding: 6px 12px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 20px; font-size: 0.85rem; font-weight: 500; border: 1px solid rgba(16, 185, 129, 0.2); margin-right: 10px; display: flex; align-items: center; gap: 6px;';
-                badge.innerHTML = '<span>☁️ Checking...</span>';
+                badge.innerHTML = '<span>☁️ Connecting...</span>';
                 headerActions.prepend(badge);
-            }
-        }
 
-        if (importVendorBtn && vendorImportDropZone) {
-            importVendorBtn.addEventListener('click', () => {
-                // Toggle drop bucket visibility
-                if (vendorImportDropZone.style.display === 'none') {
-                    vendorImportDropZone.style.display = 'block';
-                } else {
-                    vendorImportDropZone.style.display = 'none';
-                }
-            });
-
-            // Handle file selection and drag/drop
-            if (vendorImportInput) {
-                const handleFiles = async (files) => {
-                    if (files.length === 0) return;
-
-                    let totalVendorsAdded = 0;
-                    let totalVendorsUpdated = 0;
-
-                    for (const file of files) {
-                        try {
-                            const fileName = file.name.toLowerCase();
-
-                            if (fileName.endsWith('.csv') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-                                // Parse transactions and extract vendors
-                                const transactions = await CSVParser.parseFile(file);
-
-                                if (transactions && transactions.length > 0) {
-                                    // Extract unique vendors from transactions
-                                    console.log(`🔍 Processing ${transactions.length} transactions for vendors...`);
-                                    console.log('   First transaction sample:', transactions[0]);
-
-                                    const vendorNames = new Set();
-                                    transactions.forEach((tx, index) => {
-                                        // Debug first 3 transactions
-                                        if (index < 3) console.log(`   Rx ${index}: Payee="${tx.payee}", Desc="${tx.description}"`);
-
-                                        const rawName = tx.payee || tx.description || tx.vendor || '';
-
-                                        if (rawName) {
-                                            const vendorName = VendorNameUtils.extractVendorName(rawName);
-
-                                            // Debug name extraction
-                                            if (index < 3) console.log(`      -> Extracted: "${vendorName}"`);
-
-                                            if (vendorName && vendorName.length >= 2) {
-                                                vendorNames.add(vendorName);
-                                            }
-                                        }
-                                    });
-
-                                    console.log(`✅ Found ${vendorNames.size} unique potential vendors`);
-
-                                    // Add vendors to dictionary
-                                    vendorNames.forEach(name => {
-                                        const existing = VendorMatcher.getVendorByName(name);
-                                        if (!existing) {
-                                            VendorMatcher.addVendor({
-                                                name: name,
-                                                defaultAccount: '9970',
-                                                category: 'General'
-                                            });
-                                            totalVendorsAdded++;
-                                        } else {
-                                            totalVendorsUpdated++;
-                                        }
-                                    });
-                                }
-                            }
-                        } catch (error) {
-                            console.error(`Failed to process ${file.name}:`, error);
-                        }
-                    }
-
-                    VendorMatcher.initialize();
-                    VendorGrid.loadVendors();
-
-                    vendorImportDropZone.style.display = 'none';
-                    alert(`\u2705 Vendor Indexing Complete!\n\n` +
-                        `${totalVendorsAdded} new vendors added\n` +
-                        `${totalVendorsUpdated} vendors already exist\n` +
-                        `Total: ${VendorMatcher.getAllVendors().length} vendors`);
-                };
-
-                vendorImportInput.onchange = (e) => handleFiles(Array.from(e.target.files));
-
-                const uploadZone = vendorImportDropZone.querySelector('.upload-zone');
-                if (uploadZone) {
-                    uploadZone.onclick = () => vendorImportInput.click();
-
-                    uploadZone.ondragover = (e) => {
-                        e.preventDefault();
-                        uploadZone.style.borderColor = 'var(--primary-color)';
-                        uploadZone.style.backgroundColor = 'var(--hover-bg)';
-                    };
-
-                    uploadZone.ondragleave = () => {
-                        uploadZone.style.borderColor = '';
-                        uploadZone.style.backgroundColor = '';
-                    };
-
-                    uploadZone.ondrop = (e) => {
-                        e.preventDefault();
-                        uploadZone.style.borderColor = '';
-                        uploadZone.style.backgroundColor = '';
-                        handleFiles(Array.from(e.dataTransfer.files));
-                    };
-                }
-            }
-        }
-
-        // Export / Sync Button
-        const exportVendorBtn = document.getElementById('exportVendorBtn');
-        if (exportVendorBtn) {
-            exportVendorBtn.addEventListener('click', () => {
-                const vendors = VendorMatcher.getAllVendors();
-
-                if (vendors.length === 0) {
-                    alert('No vendors to export');
-                    return;
-                }
-
-                // Cloud Sync Only
+                // Initialize Status
                 if (window.SupabaseClient) {
-                    const originalText = exportVendorBtn.textContent;
-                    exportVendorBtn.textContent = '⏳ Syncing...';
-                    exportVendorBtn.disabled = true;
-
-                    SupabaseClient.initialize().then(connected => {
-                        exportVendorBtn.textContent = originalText;
-                        exportVendorBtn.disabled = false;
-
-                        if (connected) {
-                            SupabaseClient.syncVendors(vendors);
+                    SupabaseClient.getVendorCount().then(count => {
+                        if (count > 0) {
+                            badge.innerHTML = `<span>☁️ ${count} Synced</span>`;
                         } else {
-                            alert('⚠️ Cloud connection unavailable.');
+                            badge.innerHTML = '<span>☁️ Ready</span>';
                         }
                     });
-                } else {
-                    alert('Supabase Client not loaded.');
                 }
-            });
+            }
         }
+
+
+
+        // Handle file selection and drag/drop
+        if (vendorImportInput) {
+            const handleFiles = async (files) => {
+                if (files.length === 0) return;
+
+                let totalVendorsAdded = 0;
+                let totalVendorsUpdated = 0;
+
+                for (const file of files) {
+                    try {
+                        const fileName = file.name.toLowerCase();
+
+                        if (fileName.endsWith('.csv') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                            // Parse transactions and extract vendors
+                            const transactions = await CSVParser.parseFile(file);
+
+                            if (transactions && transactions.length > 0) {
+                                // Extract unique vendors from transactions
+                                console.log(`🔍 Processing ${transactions.length} transactions for vendors...`);
+                                console.log('   First transaction sample:', transactions[0]);
+
+                                const vendorNames = new Set();
+                                transactions.forEach((tx, index) => {
+                                    // Debug first 3 transactions
+                                    if (index < 3) console.log(`   Rx ${index}: Payee="${tx.payee}", Desc="${tx.description}"`);
+
+                                    const rawName = tx.payee || tx.description || tx.vendor || '';
+
+                                    if (rawName) {
+                                        const vendorName = VendorNameUtils.extractVendorName(rawName);
+
+                                        // Debug name extraction
+                                        if (index < 3) console.log(`      -> Extracted: "${vendorName}"`);
+
+                                        if (vendorName && vendorName.length >= 2) {
+                                            vendorNames.add(vendorName);
+                                        }
+                                    }
+                                });
+
+                                console.log(`✅ Found ${vendorNames.size} unique potential vendors`);
+
+                                // Add vendors to dictionary
+                                vendorNames.forEach(name => {
+                                    const existing = VendorMatcher.getVendorByName(name);
+                                    if (!existing) {
+                                        VendorMatcher.addVendor({
+                                            name: name,
+                                            defaultAccount: '9970',
+                                            category: 'General'
+                                        });
+                                        totalVendorsAdded++;
+                                    } else {
+                                        totalVendorsUpdated++;
+                                    }
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Failed to process ${file.name}:`, error);
+                    }
+                }
+
+                VendorMatcher.initialize();
+                VendorGrid.loadVendors();
+
+                vendorImportDropZone.style.display = 'none';
+                alert(`\u2705 Vendor Indexing Complete!\n\n` +
+                    `${totalVendorsAdded} new vendors added\n` +
+                    `${totalVendorsUpdated} vendors already exist\n` +
+                    `Total: ${VendorMatcher.getAllVendors().length} vendors`);
+            };
+
+            vendorImportInput.onchange = (e) => handleFiles(Array.from(e.target.files));
+
+            const uploadZone = vendorImportDropZone.querySelector('.upload-zone');
+            if (uploadZone) {
+                uploadZone.onclick = () => vendorImportInput.click();
+
+                uploadZone.ondragover = (e) => {
+                    e.preventDefault();
+                    uploadZone.style.borderColor = 'var(--primary-color)';
+                    uploadZone.style.backgroundColor = 'var(--hover-bg)';
+                };
+
+                uploadZone.ondragleave = () => {
+                    uploadZone.style.borderColor = '';
+                    uploadZone.style.backgroundColor = '';
+                };
+
+                uploadZone.ondrop = (e) => {
+                    e.preventDefault();
+                    uploadZone.style.borderColor = '';
+                    uploadZone.style.backgroundColor = '';
+                    handleFiles(Array.from(e.dataTransfer.files));
+                };
+            }
+        }
+
+
+
 
         // Bulk upload zone
         const bulkUploadZone = document.getElementById('bulkUploadZone');
@@ -259,6 +221,30 @@ window.VendorManager = {
                 this.hideModal();
             }
         });
+        // Initialize Real-Time Sync
+        if (window.SupabaseClient) {
+            SupabaseClient.subscribeToVendors((payload) => {
+                // 🟢 Process Update ("The Ticker")
+                if (window.VendorMatcher && VendorMatcher.handleCloudUpdate) {
+                    VendorMatcher.handleCloudUpdate(payload);
+                }
+
+                const badge = document.getElementById('cloudCountBadge');
+                if (badge) {
+                    badge.innerHTML = '<span>⚡ Syncing...</span>';
+                    badge.style.background = 'rgba(59, 130, 246, 0.1)';
+                    badge.style.color = '#3b82f6';
+
+                    // Revert after 1.5s
+                    setTimeout(() => {
+                        badge.innerHTML = '<span>☁️ Synced</span>';
+                        badge.style.background = 'rgba(16, 185, 129, 0.1)';
+                        badge.style.color = '#10b981';
+                        // Ideally trigger a grid refresh here in future iterations
+                    }, 1500);
+                }
+            });
+        }
     },
 
     showModal() {
