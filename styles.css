@@ -1427,7 +1427,8 @@ textarea:focus {
     height: 100%;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
-    z-index: 9999;
+    z-index: 10000;
+    /* Ensure this is safely above sticky header (z=50) */
     align-items: center;
     justify-content: center;
     animation: fadeIn 0.2s ease;
@@ -1451,9 +1452,13 @@ textarea:focus {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
-    max-width: 90%;
+
+    /* Reverted to Standard Centered Sizing */
+    width: 90%;
+    max-width: 800px;
     /* Responsive height limits */
     max-height: 90vh;
+
     display: flex;
     flex-direction: column;
     animation: slideUp 0.3s ease;
@@ -2509,4 +2514,55 @@ input.currency-input,
     .reconciliation-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* --- Sticky Header & Layout Fixes --- */
+/* --- Sticky Header & Layout Fixes --- */
+.sticky-header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    /* Glassmorphism Effect */
+    background: color-mix(in srgb, var(--bg-primary), transparent 10%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    /* Subtle border for separation */
+}
+
+/* Remove old sticky from child if present */
+.review-header {
+    position: relative;
+    top: auto;
+    z-index: auto;
+    box-shadow: none;
+    border-bottom: none;
+    /* Let wrapper handle it */
+}
+
+/* Ensure Parent Section allows sticky */
+#reviewSection {
+    overflow: visible;
+    /* Required for sticky children */
+}
+
+/* Prevent Page Scroll by constraining Grid Height */
+.grid-container {
+    /* height: 600px;  <-- REMOVED to allow page scroll */
+    /* overflow-y: auto; <-- REMOVED */
+    height: 80vh;
+    /* Give it substantial height but let page drive it if needed, or stick to auto */
+    /* actually, if we want sticky header to work on PAGE scroll, the grid must push page content down. */
+    height: auto;
+    min-height: 500px;
+    overflow: visible;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
 }

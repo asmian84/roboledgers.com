@@ -9,6 +9,28 @@ const App = {
     async initialize() {
         console.log('🚀 Initializing AutoBookkeeping v1.03...');
 
+        // 1. Initialize Settings (UI Theme, etc.) - Run first for visuals
+        if (typeof Settings !== 'undefined') {
+            Settings.initialize();
+        }
+
+        // 2. Auth Check
+        try {
+            if (typeof AuthManager !== 'undefined') {
+                await AuthManager.initialize();
+                if (!AuthManager.user) {
+                    console.warn('⚠️ User not logged in. App functionality will be limited.');
+                    // If redirection in AuthManager didn't happen, we might want to force it or show a UI overlay
+                    // For now, let's NOT return, but just warn, to see if it fixes the "Empty Grid" issue if they ARE logged in but state is laggy
+                    // return; 
+                } else {
+                    console.log('✅ User authenticated:', AuthManager.user.email);
+                }
+            }
+        } catch (e) {
+            console.error('⚠️ Auth Check Failed:', e);
+        }
+
         try {
             // Initialize modules
             AccountAllocator.initialize();
@@ -1400,10 +1422,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Let's force the Old Modal for the full manager view as requested
             const modal = document.getElementById('manageAccountsModal');
             if (modal) {
-               modal.style.display = 'block';
-               if (typeof BankAccountManager !== 'undefined' && BankAccountManager.renderAccountsList) {
-                   BankAccountManager.renderAccountsList();
-               }
+                modal.style.display = 'block';
+                if (typeof BankAccountManager !== 'undefined' && BankAccountManager.renderAccountsList) {
+                    BankAccountManager.renderAccountsList();
+                }
             }
         });
     }
@@ -1412,8 +1434,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeManageAccountsBtn = document.getElementById('closeManageAccountsModal');
     if (closeManageAccountsBtn) {
         closeManageAccountsBtn.addEventListener('click', () => {
-             const modal = document.getElementById('manageAccountsModal');
-             if (modal) modal.style.display = 'none';
+            const modal = document.getElementById('manageAccountsModal');
+            if (modal) modal.style.display = 'none';
         });
     }
 
