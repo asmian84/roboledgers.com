@@ -62,6 +62,28 @@ window.VendorMatcher = {
         return null;
     },
 
+    /**
+     * Bulk match transactions
+     * @param {Array} transactions 
+     */
+    matchTransactions(transactions) {
+        if (!transactions || !Array.isArray(transactions)) return { transactions: [] };
+
+        const matchedTransactions = transactions.map(tx => {
+            const match = this.matchPayee(tx.payee);
+            if (match && match.vendor) {
+                tx.vendor = match.vendor.name;
+                tx.vendorId = match.vendor.id;
+                tx.category = match.vendor.category;
+                tx.allocatedAccount = match.vendor.defaultAccount;
+                tx.allocatedAccountName = match.vendor.defaultAccountName;
+            }
+            return tx;
+        });
+
+        return { transactions: matchedTransactions };
+    },
+
     // ... (matchTransactions remains the same) ...
 
     // Add vendor
