@@ -14,6 +14,11 @@ const App = {
             AccountAllocator.initialize();
             VendorMatcher.initialize();
 
+            // Initialize Bank Account Manager 🏦
+            if (typeof BankAccountManager !== 'undefined') {
+                BankAccountManager.initialize();
+            }
+
             // Initialize Settings
             if (typeof Settings !== 'undefined') {
                 Settings.initialize();
@@ -396,8 +401,16 @@ const App = {
             });
         }
 
+        // Manage Bank Accounts Settings Button
+        const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn');
+        if (settingsBankAccountsBtn) {
+            settingsBankAccountsBtn.addEventListener('click', () => {
+                document.getElementById('manageAccountsModal').classList.add('active');
+            });
+        }
+
         // Accounts modal
-        const closeAccountsModal = document.getElementById('closeAccountsModal');
+        const closeAccountsModal = document.getElementById('closeManageAccountsModal');
         if (closeAccountsModal) {
             closeAccountsModal.addEventListener('click', () => {
                 this.hideAccountsModal();
@@ -439,8 +452,12 @@ const App = {
 
             this.updateProcessing('Parsing transactions...', 30);
 
-            // Parse CSV
-            const transactions = await CSVParser.parseFile(file);
+            // Parse CSV with Account Awareness 🏦
+            // Parse CSV (Smart Account Detection enabled in Parser)
+            const selectedAccount = null; // Auto-detect
+
+
+            const transactions = await CSVParser.parseFile(file, selectedAccount);
             console.log(`✅ Parsed ${transactions.length} transactions`);
 
             this.updateProcessing(`Found ${transactions.length} transactions. Matching vendors...`, 50);
@@ -448,17 +465,22 @@ const App = {
             // Match vendors
             await this.delay(500);
             const matchResult = VendorMatcher.matchTransactions(transactions);
+            const matchedTransactions = matchResult.transactions || (Array.isArray(matchResult) ? matchResult : []);
+
+            if (!matchedTransactions || matchedTransactions.length === 0) {
+                console.warn("⚠️ Vendor matching returned no transactions or invalid format.", matchResult);
+            }
 
             this.updateProcessing('Allocating accounts...', 70);
 
             // Allocate accounts
             await this.delay(500);
-            AccountAllocator.allocateTransactions(matchResult.transactions);
+            AccountAllocator.allocateTransactions(matchedTransactions);
 
             this.updateProcessing('Preparing review...', 90);
 
-            // Store transactions
-            this.transactions = matchResult.transactions;
+            // Store transactions (Merge with existing)
+            this.mergeTransactions(matchedTransactions);
             Storage.saveTransactions(this.transactions);
 
             // Save session for Continue/Start Over
@@ -497,6 +519,51 @@ const App = {
             alert('Error processing file: ' + error.message);
             this.showSection('upload');
         }
+    },
+
+    // Merge new transactions with deduplication 🧩
+    mergeTransactions(newTransactions) {
+        if (!newTransactions || !Array.isArray(newTransactions)) {
+            console.error('❌ mergeTransactions called with invalid data:', newTransactions);
+            return;
+        }
+
+        if (!this.transactions || this.transactions.length === 0) {
+            this.transactions = newTransactions;
+            console.log(`Initialized with all ${newTransactions.length} transactions.`);
+            return;
+        }
+
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        newTransactions.forEach(newTx => {
+            // Deduplication Logic
+            // Create a simple signature based on immutable import fields
+            // Note: We use original payee from import, but 'payee' field might change?
+            // Actually 'payee' in Transaction model usually stores the raw payee from CSV designated column.
+            const newDate = new Date(newTx.date).toISOString().split('T')[0];
+            // Use debits and credits separate to be precise
+            const signature = `${newDate}_${newTx.debits}_${newTx.amount}_${newTx.payee}_${newTx.balance}_${newTx.accountId || 'null'}`;
+
+            const exists = this.transactions.some(existingTx => {
+                const exDate = new Date(existingTx.date).toISOString().split('T')[0];
+                const exSignature = `${exDate}_${existingTx.debits}_${existingTx.amount}_${existingTx.payee}_${existingTx.balance}_${existingTx.accountId || 'null'}`;
+                return signature === exSignature;
+            });
+
+            if (!exists) {
+                this.transactions.push(newTx);
+                addedCount++;
+            } else {
+                skippedCount++;
+            }
+        });
+
+        console.log(`🧩 Merged ${addedCount} new transactions. Skipped ${skippedCount} duplicates.`);
+
+        // Re-sort by date descending
+        this.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
     },
 
     loadReviewSection() {
@@ -1010,29 +1077,7 @@ const App = {
         newInput.click();
     },
 
-    // Merge transactions and remove duplicates
-    mergeTransactions(existing, newTxns) {
-        const merged = [...existing];
-        let duplicates = 0;
 
-        for (const newTx of newTxns) {
-            // Check if duplicate exists
-            const isDuplicate = existing.some(existingTx =>
-                existingTx.date === newTx.date &&
-                existingTx.amount === newTx.amount &&
-                existingTx.description === newTx.description
-            );
-
-            if (!isDuplicate) {
-                merged.push(newTx);
-            } else {
-                duplicates++;
-            }
-        }
-
-        console.log('🔍 Duplicates skipped:', duplicates);
-        return merged;
-    },
 
     // Start Over: Clear all data and return to upload
     startOver() {

@@ -141,23 +141,70 @@ const DashboardManager = {
                     this.addToTrend(metrics.monthlyTrend, txn.date, 0, debit);
                 }
             }
-
-            // CASH ON HAND (Latest Balance)
-            if (txn.date && !isNaN(balance)) {
+            // 💵 NET POSITION / CASH AGGREGATION
+            // Track the latest balance for EACH account to determine current standing
+            if (txn.accountId && txn.date && !isNaN(balance)) {
+                const d = new Date(txn.date);
+                if (!metrics.accountBalances[txn.accountId] || d > metrics.accountBalances[txn.accountId].date) {
+                    metrics.accountBalances[txn.accountId] = { date: d, balance: balance };
+                }
+            } else if (!txn.accountId && txn.date && !isNaN(balance)) {
+                // Fallback for legacy transactions without accountId (Treat as one 'default' account)
                 const d = new Date(txn.date);
                 if (!metrics.latestDate || d > metrics.latestDate) {
                     metrics.latestDate = d;
-                    metrics.cash = balance;
+                    metrics.cash = balance; // Legacy behavior
                 }
             }
         });
 
         metrics.profit = metrics.revenue - metrics.expenses;
 
-        // Safety: If cash is 0 but we have revenue, maybe assume cash = profit? 
-        // No, keep it strictly to balance field to be accurate. 
+        // Finalize Net Position Calculation
+        let netPosition = 0;
+        let hasMultiAccountData = Object.keys(metrics.accountBalances).length > 0;
+
+        if (hasMultiAccountData) {
+            // Sum up latest balances from all accounts
+            Object.keys(metrics.accountBalances).forEach(accId => {
+                let bal = metrics.accountBalances[accId].balance;
+
+                // Smart Liability Handling
+                // If it's a Credit Card, Positive Balance usually means DEBT.
+                // We should display Net Position (Assets - Liabilities).
+                // So if we owe $500 (Positive in CSV), it counts as -$500 towards Net Position.
+                if (window.BankAccountManager) {
+                    const acc = BankAccountManager.getAccountById(accId);
+                    if (acc && acc.isReversedLogic && acc.isReversedLogic()) {
+                        // It's a liability (Credit Card / LOC)
+                        // Assumption: Bank CSV shows positive number for amount owed.
+                        netPosition -= bal;
+                    } else {
+                        // Asset (Checking / Savings)
+                        netPosition += bal;
+                    }
+                } else {
+                    netPosition += bal;
+                }
+            });
+            metrics.cash = netPosition;
+        }
 
         return metrics;
+    },
+
+    // Helper to init metrics
+    _initMetrics() {
+        return {
+            revenue: 0,
+            expenses: 0,
+            profit: 0,
+            cash: 0,
+            expenseCategories: {},
+            monthlyTrend: {},
+            accountBalances: {}, // Map of accountId -> {date, balance}
+            latestDate: null
+        };
     },
 
     addToTrend(trendObj, dateStr, rev, exp) {

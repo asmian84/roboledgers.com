@@ -198,8 +198,8 @@ window.TransactionGrid = {
     },
 
     getColumnDefs() {
-        const accounts = AccountAllocator.getAllAccounts();
-        const accountOptions = accounts.map(a => a.fullName);
+        // Use smart options from AccountAllocator (sorted by usage)
+        const accountOptions = AccountAllocator.getAccountOptions ? AccountAllocator.getAccountOptions() : AccountAllocator.getAllAccounts().map(a => a.fullName);
 
         return [
             // Checkbox for batch selection
@@ -422,7 +422,20 @@ window.TransactionGrid = {
 
         // Handle account selection
         if (field === 'allocatedAccountName') {
-            const accountName = event.newValue;
+            let accountName = event.newValue;
+
+            // Clean visual suffixes
+            if (accountName) {
+                accountName = accountName.replace(' (Unused)', '').replace('──────────', '');
+                if (accountName.trim() === '') {
+                    // Reset if they selected the separator or empty
+                    const oldVal = event.oldValue || '';
+                    transaction.allocatedAccountName = oldVal;
+                    this.gridApi.refreshCells({ rowNodes: [event.node], columns: ['allocatedAccountName'], force: true });
+                    return;
+                }
+            }
+
             const account = AccountAllocator.getAllAccounts().find(a =>
                 a.fullName === accountName
             );
@@ -638,6 +651,8 @@ window.TransactionGrid = {
 
     // BATCH SELECTION: Initialize bulk actions toolbar
     initializeBulkActions() {
+        if (this._bulkActionsInitialized) return; // Prevent double init
+
         const accountSelect = document.getElementById('bulkAccountSelect');
         const applyBtn = document.getElementById('applyBulkAccount');
         const clearBtn = document.getElementById('clearSelection');
@@ -647,19 +662,36 @@ window.TransactionGrid = {
             return;
         }
 
-        // Populate account dropdown
+        // Populate account dropdown with smart options
         const accounts = AccountAllocator.getAllAccounts();
+        const smartOptions = AccountAllocator.getAccountOptions ? AccountAllocator.getAccountOptions() : accounts.map(a => a.fullName);
         accountSelect.innerHTML = '<option value="">Assign Account...</option>';
 
-        accounts.forEach(account => {
+        smartOptions.forEach(optionText => {
             const option = document.createElement('option');
-            option.value = account.code;
-            option.textContent = `${account.code} - ${account.fullName}`;
+
+            if (optionText.includes('──────────')) {
+                option.disabled = true;
+                option.textContent = '──────────';
+            } else {
+                // Extract code (first part before " - ")
+                const code = optionText.split(' - ')[0];
+                option.value = code;
+                option.textContent = optionText;
+
+                // Visual "grey out" for unused in standard dropdown
+                if (optionText.includes('(Unused)')) {
+                    option.style.color = '#9ca3af'; // Tailwind gray-400
+                }
+            }
             accountSelect.appendChild(option);
         });
 
-        // Apply button handler
-        applyBtn.addEventListener('click', () => {
+        // Apply button handler - Use onclick to prevent duplicate listeners
+        applyBtn.onclick = (e) => {
+            e.preventDefault(); // Prevent form submission if in form
+            console.log('👆 Apply Bulk Account clicked');
+
             const selectedAccount = accountSelect.value;
             if (!selectedAccount) {
                 alert('Please select an account');
@@ -671,13 +703,15 @@ window.TransactionGrid = {
                 this.applyBulkAccount(account.code, account.fullName);
                 accountSelect.value = ''; // Reset dropdown
             }
-        });
+        };
 
         // Clear selection button
-        clearBtn.addEventListener('click', () => {
+        clearBtn.onclick = (e) => {
+            e.preventDefault();
             this.gridApi.deselectAll();
-        });
+        };
 
+        this._bulkActionsInitialized = true;
         console.log('✅ Bulk actions initialized');
     },
 

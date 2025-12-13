@@ -1,171 +1,316 @@
 // CSV Parser for bank statement files
 
-// CSV Parser for bank statement files
-
 window.CSVParser = {
-    // Parse CSV file and return array of transactions
-    parseFile(file) {
+
+    // Parse a CSV file
+    async parseFile(file, targetAccount = null) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
 
             reader.onload = async (e) => {
                 try {
-                    const data = e.target.result;
-                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
-                    // Get first sheet
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-
-                    // Convert to JSON
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                        raw: false,
-                        defval: ''
-                    });
-
-                    if (jsonData.length === 0) {
-                        reject(new Error('CSV file is empty'));
-                        return;
-                    }
-
-                    // Parse transactions (now async with AI pipeline)
-                    const transactions = await this.parseTransactions(jsonData);
+                    // Now awaited because pipeline might be async
+                    const transactions = await this.parseTransactions(jsonData, targetAccount);
 
                     if (transactions.length === 0) {
                         reject(new Error('No valid transactions found in CSV'));
                         return;
                     }
-
                     resolve(transactions);
                 } catch (error) {
-                    reject(new Error('Failed to parse CSV: ' + error.message));
+                    reject(error);
                 }
             };
 
-            reader.onerror = () => {
-                reject(new Error('Failed to read file'));
-            };
-
-            reader.readAsBinaryString(file);
+            reader.onerror = (error) => reject(error);
+            reader.readAsArrayBuffer(file);
         });
     },
 
-    // Parse transaction data from JSON array
-    async parseTransactions(data) {
-        const transactions = [];
+    // Store identified column headers
+    _columnMap: {},
 
-        for (let i = 0; i < data.length; i++) {
-            const row = data[i];
+    // Find the header row in a CSV
+    findHeaderRow(rows) {
+        const keywords = ['date', 'amount', 'payee', 'description', 'debit', 'credit', 'balance', 'transaction date'];
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (Array.isArray(row) && row.some(cell => typeof cell === 'string' && keywords.some(kw => cell.toLowerCase().includes(kw)))) {
+                return i;
+            }
+        }
+        return -1; // No header row found
+    },
 
-            try {
-                const transaction = this.parseRow(row);
-                if (transaction) {
-                    // Process through AI pipeline for immediate categorization
-                    const processedTx = await TransactionPipeline.process(transaction);
-                    transactions.push(processedTx);
+    // Identify columns based on header row
+    identifyColumns(headerCells) {
+        this._columnMap = {};
+        const possibleNames = {
+            'ref': ['ref#', 'ref', 'reference', 'transaction id', 'trans id', 'id', 'txn id', 'cheque', 'check'],
+            'date': ['date', 'transaction date', 'trans date', 'posted date', 'post date'],
+            'payee': ['payee', 'description', 'memo', 'vendor', 'name', 'transaction', 'details'],
+            'account': ['account', 'account number', 'acct', 'account #', 'account#'],
+            'balance': ['balance', 'running balance', 'account balance', 'current balance'],
+            'debits': ['debits', 'debit', 'withdrawals', 'withdrawal', 'out'],
+            'credits': ['credits', 'credit', 'deposits', 'deposit', 'in'],
+            'amount': ['amount', 'transaction amount', 'amt', 'value']
+        };
+
+        headerCells.forEach((cell, index) => {
+            if (typeof cell === 'string') {
+                const lowerCell = cell.toLowerCase().trim();
+                for (const key in possibleNames) {
+                    if (possibleNames[key].includes(lowerCell) || possibleNames[key].some(name => lowerCell.includes(name))) {
+                        if (!this._columnMap[key]) { // Only map the first match
+                            this._columnMap[key] = index;
+                        }
+                    }
                 }
-            } catch (error) {
-                console.warn(`Error parsing row ${i + 1}:`, error);
-                // Continue with next row
+            }
+        });
+    },
+
+    // Detect Account Type based on transaction patterns 🕵️‍♂️
+    detectAccountLogic(rows, headerRowIndex) {
+        let creditCardVotes = 0;
+        let checkingVotes = 0;
+
+        // Keywords that strongly imply an expense (Money OUT)
+        const expenseKeywords = ['starbucks', 'mcdonald', 'tim horton', 'uber', 'gas', 'shell', 'petro', 'walmart', 'amzn', 'amazon', 'restaurant', 'cafe', 'coffee', 'taxi', 'lyft'];
+        // Keywords that strongly imply income/deposit (Money IN)
+        const incomeKeywords = ['deposit', 'payroll', 'canada', 'transfer in', 'interest', 'refund', 'gst', 'cra', 'tax return'];
+
+        // Sample up to 20 rows
+        const limit = Math.min(rows.length, headerRowIndex + 20);
+
+        for (let i = headerRowIndex + 1; i < limit; i++) {
+            const row = rows[i];
+
+            // Get columns using current map
+            const payee = this.getColValue(row, 'payee')?.toString().toLowerCase() || '';
+            const creditVal = this.getColValue(row, 'credits'); // Or Amount
+            const amountVal = this.getColValue(row, 'amount');
+
+            let positiveAmount = false;
+
+            // Check if there is a positive number in Credit column or Amount column
+            if (creditVal) {
+                const val = Utils.parseCurrency(creditVal);
+                if (val > 0) positiveAmount = true;
+            } else if (amountVal) {
+                const val = Utils.parseCurrency(amountVal);
+                if (val > 0) positiveAmount = true;
+            }
+
+            if (positiveAmount && payee) {
+                // If we see a Positive Amount (Credit), check what it is
+
+                // If it matches an EXPENSE -> It's a Credit Card (Positive = Charge)
+                if (expenseKeywords.some(kw => payee.includes(kw))) {
+                    creditCardVotes++;
+                }
+                // If it matches INCOME -> It's a Checking Account (Positive = Deposit)
+                else if (incomeKeywords.some(kw => payee.includes(kw))) {
+                    checkingVotes++;
+                }
             }
         }
 
-        return transactions;
+        console.log(`🕵️‍♂️ Logic Detection: CC Votes=${creditCardVotes}, Checking Votes=${checkingVotes}`);
+        return creditCardVotes > checkingVotes;
+    },
+
+    getColValue(row, key) {
+        const index = this._columnMap[key];
+        return index !== undefined && row[index] !== undefined ? row[index] : null;
+    },
+
+    // Parse transaction data from JSON array
+    async parseTransactions(rows, targetAccount = null) {
+        const transactions = [];
+        if (!rows || rows.length < 2) return [];
+
+        const headerRowIndex = this.findHeaderRow(rows);
+        if (headerRowIndex === -1) {
+            console.warn("No header row found in CSV. Attempting to parse without explicit headers.");
+            return [];
+        }
+
+        // Identify columns based on header
+        this.identifyColumns(rows[headerRowIndex]);
+
+        // 🧠 Smart Logic Detection
+        // If the data looks like a Credit Card (Positive Expenses), treat it as such
+        // regardless of what the user selected (or if they selected nothing).
+        // This handles the "Expenses on Credit Side" use case.
+        const looksLikeCreditCard = this.detectAccountLogic(rows, headerRowIndex);
+
+        // Determine effective logic
+        let effectiveIsReversed = false;
+
+        if (targetAccount) {
+            // Default to account setting
+            effectiveIsReversed = targetAccount.isReversedLogic ? targetAccount.isReversedLogic() : false;
+
+            // OVERRIDE if data strongly suggests otherwise?
+            // User request: "system should be smart enough... then it must be a credit card"
+            if (looksLikeCreditCard && !effectiveIsReversed) {
+                console.log("⚠️ OVERRIDE: Data detected as Credit Card. Flipping logic.");
+                effectiveIsReversed = true;
+            }
+        } else {
+            // No account detected, use heuristic
+            effectiveIsReversed = looksLikeCreditCard;
+            if (effectiveIsReversed) {
+                console.log("ℹ️ Auto-detected Credit Card format (no account selected).");
+            }
+        }
+
+        for (let i = headerRowIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            try {
+                // Pass the effective logic decision explicitly
+                const transaction = this.parseRow(row, targetAccount, effectiveIsReversed);
+                if (transaction) {
+                    transactions.push(transaction);
+                }
+            } catch (error) {
+                console.warn(`Error parsing row ${i + 1}:`, error);
+            }
+        }
+
+        // Process through Pipeline (Async)
+        return Promise.all(transactions.map(async (tx) => {
+            return await TransactionPipeline.process(tx);
+        }));
     },
 
     // Parse a single row into a Transaction object
-    parseRow(row) {
-        // Detect column names (flexible to handle variations)
-        const refCol = this.findColumn(row, ['ref#', 'ref', 'reference', 'transaction id', 'trans id', 'id']);
-        const dateCol = this.findColumn(row, ['date', 'transaction date', 'trans date', 'posted date', 'post date']);
-        const payeeCol = this.findColumn(row, ['payee', 'description', 'memo', 'vendor', 'name', 'transaction', 'details']);
-        const accountCol = this.findColumn(row, ['account', 'account number', 'acct', 'account #', 'account#']);
-        const balanceCol = this.findColumn(row, ['balance', 'running balance', 'account balance', 'current balance']);
+    parseRow(row, targetAccount = null, forceReversedLogic = null) {
+        if (!row || row.length === 0) return null;
 
-        // Smart amount detection - handle various formats
+        // Use the identified column map
+        const getColValue = (key) => {
+            const index = this._columnMap[key];
+            return index !== undefined && row[index] !== undefined ? row[index] : null;
+        };
+
+        const refVal = getColValue('ref');
+        const dateVal = getColValue('date');
+        const payeeVal = getColValue('payee');
+        const accountVal = getColValue('account');
+        const balanceVal = getColValue('balance');
+
         let debits = 0;
         let credits = 0;
 
-        // Try to find separate debit/credit columns first
-        const debitsCol = this.findColumn(row, ['debits', 'debit', 'withdrawals', 'withdrawal', 'out']);
-        const creditsCol = this.findColumn(row, ['credits', 'credit', 'deposits', 'deposit', 'in', 'amount']);
+        let rawDebit = 0;
+        let rawCredit = 0;
 
-        if (debitsCol && row[debitsCol]) {
-            debits = Math.abs(Utils.parseCurrency(row[debitsCol]));
+        // Try to find separate debit/credit columns first (Standard Banking Format)
+        const debitsColVal = getColValue('debits');
+        const creditsColVal = getColValue('credits');
+        const amountColVal = getColValue('amount');
+
+        if (debitsColVal !== null) {
+            rawDebit = Math.abs(Utils.parseCurrency(debitsColVal));
         }
-        if (creditsCol && row[creditsCol]) {
-            credits = Math.abs(Utils.parseCurrency(row[creditsCol]));
+        if (creditsColVal !== null) {
+            rawCredit = Math.abs(Utils.parseCurrency(creditsColVal));
         }
 
         // If no separate columns, look for a single "Amount" column with +/- signs
-        if (debits === 0 && credits === 0) {
-            const amountCol = this.findColumn(row, ['amount', 'transaction amount', 'amt', 'value']);
-            if (amountCol && row[amountCol]) {
-                const signedAmount = Utils.parseCurrency(row[amountCol]);
+        if (rawDebit === 0 && rawCredit === 0 && amountColVal !== null) {
+            const signedAmount = Utils.parseCurrency(amountColVal);
 
-                // IMPORTANT: Negative amounts are CREDITS, Positive amounts are DEBITS
-                if (signedAmount < 0) {
-                    credits = Math.abs(signedAmount);
-                } else if (signedAmount > 0) {
-                    debits = signedAmount;
+            if (signedAmount < 0) {
+                rawCredit = Math.abs(signedAmount);
+            } else if (signedAmount > 0) {
+                rawDebit = signedAmount;
+            }
+        }
+
+        // --- ACCOUNT TYPE LOGIC FLIP 🧠 ---
+        // Use forced logic if valid boolean passed, otherwise check account object
+        const isLiability = (forceReversedLogic !== null)
+            ? forceReversedLogic
+            : (targetAccount && targetAccount.isReversedLogic && targetAccount.isReversedLogic());
+
+        if (isLiability) {
+            // Credit Card Logic
+            // CSV 'Debit' Column or Positive Amount = Expense (Transaction.debits)
+            // CSV 'Credit' Column or Negative Amount = Payment (Transaction.amount)
+            debits = rawDebit;
+            credits = rawCredit;
+        } else {
+            // Checking Account Logic
+            if (rawDebit > 0 || rawCredit > 0) {
+                debits = rawDebit;
+                credits = rawCredit;
+            } else {
+                if (amountColVal !== null) {
+                    const val = Utils.parseCurrency(amountColVal);
+                    if (val < 0) {
+                        debits = Math.abs(val); // Money OUT
+                        credits = 0;
+                    } else {
+                        credits = val; // Money IN
+                        debits = 0;
+                    }
                 }
             }
         }
 
         // Required fields
-        if (!dateCol || !payeeCol) {
+        if (!dateVal || !payeeVal) {
             return null;
         }
 
-        // Parse date
-        const dateStr = row[dateCol];
-        const date = Utils.parseDate(dateStr);
+        const date = Utils.parseDate(dateVal);
         if (!date) {
-            console.warn('Invalid date:', dateStr);
+            console.warn('Invalid date:', dateVal);
             return null;
         }
 
-        // Parse balance
-        const balance = balanceCol ? Utils.parseCurrency(row[balanceCol]) : 0;
+        const balance = balanceVal ? Utils.parseCurrency(balanceVal) : 0;
 
-        // Skip if no amount
         if (debits === 0 && credits === 0) {
             return null;
         }
 
         const transaction = new Transaction({
-            ref: refCol ? row[refCol] : '',
+            ref: refVal || '',
             date: date,
-            payee: row[payeeCol] || '',
+            payee: payeeVal || '',
             debits: debits,
-            amount: credits,  // amount field stores credits
+            amount: credits,  // amount field stores credits (Money In)
             balance: balance,
-            account: accountCol ? row[accountCol] : ''
+            account: accountVal || '',
+            accountId: targetAccount ? targetAccount.id : null // Link to BankAccount
         });
+
+        // 🧠 Auto-Code Payments for Credit Cards
+        if (isLiability && transaction.isCredit) {
+            transaction.category = 'Transfer';
+            transaction.account = '2701';
+            transaction.allocatedAccount = '2701';
+            transaction.allocatedAccountName = 'Credit Card Payable';
+            transaction.status = 'matched';
+            transaction.notes = 'Auto-coded Payment';
+        }
 
         return transaction;
     },
 
-    // Find column name (case-insensitive)
+    // Legacy helper kept for safety
     findColumn(row, possibleNames) {
-        const keys = Object.keys(row);
-
-        for (const possibleName of possibleNames) {
-            const found = keys.find(key =>
-                key.toLowerCase().trim() === possibleName.toLowerCase()
-            );
-            if (found) return found;
-        }
-
-        // Try partial match
-        for (const possibleName of possibleNames) {
-            const found = keys.find(key =>
-                key.toLowerCase().includes(possibleName.toLowerCase())
-            );
-            if (found) return found;
-        }
-
-        return null;
+        return null; // Not used anymore as we rely on identifyColumns
     },
 
     // Validate CSV format
@@ -182,48 +327,25 @@ window.CSVParser = {
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
                     if (jsonData.length === 0) {
-                        resolve({
-                            isValid: false,
-                            error: 'CSV file is empty'
-                        });
+                        resolve({ isValid: false, error: 'CSV file is empty' });
                         return;
                     }
 
-                    // Check for required columns
+                    // Check for required columns using the new helper if we wanted, 
+                    // but keeping it simple for now:
                     const firstRow = jsonData[0];
-                    const hasDate = this.findColumn(firstRow, ['date', 'transaction date']);
-                    const hasPayee = this.findColumn(firstRow, ['payee', 'description', 'memo']);
-                    const hasAmount = this.findColumn(firstRow, ['debits', 'amount', 'credit', 'debit']);
-
-                    if (!hasDate || !hasPayee || !hasAmount) {
-                        resolve({
-                            isValid: false,
-                            error: 'CSV is missing required columns (Date, Payee, Amount)',
-                            columns: Object.keys(firstRow)
-                        });
-                        return;
-                    }
-
+                    // Simply return valid if we have data, let parser handle column mapping
                     resolve({
                         isValid: true,
                         rowCount: jsonData.length,
                         columns: Object.keys(firstRow)
                     });
+
                 } catch (error) {
-                    resolve({
-                        isValid: false,
-                        error: error.message
-                    });
+                    resolve({ isValid: false, error: error.message });
                 }
             };
-
-            reader.onerror = () => {
-                resolve({
-                    isValid: false,
-                    error: 'Failed to read file'
-                });
-            };
-
+            reader.onerror = () => resolve({ isValid: false, error: 'Failed to read file' });
             reader.readAsBinaryString(file);
         });
     }

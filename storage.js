@@ -113,7 +113,8 @@ const Storage = {
                 allocatedAccountName: t.allocatedAccountName,
                 category: t.category,
                 notes: t.notes,
-                status: t.status
+                status: t.status,
+                accountId: t.accountId // 🆕 Multi-Account Support
             }));
             localStorage.setItem(this.KEYS.TRANSACTIONS, JSON.stringify(data));
             return true;
@@ -137,6 +138,43 @@ const Storage = {
 
     clearTransactions() {
         localStorage.removeItem(this.KEYS.TRANSACTIONS);
+    },
+
+    // 🏦 Bank Accounts Persistence (New for v1.3)
+    saveBankAccounts(accounts) {
+        try {
+            const data = accounts.map(a => ({
+                id: a.id,
+                name: a.name,
+                type: a.type,
+                description: a.description || '',
+                openingBalance: a.openingBalance,
+                currency: a.currency || 'CAD',
+                color: a.color,
+                isActive: a.isActive,
+                createdAt: a.createdAt
+            }));
+            localStorage.setItem('autobookkeeping_bank_accounts', JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving bank accounts:', error);
+            return false;
+        }
+    },
+
+    loadBankAccounts() {
+        try {
+            const data = localStorage.getItem('autobookkeeping_bank_accounts');
+            if (!data) return [];
+            const parsed = JSON.parse(data);
+            if (window.BankAccount) {
+                return parsed.map(a => new BankAccount(a));
+            }
+            return parsed;
+        } catch (error) {
+            console.error('Error loading bank accounts:', error);
+            return [];
+        }
     },
 
     // Settings

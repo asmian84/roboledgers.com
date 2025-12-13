@@ -28,13 +28,66 @@ window.AccountAllocator = {
 
     // Get account options for dropdown
     getAccountOptions() {
-        return this.accounts
-            .filter(a => a.isActive)
-            .map(a => ({
-                value: a.code,
-                label: a.fullName,
-                type: a.type
-            }));
+        // Calculate usage dynamically
+        const transactions = Storage.loadTransactions();
+        const usedCodes = new Set();
+
+        if (transactions && transactions.length > 0) {
+            transactions.forEach(t => {
+                if (t.allocatedAccount) usedCodes.add(t.allocatedAccount);
+            });
+        }
+
+        // Get all accounts
+        const allAccounts = this.accounts.filter(a => a.isActive);
+
+        // Split into Used and Unused
+        const usedAccounts = [];
+        const unusedAccounts = [];
+
+        allAccounts.forEach(a => {
+            if (usedCodes.has(a.code)) {
+                usedAccounts.push(a);
+            } else {
+                unusedAccounts.push(a);
+            }
+        });
+
+        // specific override for Bank (1000) and Sales (4001) - always show as used
+        if (!usedCodes.has('1000')) {
+            const bank = unusedAccounts.find(a => a.code === '1000');
+            if (bank) {
+                unusedAccounts.splice(unusedAccounts.indexOf(bank), 1);
+                usedAccounts.push(bank);
+            }
+        }
+        if (!usedCodes.has('4001')) {
+            const sales = unusedAccounts.find(a => a.code === '4001');
+            if (sales) {
+                unusedAccounts.splice(unusedAccounts.indexOf(sales), 1);
+                usedAccounts.push(sales);
+            }
+        }
+
+        // Sort both lists by code
+        usedAccounts.sort((a, b) => a.code.localeCompare(b.code));
+        unusedAccounts.sort((a, b) => a.code.localeCompare(b.code));
+
+        // Format options
+        const options = [];
+
+        // 1. Add Used Accounts (clean)
+        usedAccounts.forEach(a => options.push(a.fullName));
+
+        // 2. Add Separator if needed
+        if (usedAccounts.length > 0 && unusedAccounts.length > 0) {
+            options.push('──────────');
+        }
+
+        // 3. Add Unused Accounts (marked)
+        unusedAccounts.forEach(a => options.push(`${a.fullName} (Unused)`));
+
+        return options;
     },
 
     // Get accounts by type
