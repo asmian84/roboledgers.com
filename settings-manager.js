@@ -115,10 +115,5 @@ const Settings = {
 
     get(key) {
         return this.current[key];
-        if (fontSize) this.current.gridFontSize = fontSize;
-        Storage.saveSettings(this.current);
-        if (typeof TransactionGrid !== 'undefined') {
-            TransactionGrid.applyGridCustomization();
-        }
     }
 };

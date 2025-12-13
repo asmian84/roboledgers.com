@@ -163,25 +163,8 @@ window.VendorMatcher = {
     },
 
     /**
-     * Add a new vendor to the dictionary
-     * @param {Object} vendor - Vendor object
+     * Get vendor by ID (internal helper)
      */
-    addVendor(vendor) {
-        this.vendors.push(vendor);
-        Storage.saveVendors(this.vendors);
-    },
-
-    /**
-     * Update an existing vendor
-     * @param {Object} updatedVendor - Updated vendor object
-     */
-    updateVendor(updatedVendor) {
-        const index = this.vendors.findIndex(v => v.id === updatedVendor.id);
-        if (index !== -1) {
-            this.vendors[index] = updatedVendor;
-            Storage.saveVendors(this.vendors);
-        }
-    },
 
     // Find vendor by ID
     getVendorById(id) {

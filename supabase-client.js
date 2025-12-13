@@ -108,10 +108,24 @@ window.SupabaseClient = {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // Check for schema mismatch (missing columns)
+                if (error.code === 'PGRST204' && error.message.includes('normalized_name')) {
+                    if (!this._schemaErrorLogged) {
+                        console.error('🚨 CRITICAL DATABASE ERROR: Schema mismatch. You MUST run the SQL update script in Supabase.');
+                        console.error('Missing column "normalized_name". Operations using this column will fail.');
+                        alert('Database Error: Your Supabase database is missing required columns. Please run the provided SQL script to update the schema.');
+                        this._schemaErrorLogged = true; // Log only once
+                    }
+                    return null; // Fail silently after first alert
+                }
+                throw error;
+            }
             return data;
         } catch (err) {
-            console.error('❌ Failed to upsert vendor:', err);
+            if (err.code !== 'PGRST204') { // Don't re-log known schema errors
+                console.error('❌ Failed to upsert vendor:', err);
+            }
             return null;
         }
     },
