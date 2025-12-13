@@ -17,8 +17,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
 
+    <!-- Chart.js for Beautiful Visuals -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css?v=6">
     <link rel="stylesheet" href="ticker.css?v=6">
+    <link rel="stylesheet" href="dashboard.css?v=1">
 </head>
 
 <body>
@@ -26,7 +30,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-content">
-                <div class="logo-section" id="logoHome" 2
+                <div class="logo-section" id="logoHome"
                     style="flex: 1; text-align: right; padding-right: 3rem; cursor: pointer;" title="Return to Home">
                     <h1 style="font-size: 2.25rem; font-weight: 700;">RoboLedgers<span class="domain"
                             style="font-weight: 400; opacity: 0.85;">.com</span>
@@ -34,6 +38,11 @@
                 </div>
 
                 <div class="header-actions">
+                    <button id="openDashboardBtn" class="btn-secondary" title="Executive Dashboard"
+                        onclick="if(window.DashboardManager) DashboardManager.openDashboard()">
+                        <i class="fas fa-chart-pie"></i>
+                        Dashboard
+                    </button>
                     <button onclick="window.location.href='roadmap.html'" class="btn-secondary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 11l3 3L22 4"></path>
@@ -41,15 +50,7 @@
                         </svg>
                         Roadmap
                     </button>
-                    <button id="reportsBtn" class="btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 3v18h18"></path>
-                            <path d="M18 17V9"></path>
-                            <path d="M13 17v-6"></path>
-                            <path d="M8 17v-3"></path>
-                        </svg>
-                        Reports
-                    </button>
+
                     <button id="settingsBtn" class="btn-secondary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"></circle>
@@ -532,6 +533,7 @@
     <!-- Scripts -->
     <script src="models.js"></script>
     <script src="storage.js"></script>
+    <script src="settings-manager.js"></script>
     <script src="utils.js"></script>
     <script src="vendor-name-utils.js"></script>
     <script src="csv-parser.js"></script>
@@ -541,7 +543,7 @@
     <script src="bulk-indexer.js"></script>
     <script src="grid-stream.js?v=1.0"></script>
     <script src="transaction-grid.js?v=2.6"></script>
-    <script src="google-search.js"></script>
+    <script src="search-service.js"></script>
     <script src="vendor-ai.js"></script>
     <script src="transaction-pipeline.js"></script>
     <script src="ai-worker.js"></script>
@@ -618,8 +620,99 @@
             <!-- Footer removed -->
         </div>
     </div>
-    <script src="reports-modal.js"></script>
-    <script src="settings-manager.js"></script>
+    <!-- 📊 FINANCIAL DASHBOARD OVERLAY -->
+    <div id="financialDashboard" class="dashboard-overlay hidden">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h2>Executive Dashboard</h2>
+                    <span class="live-badge">
+                        <span class="pulse-dot"></span>
+                        LIVE
+                    </span>
+                </div>
+                <div class="header-right">
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="close-btn" id="closeDashboardBtn">&times;</button>
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="dashboard-content">
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card glass-panel revenue-card">
+                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
+                        <div class="kpi-info">
+                            <h3>Revenue</h3>
+                            <h2 id="kpiRevenue">$0.00</h2>
+                            <!-- <p class="trend positive">+12% vs last month</p> -->
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel expense-card">
+                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-down"></i></div>
+                        <div class="kpi-info">
+                            <h3>Expenses</h3>
+                            <h2 id="kpiExpenses">$0.00</h2>
+                            <!-- <p class="trend negative">+5% vs last month</p> -->
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel profit-card">
+                        <div class="icon-wrapper"><i class="fas fa-wallet"></i></div>
+                        <div class="kpi-info">
+                            <h3>Net Profit</h3>
+                            <h2 id="kpiProfit">$0.00</h2>
+                            <!-- <p class="trend positive">+8% margin</p> -->
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel cash-card">
+                        <div class="icon-wrapper"><i class="fas fa-coins"></i></div>
+                        <div class="kpi-info">
+                            <h3>Cash on Hand</h3>
+                            <h2 id="kpiCash">$0.00</h2>
+                            <p class="trend neutral">Latest Balance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Charts Area -->
+                <div class="charts-row">
+                    <!-- Trend Chart (Large) -->
+                    <div class="chart-container glass-panel trend-panel">
+                        <div class="panel-header">
+                            <h3>Income vs Expenses (YTD)</h3>
+                        </div>
+                        <div class="canvas-wrapper">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Donut Chart (Side) -->
+                    <div class="chart-container glass-panel donut-panel">
+                        <div class="panel-header">
+                            <h3>Top Expense Categories</h3>
+                        </div>
+                        <div class="canvas-wrapper">
+                            <canvas id="expenseDonutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insight Banner -->
+                <div class="insight-banner glass-panel">
+                    <div class="ai-icon">✨</div>
+                    <div class="insight-content">
+                        <h4>AI Financial Analyst</h4>
+                        <p id="aiInsightText">Analyzing real-time transaction data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="theme-manager.js"></script>
     <script src="theme-radio-handler.js"></script>
     <script>
@@ -634,7 +727,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="grid-popout.js"></script>
-    <script src="app.js?v=2.1"></script>
+    <script src="reports-engine.js"></script>
+    <script src="dashboard-logic.js"></script>
+    <script src="app.js?v=2.2"></script>
 </body>
 
 </html>

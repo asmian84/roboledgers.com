@@ -3,50 +3,105 @@
  * Handles integration with Google Custom Search API to enrich vendor data.
  */
 const GoogleSearchService = {
-    /**
-     * Search for a vendor by name
-     * @param {string} query - The search query (vendor name)
-     * @returns {Promise<Object>} - Simplifed search result { title, snippet, link }
-     */
+    cacheKey: 'google_search_cache',
+    lastRequestTime: 0,
+    minDelay: 2500, // 2.5 seconds strict delay
+    isRateLimited: false,
+
+    getCache() {
+        try {
+            return JSON.parse(localStorage.getItem(this.cacheKey)) || {};
+        } catch (e) {
+            return {};
+        }
+    },
+
+    setCache(query, result) {
+        try {
+            const cache = this.getCache();
+            cache[query] = {
+                result,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(this.cacheKey, JSON.stringify(cache));
+        } catch (e) {
+            console.warn('Cache write failed (likely quota exceeded):', e);
+        }
+    },
+
     async searchVendor(query) {
+        if (!query) return null;
         if (!window.Settings) {
-            console.error('Settings not loaded');
+            // console.error('Settings not loaded yet'); 
             return null;
+        }
+
+        // 1. Check Cache
+        const cache = this.getCache();
+        if (cache[query]) {
+            // console.log(`🎯 Cache Hit: ${query}`);
+            return cache[query].result;
+        }
+
+        // 2. Check Global Rate Limit Flag
+        if (this.isRateLimited) {
+            console.warn('⚠️ Google Search API Rate Limit Reached. Enrichment paused.');
+            return null;
+        }
+
+        // 3. Rate Limiting Logic (Throttle)
+        const now = Date.now();
+        const timeSinceLast = now - this.lastRequestTime;
+        if (timeSinceLast < this.minDelay) {
+            const waitTime = this.minDelay - timeSinceLast;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
         const apiKey = Settings.get('googleApiKey');
         const cx = Settings.get('googleSearchCx');
 
         if (!apiKey || !cx) {
-            console.warn('Google Search API not configured. Missing API Key or CX.');
+            // console.warn('Google Search API not configured.');
             return null;
         }
 
+        this.lastRequestTime = Date.now();
         const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
 
         try {
+            console.log(`🔍 Google Search: ${query}`);
             const response = await fetch(url);
 
+            if (response.status === 429) {
+                console.error('⛔ API Rate Limit Hit (429). Stopping all searches for this session.');
+                this.isRateLimited = true;
+                return null;
+            }
+
             if (!response.ok) {
-                console.error(`Google Search Error: ${response.status} ${response.statusText}`);
+                // Other errors (403, 500)
+                console.warn(`Google API Error: ${response.status}`);
                 return null;
             }
 
             const data = await response.json();
 
             if (!data.items || data.items.length === 0) {
-                return null; // No results
+                this.setCache(query, null); // Cache "no result" to avoid re-searching
+                return null;
             }
 
-            // Return the top result simplifed
             const topResult = data.items[0];
-            return {
+            const result = {
                 title: topResult.title,
                 snippet: topResult.snippet,
                 link: topResult.link,
                 displayLink: topResult.displayLink,
-                pagemap: topResult.pagemap || {} // 🧠 The Brain: Contains Schema.org & Metatags
+                pagemap: topResult.pagemap || {}
             };
+
+            this.setCache(query, result);
+            return result;
 
         } catch (error) {
             console.error('Google Search Exception:', error);
@@ -54,18 +109,9 @@ const GoogleSearchService = {
         }
     },
 
-    /**
-     * Suggest a better name based on search result
-     * @param {Object} searchResult 
-     * @returns {string|null}
-     */
     suggestName(searchResult) {
         if (!searchResult) return null;
-
         let title = searchResult.title;
-
-        // Clean up common SEO junk in titles
-        // e.g. "Amazon.com: Online Shopping..." -> "Amazon.com"
         const separators = [':', '|', '-', '–', '—'];
         for (const sep of separators) {
             const index = title.indexOf(sep);
@@ -73,7 +119,6 @@ const GoogleSearchService = {
                 title = title.substring(0, index).trim();
             }
         }
-
         return title;
     }
 };

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Server Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🦆 Search Server Test</h1>
+    <p>Use this page to verify your local Python server is working before integrating it into the main app.</p>
+
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <input type="text" id="query" value="Tesla" placeholder="Enter search term" style="padding: 0.5rem; flex: 1;">
+        <button onclick="testSearch()" style="padding: 0.5rem 1rem; cursor: pointer;">Test Search</button>
+    </div>
+
+    <div id="status">Waiting for test...</div>
+    <div id="result"></div>
+
+    <script>
+        async function testSearch() {
+            const query = document.getElementById('query').value;
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+
+            status.textContent = "⏳ Connecting to server...";
+            result.innerHTML = "";
+
+            try {
+                // Try to hit the local server
+                const response = await fetch(`http://localhost:8000/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    status.innerHTML = "<span class='success'>✅ Server is Online & Working!</span>";
+                    result.innerHTML = `
+                        <h3>Result:</h3>
+                        <pre>${JSON.stringify(data.result, null, 2)}</pre>
+                        <p><strong>Title:</strong> ${data.result.title}</p>
+                        <p><strong>URL:</strong> <a href="${data.result.href}" target="_blank">${data.result.href}</a></p>
+                    `;
+                } else {
+                    status.innerHTML = "<span class='error'>❌ Server responded, but no results found.</span>";
+                    result.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                status.innerHTML = "<span class='error'>❌ Connection Failed!</span>";
+                result.innerHTML = `
+                    <p>Is the server running?</p>
+                    <ol>
+                        <li>Open Terminal</li>
+                        <li>Run: <code>python server/server.py</code></li>
+                        <li>Retry this test</li>
+                    </ol>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -26,10 +26,7 @@ window.AIWorker = {
     processTick() {
         if (!window.TransactionGrid || !window.GridStream) return;
 
-        // Ensure we have the latest vendor rules
-        if (window.VendorMatcher) {
-            VendorMatcher.initialize();
-        }
+
 
         // Get live transactions directly from internal storage or grid
         // We use TransactionGrid.transactions to ensure we are looking at the source of truth

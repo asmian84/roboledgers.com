@@ -14,6 +14,11 @@ const App = {
             AccountAllocator.initialize();
             VendorMatcher.initialize();
 
+            // Initialize Settings
+            if (typeof Settings !== 'undefined') {
+                Settings.initialize();
+            }
+
             // Initialize UI components  
             if (typeof TransactionGrid === 'undefined') {
                 throw new Error('TransactionGrid not loaded. Check script order in index.html');
@@ -1105,6 +1110,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Dashboard Launch Button from Header
+    const dashboardBtn = document.getElementById('openDashboardBtn');
+    if (dashboardBtn) {
+        dashboardBtn.addEventListener('click', () => {
+            if (window.DashboardManager) {
+                DashboardManager.openDashboard();
+            } else {
+                console.error('DashboardManager not loaded');
+                alert('Dashboard module not loaded. Please refresh.');
+            }
+        });
+    }
 
     // Start Over Button Logic
     const startOverBtn = document.getElementById('startOverBtn');

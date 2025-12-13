@@ -652,35 +652,85 @@ window.VendorAI = {
             vendor.patterns = [...new Set([...vendor.patterns, ...patterns])];
         }
 
-        // 5. 🤖 Google Search Enrichment (Async, for Mystery Vendors)
+        // 5. 🤖 Google Search Enrichment (Last Resort for Mystery/Garbage Vendors)
         // Only if category is still General/Unknown AND hasn't been searched yet
-        // AND we have the service available.
-        if (window.GoogleSearchService &&
+        // AND checks specifically for "Garbage" or "Unusual" characteristics
+        if (window.SearchService &&
             (vendor.category === 'General' || vendor.defaultAccount === '9970') &&
             !vendor._googleSearched) {
 
-            this.updateTicker(`🔍 Searching clues for: ${normalized}...`, 'processing');
-            console.log(`🔍 Searching Google for mystery vendor: ${normalized}`);
-            const searchResult = await GoogleSearchService.searchVendor(normalized);
-            vendor._googleSearched = true; // Mark as searched to prevent quota drain
+            // 🕵️ GARBAGE DETECTION
+            const isGarbage = this.isGarbage(normalized);
+
+            // 🧠 SMART SEARCH LOGIC: 
+            // 1. If it's garbage (e.g. "POS DEBIT", "TRANSFER", "123456"), DO NOT search. It's a waste of API credits.
+            // 2. If it's too short (< 3 chars), DO NOT search. "Dd", "Ab" are useless queries.
+            // 3. Only search if it looks like a valid entity name that we just don't recognize yet.
+
+            if (isGarbage) {
+                console.log(`🗑️ Skipping Google Search for garbage/generic term: "${normalized}"`);
+                return vendor;
+            }
+
+            if (normalized.length < 3) {
+                console.log(`📏 Skipping Google Search for short string: "${normalized}"`);
+                return vendor;
+            }
+
+            // At this point, it's not garbage, it's valid length, but it's classified as "General".
+            // This is a perfect candidate for enrichment.
+            this.updateTicker(`🔍 Analyzing unknown entity: ${normalized}...`, 'processing');
+            console.log(`🔍 Search Service Triggered for Mystery Vendor: "${normalized}"`);
+
+            const searchResult = await SearchService.searchVendor(normalized);
+            vendor._googleSearched = true;
 
             if (searchResult) {
-                console.log('✨ Google found:', searchResult);
-
-                // Enhance Name
-                const betterName = GoogleSearchService.suggestName(searchResult);
-                if (betterName && betterName.length > normalized.length && betterName.length < 50) {
+                console.log('✨ Entity found:', searchResult);
+                const betterName = SearchService.suggestName(searchResult);
+                if (betterName && betterName.length > 2) {
                     vendor.name = betterName;
-                    const newPatterns = this.generatePatterns(betterName);
-                    vendor.patterns = [...new Set([...vendor.patterns, ...newPatterns])];
+                    // Re-run account allocation with better name
+                    const reCheck = AccountAllocator.suggestAccountFromText(betterName);
+                    if (reCheck) {
+                        vendor.defaultAccount = reCheck.code;
+                        vendor.defaultAccountName = reCheck.name;
+                        vendor.category = reCheck.type === 'Expense' ? 'Expense' : 'Revenue';
+                    }
                 }
-
                 return vendor;
             }
         }
 
         return vendor;
     },
+
+    isGarbage(name) {
+        if (!name) return false;
+        const n = name.toUpperCase();
+
+        // 1. Length check
+        if (n.length < 3) return true;
+
+        // 2. Numeric heavy (e.g. "78239282")
+        const digits = n.replace(/[^0-9]/g, '').length;
+        if (digits > n.length * 0.6) return true;
+
+        // 3. Common statement junk
+        const junkTerms = [
+            'HOLD', 'PENDING', 'AUTH', 'PURCHASE', 'DEPOSIT', 'WITHDRAWAL',
+            'POS', 'DEBIT', 'CREDIT', 'MISC', 'FEES', 'TRANSFER', 'E-TRANSFER'
+        ];
+        if (junkTerms.includes(n)) return true;
+
+        // 4. Weird codes (e.g. "X7Z-99-A")
+        if (/[A-Z0-9]{3,}-[A-Z0-9]{3,}/.test(n)) return true; // Two alphanumeric blocks
+        if (n.includes('*') && n.length < 10) return true; // Short names with asterisks
+
+        return false;
+    },
+
+
 
     updateTicker(msg, type = 'normal') {
         const ticker = document.getElementById('activityTicker');

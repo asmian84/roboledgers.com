@@ -130,3 +130,6 @@ const Settings = {
         return this.current[key];
     }
 };
+
+// Expose to window for global access
+window.Settings = Settings;
