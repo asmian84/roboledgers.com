@@ -1010,9 +1010,9 @@ window.VendorGrid = {
 
 // Initialize if DOM loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => TransactionGrid.initialize());
+    document.addEventListener('DOMContentLoaded', () => TransactionGrid.initialize('transactionGrid'));
 } else {
-    TransactionGrid.initialize();
+    TransactionGrid.initialize('transactionGrid');
 }
 
 
