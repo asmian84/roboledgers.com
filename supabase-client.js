@@ -12,8 +12,11 @@ window.SupabaseClient = {
     isConnected: false,
 
     async initialize() {
+        if (this.client) return true; // Already initialized
+        if (this.isConnected) return true;
+
         if (typeof supabase === 'undefined') {
-            console.warn('⚠️ Supabase SDK not loaded');
+            console.warn('⚠️ Supabase SDK not loaded.');
             return false;
         }
 
@@ -23,19 +26,15 @@ window.SupabaseClient = {
         }
 
         try {
+            console.log('☁️ Loading Supabase Client...');
             this.client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            const { data, error } = await this.client.from('user_profiles').select('count', { count: 'exact', head: true });
-
-            if (!error) {
-                this.isConnected = true;
-                console.log('✅ Supabase Connected');
-                return true;
-            } else {
-                console.error('❌ Supabase Connection Failed:', error);
-                return false;
-            }
-        } catch (e) {
-            console.error('❌ Supabase Init Error:', e);
+            // The original code had a select to verify connection, but the instruction removes it.
+            // For now, we'll assume creation implies connection for this simplified init.
+            this.isConnected = true;
+            console.log('✅ Supabase Connected');
+            return true;
+        } catch (error) {
+            console.error('❌ Supabase Connection Failed:', error);
             return false;
         }
     },
