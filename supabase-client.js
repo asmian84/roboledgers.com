@@ -20,16 +20,9 @@ window.SupabaseClient = {
             return false;
         }
 
-        if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-            console.warn('⚠️ Supabase credentials not set');
-            return false;
-        }
-
         try {
             console.log('☁️ Loading Supabase Client...');
             this.client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            // The original code had a select to verify connection, but the instruction removes it.
-            // For now, we'll assume creation implies connection for this simplified init.
             this.isConnected = true;
             console.log('✅ Supabase Connected');
             return true;
@@ -118,6 +111,40 @@ window.SupabaseClient = {
                     }
                     return null; // Fail silently after first alert
                 }
+
+                // Check for UUID/Text mismatch (22P02)
+                if (error.code === '22P02') {
+                    if (!this._schemaErrorLogged) {
+                        console.error('🚨 CRITICAL DATABASE ERROR: Type mismatch. You MUST run the SQL update script in Supabase.');
+                        console.error('The database expects UUIDs but we are sending Text IDs. Please run: ALTER TABLE public.vendors ALTER COLUMN id TYPE text;');
+                        alert('Database Error: Column type mismatch. Please run the provided SQL script to change "id" and "default_account_id" columns to TEXT in Supabase.');
+                        this._schemaErrorLogged = true; // Log only once
+                    }
+                    return null;
+                }
+
+                // Check for RLS Policy violation (42501)
+                if (error.code === '42501') {
+                    if (!this._schemaErrorLogged) {
+                        console.error('🚨 CRITICAL DATABASE ERROR: RLS Policy Violation. You MUST configure database permissions.');
+                        console.error('Row Level Security is blocking updates. Please run: ALTER TABLE public.vendors DISABLE ROW LEVEL SECURITY;');
+                        alert('Database Permissions Error: The database is blocking this text. Please run the provided SQL script to disable Row Level Security (RLS) or add a policy.');
+                        this._schemaErrorLogged = true; // Log only once
+                    }
+                    return null;
+                }
+
+                // Check for Not Null Violation on user_id (23502)
+                if (error.code === '23502' && error.message.includes('user_id')) {
+                    if (!this._schemaErrorLogged) {
+                        console.error('🚨 CRITICAL DATABASE ERROR: Schema constraint violation. "user_id" is required but we are anonymous.');
+                        console.error('Please run: ALTER TABLE public.vendors ALTER COLUMN user_id DROP NOT NULL;');
+                        alert('Database Schema Error: The "user_id" column is required but you are not logged in. Please run the provided SQL script to make this column optional.');
+                        this._schemaErrorLogged = true;
+                    }
+                    return null;
+                }
+
                 throw error;
             }
             return data;
