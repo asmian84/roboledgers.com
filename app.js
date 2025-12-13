@@ -190,6 +190,29 @@ const App = {
         console.log('✅ Unified AI Re-think complete:', { vendorResult, categorized, errors });
     },
 
+    updateBankAccountSelector() {
+        const selector = document.getElementById('bankAccountSelect');
+        if (!selector || !window.BankAccountManager) return;
+
+        const options = BankAccountManager.getAccountOptions();
+        selector.innerHTML = '<option value="">Select Account...</option>';
+
+        options.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.value;
+            el.textContent = opt.label;
+            if (opt.disabled) el.disabled = true;
+            if (opt.isUnused) el.style.color = '#9ca3af';
+            if (opt.action) el.style.fontWeight = 'bold';
+            selector.appendChild(el);
+        });
+
+        // Restore selection if exists
+        if (this.currentAccountId) {
+            selector.value = this.currentAccountId;
+        }
+    },
+
     setupEventListeners() {
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
@@ -1268,6 +1291,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Settings Button Logic
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettingsBtn = document.getElementById('closeSettingsModal');
+
+    if (settingsBtn && settingsModal) {
+        settingsBtn.addEventListener('click', () => {
+            console.log('⚙️ Opening settings...');
+            settingsModal.style.display = '';
+            settingsModal.classList.add('active');
+
+            // Refresh settings UI if needed
+            if (typeof Settings !== 'undefined') {
+                Settings.updateCompanyName();
+                Settings.updateThemePicker();
+            }
+        });
+
+        // Close button
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+            });
+        }
+
+        // Click outside to close
+        window.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('active');
+            }
+        });
+    }
+
     // Reports button (placeholder)
     const reportsBtn = document.getElementById('reportsBtn');
     if (reportsBtn) {
@@ -1277,13 +1333,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Settings Data tab buttons
+    // Settings Data tab buttons
     const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-    const settingsAccountsBtn = document.getElementById('settingsAccountsBtn');
+    const settingsAccountsBtn = document.getElementById('settingsBankAccountsBtn');
 
     if (settingsVendorDictBtn) {
         settingsVendorDictBtn.addEventListener('click', () => {
+            console.log('📚 Opening Vendor Dictionary from Settings...');
             if (typeof VendorManager !== 'undefined') {
-                VendorManager.showModal();
+                // Ensure modal is reset/ready
+                const vendorModal = document.getElementById('vendorModal');
+                if (vendorModal) vendorModal.style.display = 'block';
+                if (typeof VendorManager.init === 'function') VendorManager.init();
+            } else {
+                console.error('VendorManager not found');
+            }
+        });
+    }
+
+    // Edit Account Button (in Review Toolbar)
+    const editAccountBtn = document.getElementById('editAccountBtn');
+    if (editAccountBtn) {
+        editAccountBtn.addEventListener('click', (e) => {
+            if (typeof BankAccountManager !== 'undefined') {
+                e.stopPropagation(); // Prevent immediate close
+                BankAccountManager.togglePopover(editAccountBtn);
             }
         });
     }
@@ -1320,7 +1394,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (settingsAccountsBtn) {
         settingsAccountsBtn.addEventListener('click', () => {
-            App.showAccountsModal();
+            console.log('🏦 Opening Bank Accounts from Settings...');
+            // Check if we should use the new Popover or the Old Modal
+            // Current design seems to point to Old Modal for "Manage" but Popover for "Quick Edit"
+            // Let's force the Old Modal for the full manager view as requested
+            const modal = document.getElementById('manageAccountsModal');
+            if (modal) {
+               modal.style.display = 'block';
+               if (typeof BankAccountManager !== 'undefined' && BankAccountManager.renderAccountsList) {
+                   BankAccountManager.renderAccountsList();
+               }
+            }
+        });
+    }
+
+    // Close Manage Accounts Modal
+    const closeManageAccountsBtn = document.getElementById('closeManageAccountsModal');
+    if (closeManageAccountsBtn) {
+        closeManageAccountsBtn.addEventListener('click', () => {
+             const modal = document.getElementById('manageAccountsModal');
+             if (modal) modal.style.display = 'none';
         });
     }
 

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approval - RoboLedgers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            padding: 3rem;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .logout-link {
+            display: block;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .logout-link:hover {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <span class="status-icon">⏳</span>
+        <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Account Pending</h2>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+            Your account has been created but is waiting for administrator approval.
+        </p>
+        <p style="color: var(--text-secondary); margin-top: 1rem;">
+            Please contact the system administrator to activate your access.
+        </p>
+
+        <a onclick="AuthManager.signOut()" class="logout-link">← Sign Out</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth-manager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await SupabaseClient.initialize();
+            // Optional: polling to check if approved?
+        });
+    </script>
+</body>
+
+</html>

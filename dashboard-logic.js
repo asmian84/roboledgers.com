@@ -94,6 +94,7 @@ const DashboardManager = {
             cash: 0,
             expenseCategories: {},
             monthlyTrend: {},
+            accountBalances: {},
             latestDate: null
         };
 

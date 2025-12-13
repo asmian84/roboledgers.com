@@ -1452,10 +1452,14 @@ textarea:focus {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     max-width: 90%;
+    /* Responsive height limits */
     max-height: 90vh;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     animation: slideUp 0.3s ease;
     border: 1px solid var(--border-color);
+    margin: auto;
+    /* Robust centering fallback */
 }
 
 @keyframes slideUp {
@@ -1514,7 +1518,10 @@ textarea:focus {
 .modal-body {
     padding: var(--spacing-lg);
     overflow-y: auto;
-    max-height: calc(90vh - 100px);
+    flex: 1;
+    /* Take remaining space */
+    min-height: 0;
+    /* Enable scrolling inside flex item */
 }
 
 /* Settings Tabs */
@@ -2323,4 +2330,183 @@ input.currency-input,
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+
+/* --- Mini-Manager Popover --- */
+#accountManagerPopover {
+    position: absolute;
+    background: var(--surface-bg, #1e293b);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 250px;
+    display: none;
+    /* Hidden by default */
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--text-primary, #fff);
+}
+
+.popover-arrow {
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    width: 12px;
+    height: 12px;
+    background: var(--surface-bg, #1e293b);
+    border-left: 1px solid var(--border-color, #334155);
+    border-top: 1px solid var(--border-color, #334155);
+    transform: rotate(45deg);
+}
+
+.popover-header {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color, #334155);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quick-add-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.quick-add-btn {
+    background: var(--input-bg, #0f172a);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 4px;
+    color: var(--text-secondary, #94a3b8);
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.quick-add-btn:hover {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.account-list-mini {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.account-item-mini {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    gap: 0.5rem;
+}
+
+.account-item-mini:hover {
+    background: var(--hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary);
+}
+
+.account-item-mini span[contenteditable="true"] {
+    border-bottom: 1px dashed var(--primary-color);
+    outline: none;
+    min-width: 50px;
+}
+
+.account-item-mini .delete-btn {
+    margin-left: auto;
+    opacity: 0;
+    cursor: pointer;
+    color: #ef4444;
+}
+
+.account-item-mini:hover .delete-btn {
+    opacity: 1;
+}
+
+/* Reconciliation Panel Layout */
+.reconciliation-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.reconciliation-section {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.reconciliation-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reconciliation-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.reconciliation-input-group label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.reconciliation-value {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.9rem;
+}
+
+.calculated-value {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+}
+
+.discrepancy-value {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 600;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .reconciliation-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .reconciliation-grid {
+        grid-template-columns: 1fr;
+    }
 }

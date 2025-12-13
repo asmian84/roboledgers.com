@@ -41,37 +41,56 @@ window.AccountAllocator = {
         // Get all accounts
         const allAccounts = this.accounts.filter(a => a.isActive);
 
-        // Split into Used and Unused
+        // Split lists (Cash Basis: Deprioritize AR/AP)
         const usedAccounts = [];
-        const unusedAccounts = [];
+        const unusedStandard = [];
+        const unusedLowPriority = [];
+
+        // Definition of Low Priority (Accrual) Account Ranges (Cash Basis Logic)
+        const isLowPriority = (code) => {
+            const c = parseInt(code);
+            // 1200-1299 (Receivables) and 2100-2199 (Payables/Accruals)
+            return (c >= 1200 && c <= 1299) || (c >= 2100 && c <= 2199);
+        };
 
         allAccounts.forEach(a => {
             if (usedCodes.has(a.code)) {
                 usedAccounts.push(a);
             } else {
-                unusedAccounts.push(a);
+                if (isLowPriority(a.code)) {
+                    unusedLowPriority.push(a);
+                } else {
+                    unusedStandard.push(a);
+                }
             }
         });
 
         // specific override for Bank (1000) and Sales (4001) - always show as used
-        if (!usedCodes.has('1000')) {
-            const bank = unusedAccounts.find(a => a.code === '1000');
-            if (bank) {
-                unusedAccounts.splice(unusedAccounts.indexOf(bank), 1);
-                usedAccounts.push(bank);
-            }
-        }
-        if (!usedCodes.has('4001')) {
-            const sales = unusedAccounts.find(a => a.code === '4001');
-            if (sales) {
-                unusedAccounts.splice(unusedAccounts.indexOf(sales), 1);
-                usedAccounts.push(sales);
-            }
-        }
+        const ensureUsed = (code) => {
+            if (!usedCodes.has(code)) {
+                // Try to find in standard or low priority
+                let list = unusedStandard;
+                let item = list.find(a => a.code === code);
 
-        // Sort both lists by code
+                if (!item) {
+                    list = unusedLowPriority;
+                    item = list.find(a => a.code === code);
+                }
+
+                if (item) {
+                    list.splice(list.indexOf(item), 1);
+                    usedAccounts.push(item);
+                }
+            }
+        };
+
+        ensureUsed('1000');
+        ensureUsed('4001');
+
+        // Sort lists by code
         usedAccounts.sort((a, b) => a.code.localeCompare(b.code));
-        unusedAccounts.sort((a, b) => a.code.localeCompare(b.code));
+        unusedStandard.sort((a, b) => a.code.localeCompare(b.code));
+        unusedLowPriority.sort((a, b) => a.code.localeCompare(b.code));
 
         // Format options
         const options = [];
@@ -80,12 +99,20 @@ window.AccountAllocator = {
         usedAccounts.forEach(a => options.push(a.fullName));
 
         // 2. Add Separator if needed
-        if (usedAccounts.length > 0 && unusedAccounts.length > 0) {
+        if (usedAccounts.length > 0 && (unusedStandard.length > 0 || unusedLowPriority.length > 0)) {
             options.push('──────────');
         }
 
-        // 3. Add Unused Accounts (marked)
-        unusedAccounts.forEach(a => options.push(`${a.fullName} (Unused)`));
+        // 3. Add Unused Standard Accounts (marked)
+        unusedStandard.forEach(a => options.push(`${a.fullName} (Unused)`));
+
+        // 4. Add Low Priority (Accruals) at the bottom
+        if (unusedLowPriority.length > 0) {
+            if (unusedStandard.length > 0 || usedAccounts.length > 0) {
+                options.push('────────── (Accruals)');
+            }
+            unusedLowPriority.forEach(a => options.push(`${a.fullName} (Low Priority)`));
+        }
 
         return options;
     },

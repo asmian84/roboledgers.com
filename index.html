@@ -191,223 +191,235 @@
                                 " />
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <label for="accountTypeSelect" style="font-size: 0.9rem; color: var(--text-secondary);">
-                                    Account Type:
-                                </label>
-                                <select id="accountTypeSelect" style="
-                                    padding: 0.4rem 0.6rem;
-                                    border: 1px solid var(--border-color);
-                                    border-radius: 4px;
-                                    background: var(--input-bg);
-                                    color: var(--text-primary);
-                                    font-size: 0.9rem;
-                                    cursor: pointer;
-                                ">
-                                    <option value="chequing">Chequing</option>
-                                    <option value="savings">Savings</option>
-                                    <option value="credit">Credit Card</option>
-                                    <option value="loan">Loan</option>
-                                    <option value="investment">Investment</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Bulk Actions Bar (appears when rows selected) -->
-                <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
-                    <div class="bulk-actions-content">
-                        <span class="selection-count">
-                            <strong id="selectedCount">0</strong> transactions selected
-                        </span>
-
-                        <div class="bulk-actions-controls">
-                            <select id="bulkAccountSelect" class="bulk-account-dropdown">
-                                <option value="">Assign Account...</option>
-                            </select>
-
-                            <button id="applyBulkAccount" class="bulk-action-btn primary">
-                                Apply to Selected
-                            </button>
-
-                            <button id="clearSelection" class="bulk-action-btn secondary">
-                                Clear Selection
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid-container">
-                    <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
-                </div>
-
-                <!-- Bank Reconciliation Panel -->
-                <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>🏦 Bank Reconciliation</h3>
-                    <div class="reconciliation-grid">
-                        <div class="reconciliation-section">
-                            <h4>Opening Balance</h4>
-                            <div class="reconciliation-input-group">
-                                <label>Expected</label>
-                                <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
-                                    class="currency-input">
-                            </div>
-                            <div class="reconciliation-value">
-                                <label>Calculated</label>
-                                <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
-                            </div>
-                        </div>
-                        <div class="reconciliation-section">
-                            <h4>Ending Balance</h4>
-                            <div class="reconciliation-input-group">
-                                <label>Expected</label>
-                                <input type="text" id="expectedEndingBalance" placeholder="$0.00"
-                                    class="currency-input">
-                            </div>
-                            <div class="reconciliation-value">
-                                <label>Calculated</label>
-                                <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
-                            </div>
-                        </div>
-                        <div class="reconciliation-section">
-                            <h4>Transaction Totals</h4>
-                            <div class="status-item">
-                                <label>Total Credits</label>
-                                <span id="totalCredits" class="calculated-value">$0.00</span>
-                            </div>
-                            <div class="status-item">
-                                <label>Total Debits</label>
-                                <span id="totalDebits" class="calculated-value">$0.00</span>
-                            </div>
-                        </div>
-                        <div class="reconciliation-section">
-                            <h4>Discrepancy</h4>
-                            <div class="status-item">
-                                <label>Opening</label>
-                                <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
-                            </div>
-                            <div class="status-item">
-                                <label>Ending</label>
-                                <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
-                            </div>
-                            <div class="status-indicator" id="statusIndicator">
-                                <span class="status-icon">⚪</span>
-                                <span class="status-text">Enter expected balances</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Modal -->
-                <div id="settingsModal" class="modal">
-                    <div class="modal-content modal-large settings-modal">
-                        <div class="modal-header">
-                            <h2>⚙️ Settings</h2>
-                            <button class="modal-close" id="closeSettingsModal">&times;</button>
-                        </div>
-                        <div class="modal-body settings-body">
-                            <!-- Settings Tabs -->
-                            <div class="settings-tabs">
-                                <button class="settings-tab active" data-tab="appearance">Appearance</button>
-                                <button class="settings-tab" data-tab="company">Company</button>
-                                <button class="settings-tab" data-tab="data">Data</button>
-                            </div>
-
-                            <!-- Appearance Settings -->
-                            <div class="settings-panel active" data-panel="appearance">
-
-                                <div class="settings-section">
-                                    <label class="settings-label">Color Theme</label>
-                                    <div class="theme-radio-group">
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="cyber-night" checked>
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌃</span>
-                                                <span class="theme-name">Cyber Night</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="arctic-dawn">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">❄️</span>
-                                                <span class="theme-name">Arctic Dawn</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="neon-forest">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌲</span>
-                                                <span class="theme-name">Neon Forest</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="royal-amethyst">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">💎</span>
-                                                <span class="theme-name">Royal Amethyst</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="sunset-horizon">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌅</span>
-                                                <span class="theme-name">Sunset Horizon</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="ocean-depths">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌊</span>
-                                                <span class="theme-name">Ocean Depths</span>
-                                            </div>
-                                        </label>
+                                <div class="input-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <label style="margin: 0; white-space: nowrap;">Account:</label>
+                                    <div style="display: flex; gap: 0.25rem; align-items: center;">
+                                        <select id="bankAccountSelect" style="
+                                        padding: 0.4rem 0.6rem;
+                                        border: 1px solid var(--border-color);
+                                        border-radius: 4px;
+                                        background: var(--input-bg);
+                                        color: var(--text-primary);
+                                        font-size: 0.9rem;
+                                        cursor: pointer;
+                                        min-width: 180px;
+                                    ">
+                                            <option value="">Select Account...</option>
+                                        </select>
+                                        <button id="editAccountBtn" class="btn-icon" title="Manage Accounts" style="
+                                        background: transparent;
+                                        border: 1px solid var(--border-color);
+                                        border-radius: 4px;
+                                        padding: 0.3rem;
+                                        cursor: pointer;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: var(--text-secondary);
+                                    ">
+                                            ✏️
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="settings-panel" data-panel="company" style="padding: 0 2rem 2rem 2rem;">
-                            <div class="settings-section">
-                                <label class="settings-label">Company Name</label>
-                                <input type="text" id="companyNameInput" class="settings-input"
-                                    placeholder="Enter company name (optional)">
-                                <p class="settings-hint">Will be displayed above Transaction Review</p>
-                            </div>
+                    <!-- Bulk Actions Bar (appears when rows selected) -->
+                    <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+                        <div class="bulk-actions-content">
+                            <span class="selection-count">
+                                <strong id="selectedCount">0</strong> transactions selected
+                            </span>
 
-                            <div class="settings-section">
-                                <label class="settings-label">Fiscal Year-End Date</label>
-                                <input type="date" id="yearEndDate" class="settings-input">
-                                <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
+                            <div class="bulk-actions-controls">
+                                <select id="bulkAccountSelect" class="bulk-account-dropdown">
+                                    <option value="">Assign Account...</option>
+                                </select>
+
+                                <button id="applyBulkAccount" class="bulk-action-btn primary">
+                                    Apply to Selected
+                                </button>
+
+                                <button id="clearSelection" class="bulk-action-btn secondary">
+                                    Clear Selection
+                                </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="settings-panel" data-panel="data" style="padding: 0 2rem 2rem 2rem;">
-                            <div class="settings-section">
-                                <label class="settings-label">Vendor Dictionary</label>
-                                <button id="settingsVendorDictBtn" class="btn-secondary full-width">
-                                    Manage Vendor Dictionary
-                                </button>
+                    <div class="grid-container">
+                        <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                    </div>
+
+                    <!-- Bank Reconciliation Panel -->
+                    <div id="reconciliationPanel" class="reconciliation-panel">
+                        <h3>🏦 Bank Reconciliation</h3>
+                        <div class="reconciliation-grid">
+                            <div class="reconciliation-section">
+                                <h4>Opening Balance</h4>
+                                <div class="reconciliation-input-group">
+                                    <label>Expected</label>
+                                    <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
+                                        class="currency-input">
+                                </div>
+                                <div class="reconciliation-value">
+                                    <label>Calculated</label>
+                                    <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="reconciliation-section">
+                                <h4>Ending Balance</h4>
+                                <div class="reconciliation-input-group">
+                                    <label>Expected</label>
+                                    <input type="text" id="expectedEndingBalance" placeholder="$0.00"
+                                        class="currency-input">
+                                </div>
+                                <div class="reconciliation-value">
+                                    <label>Calculated</label>
+                                    <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="reconciliation-section">
+                                <h4>Transaction Totals</h4>
+                                <div class="status-item">
+                                    <label>Total Credits</label>
+                                    <span id="totalCredits" class="calculated-value">$0.00</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Total Debits</label>
+                                    <span id="totalDebits" class="calculated-value">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="reconciliation-section">
+                                <h4>Discrepancy</h4>
+                                <div class="status-item">
+                                    <label>Opening</label>
+                                    <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Ending</label>
+                                    <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                                </div>
+                                <div class="status-indicator" id="statusIndicator">
+                                    <span class="status-icon">⚪</span>
+                                    <span class="status-text">Enter expected balances</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Modal -->
+                    <div id="settingsModal" class="modal">
+                        <div class="modal-content modal-large settings-modal">
+                            <div class="modal-header">
+                                <h2>⚙️ Settings</h2>
+                                <button class="modal-close" id="closeSettingsModal">&times;</button>
+                            </div>
+                            <div class="modal-body settings-body">
+                                <!-- Settings Tabs -->
+                                <div class="settings-tabs">
+                                    <button class="settings-tab active" data-tab="appearance">Appearance</button>
+                                    <button class="settings-tab" data-tab="company">Company</button>
+                                    <button class="settings-tab" data-tab="data">Data</button>
+                                </div>
+
+                                <!-- Appearance Settings -->
+                                <div class="settings-panel active" data-panel="appearance">
+
+                                    <div class="settings-section">
+                                        <label class="settings-label">Color Theme</label>
+                                        <div class="theme-radio-group">
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="cyber-night" checked>
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">🌃</span>
+                                                    <span class="theme-name">Cyber Night</span>
+                                                </div>
+                                            </label>
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="arctic-dawn">
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">❄️</span>
+                                                    <span class="theme-name">Arctic Dawn</span>
+                                                </div>
+                                            </label>
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="neon-forest">
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">🌲</span>
+                                                    <span class="theme-name">Neon Forest</span>
+                                                </div>
+                                            </label>
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="royal-amethyst">
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">💎</span>
+                                                    <span class="theme-name">Royal Amethyst</span>
+                                                </div>
+                                            </label>
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="sunset-horizon">
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">🌅</span>
+                                                    <span class="theme-name">Sunset Horizon</span>
+                                                </div>
+                                            </label>
+                                            <label class="theme-radio-option">
+                                                <input type="radio" name="theme" value="ocean-depths">
+                                                <div class="theme-content">
+                                                    <span class="theme-icon">🌊</span>
+                                                    <span class="theme-name">Ocean Depths</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="settings-section">
-                                <label class="settings-label">Chart of Accounts</label>
-                                <button id="settingsAccountsBtn" class="btn-secondary full-width">
-                                    View Chart of Accounts
-                                </button>
+                            <div class="settings-panel" data-panel="company" style="padding: 0 2rem 2rem 2rem;">
+                                <div class="settings-section">
+                                    <label class="settings-label">Company Name</label>
+                                    <input type="text" id="companyNameInput" class="settings-input"
+                                        placeholder="Enter company name (optional)">
+                                    <p class="settings-hint">Will be displayed above Transaction Review</p>
+                                </div>
+
+                                <div class="settings-section">
+                                    <label class="settings-label">Fiscal Year-End Date</label>
+                                    <input type="date" id="yearEndDate" class="settings-input">
+                                    <p class="settings-hint">Used for financial reports cutoff (e.g., Dec 31, 2024)</p>
+                                </div>
                             </div>
 
-                            <div class="settings-section">
-                                <label class="settings-label">Bank Accounts</label>
-                                <button id="settingsBankAccountsBtn" class="btn-primary full-width">
-                                    Manage Bank Accounts
-                                </button>
+                            <div class="settings-panel" data-panel="data" style="padding: 0 2rem 2rem 2rem;">
+                                <div class="settings-section">
+                                    <label class="settings-label">Vendor Dictionary</label>
+                                    <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                                        Manage Vendor Dictionary
+                                    </button>
+                                </div>
+
+                                <div class="settings-section">
+                                    <label class="settings-label">Chart of Accounts</label>
+                                    <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                                        View Chart of Accounts
+                                    </button>
+                                </div>
+
+                                <div class="settings-section">
+                                    <label class="settings-label">Bank Accounts</label>
+                                    <button id="settingsBankAccountsBtn" class="btn-primary full-width">
+                                        Manage Bank Accounts
+                                    </button>
+                                </div>
+
+
                             </div>
-
-
                         </div>
                     </div>
                 </div>
-    </div>
     </div>
 
     <!-- Manage Accounts Modal -->
@@ -427,12 +439,35 @@
                         Add Account
                     </button>
                 </div>
+                <!-- Mini-Manager Popover -->
+                <div id="accountManagerPopover">
+                    <div class="popover-arrow"></div>
+                    <div class="popover-header">
+                        <span>Manage Accounts</span>
+                        <span style="font-size: 0.8rem; color: #94a3b8; cursor: pointer;" id="closePopoverBtn">&times;
+                            Close</span>
+                    </div>
 
-                <div id="accountsList" class="accounts-list">
-                    <!-- Populated dynamically -->
+                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Quick Add:</div>
+                    <div class="quick-add-grid">
+                        <div class="quick-add-btn" data-type="chequing">Chequing</div>
+                        <div class="quick-add-btn" data-type="savings">Savings</div>
+                        <div class="quick-add-btn" data-type="credit">Credit Card</div>
+                    </div>
+
+                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Active Accounts
+                        (Double-click to edit):</div>
+                    <div class="account-list-mini" id="miniAccountList">
+                        <!-- Dynamic Content -->
+                    </div>
                 </div>
             </div>
+
+            <div id="accountsList" class="accounts-list">
+                <!-- Populated dynamically -->
+            </div>
         </div>
+    </div>
     </div>
 
     <!-- Add/Edit Account Modal -->
@@ -538,27 +573,7 @@
 
 
 
-    <!-- Scripts -->
-    <script src="models.js"></script>
-    <script src="storage.js"></script>
-    <script src="bank-account-manager.js"></script>
-    <script src="settings-manager.js"></script>
-    <script src="utils.js"></script>
-    <script src="vendor-name-utils.js"></script>
-    <script src="csv-parser.js"></script>
-    <script src="vendor-matcher.js"></script>
-    <script src="account-allocator.js"></script>
-    <script src="excel-exporter.js"></script>
-    <script src="bulk-indexer.js"></script>
-    <script src="grid-stream.js?v=1.0"></script>
-    <script src="transaction-grid.js?v=2.6"></script>
-    <script src="search-service.js"></script>
-    <script src="vendor-ai.js"></script>
-    <script src="transaction-pipeline.js"></script>
-    <script src="ai-worker.js"></script>
-    <script src="vendor-manager.js"></script>
-    <script src="account-chart.js"></script>
-    <script src="reconciliation.js"></script>
+
     <!-- Vendor Manager Modal (Restored) -->
     <div id="vendorModal" class="modal">
         <div class="modal-content large-modal">
@@ -724,21 +739,50 @@
 
     <script src="theme-manager.js"></script>
     <script src="theme-radio-handler.js"></script>
-    <script>
-        // Debug test - verify JavaScript works
-        console.log('🔍 TEST: JavaScript is executing!');
-        console.log('🔍 TEST: About to load app.j');
-    </script>
+
+    <!-- Core Models & Utils -->
+    <script src="models.js"></script>
+    <script src="utils.js"></script>
+    <script src="storage.js"></script>
     <script src="session-manager.js"></script>
     <script src="undo-manager.js"></script>
     <script src="keyboard-handler.js"></script>
-    <script src="vendor-import-export.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-client.js"></script>
-    <script src="grid-popout.js"></script>
+    <script src="settings-manager.js"></script>
+    <script src="vendor-name-utils.js"></script>
+    <script src="excel-exporter.js"></script>
+    <script src="bulk-indexer.js"></script>
+    <script src="search-service.js"></script>
+    <script src="vendor-ai.js"></script>
+    <script src="grid-stream.js"></script>
+    <script src="reconciliation.js"></script>
+
+    <!-- Logic Engines -->
+    <script src="account-chart.js"></script>
+    <script src="account-allocator.js"></script>
+    <script src="bank-account-manager.js"></script>
+    <script src="csv-parser.js"></script>
+    <script src="vendor-matcher.js"></script>
+    <script src="transaction-pipeline.js"></script>
     <script src="reports-engine.js"></script>
     <script src="dashboard-logic.js"></script>
-    <script src="app.js?v=2.2"></script>
+    <script src="dashboard-manager.js"></script>
+    <script src="vendor-import-export.js"></script>
+
+    <!-- UI & Components -->
+    <script src="transaction-grid.js"></script>
+    <script src="grid-popout.js"></script>
+
+    <!-- Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+
+    <!-- Main App Entry -->
+    <script src="app.js?v=2.3"></script>
+
+    <script>
+        console.log('🔍 TEST: JavaScript is executing!');
+        console.log('🔍 TEST: App loaded successfully.');
+    </script>
 </body>
 
 </html>
