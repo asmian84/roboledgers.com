@@ -53,29 +53,8 @@ window.VendorManager = {
         const vendorImportDropZone = document.getElementById('vendorImportDropZone');
         const vendorImportInput = document.getElementById('vendorImportInput');
 
-        // Create Cloud Badge if not exists
-        if (!document.getElementById('cloudCountBadge')) {
-            const headerActions = this.modal.querySelector('.header-actions');
-            if (headerActions) {
-                const badge = document.createElement('div');
-                badge.id = 'cloudCountBadge';
-                badge.className = 'status-badge';
-                badge.style.cssText = 'padding: 6px 12px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 20px; font-size: 0.85rem; font-weight: 500; border: 1px solid rgba(16, 185, 129, 0.2); margin-right: 10px; display: flex; align-items: center; gap: 6px;';
-                badge.innerHTML = '<span>☁️ Connecting...</span>';
-                headerActions.prepend(badge);
+        // Cloud Badge Removed as per user request
 
-                // Initialize Status
-                if (window.SupabaseClient) {
-                    SupabaseClient.getVendorCount().then(count => {
-                        if (count > 0) {
-                            badge.innerHTML = `<span>☁️ ${count} Synced</span>`;
-                        } else {
-                            badge.innerHTML = '<span>☁️ Ready</span>';
-                        }
-                    });
-                }
-            }
-        }
 
 
 

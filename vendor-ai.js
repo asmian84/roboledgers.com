@@ -693,13 +693,14 @@ window.VendorAI = {
     normalizeVendorName(rawName) {
         if (!rawName) return rawName;
 
-        let cleaned = rawName.trim();
+        // 0. Pre-clean: Remove invisible characters (NBSP) and controls
+        let cleaned = rawName.replace(/\u00A0/g, ' ').replace(/[\r\n\t]/g, ' ').trim();
         const lower = cleaned.toLowerCase();
 
-        // 0. 🚨 GLOBAL LOGIC: Detect Transfers/Payments 🚨
+        // 0.1 🚨 GLOBAL LOGIC: Detect Transfers/Payments 🚨
         // Collapse all variations of transfers into single recognized entities
-        if (/tfrto|tfrfr|transfer|etransfer|e-transfer|sent to|received from/i.test(cleaned)) return 'Transfer';
-        if (/pyt|payment|bill payment|pre-authorized debit/i.test(cleaned)) return 'Payment';
+        if (/tfrto|tfrfr|transfer|etransfer|e-transfer|etfr|sent to|received from/i.test(cleaned)) return 'Transfer';
+        if (/pyt|payment|bill payment|pre-authorized debit|direct debit/i.test(cleaned)) return 'Payment';
         if (/deposit/i.test(cleaned) && !/check|cheque/i.test(cleaned)) return 'Deposit';
         if (/fee|charge/i.test(cleaned) && /bank|overdraft|service/i.test(cleaned)) return 'Bank Fee';
 
@@ -718,18 +719,24 @@ window.VendorAI = {
             'Amzn': 'Amazon',
             'Amz': 'Amazon',
             'Amz*': 'Amazon',
+            'Amzn Mktp': 'Amazon',
             'Mcd': 'McDonalds',
             'Mcdo': 'McDonalds',
             'Tims': 'Tim Hortons',
             'Cdn Tire': 'Canadian Tire',
             'Wal-mart': 'Walmart',
+            'Wal Mart': 'Walmart',
+            'Costco Whse': 'Costco',
+            'Home Dep': 'Home Depot',
             'Alibabacom': 'Alibaba'
         };
 
         // Check if the cleaned name IS an alias or STARTS with an alias
         for (const [alias, full] of Object.entries(ALIASES)) {
-            if (cleaned === alias || cleaned.startsWith(alias + ' ')) {
-                cleaned = cleaned.replace(alias, full);
+            // Case insensitive check for better matching
+            if (cleaned.toLowerCase() === alias.toLowerCase() ||
+                cleaned.toLowerCase().startsWith(alias.toLowerCase() + ' ')) {
+                cleaned = full; // Replace with canonical name
                 break; // One expansion matches
             }
         }

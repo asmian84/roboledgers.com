@@ -1055,11 +1055,12 @@ window.VendorGrid = {
     },
 
     // Delete vendor logic
-    deleteVendor(vendorId) {
-        if (confirm('Are you sure you want to delete this vendor?')) {
-            VendorMatcher.deleteVendor(vendorId);
-            this.loadVendors();
-        }
+    async deleteVendor(vendorId) {
+        // Confirmation executed in button click handler
+        // 1. Delete from data store
+        await VendorMatcher.deleteVendor(vendorId);
+        // 2. Refresh grid
+        this.loadVendors();
     }
 };
 

@@ -16,6 +16,7 @@ window.VendorMatcher = {
                 this.vendors = cloudVendors;
                 // Update local cache as backup
                 this.saveVendors();
+                this.startContinuousOptimization(); // 🧠 START BRAIN
                 return;
             }
         }
@@ -24,53 +25,36 @@ window.VendorMatcher = {
         console.log('📂 Loading vendors from Local Storage...');
         this.vendors = Storage.loadVendors();
 
-        // 🛡️ RE-OPTIMIZATION CHECK
-        // Check if vendors need optimization (e.g. loaded from old data)
-        if (window.VendorAI) {
-            let changeCount = 0;
-            // Add a small delay so UI can render and user can see the ticker start
-            setTimeout(async () => {
-                for (const vendor of this.vendors) {
-                    // If name is all lowercase or looks raw, force optimize
-                    if (vendor.name && (vendor.name === vendor.name.toLowerCase() || !vendor.category || vendor.defaultAccount === '9970')) {
-                        // FORCE RE-SEARCH for the ticker effect
-                        vendor._googleSearched = false;
+        this.startContinuousOptimization(); // 🧠 START BRAIN
+    },
 
-                        await VendorAI.optimizeVendor(vendor);
-                        changeCount++;
-
-                        // Visual "Flipper" Effect 🎰
-                        const api = window.VendorGrid?.gridApi || window.VendorGrid?.gridOptions?.api;
-                        if (api) {
-                            const rowNode = api.getRowNode(vendor.id);
-                            if (rowNode) {
-                                // 1. Update data
-                                rowNode.setData(vendor);
-                                // 2. Flash the row (The "Flipper" visual)
-                                api.flashCells({
-                                    rowNodes: [rowNode],
-                                    flashDelay: 500,
-                                    fadeDelay: 300
-                                });
-                            }
-                        }
-
-                        // 🔄 TRIGGER TRANSACTION SYNC (The "Grid" User Cares About)
-                        if (window.App && App.updateTransactionsForVendor) {
-                            // Run this slightly offset to not block the visual flash
-                            setTimeout(() => App.updateTransactionsForVendor(vendor), 50);
-                        }
-
-                        // Small delay for the visual cadence
-                        await new Promise(r => setTimeout(r, 600));
-                    }
-                }
-                if (changeCount > 0) {
-                    console.log(`✨ Re-optimized ${changeCount} legacy vendors`);
-                    this.saveVendors();
-                }
-            }, 2000); // Start 2 seconds after load
+    // 🧠 CONTINUOUS AI LOOP: The "Heartbeat" of the System
+    startContinuousOptimization() {
+        if (this._optimizationInterval) {
+            console.warn('⚠️ Optimization loop already running. Skipping start.');
+            return;
         }
+
+        console.log('🚀 Starting Turbo-Charged Optimization Loop (High Performance)...');
+
+        // Run every 200ms: CPU-bound speed, skipping network latency
+        this._optimizationInterval = setInterval(async () => {
+            if (!this.vendors || this.vendors.length === 0) return;
+
+            // BATCH PROCESSING: Grab 10 items that haven't been checked recently
+            // Prioritize messy ones, but essentially check everyone round-robin
+            const candidates = this.vendors
+                .filter(v => (!v._lastChecked || Date.now() - v._lastChecked > 10000)) // Re-check every 10s
+                .sort((a, b) => (a._lastChecked || 0) - (b._lastChecked || 0)) // Oldest first
+                .slice(0, 10); // Process 10 at a time
+
+            if (candidates.length === 0) return;
+
+            // Process batch. Note: updateVendor now supports { skipCloud: true }
+            for (const candidate of candidates) {
+                await this.updateVendor(candidate.id, { _lastChecked: Date.now() }, { skipCloud: true });
+            }
+        }, 200);
     },
 
     // Match a payee to a vendor
@@ -186,7 +170,8 @@ window.VendorMatcher = {
     },
 
     // Update vendor
-    async updateVendor(vendorId, updates) {
+    async updateVendor(vendorId, updates, options = {}) {
+        const { skipCloud = false } = options;
         let vendor = this.vendors.find(v => v.id === vendorId);
         if (vendor) {
             Object.assign(vendor, updates);
@@ -211,18 +196,26 @@ window.VendorMatcher = {
                 );
 
                 if (duplicate) {
-                    console.log(`🔀 Auto-Consolidating duplicate "${vendor.name}"...`);
+                    // console.log(`🔀 Auto-Consolidating duplicate "${vendor.name}"...`);
                     // Merge THIS vendor (source) into the DUPLICATE (target)
-                    // We return the result of the merge (the target)
                     return this.mergeVendors(vendor, duplicate);
                 }
             }
 
-            this.saveVendors(); // Local Cache
+            // Local Save
+            this.saveVendors();
 
-            // Sync to Cloud
-            if (window.SupabaseClient) {
-                await SupabaseClient.upsertVendor(vendor);
+            // ⚡ REAL-TIME UI UPDATE (Standard Optimization) ⚡
+            // If we didn't delete or merge, we still improved the name/category. Show it!
+            if (window.VendorGrid && window.VendorGrid.gridApi && !window.VendorGrid.gridApi.destroyCalled) {
+                window.VendorGrid.gridApi.applyTransaction({ update: [vendor] });
+            }
+
+            // Sync to Cloud (unless skipped for speed)
+            if (!skipCloud && window.SupabaseClient) {
+                // Don't await this if we want UI to be snappy, but safe to await if not batching
+                // In Turbo mode, we skip this.
+                SupabaseClient.upsertVendor(vendor);
             }
             return vendor;
         }
@@ -352,13 +345,26 @@ window.VendorMatcher = {
     async deleteVendor(vendorId) {
         const index = this.vendors.findIndex(v => v.id === vendorId);
         if (index !== -1) {
+            const removed = this.vendors[index];
             this.vendors.splice(index, 1);
-            this.saveVendors(); // Local Cache
+            this.saveVendors();
 
-            // Sync to Cloud
+            // Cloud Sync
             if (window.SupabaseClient) {
                 await SupabaseClient.deleteVendor(vendorId);
             }
+
+            // ⚡ REAL-TIME UI UPDATE ⚡
+            // Directly remove from grid without full reload
+            if (window.VendorGrid && window.VendorGrid.gridApi && !window.VendorGrid.gridApi.destroyCalled) {
+                // Find node by ID
+                const rowNode = window.VendorGrid.gridApi.getRowNode(vendorId);
+                // Or remove by data
+                window.VendorGrid.gridApi.applyTransaction({ remove: [{ id: vendorId }] });
+            }
+
+            // Notify others
+            window.dispatchEvent(new CustomEvent('vendor-deleted', { detail: { id: vendorId } }));
             return true;
         }
         return false;
@@ -366,9 +372,25 @@ window.VendorMatcher = {
 
     // Get all vendors
     getAllVendors() {
-        // 🗑️ GARBAGE FILTER: Hide internal transfer logic from UI
+        // 🗑️ GARBAGE FILTER: Hide internal transfer logic AND empty rows from UI
         const garbagePattern = /(tfrto|tfrfr|pyt|mtg|direct transfer|direct debit|global payment|bill payment|pre-authorized debit)/i;
-        return this.vendors.filter(v => !garbagePattern.test(v.name));
+
+        return this.vendors.filter(v => {
+            if (!v.name) return false;
+
+            // Check RAW name first for garbage patterns
+            if (garbagePattern.test(v.name)) return false;
+
+            // Check NORMALIZED name (what actually gets displayed)
+            // If the cleaner strips it to empty, hide it!
+            if (window.VendorAI) {
+                const normalized = VendorAI.normalizeVendorName(v.name);
+                return normalized && normalized.trim().length > 0;
+            }
+
+            // Fallback if AI not loaded
+            return v.name.trim().length > 0;
+        });
     },
 
     /**
