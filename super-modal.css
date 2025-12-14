@@ -3,13 +3,26 @@
    ========================================= */
 
 /* The Wrapper - Covers ENTIRE screen */
+#vendorSummaryModal {
+    z-index: 2000 !important;
+}
+
+#drillDownModal {
+    z-index: 3000 !important;
+    /* Always on top of Summary */
+}
+
+#vendorModal {
+    z-index: 2000 !important;
+}
+
+/* Base Modal Styles */
 #drillDownModal,
 #vendorSummaryModal,
 #vendorModal {
     position: fixed;
     inset: 0;
-    z-index: 2147483647 !important;
-    /* MAX INT Priority */
+    /* z-index moved to individual IDs for stacking control */
     background: rgba(0, 0, 0, 0.7);
     /* Standard Dark Backdrop */
     backdrop-filter: blur(4px);

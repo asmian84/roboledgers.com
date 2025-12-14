@@ -911,21 +911,19 @@ window.TransactionGrid = {
     // Get row style based on selected color scheme
     getRowStyle(params) {
         // 1. Highlight Unmatched/Action Items
-        // "Unmatched" = Explicit status OR no account allocated
-        if (params.data.status === 'unmatched' || !params.data.allocatedAccount) {
-            return {
-                background: '#fff1f2', // Very light red
-                borderLeft: '5px solid #ef4444', // Red indicator
-                fontWeight: '500'
-            };
-        }
-
-        // 2. Standard Color Scheme
+        // 1. Calculate Base Rainbow Theme First (Always applied)
         const scheme = Settings.current.gridColorScheme || 'rainbow';
         const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
         const colorIndex = params.node.rowIndex % colors.length;
 
         const style = { background: colors[colorIndex] };
+
+        // 2. Add Status Indicators (Overlay, do not replace background)
+        if (params.data.status === 'unmatched' || !params.data.allocatedAccount) {
+            style.borderLeft = '5px solid #ef4444'; // Red indicator for attention
+            style.fontWeight = '500';
+            // We removed the pink background overwrite so Rainbow shines through 🌈
+        }
 
         // Apply font customization if set
         if (Settings.current.gridFontFamily) {
@@ -1206,6 +1204,25 @@ window.VendorGrid = {
         const vendors = VendorMatcher.getAllVendors();
         this.gridApi.setRowData(vendors);
         this.safelySizeColumnsToFit();
+    },
+
+    // ⚡ SMART RESIZE: Polls until grid is visible
+    safelySizeColumnsToFit() {
+        if (!this.gridApi) return;
+
+        const attemptResize = (attemptsLeft) => {
+            const container = document.getElementById('vendorGrid');
+            if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+                // ✅ Visible! Resize now.
+                this.gridApi.sizeColumnsToFit();
+            } else if (attemptsLeft > 0) {
+                // ⏳ Not visible yet... wait and retry
+                requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
+            }
+        };
+
+        // Try for 300 frames (~5 seconds)
+        attemptResize(300);
     },
 
     onCellValueChanged(event) {

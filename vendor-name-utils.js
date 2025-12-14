@@ -36,8 +36,14 @@ window.VendorNameUtils = {
             /^ATM\s*-?\s*/i,
             /^ATM WITHDRAWAL\s*-?\s*/i,
             /^ATM\s*-?\s*/i,
+            /^ATM WITHDRAWAL\s*-?\s*/i,
+            /^ATM\s*-?\s*/i,
             /^MONTHLY FEE\s*$/i,
-            /^WWW\s+/i
+            /^WWW\s+/i,
+            // 🧹 INTERAC GARBAGE (e.g. "Interac 9494 B002 Shell C10381")
+            /^INTERAC\s*e-Transfer\s*-?\s*/i,
+            /^INTERAC\s*\d+\s*[A-Z0-9]+\s*/i, // Matches "Interac 9494 B002"
+            /^INTERAC\s*-?\s*/i
         ];
 
         // 0. Remove Leading Numbers (Store IDs like "22048 MACS")

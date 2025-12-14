@@ -68,11 +68,14 @@ window.DrillDownGrid = {
 
         this.gridApi = agGrid.createGrid(container, gridOptions);
 
-        // Responsive Resize
+        // Responsive Resize (Debounced)
         const resizeObserver = new ResizeObserver(entries => {
             for (const entry of entries) {
                 if (entry.contentRect.width > 0 && this.gridApi) {
-                    // this.gridApi.sizeColumnsToFit();
+                    // Force resize when container becomes visible/resizes
+                    requestAnimationFrame(() => {
+                        this.safelySizeColumnsToFit();
+                    });
                 }
             }
         });

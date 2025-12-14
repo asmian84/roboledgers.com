@@ -821,7 +821,7 @@
     <script src="undo-manager.js"></script>
     <script src="keyboard-handler.js"></script>
     <script src="settings-manager.js"></script>
-    <script src="vendor-name-utils.js"></script>
+    <script src="vendor-name-utils.js?v=2"></script>
     <script src="excel-exporter.js"></script>
     <script src="bulk-indexer.js"></script>
     <script src="search-service.js"></script>
@@ -843,8 +843,8 @@
     <script src="vendor-import-export.js"></script>
 
     <!-- UI & Components -->
-    <script src="transaction-grid.js?v=6"></script>
-    <script src="vendor-summary-grid.js?v=6"></script>
+    <script src="transaction-grid.js?v=8"></script>
+    <script src="vendor-summary-grid.js?v=7"></script>
     <script src="drill-down-grid.js?v=10"></script>
     <script src="grid-popout.js"></script>
 
@@ -855,7 +855,8 @@
     <script src="auth-manager.js"></script>
 
     <!-- Main App Entry -->
-    <script src="app.js?v=2.3"></script>
+    <!-- Main App Entry -->
+    <script src="app.js?v=3.3"></script>
 
     <script>
         console.log('🔍 TEST: JavaScript is executing!');
@@ -863,21 +864,38 @@
     </script>
     <!-- Vendor Summary Modal -->
     <div id="vendorSummaryModal" class="modal">
-        <div class="modal-content" style="max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-content" style="width: 95%; height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <h2>Vendors in Current Grid</h2>
                 <button class="close-modal" id="closeVendorSummaryModal">&times;</button>
             </div>
-            <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+            <!-- Remove inline overflow to allow AG Grid to handle scrolling (Sticky Headers) -->
+            <div class="modal-body">
                 <p class="section-desc">Updating a vendor here will update ALL matching transactions in the grid and
                     save the rule for future imports.</p>
-                <div id="vendorSummaryList" style="display: grid; gap: 0.5rem;">
-                    <!-- Populated dynamically -->
-                </div>
+                <!-- Correct ID for AG Grid and ensure full height -->
+                <div id="vendorSummaryGridContainer" style="width: 100%; height: 100%;"></div>
             </div>
-            <div class="modal-footer"
-                style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <div class="modal-footer">
                 <button class="btn-secondary" id="closeVendorSummaryBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drill Down Modal -->
+    <div id="drillDownModal" class="modal">
+        <div class="modal-content" style="width: 95%; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 id="drillDownModalTitle">Vendor Transactions</h2>
+                <button class="close-modal"
+                    onclick="document.getElementById('drillDownModal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div id="drillDownGridContainer" style="width: 100%; height: 100%;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary"
+                    onclick="document.getElementById('drillDownModal').classList.remove('active')">Close</button>
             </div>
         </div>
     </div>

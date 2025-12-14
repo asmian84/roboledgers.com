@@ -126,9 +126,14 @@ window.VendorSummaryGrid = {
                     // Robust targeting using closest()
                     if (target.closest('.drill-down-link') || target.classList.contains('drill-down-link')) {
                         // 🔍 DRILL DOWN ACTION
-                        console.log('🔍 Drill Down Clicked:', params.value);
-                        if (typeof App !== 'undefined' && App.openDrillDown) {
-                            App.openDrillDown(params.value);
+                        const vendorName = params.value;
+                        console.log('🔍 Drill Down Clicked:', vendorName);
+
+                        if (window.App && window.App.openDrillDown) {
+                            window.App.openDrillDown(vendorName);
+                        } else {
+                            console.error('❌ App.openDrillDown not found!', window.App);
+                            alert(`Drill-down not available for ${vendorName} (App not verified)`);
                         }
                     }
 

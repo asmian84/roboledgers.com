@@ -1,0 +1,47 @@
+/* UNIVERSAL GRID STYLING */
+/* User Request: "make a rule that all grid text is in uppercase" */
+
+.ag-cell,
+.ag-header-cell-text,
+.ag-cell-value,
+.ag-group-value,
+.ag-cell span,
+.ag-cell div,
+.ag-cell a,
+.vendor-name-link {
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+}
+
+/* Ensure inputs in the grid are also uppercase when editing */
+.ag-input-field-input {
+    text-transform: uppercase !important;
+}
+
+/* Fix for Drill Down Grid "Squished" look */
+/* Ensure the grid wrapper takes full height/width */
+#drillDownGrid {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* SPREADSHEET / GRID LINES */
+/* User Request: "show like a grid" (Vertical Borders) */
+.ag-theme-alpine-dark .ag-cell,
+.ag-theme-alpine-dark .ag-header-cell {
+    border-right: 1px solid var(--border-color) !important;
+}
+
+.ag-theme-alpine-dark .ag-header-row {
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+/* Row Borders */
+.ag-theme-alpine-dark .ag-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Optional: Add a subtle transition for smoother hover effects */
+.ag-row {
+    transition: background-color 0.1s;
+}
