@@ -7,6 +7,15 @@ window.TransactionGrid = {
 
     initialize(containerId) {
         const container = document.getElementById(containerId);
+        if (!container) return; // Safety check
+
+        // Prevent Duplicate Initialization which causes "Blank Space" / Double Grids
+        if (this.gridApi) {
+            console.warn('⚠️ TransactionGrid already initialized. Destroying previous instance to prevent duplicates.');
+            this.gridApi.destroy();
+            this.gridApi = null;
+        }
+        container.innerHTML = ''; // Clear container DOM
 
         const gridOptions = {
             columnDefs: this.getColumnDefs(),
@@ -29,7 +38,6 @@ window.TransactionGrid = {
 
             suppressRowClickSelection: true, // Only checkbox selects rows
             rowSelection: 'multiple',
-            onCellValueChanged: this.onCellValueChanged.bind(this),
             onSelectionChanged: this.onSelectionChanged.bind(this), // Track selection changes
             onGridReady: (params) => {
                 this.gridApi = params.api;
@@ -400,8 +408,20 @@ window.TransactionGrid = {
         // Store FULL list externally if needed, but here we process what's passed
         // Filter if context is set
         let filteredTransactions = transactions;
-        if (this.currentAccountId && this.currentAccountId !== 'all') {
-            filteredTransactions = transactions.filter(t => t.accountId === this.currentAccountId);
+        if (this.currentAccountId && this.currentAccountId !== 'all' && this.currentAccountId !== '') {
+            // Robust comparison: Ensure both are strings for comparison
+            filteredTransactions = transactions.filter(t =>
+                String(t.accountId) === String(this.currentAccountId)
+            );
+            console.log(`🔍 Grid Filter: Context=${this.currentAccountId} | Matched ${filteredTransactions.length}/${transactions.length}`);
+
+            // FALLBACK: If filtering hides everything but we have data, warn the user check console
+            if (filteredTransactions.length === 0 && transactions.length > 0) {
+                console.warn('⚠️ Grid Filter resulted in 0 rows. Check Account ID matching.');
+            }
+        } else {
+            console.log(`Note: No Account Context set. Showing all ${transactions.length} transactions.`);
+            filteredTransactions = transactions;
         }
 
         this.transactions = filteredTransactions;
@@ -424,6 +444,26 @@ window.TransactionGrid = {
             // Initialize bulk actions toolbar
             this.initializeBulkActions();
         }
+    },
+
+    // Nuclear option: Clear and Reload ☢️
+    forceRefresh(transactions) {
+        if (!this.gridApi) return;
+
+        console.log('☢️ TransactionGrid: FORCE REFRESH TRIGGERED');
+
+        // 1. Clear Grid
+        this.gridApi.setRowData([]);
+
+        // 2. Timeout to allow clear to render (tick)
+        setTimeout(() => {
+            // 3. Reload with new data
+            this.loadTransactions(transactions);
+
+            // 4. Force Redraw
+            this.gridApi.redrawRows();
+            this.gridApi.refreshCells({ force: true });
+        }, 50);
     },
 
     setRefPrefix(prefix) {

@@ -71,6 +71,18 @@
         <main class="main-content">
             <!-- Step 1: Upload Zone -->
             <section id="uploadSection" class="section active">
+                <div class="stats-bar" id="statsBar">
+
+                    <span id="fileTypeIndicator" style="
+                        margin-left: 1rem; 
+                        padding: 0.2rem 0.6rem; 
+                        border-radius: 999px; 
+                        font-size: 0.75rem; 
+                        font-weight: 700; 
+                        text-transform: uppercase;
+                        display: none;">
+                    </span>
+                </div>
                 <div class="upload-container">
                     <div class="upload-zone" id="uploadZone">
                         <div class="upload-icon">
@@ -128,7 +140,8 @@
                     <div class="review-header">
                         <div class="review-title-center">
                             <h2>Transaction Review</h2>
-                            <p id="reviewStats" class="review-stats"></p>
+                            <p id="reviewStats" class="review-stats"><span
+                                    style="color:var(--text-secondary); opacity:0.7;">Ready to import CSV...</span></p>
                         </div>
                     </div>
                     <div class="review-actions-wrapper">
@@ -159,6 +172,17 @@
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
                                 Export XLS
+                            </button>
+                            <!-- NEW: Vendor Summary Button -->
+                            <button id="vendorSummaryBtn" class="btn-secondary"
+                                title="View/Edit unique vendors in grid">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Vendors in Grid
                             </button>
                             <button id="addDataBtn" class="btn-secondary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -810,6 +834,26 @@
         console.log('🔍 TEST: JavaScript is executing!');
         console.log('🔍 TEST: App loaded successfully.');
     </script>
+    <!-- Vendor Summary Modal -->
+    <div id="vendorSummaryModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>Vendors in Current Grid</h2>
+                <button class="close-modal" id="closeVendorSummaryModal">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+                <p class="section-desc">Updating a vendor here will update ALL matching transactions in the grid and
+                    save the rule for future imports.</p>
+                <div id="vendorSummaryList" style="display: grid; gap: 0.5rem;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer"
+                style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <button class="btn-secondary" id="closeVendorSummaryBtn">Close</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

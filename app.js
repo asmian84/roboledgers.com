@@ -146,8 +146,33 @@ const App = {
                     const accounts = AccountAllocator.getAllAccounts();
                     let assignedAccount = null;
 
-                    // Apply patterns (same as in vendor-ai.js)
-                    if (/wcb|workers comp/i.test(vendorName)) {
+                    // --- SPECIAL LOGIC: Credit Card Payments ---
+                    // If this transaction is on a Credit Card (Liability) AND it is a Credit (Money In/Payment)
+                    // Then it is likely a transfer from the bank, NOT revenue.
+                    let isCCPayment = false;
+                    if (window.BankAccountManager && tx.accountId) {
+                        const acc = BankAccountManager.getAccountById(tx.accountId);
+                        if (acc && BankAccountManager.isLiability(acc.type) && tx.amount > 0) {
+                            isCCPayment = true;
+                        }
+                    }
+
+                    if (isCCPayment) {
+                        console.log(`💳 Detected Credit Card Payment: "${tx.payee}"`);
+                        // Assign to Main Checking (1000) or 'Transfer'
+                        // Try to find the default checking account
+                        const defaultChecking = BankAccountManager.accounts.find(a => a.type === 'CHECKING');
+                        assignedAccount = defaultChecking
+                            ? accounts.find(a => a.code === '1000') // Map to GL 1000 if possible
+                            : accounts.find(a => a.code === '1000');
+
+                        // Force specific category/account for payments
+                        if (!assignedAccount) assignedAccount = { code: '1000', name: 'Bank' }; // Fallback
+                        tx.category = 'Credit Card Payment';
+                    }
+
+                    // Apply patterns (same as in vendor-ai.js) 
+                    else if (/wcb|workers comp/i.test(vendorName)) {
                         assignedAccount = accounts.find(a => a.code === '9750');
                     } else if (/pay[-\s]?file|file\s*fee/i.test(vendorName)) {
                         assignedAccount = accounts.find(a => a.code === '7700');
@@ -175,6 +200,22 @@ const App = {
                         // Use vendor's default account if no pattern matches
                         assignedAccount = match.vendor.defaultAccount ?
                             accounts.find(a => a.code === match.vendor.defaultAccount) : null;
+
+                        // 🧠 SANITY CHECK: If allocated to Accounts Receivable (1210) but likely an expense?
+                        // This fixes legacy data ("Home Depot" -> 1210)
+                        if (assignedAccount && assignedAccount.code === '1210') {
+                            const betterSuggestion = AccountAllocator.suggestAccountFromText(vendorName);
+                            if (betterSuggestion && betterSuggestion.code !== '1210') {
+                                console.log(`🧠 AI OVERRIDE: "${vendorName}" was 1210, correcting to ${betterSuggestion.code} (${betterSuggestion.name})`);
+                                assignedAccount = betterSuggestion;
+
+                                // Update the vendor in memory too so next time it's right
+                                if (match.vendor) {
+                                    match.vendor.defaultAccount = betterSuggestion.code;
+                                    match.vendor.defaultAccountName = betterSuggestion.name;
+                                }
+                            }
+                        }
                     }
 
                     if (assignedAccount) {
@@ -268,7 +309,6 @@ const App = {
         // Restore selection if valid
         if (currentVal) {
             selector.value = currentVal;
-            // If value no longer exists (e.g. deleted), it will default to ""
         }
     },
 
@@ -276,20 +316,30 @@ const App = {
     assignAllToAccount(accountId) {
         console.log(`🔗 Linking ${this.transactions.length} transactions to account: ${accountId}`);
 
-        let updateCount = 0;
         this.transactions.forEach(tx => {
-            // Only update if not already assigned (or re-assigning all? User said "apply that account to the given grid")
-            // Assuming we overwrite all current transactions in memory
             tx.accountId = accountId;
-            updateCount++;
         });
+
+        // 🧠 AUTO-SMART: Now that we have the Account Context, re-run categorization!
+        // This fixes Credit Card Pymts vs Revenue, and 1210 overrides based on the specific account type.
+        console.log('🧠 Auto-applying smart categorization based on new account context...');
+        this.applySmartCategorization(this.transactions);
 
         // Save
         Storage.saveTransactions(this.transactions);
 
         // Refresh Grid (Current filter will now match everything)
         if (window.TransactionGrid) {
-            TransactionGrid.loadTransactions(this.transactions);
+            // 1. Nuclear Refresh to ensure the view updates visually ☢️
+            TransactionGrid.forceRefresh(this.transactions);
+
+            // 2. ⚡ TICKER EFFECT: Push update via stream to trigger "Green Flash"
+            // This grants the user's wish for "Stock Market Logic" visual feedback
+            if (window.GridStream) {
+                setTimeout(() => {
+                    GridStream.pushBatchUpdate(this.transactions);
+                }, 400); // 400ms delay to allow forceRefresh (50ms) + render to complete
+            }
         }
 
         // Hide Button
@@ -301,6 +351,259 @@ const App = {
 
         // Refresh Dropdown (Updates "(Unused)" status to used)
         this.updateBankAccountSelector();
+    },
+
+    // ⚡ BULK VENDOR UPDATE (From Summary Modal)
+    bulkUpdateVendor(vendorName, newAccountCode) {
+        console.log(`⚡ BULK UPDATE: "${vendorName}" -> ${newAccountCode}`);
+
+        let updateCount = 0;
+        const newAccount = AccountAllocator.getAccountByCode(newAccountCode);
+        const newAccountName = newAccount ? newAccount.name : '';
+
+        // 1. Update Transactions
+        this.transactions.forEach(tx => {
+            if (tx.vendor === vendorName || tx.payee === vendorName) {
+                tx.account = newAccountCode;
+                tx.allocatedAccount = newAccountCode;
+                tx.allocatedAccountName = newAccountName;
+                tx.status = 'manual'; // User engaged
+                updateCount++;
+            }
+        });
+
+        // 2. Update Vendor Dictionary (Persist Rule)
+        if (typeof VendorMatcher !== 'undefined') {
+            const vendor = VendorMatcher.getVendorByName(vendorName);
+            if (vendor) {
+                vendor.defaultAccount = newAccountCode;
+                vendor.defaultAccountName = newAccountName;
+                VendorMatcher.updateVendor(vendor); // Save to storage
+            } else {
+                // Create new if missing
+                VendorMatcher.addVendor({
+                    name: vendorName,
+                    defaultAccount: newAccountCode,
+                    defaultAccountName: newAccountName
+                });
+            }
+        }
+
+        // 3. Refresh Grid & Flash
+        if (window.TransactionGrid) {
+            TransactionGrid.forceRefresh(this.transactions);
+            if (window.GridStream) {
+                setTimeout(() => GridStream.pushBatchUpdate(this.transactions), 400);
+            }
+        }
+
+        console.log(`✅ Updated ${updateCount} transactions for "${vendorName}"`);
+    },
+
+    // 📊 GENERATE VENDOR SUMMARY
+    openVendorSummary() {
+        const modal = document.getElementById('vendorSummaryModal');
+        const listContainer = document.getElementById('vendorSummaryList');
+        if (!modal || !listContainer) return;
+
+        // 1. Aggregate Data
+        const vendorMap = new Map();
+
+        this.transactions.forEach(tx => {
+            const name = tx.vendor || tx.payee; // Prefer vendor name
+            if (!vendorMap.has(name)) {
+                vendorMap.set(name, { count: 0, currentAccount: tx.allocatedAccount, totalAmount: 0 });
+            }
+            const entry = vendorMap.get(name);
+            entry.count++;
+            entry.totalAmount += (tx.amount || 0) + (tx.debits || 0); // Rough total volume
+        });
+
+        // Sort by Count (Desc)
+        const sortedVendors = Array.from(vendorMap.entries()).sort((a, b) => b[1].count - a[1].count);
+
+        // 2. Render List
+        listContainer.innerHTML = '';
+        const accounts = AccountAllocator.getAccountOptions(); // Get dropdown options
+
+        sortedVendors.forEach(([name, data]) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 2fr; align-items: center; padding: 0.5rem; background: var(--bg-secondary); border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);';
+
+            // Name & Count
+            const infoDiv = document.createElement('div');
+            infoDiv.innerHTML = `<strong>${name}</strong> <span style="color:var(--text-secondary); font-size:0.85em;">(${data.count} items)</span>`;
+
+            // Amount
+            const amtDiv = document.createElement('div');
+            amtDiv.textContent = `$${data.totalAmount.toFixed(2)}`;
+            amtDiv.style.color = 'var(--text-secondary)';
+            amtDiv.style.fontSize = '0.9rem';
+
+            // Dropdown
+            const select = document.createElement('select');
+            select.style.cssText = 'padding: 0.3rem; border: 1px solid var(--border-color); border-radius: 4px; width: 100%; background: white; color: var(--text-primary);';
+
+            // Populate Options
+            // Default option
+            const defOpt = document.createElement('option');
+            defOpt.value = '';
+            defOpt.textContent = 'Select Account...';
+            select.appendChild(defOpt);
+
+            accounts.forEach(opt => {
+                if (opt.disabled) {
+                    const el = document.createElement('option');
+                    el.disabled = true;
+                    el.textContent = opt.label; // Separator
+                    select.appendChild(el);
+                } else {
+                    const el = document.createElement('option');
+                    el.value = opt.value;
+                    el.textContent = opt.label;
+                    if (String(opt.value) === String(data.currentAccount)) el.selected = true;
+                    select.appendChild(el);
+                }
+            });
+
+            // Event Listener
+            select.addEventListener('change', (e) => {
+                const newAcc = e.target.value;
+                if (newAcc) {
+                    this.bulkUpdateVendor(name, newAcc);
+                    // Visual feedback
+                    row.style.backgroundColor = '#dcfce7'; // Flash green
+                    setTimeout(() => row.style.backgroundColor = 'var(--bg-secondary)', 500);
+                }
+            });
+
+            row.appendChild(infoDiv);
+            row.appendChild(amtDiv);
+            row.appendChild(select);
+            listContainer.appendChild(row);
+        });
+
+        // 3. Show Modal
+        modal.display = 'block'; // Fallback
+        modal.classList.add('active');
+    },
+
+    // 🧠 CENTRAL BRAIN: Apply all smart logic (Vendor Match + Account Rules)
+    applySmartCategorization(transactions) {
+        let updates = 0;
+
+        for (const tx of transactions) {
+            // 1. Basic Vendor Match (if not matched or to ensure freshness)
+            const match = VendorMatcher.matchPayee(tx.payee);
+            if (match && match.vendor) {
+                tx.vendor = match.vendor.name;
+                tx.vendorId = match.vendor.id;
+                tx.category = match.vendor.category;
+                tx.status = 'matched';
+
+                // Default Assignment
+                let assignedAccount = null;
+                const accounts = AccountAllocator.getAllAccounts();
+
+                // --- SPECIAL LOGIC: Credit Card Payments ---
+                let isCCPayment = false;
+                if (window.BankAccountManager && tx.accountId) {
+                    const acc = BankAccountManager.getAccountById(tx.accountId);
+                    if (acc && BankAccountManager.isLiability(acc.type) && tx.amount > 0) {
+                        isCCPayment = true;
+                    }
+                }
+
+                // --- LOGIC: Contra-Expense Checks (Refunds) ---
+                // If it's a Credit (Refund) but the Vendor is a known Expense Vendor, keep it in Expense account.
+                // e.g. "Amazon Refund" -> 8600 (not 4001)
+
+                if (match.vendor.defaultAccount) {
+                    const defAcc = accounts.find(a => a.code === match.vendor.defaultAccount);
+
+                    if (defAcc) {
+                        // Logic: If manual rule exists, TRUST IT 100%
+                        // This covers both normal expenses AND refunds to that vendor
+                        assignedAccount = defAcc;
+                    }
+                }
+
+                // If no assigned account yet, try suggestions
+                if (!assignedAccount) {
+                    if (isCCPayment) {
+                        // CC Payment Logic
+                        assignedAccount = accounts.find(a => a.code === '2101') || accounts.find(a => a.code === '2100');
+                    } else {
+                        // Standard Logic
+                        // If Credit (tx.amount > 0), suggestAccount typically finds Income.
+                        // But if suggestAccount finds an EXPENSE account based on name (e.g. "Home Depot"), 
+                        // we should use it! (Contra-Expense)
+
+                        const suggestion = AccountAllocator.suggestAccount(tx);
+                        if (suggestion) {
+                            if (tx.isCredit && (suggestion.type === 'Expense' || suggestion.type === 'Asset')) {
+                                // It's a refund! Allow mapping to Expense/Asset
+                                console.log(`↩️ Refund Detected: ${tx.payee} -> ${suggestion.code} (${suggestion.type})`);
+                                assignedAccount = suggestion;
+                            } else {
+                                assignedAccount = suggestion;
+                            }
+                        }
+                    }
+                }
+
+                // 🧠 SANITY CHECK (1210 Override) / 1200 (Accounts Receivable)
+                // Check for 1210 or 1200 (Common AR codes)
+                if (assignedAccount && (assignedAccount.code == 1210 || assignedAccount.code == 1200)) {
+
+                    if (isCCPayment) {
+                        // Credit Card Payment Logic
+                        assignedAccount = accounts.find(a => a.code === '1000');
+                        tx.category = 'Credit Card Payment';
+                    } else {
+                        // Standard Logic
+                        // 🧠 SANITY CHECK (1210 Override) / 1200 (Accounts Receivable)
+                        // Check for 1210 or 1200 (Common AR codes)
+                        console.log(`🧠 Checking AR Override for: ${match.vendor.name} (${tx.payee})`);
+
+                        // 1. Try Vendor Name
+                        let betterSuggestion = AccountAllocator.suggestAccountFromText(match.vendor.name);
+
+                        // 2. If no luck, try Raw Payee (in case vendor name is generic like 'Store')
+                        if (!betterSuggestion || betterSuggestion.code == 1210 || betterSuggestion.code == 1200) {
+                            betterSuggestion = AccountAllocator.suggestAccountFromText(tx.payee);
+                        }
+
+                        if (betterSuggestion && betterSuggestion.code != 1210 && betterSuggestion.code != 1200) {
+                            console.log(`🚀 AI OVERRIDE SUCCESS: ${match.vendor.name} 1210 -> ${betterSuggestion.code}`);
+                            assignedAccount = betterSuggestion;
+
+                            // Auto-update vendor dict validation
+                            if (match.vendor) {
+                                match.vendor.defaultAccount = betterSuggestion.code;
+                                match.vendor.defaultAccountName = betterSuggestion.name;
+                                match.vendor.isAutoCorrected = true; // Flag it
+                            }
+                        } else {
+                            console.log(`❌ AI Override Failed: Could not find better match for ${match.vendor.name}`);
+                        }
+                    }
+                }
+
+                if (assignedAccount) {
+                    tx.account = assignedAccount.code;
+                    tx.allocatedAccount = assignedAccount.code;
+                    tx.allocatedAccountName = assignedAccount.name;
+                } else {
+                    // Fallback
+                    tx.account = match.vendor.defaultAccount || '9970';
+                    tx.allocatedAccount = match.vendor.defaultAccount || '9970';
+                    tx.allocatedAccountName = match.vendor.defaultAccountName || 'Unusual item';
+                }
+                updates++;
+            }
+        }
+        console.log(`🧠 Smart Categorization applied to ${updates} transactions.`);
     },
 
     setupEventListeners() {
@@ -568,6 +871,39 @@ const App = {
             });
         }
 
+        // Verify Account Button
+        const verifySettingsBtn = document.getElementById('settingsBankAccountsBtn');
+        if (verifySettingsBtn) {
+            verifySettingsBtn.addEventListener('click', () => {
+                document.getElementById('manageAccountsModal').classList.add('active');
+            });
+        }
+
+        // New: Vendor Summary Button
+        const vendorSummaryBtn = document.getElementById('vendorSummaryBtn');
+        const vendorSummaryModal = document.getElementById('vendorSummaryModal');
+        const closeVendorSummaryBtn = document.getElementById('closeVendorSummaryBtn');
+        const closeVendorSummaryModal = document.getElementById('closeVendorSummaryModal');
+
+        if (vendorSummaryBtn) {
+            vendorSummaryBtn.addEventListener('click', () => {
+                this.openVendorSummary();
+            });
+        }
+
+        if (closeVendorSummaryBtn) {
+            closeVendorSummaryBtn.addEventListener('click', () => vendorSummaryModal.classList.remove('active'));
+        }
+
+        if (closeVendorSummaryModal) {
+            closeVendorSummaryModal.addEventListener('click', () => vendorSummaryModal.classList.remove('active'));
+        }
+
+        if (vendorSummaryModal) {
+            vendorSummaryModal.addEventListener('click', (e) => {
+                if (e.target.id === 'vendorSummaryModal') vendorSummaryModal.classList.remove('active');
+            });
+        }
         // Logo click - return to home
         const logoHome = document.getElementById('logoHome');
         if (logoHome) {
@@ -637,11 +973,68 @@ const App = {
             const transactions = await CSVParser.parseFile(file, selectedAccount);
             console.log(`✅ Parsed ${transactions.length} transactions`);
 
-            this.updateProcessing(`Found ${transactions.length} transactions. Matching vendors...`, 50);
+            // 🧹 AUTO-CLEAN VENDORS ON IMPORT 🧹
+            // User Request: "smart system... do it upon initial loadup"
+            const cleanedTransactions = transactions.map(tx => {
+                // 1. Clean Name (Aggressive)
+                const originalPayee = tx.payee;
+                const cleanedPayee = Utils.normalizeVendorName(originalPayee);
+
+                if (cleanedPayee !== originalPayee) {
+                    tx.payee = cleanedPayee;
+                    tx.vendor = cleanedPayee; // Updates vendor field too
+                }
+
+                // 2. Try Smart Categorization (if not already matched)
+                if (!tx.category && window.VendorAI) {
+                    const aiCat = VendorAI.categorizeVendor(tx.payee);
+                    if (aiCat && aiCat !== 'General') tx.category = aiCat;
+                }
+
+                return tx;
+            });
+
+            // Replace the raw transactions with clean ones
+            // Note: We don't overwrite 'this.transactions' yet, we do it at merge step.
+            // But properly we should use these cleaned ones for matching.
+
+            // 🕵️ AUTO-DETECT INDICATOR
+            // Logic: 
+            // 1. If Account is Liability -> CREDIT CARD
+            // 2. If 'FORCE REVERSED' was triggered in Parser -> CREDIT CARD
+            // 3. Fallback: Check if we have typical Credit Card categories
+
+            let detectedType = 'CHECKING';
+            if (selectedAccount && window.BankAccountManager.isLiability(selectedAccount.type)) {
+                detectedType = 'CREDIT CARD';
+            } else if (cleanedTransactions.some(t => t.isCredit && t.category === 'Credit Card Payment')) {
+                detectedType = 'CREDIT CARD (Inferred)';
+            } else {
+                detectedType = 'BANK / CHECKING';
+            }
+
+            // UPDATE INDICATOR UI
+            const indicator = document.getElementById('fileTypeIndicator');
+            if (indicator) {
+                indicator.style.display = 'inline-block';
+                if (detectedType.includes('CREDIT')) {
+                    indicator.textContent = '💳 ' + detectedType;
+                    indicator.style.backgroundColor = '#fef3c7'; // Yellow/Amber
+                    indicator.style.color = '#d97706';
+                    indicator.style.border = '1px solid #fcd34d';
+                } else {
+                    indicator.textContent = '🏦 ' + detectedType;
+                    indicator.style.backgroundColor = '#dcfce7'; // Green
+                    indicator.style.color = '#15803d';
+                    indicator.style.border = '1px solid #86efac';
+                }
+            }
+
+            this.updateProcessing(`Found ${cleanedTransactions.length} transactions. Matching vendors...`, 50);
 
             // Match vendors
             await this.delay(500);
-            const matchResult = VendorMatcher.matchTransactions(transactions);
+            const matchResult = VendorMatcher.matchTransactions(cleanedTransactions);
             const matchedTransactions = matchResult.transactions || (Array.isArray(matchResult) ? matchResult : []);
 
             if (!matchedTransactions || matchedTransactions.length === 0) {
@@ -652,7 +1045,24 @@ const App = {
 
             // Allocate accounts
             await this.delay(500);
+            // Allocate accounts
+            await this.delay(500);
             AccountAllocator.allocateTransactions(matchedTransactions);
+
+            // 🧠 CORE FIX: Ensure Grid Context matches Import
+            // If we detected an account or used a selected one, FORCE the grid to look at it.
+            // If nothing selected, FORCE it to 'all' to ensure rows show up.
+            const targetContext = selectedAccount ? selectedAccount.id : 'all';
+
+            if (this.currentAccountId !== targetContext) {
+                this.currentAccountId = targetContext;
+                if (TransactionGrid) TransactionGrid.setAccountContext(targetContext);
+                const selector = document.getElementById('bankAccountSelect');
+                if (selector) selector.value = targetContext === 'all' ? '' : targetContext;
+            } else if (!this.currentAccountId && TransactionGrid) {
+                // Double safety: If app state is null, ensure grid is 'all'
+                TransactionGrid.setAccountContext('all');
+            }
 
             this.updateProcessing('Preparing review...', 90);
 
@@ -908,14 +1318,22 @@ const App = {
 
     updateStatistics() {
         const stats = AccountAllocator.getStats(this.transactions);
-
         const reviewStats = document.getElementById('reviewStats');
+
         if (reviewStats) {
+            // Simplified view when empty
+            if (!stats.total || stats.total === 0) {
+                reviewStats.innerHTML = '<span style="color:var(--text-secondary); opacity:0.7;">Ready to import CSV...</span>';
+                return;
+            }
+
+            // Active view
             reviewStats.innerHTML = `
-                ${stats.total} transactions | 
-                ${stats.allocated} allocated (${stats.allocationRate}%) | 
-                ${stats.unallocated} unallocated | 
-                ${stats.accountsUsed} accounts used
+                <span class="stat-item"><strong>${stats.total}</strong> txns</span> | 
+                <span class="stat-item" style="color:${stats.unallocated === 0 ? 'var(--success-color)' : 'var(--warning-color)'}">
+                    ${stats.allocated} allocated
+                </span> | 
+                <span class="stat-item">${stats.accountsUsed} accounts</span>
             `;
         }
 
@@ -1610,6 +2028,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = document.getElementById('manageAccountsModal');
             if (modal) modal.style.display = 'none';
         });
+    }
+
+    // Initialize the main application
+    if (typeof App !== 'undefined' && App.initialize) {
+        App.initialize();
+    } else {
+        console.error('❌ App object not found or initialize missing!');
     }
 
     console.log('✅ App.js loaded and event listeners set up');

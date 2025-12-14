@@ -242,13 +242,13 @@ window.CSVParser = {
             console.log(`💰 Parsing Amount: ${signedAmount} (isLiability: ${isLiability})`);
 
             if (isLiability) {
-                // CREDIT CARD Logic
-                // Positive = Purchase (Expense/Debit)
-                // Negative = Payment (Credit)
-                if (signedAmount > 0) {
-                    rawDebit = signedAmount;
+                // CREDIT CARD Logic (User Preferred: Negative = Expense)
+                // "you are moving credit card -ve to debits instead they should stay at the same spot"
+                // Interpretation: Negative numbers in CSV are Debits (Expenses).
+                if (signedAmount < 0) {
+                    rawDebit = Math.abs(signedAmount); // Expense
                 } else {
-                    rawCredit = Math.abs(signedAmount);
+                    rawCredit = signedAmount; // Payment
                 }
             } else {
                 // CHECKING Account Logic (Standard)
@@ -291,7 +291,7 @@ window.CSVParser = {
             amount: credits,  // amount field stores credits (Money In)
             balance: balance,
             account: accountVal || '',
-            accountId: targetAccount ? targetAccount.id : null // Link to BankAccount
+            accountId: targetAccount ? String(targetAccount.id) : null // Link to BankAccount
         });
 
         // 🧠 Auto-Code Payments for Credit Cards

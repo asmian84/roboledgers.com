@@ -34,8 +34,36 @@ window.VendorNameUtils = {
             /^POS\s*-?\s*/i,
             /^ATM WITHDRAWAL\s*-?\s*/i,
             /^ATM\s*-?\s*/i,
-            /^MONTHLY FEE\s*$/i
+            /^ATM WITHDRAWAL\s*-?\s*/i,
+            /^ATM\s*-?\s*/i,
+            /^MONTHLY FEE\s*$/i,
+            /^WWW\s+/i
         ];
+
+        // 0. Remove Leading Numbers (Store IDs like "22048 MACS")
+        cleaned = cleaned.replace(/^\d{3,}\s+/, '');
+
+        // 1. Remove Location Suffixes (Canadian Specific + Generic)
+        // e.g. "CALGARY AB", "EDMONTON AB", "VANCOUVER BC", "TORONTO ON"
+        const locationSuffixes = [
+            /\s+(CALGARY|EDMONTON|RED DEER|LETHBRIDGE|BANFF|CANMORE|MEDICINE HAT|AIRDRIE)\s+AB$/i,
+            /\s+(VANCOUVER|VICTORIA|SURREY|BURNABY)\s+BC$/i,
+            /\s+(TORONTO|OTTAWA|MISSISSAUGA)\s+ON$/i,
+            /\s+(MONTREAL|QUEBEC)\s+QC$/i,
+            /\s+AB$/i, /\s+BC$/i, /\s+ON$/i, /\s+SK$/i, /\s+MB$/i, // Generic Province codes
+            /\s+CANADA$/i
+        ];
+
+        locationSuffixes.forEach(regex => {
+            cleaned = cleaned.replace(regex, '');
+        });
+
+        // 2. Remove Specific User Garbage
+        cleaned = cleaned
+            .replace(/MKTP\s+.*$/i, '')       // "MKTP CAGXKBF..." -> Remove all after MKTP
+            .replace(/WWW\s+.*$/i, '')        // "WWW AMAZON CAON" -> Remove
+            .replace(/\s+CO\s+OP\s+/i, ' CO-OP ') // Normalize CO OP
+            .replace(/\s+COMBILL/i, '');      // APPLE COMBILL -> APPLE
 
         for (const prefix of commonPrefixes) {
             const beforeRemoval = cleaned;
