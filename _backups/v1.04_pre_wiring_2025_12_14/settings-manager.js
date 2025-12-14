@@ -138,10 +138,6 @@ const Settings = {
 
     get(key) {
         return this.current[key];
-    },
-
-    save() {
-        Storage.saveSettings(this.current);
     }
 };
 

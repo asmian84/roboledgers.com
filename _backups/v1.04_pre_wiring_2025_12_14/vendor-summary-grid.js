@@ -165,33 +165,48 @@ window.VendorSummaryGrid = {
             {
                 headerName: 'Total Amount',
                 field: 'totalAmount',
-                width: 150,           // Fixed width for numbers
-                minWidth: 150,
+                minWidth: 120,
+                flex: 1,
                 type: 'numericColumn',
-                suppressSizeToFit: true, // Don't shrink/grow
-                resizable: true,
-                valueFormatter: params => Utils.formatCurrency(params.value)
+                valueFormatter: (params) => {
+                    if (params.value == null) return '$0.00';
+                    return '$' + params.value.toFixed(2);
+                }
             },
             {
                 headerName: 'Allocated Account',
                 field: 'currentAccount',
-                minWidth: 300,        // Safe minimum
-                flex: 3,              // Takes remaining space
+                minWidth: 250,
+                flex: 2,
                 editable: true,
-                resizable: true,
                 cellEditor: 'agSelectCellEditor',
-                cellEditorParams: params => {
+                cellEditorParams: (params) => {
                     const accounts = AccountAllocator.getAllAccounts();
                     return {
+                        // Show "5310 - Office Supplies" in dropdown
                         values: accounts.map(a => `${a.code} - ${a.name}`),
                         valueListGap: 8
                     };
                 },
+                // CUSTOM PARSER: Extract "5310" from "5310 - Office Supplies"
+                valueParser: (params) => {
+                    if (!params.newValue) return '';
+                    const match = params.newValue.match(/^(\d+)/);
+                    return match ? match[1] : params.newValue;
+                },
+                // CUSTOM FORMATTER: Show "5310 - Office Supplies" if underlying data is just "5310"
                 valueFormatter: (params) => {
-                    const val = params.value;
-                    if (!val) return 'SELECT...';
-                    const acc = AccountAllocator.getAccountByCode(val);
-                    return acc ? `${acc.code} - ${acc.name}` : val;
+                    if (!params.value) return '';
+                    // If it's already "Code - Name", return it
+                    if (String(params.value).includes(' - ')) return params.value;
+
+                    // Otherwise lookup name
+                    const acc = AccountAllocator.getAccountByCode(params.value);
+                    return acc ? `${acc.code} - ${acc.name}` : params.value;
+                },
+                // Renderer just passes through the formatted value now (simpler)
+                cellRenderer: (params) => {
+                    return params.valueFormatted || params.value || '<span style="color:#94a3b8; font-style:italic;">Select...</span>';
                 },
                 singleClickEdit: true
             }
@@ -202,17 +217,53 @@ window.VendorSummaryGrid = {
         if (!this.gridApi) return;
         this.vendors = vendorData;
         this.gridApi.setRowData(vendorData);
-        // Use standard sizeColumnsToFit to fill width responsively
-        if (this.gridApi) {
-            this.gridApi.sizeColumnsToFit();
-        }
+        this.safelySizeColumnsToFit();
     },
 
-    // ⚡ Standard Resize
+    // ⚡ SMART RESIZE: Shrink columns to content, allowing modal to shrink
     safelySizeColumnsToFit() {
-        if (this.gridApi) {
-            this.gridApi.sizeColumnsToFit();
-        }
+        if (!this.gridApi) return;
+
+        const autoSize = () => {
+            if (this.gridApi) {
+                // 1. Auto-size the columns content
+                const allColumns = this.gridApi.getColumns();
+                if (!allColumns || allColumns.length === 0) return;
+
+                const allColumnIds = allColumns.map(column => column.getColId());
+                this.gridApi.autoSizeColumns(allColumnIds, false);
+
+                // 2. ⚡ FORCE SNUG: Calculate exact pixel width needed
+                let totalWidth = 0;
+                // re-fetch columns to ensure we get new widths
+                const updatedColumns = this.gridApi.getColumns();
+                updatedColumns.forEach(col => {
+                    totalWidth += col.getActualWidth();
+                });
+
+                // 3. Apply exact width to container (plus small buffer for borders)
+                const container = document.getElementById('vendorSummaryGridContainer');
+                if (container) {
+                    // Cap at 90vw to prevent overflow off screen
+                    const maxWidth = window.innerWidth * 0.9;
+                    const finalWidth = Math.min(totalWidth + 40, maxWidth); // +40px buffer
+
+                    container.style.width = `${finalWidth}px`;
+                    console.log(`📏 Vendor Grid Force-Resized to: ${finalWidth}px`);
+                }
+            }
+        };
+
+        const attemptResize = (attemptsLeft) => {
+            const container = document.getElementById('vendorSummaryGridContainer');
+            if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+                setTimeout(autoSize, 100); // Slight delay for render
+            } else if (attemptsLeft > 0) {
+                requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
+            }
+        };
+
+        attemptResize(300);
     },
 
     onCellValueChanged(params) {

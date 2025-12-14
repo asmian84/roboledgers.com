@@ -1,0 +1,102 @@
+/* GRID THEMES */
+
+/* 1. Classic (Standard Professional) */
+[data-grid-theme="classic"] .ag-theme-alpine {
+    --ag-header-background-color: #f8f9fa;
+    --ag-header-foreground-color: #212529;
+    --ag-odd-row-background-color: #ffffff;
+    --ag-background-color: #ffffff;
+    --ag-row-border-color: #dee2e6;
+    --ag-font-family: 'Inter', sans-serif;
+}
+
+[data-theme="cyber-night"] [data-grid-theme="classic"] .ag-theme-alpine,
+[data-theme="dark"] [data-grid-theme="classic"] .ag-theme-alpine {
+    --ag-header-background-color: #1a2033;
+    --ag-header-foreground-color: #e8f4f8;
+    --ag-odd-row-background-color: #131825;
+    --ag-background-color: #0a0e1a;
+    --ag-row-border-color: #2a3548;
+}
+
+/* 2. Ledger Pad (Accounting Style) */
+[data-grid-theme="ledger"] .ag-theme-alpine {
+    --ag-header-background-color: #e8f5e9;
+    --ag-header-foreground-color: #1b5e20;
+    --ag-odd-row-background-color: #f1f8e9;
+    /* Greenish tint */
+    --ag-background-color: #ffffff;
+    --ag-row-border-color: #a5d6a7;
+    /* Visible green border */
+    --ag-borders: solid 1px;
+    --ag-font-family: 'Courier New', monospace;
+    /* Monospace for numbers */
+}
+
+[data-theme="cyber-night"] [data-grid-theme="ledger"] .ag-theme-alpine {
+    --ag-header-background-color: #1b3a24;
+    --ag-header-foreground-color: #a5d6a7;
+    --ag-odd-row-background-color: #0d2112;
+    --ag-background-color: #05140a;
+    --ag-row-border-color: #2e7d32;
+}
+
+/* 3. Rainbow (Status Colors - requires Row Class Logic + Variables) */
+[data-grid-theme="rainbow"] .ag-theme-alpine {
+    --ag-header-background-color: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    --ag-header-foreground-color: #444;
+    /* Rows are colored by logic, but base is clean */
+    --ag-odd-row-background-color: #fff;
+    --ag-row-border-color: transparent;
+}
+
+/* 4. Vintage (Midnight / High Contrast) */
+[data-grid-theme="vintage"] .ag-theme-alpine {
+    --ag-header-background-color: #3e2723;
+    --ag-header-foreground-color: #d7ccc8;
+    --ag-odd-row-background-color: #4e342e;
+    --ag-background-color: #3e2723;
+    --ag-row-border-color: #5d4037;
+    --ag-font-family: 'Georgia', serif;
+}
+
+/* Force overrides if mixed with light theme app */
+[data-grid-theme="vintage"] .ag-header-cell-text {
+    letter-spacing: 1px;
+}
+
+/* 5. Subtle (Minimal / No Borders) */
+[data-grid-theme="subtle"] .ag-theme-alpine {
+    --ag-header-background-color: transparent;
+    --ag-header-foreground-color: var(--text-secondary);
+    --ag-odd-row-background-color: transparent;
+    --ag-background-color: transparent;
+    --ag-borders: none;
+    --ag-row-border-color: rgba(0, 0, 0, 0.05);
+    /* Hover effect key here */
+    --ag-row-hover-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 6. Spectrum (Neon / Vibrant) */
+[data-grid-theme="spectrum"] .ag-theme-alpine {
+    --ag-header-background-color: #2d00f7;
+    --ag-header-foreground-color: #fff;
+    --ag-odd-row-background-color: #0b0033;
+    --ag-background-color: #020024;
+    --ag-row-border-color: #8900f2;
+    --ag-selected-row-background-color: #ff006e;
+    --ag-font-family: 'Orbitron', 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+/* --- CRITICAL: Z-Index Fix for Dropdowns in Modals --- */
+/* Since we set popupParent: document.body, we must ensure these float above the modal overlay */
+.ag-theme-alpine .ag-popup,
+.ag-popup {
+    z-index: 99999 !important;
+}
+
+.ag-theme-alpine .ag-select-list,
+.ag-theme-alpine .ag-rich-select-list {
+    z-index: 99999 !important;
+}

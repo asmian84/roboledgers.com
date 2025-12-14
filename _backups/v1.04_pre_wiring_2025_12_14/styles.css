@@ -2298,7 +2298,15 @@ input.currency-input,
    ========================================= */
 
 /* Constrain large modal width */
-/* REMOVED .modal-content.large-modal to prevent conflict with super-modal.css resizing logic */
+.modal-content.large-modal {
+    width: 90% !important;
+    max-width: 1200px !important;
+    /* Prevent it from being too wide */
+    height: 85vh !important;
+    max-height: 800px !important;
+    display: flex;
+    flex-direction: column;
+}
 
 /* Ensure body takes up remaining space (for grid) ONLY in large/grid modals */
 .large-modal .modal-body {

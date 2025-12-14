@@ -1,0 +1,93 @@
+/* Premium Settings Inputs (Apple Aesthetic) */
+
+.input-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper .settings-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.8rem;
+    /* Space for icon */
+    background: var(--bg-tertiary);
+    /* Darker background */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+}
+
+.input-wrapper .settings-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--bg-elevated);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+    /* Soft glow */
+}
+
+.input-wrapper .input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    font-size: 1rem;
+    transition: color var(--transition-fast);
+}
+
+.input-wrapper .settings-input:focus+.input-icon {
+    color: var(--primary-color);
+}
+
+/* Enhancing Settings Section Headers */
+.settings-section {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Last section bottom margin removal */
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.settings-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.4;
+}
+
+/* Button Full Width Enhancement */
+.full-width {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    /* Larger touch target */
+}

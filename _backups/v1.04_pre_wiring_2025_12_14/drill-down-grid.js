@@ -147,9 +147,13 @@ window.DrillDownGrid = {
             {
                 headerName: 'Amount',
                 field: 'amount',
-                minWidth: 150,
-                width: 150,
-                flex: 1, // Allow some flex here if room
+                minWidth: 120,
+                flex: 1,
+                type: 'numericColumn',
+                valueGetter: (params) => {
+                    // Logic to show generic amount regardless of Debit/Credit
+                    return params.data.debits > 0 ? -params.data.debits : params.data.amount;
+                },
                 valueFormatter: (params) => {
                     const val = Math.abs(params.value);
                     return (params.value < 0 ? '-' : '') + '$' + val.toFixed(2);
@@ -160,9 +164,11 @@ window.DrillDownGrid = {
             },
             {
                 headerName: 'Allocated Account',
-                field: 'allocatedAccount',
-                minWidth: 350,
-                width: 350,
+                field: 'allocatedAccount', // The code
+                headerName: 'Allocated Account',
+                field: 'allocatedAccount', // The code
+                minWidth: 150, // Reduced from 250 for Flex
+                flex: 2,
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: (params) => {
@@ -199,41 +205,23 @@ window.DrillDownGrid = {
         this.safelySizeColumnsToFit();
     },
 
-    // ⚡ FIXED RESIZE: Set container to exact sum of column widths
+    // ⚡ SMART RESIZE: Polls until grid is visible
     safelySizeColumnsToFit() {
         if (!this.gridApi) return;
-
-        const setExactWidth = () => {
-            const allColumns = this.gridApi.getColumns();
-            if (!allColumns) return;
-
-            // Sum up the current actual widths
-            let totalWidth = 0;
-            allColumns.forEach(col => {
-                totalWidth += col.getActualWidth();
-            });
-
-            // Apply to Container
-            const container = document.getElementById('drillDownGridContainer');
-            if (container) {
-                const finalWidth = totalWidth + 20;
-                const maxWidth = window.innerWidth * 0.95;
-                const widthToSet = Math.min(finalWidth, maxWidth);
-
-                container.style.width = `${widthToSet}px`;
-                console.log(`📏 DrillDown Grid Fixed-Resized to: ${widthToSet}px`);
-            }
-        };
 
         const attemptResize = (attemptsLeft) => {
             const container = document.getElementById('drillDownGridContainer');
             if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
-                setTimeout(setExactWidth, 100);
+                // ✅ Visible! Resize now.
+                console.log('✅ DrillDownGrid Visible - Resizing Columns...');
+                this.gridApi.sizeColumnsToFit();
             } else if (attemptsLeft > 0) {
+                // ⏳ Not visible yet... wait and retry
                 requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
             }
         };
 
+        // Try for 300 frames (~5 seconds) to be safe
         attemptResize(300);
     },
 

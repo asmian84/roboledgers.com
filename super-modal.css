@@ -1,65 +1,52 @@
-/* =========================================
-   🚀 SUPER MODAL - CLASSIC EDITION (Standardized)
-   ========================================= */
+/* Super Modal CSS - v1.27 Z-Index Fixed */
 
-/* The Wrapper - Covers ENTIRE screen */
-#vendorSummaryModal {
-    z-index: 2000 !important;
-}
-
-#drillDownModal {
-    z-index: 3000 !important;
-    /* Always on top of Summary */
-}
-
-#vendorModal {
-    z-index: 2000 !important;
-}
-
-/* Base Modal Styles */
-#drillDownModal,
-#vendorSummaryModal,
-#vendorModal {
-    position: fixed;
-    inset: 0;
-    /* z-index moved to individual IDs for stacking control */
-    background: rgba(0, 0, 0, 0.7);
-    /* Standard Dark Backdrop */
-    backdrop-filter: blur(4px);
-    /* Slight blur for focus */
+/* 1. Backdrop */
+.modal {
     display: none;
-    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(15, 23, 42, 0.65);
+    /* Slate-900 with opacity */
+    backdrop-filter: blur(4px);
     align-items: center;
-    padding: 2rem;
-    /* Outer spacing */
-    animation: fadeIn Backdrop 0.3s ease;
+    justify-content: center;
+    /* Default Z-index for generic modals */
+    z-index: 9999;
 }
 
-/* 🟢 Force Display on Active (Fix for specificity issues) */
-#drillDownModal.active,
-#vendorSummaryModal.active,
-#vendorModal.active {
-    display: flex !important;
+/* Z-Index Stacking - CRITICAL */
+/* Vendor Summary Layer */
+#vendorSummaryModal {
+    z-index: 10000 !important;
 }
 
-/* The Card - Standard White Modal */
-#drillDownModal .modal-content,
-#vendorModal .modal-content {
-    width: 95%;
-    max-width: 1400px;
+/* Drill Down Layer (Must be higher) */
+#drillDownModal {
+    z-index: 10100 !important;
 }
 
-/* ⚡ ADAPTIVE WIDTH for Vendor Summary (User Request: "fill white space") */
-/* Takes width from the grid's autosized columns */
+/* 2. Modal Content Container */
 #vendorSummaryModal .modal-content,
 #drillDownModal .modal-content {
+    /* STRICT FIT-CONTENT to shrink wrap - RESTORED "NICE" STATE */
     width: fit-content;
-    min-width: 50%;
-    /* Don't get too small */
-    max-width: 98%;
-    /* Allow full width if needed */
+    min-width: 300px;
+    max-width: 92vw;
+    /* 4% Margin on each side */
     height: 90vh;
-    max-height: 90vh;
+    max-height: 95vh;
+
+    /* RESIZABLE LOGIC */
+    resize: both !important;
+    overflow: auto !important;
+    position: relative;
+
+    /* Center it properly */
+    margin: auto;
 
     background: var(--bg-secondary);
     border-radius: 12px;
@@ -67,129 +54,72 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+
+    animation: slideUpLarge 0.2s ease-out;
 }
 
-/* Common Styles applied to all */
-#vendorModal .modal-content {
-    height: 90vh;
-    max-height: 90vh;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+#vendorSummaryModal .modal-content::-webkit-resizer,
+#drillDownModal .modal-content::-webkit-resizer {
+    background-color: var(--border-color);
+    background-image: linear-gradient(135deg, transparent 50%, var(--text-secondary) 50%);
+    background-size: 10px 10px;
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    border-top-left-radius: 4px;
+    display: block !important;
 }
 
-position: relative;
-padding: 0 !important;
-/* Reset, handle in children */
-animation: slideUpLarge 0.4s ease-out;
-}
-
-/* Header */
-#drillDownModal .modal-header,
-#vendorSummaryModal .modal-header,
-#vendorModal .modal-header {
-    padding: 1.5rem 2rem;
-    background: var(--bg-secondary);
-    /* Plain background */
-    border-bottom: 2px solid var(--border-light);
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: var(--bg-secondary);
+    border-radius: 12px 12px 0 0;
     flex-shrink: 0;
 }
 
-#drillDownTitle,
-#vendorSummaryModal h2,
-#vendorModal h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--primary-color);
-    /* Standard Primary Color */
-    background: none;
-    -webkit-text-fill-color: initial;
-    letter-spacing: normal;
+.modal-body {
+    padding: 0;
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Close Button */
-#drillDownModal .modal-close,
-#vendorSummaryModal .modal-close,
-#vendorModal .modal-close {
-    width: 36px;
-    height: 36px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 2rem;
-    line-height: 1;
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+}
+
+@keyframes slideUpLarge {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
     cursor: pointer;
+    color: var(--text-secondary);
     transition: color 0.2s;
 }
 
-#drillDownModal .modal-close:hover,
-#vendorSummaryModal .modal-close:hover,
-#vendorModal .modal-close:hover {
-    color: var(--error-color);
-    background: transparent;
-    transform: none;
-}
-
-/* Body - WITH PADDING AND MARGINS */
-#drillDownModal .modal-body,
-#vendorSummaryModal .modal-body,
-#vendorModal .modal-body {
-    flex: 1;
-    padding: 1.5rem !important;
-    /* RESTORE PADDING */
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-primary);
-    /* Slight contrast */
-    overflow: hidden;
-}
-
-/* Grid Containers - Contained within padding */
-#drillDownGridContainer,
-#vendorSummaryGridContainer,
-#vendorGrid {
-    flex: 1;
-    width: 100% !important;
-    height: 100% !important;
-    border: 1px solid var(--border-color);
-    /* Add border back */
-    border-radius: 8px;
-    /* Rounded corners for grid */
-    background: var(--bg-secondary);
-}
-
-/* Footer (Unified for ALL) */
-#drillDownModal .modal-footer,
-#vendorModal .modal-footer,
-#vendorSummaryModal .modal-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    display: flex;
-    justify-content: flex-end;
-}
-
-/* Animation Keyframes */
-@keyframes slideUpLarge {
-    0% {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.modal-close:hover {
+    color: var(--text-primary);
 }

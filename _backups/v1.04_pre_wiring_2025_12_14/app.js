@@ -619,96 +619,101 @@ window.App = {
             vendorSummaryBtn.addEventListener('click', () => {
                 console.log('🟢 Opening Vendor Summary...');
                 if (vendorSummaryModal) {
-                    // Match VIG Logic Exactly: Block -> AnimationFrame -> Active
                     vendorSummaryModal.style.display = 'block';
+                    requestAnimationFrame(() => vendorSummaryModal.classList.add('active'));
 
+                    // Load Data
                     if (window.VendorSummaryGrid) {
-                        // Re-initialize every time to ensure fresh container
-                        VendorSummaryGrid.initialize('vendorSummaryGridContainer');
-                    }
-
-                    requestAnimationFrame(() => {
-                        vendorSummaryModal.classList.add('active');
-                        // Force a resize check after animation starts frames
-                        setTimeout(() => {
-                            if (window.VendorSummaryGrid && VendorSummaryGrid.gridApi) {
-                                VendorSummaryGrid.gridApi.sizeColumnsToFit();
-                            }
-                        }, 50);
-                    });
-
-                    // 🔍 DATA SOURCE HARDENING (Aggressive)
-                    let sourceTransactions = this.transactions;
-                    console.log('🔍 VendorSummary: 1. App.transactions:', sourceTransactions ? sourceTransactions.length : 'null');
-
-                    if ((!sourceTransactions || sourceTransactions.length === 0) && window.TransactionGrid && TransactionGrid.transactions) {
-                        console.log('⚠️ App.transactions empty, pulling from TransactionGrid.transactions...');
-                        sourceTransactions = TransactionGrid.transactions;
-                    }
-
-                    if ((!sourceTransactions || sourceTransactions.length === 0) && window.TransactionGrid && TransactionGrid.gridApi) {
-                        console.log('⚠️ Grid.transactions empty, pulling from TransactionGrid API...');
-                        const rowData = [];
-                        TransactionGrid.gridApi.forEachNode(node => rowData.push(node.data));
-                        sourceTransactions = rowData;
-                    }
-
-                    // Fallback to Storage
-                    if (!sourceTransactions || sourceTransactions.length === 0) {
-                        console.log('⚠️ TransactionGrid empty, pulling from Storage...');
-                        sourceTransactions = Storage.getTransactions() || [];
-                    }
-
-                    console.log('✅ Final Source Count:', sourceTransactions ? sourceTransactions.length : 0);
-
-                    const hasData = sourceTransactions && sourceTransactions.length > 0;
-
-                    if (hasData) {
-                        // 📊 AGGREGATE TRANSACTIONS
-                        const aggregation = {};
-                        let skippedCount = 0;
-
-                        sourceTransactions.forEach((tx, index) => {
-                            const rawName = tx.vendor || tx.payee || tx.description || '';
-                            const name = tx.vendor || (window.VendorNameUtils ? VendorNameUtils.extractVendorName(rawName) : rawName);
-
-                            if (index < 5) console.log(`🔍 Row ${index} | Raw: "${rawName}" | Extracted: "${name}" | Vendor: "${tx.vendor}"`);
-
-                            if (!name) {
-                                skippedCount++;
-                                return;
-                            }
-
-                            if (!aggregation[name]) {
-                                const savedRule = window.VendorMatcher ? VendorMatcher.getVendorByName(name) : null;
-                                aggregation[name] = {
-                                    name: name,
-                                    count: 0,
-                                    totalAmount: 0,
-                                    currentAccount: savedRule ? savedRule.defaultAccount : (tx.allocatedAccount !== '9970' ? tx.allocatedAccount : ''),
-                                    isSaved: !!savedRule
-                                };
-                            }
-
-                            aggregation[name].count++;
-                            aggregation[name].totalAmount += (tx.debits || 0) - (tx.credits || 0);
-                        });
-
-                        console.log(`⚠️ Skipped ${skippedCount} rows due to empty name.`);
-                        const gridData = Object.values(aggregation).sort((a, b) => b.count - a.count);
-                        console.log(`📊 Aggregated ${gridData.length} unique vendors from ${sourceTransactions.length} transactions.`);
-
-                        if (window.VendorSummaryGrid) {
-                            VendorSummaryGrid.loadVendors(gridData);
+                        // ⚡ INITIALIZE GRID FIRST
+                        if (!VendorSummaryGrid.gridApi) {
+                            VendorSummaryGrid.initialize('vendorSummaryGridContainer');
                         }
-                    } else {
-                        if (window.VendorSummaryGrid) {
+
+                        // 🔍 DATA SOURCE HARDENING (Aggressive)
+                        // 1. Try App.transactions
+                        let sourceTransactions = this.transactions;
+                        console.log('🔍 VendorSummary: 1. App.transactions:', sourceTransactions ? sourceTransactions.length : 'null');
+
+                        // 2. Fallback to TransactionGrid.transactions (The internal array of the grid)
+                        if ((!sourceTransactions || sourceTransactions.length === 0) && window.TransactionGrid && TransactionGrid.transactions) {
+                            console.log('⚠️ App.transactions empty, pulling from TransactionGrid.transactions...');
+                            sourceTransactions = TransactionGrid.transactions;
+                        }
+
+                        // 3. Fallback to Grid API (The rendered nodes)
+                        if ((!sourceTransactions || sourceTransactions.length === 0) && window.TransactionGrid && TransactionGrid.gridApi) {
+                            console.log('⚠️ Grid.transactions empty, pulling from TransactionGrid API...');
+                            const rowData = [];
+                            TransactionGrid.gridApi.forEachNode(node => rowData.push(node.data));
+                            sourceTransactions = rowData;
+                        }
+
+                        // 4. Fallback to Storage
+                        if (!sourceTransactions || sourceTransactions.length === 0) {
+                            console.log('⚠️ TransactionGrid empty, pulling from Storage...');
+                            sourceTransactions = Storage.getTransactions() || [];
+                        }
+
+                        console.log('✅ Final Source Count:', sourceTransactions ? sourceTransactions.length : 0);
+
+                        const hasData = sourceTransactions && sourceTransactions.length > 0;
+
+                        if (hasData) {
+                            // 📊 AGGREGATE TRANSACTIONS
+                            // We want to show everything in the grid, grouped by their effective vendor name
+                            const aggregation = {};
+                            let skippedCount = 0;
+
+                            sourceTransactions.forEach((tx, index) => {
+                                // Use the vendor name if assigned, otherwise the payee/description
+                                // Clean up the name slightly so "Home Depot" and "The Home Depot" might merge if we want (optional)
+                                // For now, stick to the effective name used in the row
+                                const rawName = tx.vendor || tx.payee || tx.description || '';
+                                const name = tx.vendor || VendorNameUtils.extractVendorName(rawName);
+
+                                if (index < 5) {
+                                    console.log(`🔍 Row ${index} | Raw: "${rawName}" | Extracted: "${name}" | Vendor: "${tx.vendor}"`);
+                                }
+
+                                if (!name) {
+                                    skippedCount++;
+                                    return;
+                                }
+
+                                if (!aggregation[name]) {
+                                    // Check if we have a saved rule for this name
+                                    const savedRule = window.VendorMatcher ? VendorMatcher.getVendorByName(name) : null;
+
+                                    aggregation[name] = {
+                                        name: name,
+                                        count: 0,
+                                        totalAmount: 0,
+                                        // Use saved default account, or the one from the first transaction if consistent?
+                                        // User wants to see "Allocated Account". If mixed, maybe show "Mixed" or blank?
+                                        // Let's default to the saved rule's account if available, or the txn's account
+                                        currentAccount: savedRule ? savedRule.defaultAccount : (tx.allocatedAccount !== '9970' ? tx.allocatedAccount : ''),
+                                        isSaved: !!savedRule
+                                    };
+                                }
+
+                                aggregation[name].count++;
+                                aggregation[name].totalAmount += (tx.debits || 0) - (tx.credits || 0); // Net amount logic or just debits?
+                            });
+
+                            console.log(`⚠️ Skipped ${skippedCount} rows due to empty name.`);
+
+                            // Convert to array
+                            const gridData = Object.values(aggregation).sort((a, b) => b.count - a.count);
+
+                            console.log(`📊 Aggregated ${gridData.length} unique vendors from ${sourceTransactions.length} transactions.`);
+                            VendorSummaryGrid.loadVendors(gridData);
+                        } else {
                             VendorSummaryGrid.loadVendors([]);
                         }
-                    }
-                }
-            });
-        }
+                    } // Close if Window.VendorSummaryGrid
+                } // Close if vendorSummaryModal
+            }); // Close addEventListener
+        } // Close if vendorSummaryBtn
 
         // Close handlers for Vendor Summary
         const closeSummary = () => {
@@ -1422,57 +1427,6 @@ window.App = {
                 }
             }
         }
-    },
-
-    // ⚡ UPDATE TRANSACTION (called from Drill Down Grid or other editors)
-    updateTransaction(updatedTx) {
-        if (!updatedTx || !updatedTx.id) return;
-
-        console.log(`📝 App.updateTransaction: Updating ${updatedTx.id}`);
-
-        // 1. Update Internal Array
-        const index = this.transactions.findIndex(t => t.id === updatedTx.id);
-        if (index !== -1) {
-            this.transactions[index] = updatedTx;
-        }
-
-        // 2. Persist to Storage
-        Storage.saveTransactions(this.transactions);
-
-        // 3. Update Main Grid UI
-        if (window.TransactionGrid && window.TransactionGrid.gridApi) {
-            // refreshRow logic usually preferred
-            TransactionGrid.updateTransaction(updatedTx);
-        }
-
-        // 4. Update Stats
-        this.updateStatistics();
-        this.updateReconciliation();
-    },
-
-    // ⚡ UPDATE TRANSACTION (called from Drill Down Grid or other editors)
-    updateTransaction(updatedTx) {
-        if (!updatedTx || !updatedTx.id) return;
-
-        console.log(`📝 App.updateTransaction: Updating ${updatedTx.id}`);
-
-        // 1. Update Internal Array
-        const index = this.transactions.findIndex(t => t.id === updatedTx.id);
-        if (index !== -1) {
-            this.transactions[index] = updatedTx;
-        }
-
-        // 2. Persist to Storage
-        Storage.saveTransactions(this.transactions);
-
-        // 3. Update Main Grid UI
-        if (window.TransactionGrid && window.TransactionGrid.gridApi) {
-            TransactionGrid.updateTransaction(updatedTx);
-        }
-
-        // 4. Update Stats
-        this.updateStatistics();
-        this.updateReconciliation();
     },
 
     updateStatistics() {

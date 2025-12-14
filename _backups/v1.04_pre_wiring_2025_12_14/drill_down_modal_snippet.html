@@ -1,0 +1,16 @@
+<!-- Drill-Down Modal (VSM - Vendor Sub-Modal) -->
+<div id="drillDownModal" class="modal" style="z-index: 10001 !important;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="drillDownTitle">Vendor Transactions</h2>
+            <button class="modal-close"
+                onclick="document.getElementById('drillDownModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                Review and reclassify transactions for this vendor. Changes will update the main grid.
+            </p>
+            <div id="drillDownGridContainer" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+        </div>
+    </div>
+</div>
