@@ -5,14 +5,14 @@ const Settings = {
         companyName: '',
         fontSize: 'medium',
         fontFamily: 'Inter',
-        theme: 'cyber-night',
+        theme: 'arctic-dawn',
         accentColor: 'blue',
         googleApiKey: 'AIzaSyDNWQtND6ISB_LFyoOQbAycGzFdSPFN604',
         googleSearchCx: '61ed0fb52fe154bcf'
     },
 
     current: {
-        theme: 'cyber-night',
+        theme: 'arctic-dawn',
         companyName: '',
         gridColorScheme: 'rainbow',
         gridFontFamily: 'Arial',

@@ -99,6 +99,11 @@ window.TransactionGrid = {
                 <input type="text" id="gridQuickFilter" placeholder="Quick search..." class="toolbar-search">
             </div>
             <div class="toolbar-right">
+                <button id="gridToggleUnmatched" class="btn-icon" title="Show Unmatched Only" style="color: #ef4444;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
+                    </svg>
+                </button>
                 <button id="gridColumnToggle" class="btn-icon" title="Show/Hide Columns">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
@@ -124,6 +129,42 @@ window.TransactionGrid = {
         if (quickFilter) {
             quickFilter.addEventListener('input', (e) => {
                 this.gridApi.setQuickFilter(e.target.value);
+            });
+        }
+
+        const toggleUnmatched = document.getElementById('gridToggleUnmatched');
+        if (toggleUnmatched) {
+            toggleUnmatched.addEventListener('click', () => {
+                const isActive = toggleUnmatched.classList.toggle('active');
+                if (isActive) {
+                    toggleUnmatched.style.background = '#fee2e2'; // Light red bg
+                    // Apply Filter: Only show where allocatedAccount is null/empty OR status is 'unmatched'
+                    // Using AG Grid External Filter is best, but setFilterModel is easiest
+                    // Let's use simple filtering on the 'status' or 'allocatedAccount' column
+
+                    // Option 1: Filter "Account #" column for blanks (simpler)
+                    /*
+                    this.gridApi.setFilterModel({
+                        allocatedAccount: {
+                            filterType: 'text',
+                            type: 'empty' 
+                        }
+                    });
+                    */
+
+                    // Option 2: External Filter (More robust)
+                    this.gridApi.setGridOption('isExternalFilterPresent', () => true);
+                    this.gridApi.setGridOption('doesExternalFilterPass', (node) => {
+                        return !node.data.allocatedAccount || node.data.status === 'unmatched';
+                    });
+                    this.gridApi.onFilterChanged();
+
+                } else {
+                    toggleUnmatched.style.background = 'transparent';
+                    // Clear Filter
+                    this.gridApi.setGridOption('isExternalFilterPresent', () => false);
+                    this.gridApi.onFilterChanged();
+                }
             });
         }
 
@@ -335,9 +376,10 @@ window.TransactionGrid = {
                 cellRenderer: (params) => {
                     const statusMap = {
                         'matched': { icon: '✓', color: '#22c55e', text: 'Matched' },
+                        'auto': { icon: '⚡', color: '#8b5cf6', text: 'Auto-Match' },
                         'unmatched': { icon: '!', color: '#ef4444', text: 'Unmatched' },
                         'manual': { icon: '✎', color: '#3b82f6', text: 'Manual' },
-                        'reviewed': { icon: '✓✓', color: '#8b5cf6', text: 'Reviewed' }
+                        'reviewed': { icon: '✓✓', color: '#10b981', text: 'Reviewed' }
                     };
 
                     const status = statusMap[params.value] || statusMap['unmatched'];
@@ -770,19 +812,6 @@ window.TransactionGrid = {
         console.log('Balance calculation complete. Final balance:', runningBalance);
     },
 
-    // Rainbow row styling
-    getRowStyle(params) {
-        const rainbowColors = [
-            { background: '#FFD1DC' },  // Pink
-            { background: '#D1F2FF' },  // Cyan
-            { background: '#D1FFD1' },  // Mint
-            { background: '#FFFACD' },  // Yellow/Cream
-            { background: '#FFDAB9' },  // Peach
-            { background: '#E6E6FA' }   // Lavender
-        ];
-        return rainbowColors[params.node.rowIndex % 6];
-    },
-
     // Color schemes for grid rows
     colorSchemes: {
         rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],  // 6 pastel colors
@@ -797,6 +826,17 @@ window.TransactionGrid = {
 
     // Get row style based on selected color scheme
     getRowStyle(params) {
+        // 1. Highlight Unmatched/Action Items
+        // "Unmatched" = Explicit status OR no account allocated
+        if (params.data.status === 'unmatched' || !params.data.allocatedAccount) {
+            return {
+                background: '#fff1f2', // Very light red
+                borderLeft: '5px solid #ef4444', // Red indicator
+                fontWeight: '500'
+            };
+        }
+
+        // 2. Standard Color Scheme
         const scheme = Settings.current.gridColorScheme || 'rainbow';
         const colors = this.colorSchemes[scheme] || this.colorSchemes.rainbow;
         const colorIndex = params.node.rowIndex % colors.length;
@@ -927,9 +967,25 @@ window.VendorGrid = {
                 this.gridApi = params.api;
                 this.loadVendors();
             },
-            // 🌈 Apply Rainbow Theme (Shared with TransactionGrid)
+            // 🌈 Apply Rainbow Theme (Directly, identifying red border issue)
             getRowStyle: (params) => {
-                return TransactionGrid.getRowStyle ? TransactionGrid.getRowStyle(params) : {};
+                // Fix: Do NOT use TransactionGrid.getRowStyle because it adds Red Borders to rows without 'allocatedAccount'
+                // Vendors use 'defaultAccount' so they always fail that check.
+
+                // Use standard color scheme
+                const scheme = (window.Settings && Settings.current.gridColorScheme) || 'rainbow';
+                const schemes = TransactionGrid.colorSchemes || { rainbow: ['#ffffff', '#f8fafc'] };
+                const colors = schemes[scheme] || schemes.rainbow;
+
+                const colorIndex = params.node.rowIndex % colors.length;
+                const style = { background: colors[colorIndex] };
+
+                // Optional font settings
+                if (window.Settings && Settings.current.gridFontSize) {
+                    style.fontSize = Settings.current.gridFontSize + 'px';
+                }
+
+                return style;
             }
         };
 
@@ -956,12 +1012,27 @@ window.VendorGrid = {
                 cellRenderer: (params) => {
                     // Check if vendor has a Cloud Sync Flag or a UUID (Retroactive check)
                     const isSynced = params.data._synced || (params.data.id && params.data.id.length > 20 && !params.data.id.startsWith('vnd_'));
+                    let statusBadge = '';
 
                     if (isSynced) {
-                        return '<span title="Synced to Cloud" style="color: #10b981; font-weight: 500;">☁️ Cloud</span>';
+                        statusBadge = '<span class="status-badge status-cloud" title="Synced to Cloud">☁️ Cloud</span>';
                     } else {
-                        return '<span title="Local Only" style="color: #6b7280;">💾 Offline</span>';
+                        const isLocal = true; // This vendor is local if not synced
+                        if (isLocal) {
+                            statusBadge = '<span class="status-badge status-local" title="Local Only (No Cloud ID)">Local Only</span>';
+                        }
+                        // Check for Config Issue
+                        else if (window.SupabaseClient && SupabaseClient.isConnected === false) {
+                            // Check if it's due to placeholder key
+                            const creds = window.AppConfig ? AppConfig.getSupabaseCreds() : null;
+                            if (creds && creds.KEY && creds.KEY.includes('test_key_placeholder')) {
+                                statusBadge = '<span class="status-badge status-error" title="Update config.js with real keys">Setup Required</span>';
+                            } else {
+                                statusBadge = '<span class="status-badge status-offline" title="Cloud Sync Inactive">Offline</span>';
+                            }
+                        }
                     }
+                    return statusBadge;
                 },
                 cellStyle: { textAlign: 'center' }
             },
@@ -1095,6 +1166,38 @@ window.VendorGrid = {
         await VendorMatcher.deleteVendor(vendorId);
         // 2. Refresh grid
         this.loadVendors();
+    },
+    // Reprocess all transactions against dictionary
+    reprocessAllTransactions() {
+        if (!VendorMatcher || !VendorMatcher.vendors || VendorMatcher.vendors.length === 0) return;
+
+        console.log('🔄 Reprocessing Grid Rules against Dictionary...');
+        const allTransactions = this.transactions;
+        let updateCount = 0;
+        const updates = [];
+
+        allTransactions.forEach(t => {
+            // Only re-check if not already manually set
+            if (t.status !== 'manual' && (!t.allocatedAccount || t.status === 'unmatched')) {
+                const match = VendorMatcher.matchPayee(t.payee || t.description);
+                if (match && match.vendor) {
+                    t.allocatedAccount = match.vendor.defaultAccount;
+                    t.allocatedAccountName = match.vendor.defaultAccountName;
+                    t.vendorId = match.vendor.id;
+                    t.confidence = match.confidence; // 1.0
+                    t.status = 'auto'; // Matched!
+                    t.decisionReason = `Matched rule: ${match.vendor.name}`;
+                    updates.push(t);
+                    updateCount++;
+                }
+            }
+        });
+
+        if (updates.length > 0) {
+            console.log(`✅ Matched ${updateCount} transactions from dictionary.`);
+            this.gridApi.applyTransaction({ update: updates });
+            this.recalculateAllBalances();
+        }
     }
 };
 

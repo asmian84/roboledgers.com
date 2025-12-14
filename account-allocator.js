@@ -26,6 +26,33 @@ window.AccountAllocator = {
         );
     },
 
+    // Delete account by code
+    async deleteAccount(code) {
+        // 1. Check if used in transactions
+        const transactions = Storage.loadTransactions();
+        const isUsed = transactions.some(t => t.allocatedAccount === code);
+
+        if (isUsed) {
+            alert('Cannot delete this account because it is used in transactions. Please reassign the transactions first.');
+            return false;
+        }
+
+        // 2. Check if it's a critical system account (optional, but good safety)
+        const systemAccounts = ['1000', '4001', '9970']; // Example: Bank, Sales, Suspense
+        if (systemAccounts.includes(code)) {
+            if (!confirm('This is a core system account. Are you sure you want to delete it?')) return false;
+        }
+
+        // 3. Remove
+        const index = this.accounts.findIndex(a => a.code === code);
+        if (index > -1) {
+            this.accounts.splice(index, 1);
+            Storage.saveAccounts(this.accounts);
+            return true;
+        }
+        return false;
+    },
+
     // Get account options for dropdown
     getAccountOptions() {
         // Calculate usage dynamically
@@ -197,15 +224,33 @@ window.AccountAllocator = {
             { keywords: ['payment - thank you', 'transfer', 'sent to', 'etransfer', 'rbc pyt', 'payment'], account: '2100' }, // Accounts Payable / Transfers
         ];
 
+        // Collect all potential matches first
+        const matches = [];
         for (const mapping of industryMap) {
             if (mapping.keywords.some(k => normalized.includes(k))) {
-                return this.getAccountByCode(mapping.account);
+                const account = this.getAccountByCode(mapping.account);
+                if (account) matches.push(account);
             }
+        }
+
+        if (matches.length > 0) {
+            // 🧠 Smart Filter: Favor P&L (Expenses 5000+ / Revenue 4000+) over Balance Sheet
+            // This prevents "Amazon Payment" from going to Liability (2100) instead of Expense (8600).
+            const pnlAccounts = matches.filter(a => parseInt(a.code) >= 4000);
+
+            if (pnlAccounts.length > 0) {
+                // If we have P&L matches, prefer them. 
+                // If multiple P&L, take the first one (usually most specific based on map order)
+                return pnlAccounts[0];
+            }
+
+            // Fallback: If only Balance Sheet matches found (e.g. "Transfer"), use that.
+            return matches[0];
         }
 
         // Generic fallback based on debit/credit
         if (isDebit) {
-            return null; // Don't guess 'Misc' too aggressively
+            return null; // Leave as 'Unmatched' (Red) for user review
         } else {
             return this.getAccountByCode('4001'); // Sales
         }

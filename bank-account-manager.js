@@ -111,191 +111,308 @@ const BankAccountManager = {
     },
 
     // --- Modal UI ---
-    renderAccountsList() {
-        const list = document.getElementById('accountsList');
-        if (!list) return;
+    // Legacy render removed - using unified renderAccountsList below
 
-        list.innerHTML = '';
-        this.accounts.forEach(acc => {
-            const item = document.createElement('div');
-            item.className = 'account-item';
-            item.innerHTML = `
-                <div class="account-info">
-                    <span class="account-icon">${acc.icon || '🏦'}</span>
-                    <div class="account-details">
-                        <span class="account-name">${acc.name}</span>
-                        <span class="account-meta">${acc.type} • ${acc.currency}</span>
-                    </div>
-                </div>
-                <div class="account-actions">
-                    <button class="btn-icon edit-btn" title="Edit">✏️</button>
-                    <button class="btn-icon delete-btn" title="Delete">🗑️</button>
-                </div>
-            `;
-
-            // Edit
-            item.querySelector('.edit-btn').onclick = () => this.editAccount(acc.id);
-
-            // Delete
-            item.querySelector('.delete-btn').onclick = () => {
-                if (confirm(`Delete ${acc.name}?`)) {
-                    this.deleteAccount(acc.id);
-                    this.renderAccountsList();
-                }
-            };
-
-            list.appendChild(item);
-        });
-    },
 
     // --- Mini-Popover UI ---
 
-    togglePopover(triggerBtn) {
-        let popover = document.getElementById('accountManagerPopover');
+    // --- UI Methods ---
 
-        // Auto-inject if missing (fallback safetynet)
-        if (!popover) {
-            console.warn('⚠️ Popover not found in DOM, injecting...');
-            // In a real app we might inject it here, but we added it to index.html
-            return;
+
+    setupEventListeners() {
+        console.log('👂 Setting up Bank Account Manager Listeners...');
+        // Add Button (Inside Modal)
+        const addBtn = document.getElementById('addAccountBtn');
+        if (addBtn) {
+            // Remove old listeners to be safe (cloning)
+            const newAddBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+
+            newAddBtn.addEventListener('click', () => {
+                this.addAccount('New Account', 'CHECKING');
+            });
         }
 
-        if (popover.style.display === 'block') {
-            popover.style.display = 'none';
-        } else {
-            // Render list before showing
-            this.renderMiniList();
-
-            // Show and Position
-            popover.style.display = 'block';
-
-            // Safe positioning
-            const rect = triggerBtn.getBoundingClientRect();
-            // Align top-left of popover to bottom-left of button (plus offset)
-            popover.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-
-            // Keep it on screen (horizontal)
-            let left = rect.left + window.scrollX - 20;
-            if (left + 250 > window.innerWidth) left = window.innerWidth - 260; // adjust if too far right
-            popover.style.left = left + 'px';
-
-            // Close logic listener (one-time)
-            const closeBtn = document.getElementById('closePopoverBtn');
-            if (closeBtn) closeBtn.onclick = () => popover.style.display = 'none';
-
-            // Click outside to close
-            const clickOutside = (e) => {
-                if (!popover.contains(e.target) && e.target !== triggerBtn && !triggerBtn.contains(e.target)) {
-                    popover.style.display = 'none';
-                    document.removeEventListener('click', clickOutside);
-                }
-            };
-            // Delay adding listener to avoid immediate trigger
-            setTimeout(() => document.addEventListener('click', clickOutside), 100);
-
-            // Quick Add Listeners
-            const quickAddBtns = popover.querySelectorAll('.quick-add-btn');
-            quickAddBtns.forEach(btn => {
-                // Remove old listeners to avoid duplicates if re-opened
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-                newBtn.onclick = (e) => this.handleQuickAdd(e.target.dataset.type);
+        // Close Logic
+        const modal = document.getElementById('manageAccountsModal');
+        if (modal) {
+            const closeBtn = modal.querySelector('.modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
             });
         }
     },
 
-    renderMiniList() {
-        const list = document.getElementById('miniAccountList');
-        if (!list) return;
+    // --- STRICT TYPE ASSIGNMENT ---
+    isAsset(type) { return ['CHECKING', 'SAVINGS', 'CASH', 'INVESTMENT', 'OTHER_ASSET'].includes(type); },
+    isLiability(type) { return ['CREDIT_CARD', 'LOAN', 'LINE_OF_CREDIT', 'OTHER_LIABILITY'].includes(type); },
 
-        list.innerHTML = '';
-        const accounts = this.accounts.filter(a => a.isActive);
+    addAccount(name, accType = 'CHECKING') {
+        const baseName = name.trim();
+        let counter = 1;
+        let finalName = baseName;
 
-        accounts.forEach(acc => {
-            const item = document.createElement('div');
-            item.className = 'account-item-mini';
-
-            // Icon based on type
-            let icon = '🏦';
-            if (acc.type === 'credit') icon = '💳';
-            if (acc.type === 'savings') icon = '💰';
-
-            item.innerHTML = `
-                <span>${icon}</span>
-                <span class="editable-name" style="cursor:text;" title="Double-click to edit">${acc.name}</span>
-                <span class="delete-btn" title="Delete">&times;</span>
-            `;
-
-            // Inline Edit Event
-            const nameSpan = item.querySelector('.editable-name');
-            nameSpan.addEventListener('dblclick', () => {
-                nameSpan.contentEditable = true;
-                nameSpan.focus();
-                // Select all text
-                document.execCommand('selectAll', false, null);
-            });
-
-            nameSpan.addEventListener('blur', () => {
-                nameSpan.contentEditable = false;
-                this.updateAccountName(acc.id, nameSpan.innerText);
-            });
-
-            nameSpan.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    nameSpan.blur();
-                }
-            });
-
-            // Delete Event
-            const delBtn = item.querySelector('.delete-btn');
-            delBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (confirm(`Delete ${acc.name}?`)) {
-                    this.deleteAccount(acc.id);
-                    this.renderMiniList();
-                    if (window.App && App.updateBankAccountSelector) App.updateBankAccountSelector();
-                }
-            });
-
-            list.appendChild(item);
-        });
-    },
-
-    handleQuickAdd(type) {
-        let baseName = 'Chequing';
-        let accType = 'CHECKING';
-
-        if (type === 'savings') { baseName = 'Savings'; accType = 'SAVINGS'; }
-        if (type === 'credit') { baseName = 'Credit Card'; accType = 'CREDIT_CARD'; }
-
-        // Find unique name: Chequing, Chequing 2, Chequing 3...
-        let name = baseName;
-        let counter = 2;
-
-        // Helper to check case-insensitive name usage
+        // Prevent duplicates
         const exists = (n) => this.accounts.some(a => a.name.toLowerCase() === n.toLowerCase());
-
-        while (exists(name)) {
-            name = `${baseName} ${counter}`;
+        while (exists(finalName)) {
             counter++;
+            finalName = `${baseName} ${counter}`;
         }
 
         const newAccount = new BankAccount({
-            id: crypto.randomUUID(), // Ensure UUID
-            name: name,
+            id: crypto.randomUUID(),
+            name: finalName,
             type: accType,
             currency: 'CAD',
             isActive: true,
             color: this.getRandomColor()
         });
 
+        // Tag as NEW so we can delete if cancelled
+        newAccount.isNew = true;
+
         this.accounts.push(newAccount);
         this.saveAccounts();
+        this.renderAccountsList();
 
-        console.log(`✅ Quick Added: ${name}`);
-        this.renderMiniList();
-        if (window.App && App.updateBankAccountSelector) App.updateBankAccountSelector();
+        // Auto-trigger edit mode
+        setTimeout(() => {
+            const rows = document.querySelectorAll('#accountsList tr');
+            const lastRow = Array.from(rows).find(r => r.dataset.accountId === newAccount.id);
+            if (lastRow) {
+                const editBtn = lastRow.querySelector('.edit-btn');
+                if (editBtn) editBtn.click();
+            }
+        }, 50);
+    },
+
+    getRandomColor() {
+        const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    },
+
+    // Unified Render Method
+    renderAccountsList() {
+        const listContainer = document.getElementById('accountsList');
+        if (!listContainer) return;
+
+        listContainer.innerHTML = '';
+        if (this.accounts.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; color: var(--text-tertiary); padding: 2rem;">No accounts yet. Add one above!</div>';
+            return;
+        }
+
+        // Sort: Assets first, then Liabilities, then by Name
+        const sortedAccounts = [...this.accounts].sort((a, b) => {
+            const aAsset = this.isAsset(a.type);
+            const bAsset = this.isAsset(b.type);
+            if (aAsset && !bAsset) return -1;
+            if (!aAsset && bAsset) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        // Create Table Structure
+        const table = document.createElement('table');
+        table.className = 'grid-table';
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+
+        // Header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr style="background: var(--bg-secondary); text-align: left;">
+                <th style="padding: 12px; border-bottom: 2px solid var(--border-color); width: 50px;"></th>
+                <th style="padding: 12px; border-bottom: 2px solid var(--border-color);">Account Name</th>
+                <th style="padding: 12px; border-bottom: 2px solid var(--border-color);">Type</th>
+                 <th style="padding: 12px; border-bottom: 2px solid var(--border-color); width: 140px;">Action</th>
+            </tr>
+        `;
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        sortedAccounts.forEach(acc => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border-color)';
+            tr.dataset.accountId = acc.id;
+
+            // Icon
+            let icon = '🏦';
+            if (this.isLiability(acc.type)) icon = '💳';
+            if (acc.type === 'INVESTMENT') icon = '📈';
+
+            const typeLabel = acc.type ? acc.type.replace('_', ' ') : 'Other';
+
+            tr.innerHTML = `
+                <td style="padding: 12px; text-align: center; font-size: 1.2em;">${icon}</td>
+                <td style="padding: 12px;">
+                     <span class="account-name-field" style="font-weight:500; font-size: 1.05em;">${acc.name}</span>
+                </td>
+                <td style="padding: 12px; color: var(--text-secondary); font-size: 0.9em;">
+                    <span class="account-type-label">${typeLabel}</span>
+                </td>
+                <td style="padding: 12px; display: flex; gap: 8px; align-items: center;">
+                    <button class="edit-btn btn-icon-small" title="Edit" style="color: var(--accent-color); background: none; border: none; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                    </button>
+                    <button class="move-btn btn-icon-small" title="Move Transactions" style="color: var(--warning-color); background: none; border: none; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>
+                    </button>
+                    <button class="delete-btn btn-icon-small" title="Delete" style="color: var(--danger-color); background: none; border: none; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </td>
+            `;
+
+            // Inline Edit Event
+            const editBtn = tr.querySelector('.edit-btn');
+            const moveBtn = tr.querySelector('.move-btn');
+            const deleteBtn = tr.querySelector('.delete-btn');
+            const nameField = tr.querySelector('.account-name-field');
+            const typeLabelEl = tr.querySelector('.account-type-label');
+            const actionCell = tr.lastElementChild;
+
+            editBtn.addEventListener('click', () => {
+                // Switch to Edit Mode
+                nameField.innerHTML = `<input type="text" class="edit-input" value="${acc.name}" style="width: 100%; padding: 4px;">`;
+
+                typeLabelEl.innerHTML = `
+                    <select class="edit-select" style="width: 100%; padding: 4px;">
+                        <optgroup label="Assets (Bank)">
+                            <option value="CHECKING" ${acc.type === 'CHECKING' ? 'selected' : ''}>Chequing</option>
+                            <option value="SAVINGS" ${acc.type === 'SAVINGS' ? 'selected' : ''}>Savings</option>
+                            <option value="INVESTMENT" ${acc.type === 'INVESTMENT' ? 'selected' : ''}>Investment</option>
+                        </optgroup>
+                        <optgroup label="Liabilities (Credit)">
+                            <option value="CREDIT_CARD" ${acc.type === 'CREDIT_CARD' ? 'selected' : ''}>Credit Card</option>
+                            <option value="LOAN" ${acc.type === 'LOAN' ? 'selected' : ''}>Loan</option>
+                            <option value="LINE_OF_CREDIT" ${acc.type === 'LINE_OF_CREDIT' ? 'selected' : ''}>Line of Credit</option>
+                        </optgroup>
+                    </select>
+                `;
+
+                // Replace Buttons with Save/Cancel
+                actionCell.innerHTML = `
+                    <button class="save-btn btn-primary-small" style="padding: 2px 8px; font-size: 0.8em;">Save</button>
+                    <button class="cancel-btn btn-secondary-small" style="padding: 2px 8px; font-size: 0.8em;">Cancel</button>
+                `;
+
+                const saveBtn = actionCell.querySelector('.save-btn');
+                const cancelBtn = actionCell.querySelector('.cancel-btn');
+                const nameInput = nameField.querySelector('input');
+                const typeSelect = typeLabelEl.querySelector('select');
+
+                nameInput.focus();
+
+                // Select text on focus
+                nameInput.select();
+
+                saveBtn.addEventListener('click', () => {
+                    const newName = nameInput.value;
+                    const newType = typeSelect.value;
+
+                    if (newName && newName.trim() !== '') {
+                        acc.name = newName.trim();
+                        acc.type = newType;
+                        delete acc.isNew; // Committed, no longer new
+                        this.saveAccounts();
+                        this.renderAccountsList();
+                    }
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    if (acc.isNew) {
+                        // User Cancelled Creation -> Delete
+                        this.deleteAccount(acc.id);
+                    } else {
+                        this.renderAccountsList(); // Revert
+                    }
+                });
+            });
+
+            // Move Data Event
+            moveBtn.addEventListener('click', () => {
+                // Determine Category
+                const isSourceAsset = this.isAsset(acc.type);
+                const isSourceLiability = this.isLiability(acc.type);
+                const isSourceInvestment = acc.type === 'INVESTMENT';
+
+                const targetAccounts = this.accounts.filter(a => {
+                    if (a.id === acc.id) return false;
+
+                    if (isSourceAsset) return this.isAsset(a.type);
+                    if (isSourceLiability) return this.isLiability(a.type);
+                    if (isSourceInvestment) return a.type === 'INVESTMENT';
+
+                    return false; // Fallback: strict matching only
+                });
+
+                if (targetAccounts.length === 0) {
+                    let typeName = isSourceAsset ? 'Asset (Bank)' : (isSourceLiability ? 'Liability (Credit)' : 'Investment');
+                    alert(`No other ${typeName} accounts available to move data to.`);
+                    return;
+                }
+
+                // Real dropdown implementation requires creating a select in the row
+                actionCell.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <select class="move-select" style="max-width: 120px; font-size:0.8em; padding: 2px;">
+                            <option value="">Move to...</option>
+                            ${targetAccounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+                        </select>
+                        <div style="display:flex; gap:2px;">
+                            <button class="confirm-move-btn btn-primary-small" style="font-size:0.7em; padding: 2px 6px;">Confirm</button>
+                            <button class="cancel-move-btn btn-secondary-small" style="font-size:0.7em; padding: 2px 6px;">Cancel</button>
+                        </div>
+                    </div>
+                `;
+
+                const select = actionCell.querySelector('.move-select');
+                const confirmBtn = actionCell.querySelector('.confirm-move-btn');
+                const cancelBtn = actionCell.querySelector('.cancel-move-btn');
+
+                confirmBtn.addEventListener('click', () => {
+                    const targetId = select.value;
+                    if (targetId) {
+                        const targetAcc = this.getAccountById(targetId);
+                        if (confirm(`Move ALL transactions from ${acc.name} to ${targetAcc.name}?`)) {
+                            // Perform Move
+                            const transactions = Storage.loadTransactions();
+                            let moveCount = 0;
+                            transactions.forEach(t => {
+                                if (t.accountId === acc.id) {
+                                    t.accountId = targetId;
+                                    moveCount++;
+                                }
+                            });
+                            Storage.saveTransactions(transactions);
+                            alert(`Moved ${moveCount} transactions.`);
+
+                            if (confirm(`Delete empty account "${acc.name}" now?`)) {
+                                this.deleteAccount(acc.id);
+                            } else {
+                                this.renderAccountsList();
+                            }
+                        }
+                    }
+                });
+
+                cancelBtn.addEventListener('click', () => this.renderAccountsList());
+            });
+
+            // Delete Event
+            deleteBtn.addEventListener('click', () => {
+                if (confirm(`Delete account "${acc.name}"?`)) {
+                    this.deleteAccount(acc.id);
+                }
+            });
+
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        listContainer.appendChild(table);
     },
 
     updateAccountName(id, newName) {
@@ -306,7 +423,7 @@ const BankAccountManager = {
             if (window.App && App.updateBankAccountSelector) App.updateBankAccountSelector();
             console.log(`✏️ Renamed to: ${acc.name}`);
         } else {
-            this.renderMiniList(); // Revert
+            this.renderAccountsList(); // Revert
         }
     },
 
@@ -319,53 +436,14 @@ const BankAccountManager = {
         `).join('');
     },
 
-    // --- Actions ---
-
-    createAccount() {
-        // Simple prompt for MVP, can upgrade to Modal later
-        const name = prompt("Enter Account Name (e.g. 'RBC Savings'):");
-        if (!name) return;
-
-        const type = prompt("Type? (CHECKING, SAVINGS, CREDIT_CARD, LINE_OF_CREDIT)", "CHECKING");
-        const currency = prompt("Currency? (CAD, USD)", "CAD");
-
-        const newAccount = new BankAccount({
-            name: name,
-            type: type ? type.toUpperCase() : 'CHECKING',
-            currency: currency ? currency.toUpperCase() : 'CAD',
-            color: this.getRandomColor()
-        });
-
-        this.accounts.push(newAccount);
-        this.saveAccounts();
-    },
-
-    editAccount(id) {
+    deleteAccount(id) {
+        // Find account to get name
         const acc = this.getAccountById(id);
         if (!acc) return;
 
-        const newName = prompt("Edit Account Name:", acc.name);
-        if (newName) {
-            acc.name = newName;
-            this.saveAccounts();
-        }
-    },
-
-    deleteAccount(id) {
-        if (!confirm('Are you sure? Transactions linked to this account might lose their reference.')) return;
         this.accounts = this.accounts.filter(a => a.id !== id);
         this.saveAccounts();
-    },
-
-    setupEventListeners() {
-        const addBtn = document.getElementById('btnAddAccount');
-        if (addBtn) {
-            addBtn.onclick = () => this.createAccount();
-        }
-    },
-
-    getRandomColor() {
-        const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-        return colors[Math.floor(Math.random() * colors.length)];
+        this.renderAccountsList();
+        console.log(`🗑️ Deleted account: ${acc.name}`);
     }
 };

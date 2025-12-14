@@ -4,14 +4,21 @@
 
 console.log('☁️ Loading Supabase Client...');
 
-const SUPABASE_URL = 'https://tjpafbkpmowlttrgjqhw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqcGFmYmtwbW93bHR0cmdqcWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzODE3OTYsImV4cCI6MjA4MDk1Nzc5Nn0.YxarQZiZInt_Ntgpo1hGaeBRWTkyHDHpz-_06Lmkve0';
+// Dynamic Configuration
+const creds = window.AppConfig ? AppConfig.getSupabaseCreds() : null;
+const SUPABASE_URL = creds ? creds.URL : null;
+const SUPABASE_ANON_KEY = creds ? creds.KEY : null;
 
 window.SupabaseClient = {
     client: null,
     isConnected: false,
 
     async initialize() {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('❌ Critical: Supabase credentials missing via config.js');
+            return false;
+        }
+
         if (this.client) return true; // Already initialized
         if (this.isConnected) return true;
 

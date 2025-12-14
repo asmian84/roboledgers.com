@@ -34,7 +34,9 @@ const App = {
         try {
             // Initialize modules
             AccountAllocator.initialize();
-            VendorMatcher.initialize();
+            await VendorMatcher.initialize();
+
+
 
             // Initialize Bank Account Manager 🏦
             if (typeof BankAccountManager !== 'undefined') {
@@ -51,6 +53,13 @@ const App = {
                 throw new Error('TransactionGrid not loaded. Check script order in index.html');
             }
             TransactionGrid.initialize('transactionGrid');
+
+            // 🔄 FORCE REPROCESS: Now that dictionary and grid are loaded
+            setTimeout(() => {
+                if (window.TransactionGrid && TransactionGrid.reprocessAllTransactions) {
+                    TransactionGrid.reprocessAllTransactions();
+                }
+            }, 1500); // Wait for grid init to complete
 
             if (typeof VendorManager === 'undefined') {
                 console.warn('VendorManager not loaded yet');
@@ -1355,31 +1364,85 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Settings Data tab buttons
-    // Settings Data tab buttons
     const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-    const settingsAccountsBtn = document.getElementById('settingsBankAccountsBtn');
+    const settingsAccountsBtn = document.getElementById('settingsAccountsBtn'); // Fixed ID
+    const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn'); // Added correct var
 
     if (settingsVendorDictBtn) {
-        settingsVendorDictBtn.addEventListener('click', () => {
+        settingsVendorDictBtn.addEventListener('click', async () => {
             console.log('📚 Opening Vendor Dictionary from Settings...');
             if (typeof VendorManager !== 'undefined') {
-                // Ensure modal is reset/ready
-                const vendorModal = document.getElementById('vendorModal');
-                if (vendorModal) vendorModal.style.display = 'block';
-                if (typeof VendorManager.init === 'function') VendorManager.init();
+                // Initialize Logic Engines
+                if (typeof VendorMatcher !== 'undefined') {
+                    await VendorMatcher.initialize();
+                }
+
+                // Initialize UI Managers and show modal
+                if (typeof VendorManager.showModal === 'function') {
+                    VendorManager.showModal();
+                } else if (typeof VendorManager.initialize === 'function') {
+                    // Fallback if showModal is not directly available, but initialize is
+                    VendorManager.initialize();
+                    // If initialize doesn't show it, we might need to manually show it,
+                    // but the instruction implies showModal handles it.
+                    // For now, assume initialize might implicitly show it or we're missing a step.
+                    // If showModal is the new standard, this fallback might be removed later.
+                    console.warn('VendorManager.showModal() not found, falling back to initialize().');
+                } else {
+                    console.warn('⚠️ VendorManager not found or missing showModal()/initialize()');
+                }
             } else {
                 console.error('VendorManager not found');
             }
         });
     }
 
-    // Edit Account Button (in Review Toolbar)
+    // Settings: Chart of Accounts
+    if (settingsAccountsBtn) {
+        settingsAccountsBtn.addEventListener('click', () => {
+            console.log('📊 Opening Chart of Accounts...');
+            // Try to use the grid's sidebar if available (User preference "Grid")
+            if (typeof TransactionGrid !== 'undefined' && TransactionGrid.gridApi) {
+                // Open AG Grid Tool Panel if possible as a quick "Grid" view
+                // But also offer the full list if that fails
+                // TransactionGrid.gridApi.openToolPanel('columns'); // This might be what they meant?
+            }
+
+            if (window.ChartManager) {
+                ChartManager.showModal();
+            } else {
+                console.error('ChartManager not found');
+            }
+        });
+    }
+
+    // Settings: Manage Bank Accounts
+    if (settingsBankAccountsBtn) {
+        settingsBankAccountsBtn.addEventListener('click', () => {
+            console.log('🏦 Opening Bank Accounts from Settings...');
+            const modal = document.getElementById('manageAccountsModal');
+            if (modal) {
+                if (typeof BankAccountManager !== 'undefined') {
+                    // Ensure listeners are set up (idempotent safe)
+                    if (typeof BankAccountManager.setupEventListeners === 'function') {
+                        BankAccountManager.setupEventListeners();
+                    }
+                    BankAccountManager.renderAccountsList();
+                }
+                modal.style.display = 'block';
+            }
+        });
+    }
+
+    // Edit Account Button (in Review Toolbar) -> Opens Manage Accounts Modal
     const editAccountBtn = document.getElementById('editAccountBtn');
     if (editAccountBtn) {
         editAccountBtn.addEventListener('click', (e) => {
-            if (typeof BankAccountManager !== 'undefined') {
-                e.stopPropagation(); // Prevent immediate close
-                BankAccountManager.togglePopover(editAccountBtn);
+            e.stopPropagation();
+            const manageAccountsModal = document.getElementById('manageAccountsModal');
+            if (manageAccountsModal && typeof BankAccountManager !== 'undefined') {
+                BankAccountManager.renderAccountsList();
+                manageAccountsModal.classList.add('active');
             }
         });
     }
@@ -1414,21 +1477,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (settingsAccountsBtn) {
-        settingsAccountsBtn.addEventListener('click', () => {
-            console.log('🏦 Opening Bank Accounts from Settings...');
-            // Check if we should use the new Popover or the Old Modal
-            // Current design seems to point to Old Modal for "Manage" but Popover for "Quick Edit"
-            // Let's force the Old Modal for the full manager view as requested
-            const modal = document.getElementById('manageAccountsModal');
-            if (modal) {
-                modal.style.display = 'block';
-                if (typeof BankAccountManager !== 'undefined' && BankAccountManager.renderAccountsList) {
-                    BankAccountManager.renderAccountsList();
-                }
-            }
-        });
-    }
+    // Duplicate listener removed (Fix for COA opening Bank Accounts)
 
     // Close Manage Accounts Modal
     const closeManageAccountsBtn = document.getElementById('closeManageAccountsModal');

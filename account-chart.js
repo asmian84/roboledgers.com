@@ -193,22 +193,163 @@ const DEFAULT_CHART_OF_ACCOUNTS = [
     { code: "8500", name: "Miscellaneous" },
     { code: "8600", name: "Office supplies and postage" },
     { code: "8700", name: "Professional fees" },
-    { code: "8710", name: "Property taxes" },
-    { code: "8720", name: "Rent" },
-    { code: "8800", name: "Repairs and maintenance" },
-    { code: "8850", name: "Security" },
-    { code: "8900", name: "Shop supplies" },
-    { code: "8950", name: "Subcontracting" },
-    { code: "9100", name: "Telephone" },
-    { code: "9200", name: "Travel and accomodations" },
-    { code: "9250", name: "Training - Courses" },
-    { code: "9500", name: "Utilities" },
-    { code: "9550", name: "Uniforms" },
-    { code: "9700", name: "Vehicle" },
-    { code: "9750", name: "Workers compensation" },
-    { code: "9800", name: "Wages and benefits" },
-    { code: "9950", name: "Income taxes - current" },
-    { code: "9955", name: "Income taxes - recovery" },
-    { code: "9960", name: "Income taxes - future" },
-    { code: "9970", name: "Unusual item" }
+    { code: "6340", name: "Property taxes" },
+    { code: "6350", name: "Utilities" },
+    { code: "6390", name: "Rental expenses - other" },
+    { code: "8000", name: "Income taxes - current" },
+    { code: "8010", name: "Income taxes - future" },
+    { code: "9970", name: "Unusual item" },
+    { code: "9975", name: "Unusual item" },
+    { code: "9980", name: "Unusual item" },
+    { code: "9985", name: "Unusual item" },
+    { code: "9990", name: "Unusual item" },
+    { code: "9995", name: "Unusual item" },
+    { code: "9998", name: "Unusual item" },
+    { code: "9999", name: "Unusual item" }
 ];
+
+// 📊 Chart Manager UI
+window.ChartManager = {
+    modal: null,
+    listContainer: null,
+    searchOutput: null,
+
+    initialize() {
+        this.modal = document.getElementById('chartOfAccountsModal');
+        this.listContainer = document.getElementById('chartList');
+        this.searchInput = document.getElementById('chartSearch');
+        const refreshBtn = document.getElementById('refreshChartBtn');
+
+        if (!this.modal) return;
+
+        // Close button logic
+        const closeBtn = this.modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
+
+        // Close on click outside
+        window.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.close();
+        });
+
+        // Search logic (AG Grid Quick Filter)
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', (e) => {
+                if (this.gridApi) {
+                    this.gridApi.setGridOption('quickFilterText', e.target.value);
+                }
+            });
+        }
+
+        // Refresh logic
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.renderList());
+        }
+    },
+
+    showModal() {
+        if (!this.modal) this.initialize();
+        // Ensure strictly only this modal opens and sits on top
+        if (this.modal) {
+            this.modal.style.display = 'block';
+            this.modal.style.zIndex = '1000000000 !important';
+            this.renderList();
+        }
+    },
+
+    close() {
+        if (this.modal) this.modal.style.display = 'none';
+    },
+
+    renderList() {
+        if (!this.listContainer) return;
+
+        // Clear previous content
+        this.listContainer.innerHTML = '';
+
+        // Setup Grid Container - Match Vendor Grid Height/Width
+        this.listContainer.style.height = '60vh';
+        this.listContainer.style.width = '100%';
+        // UI MATCH: Use Light Theme to match Vendor Dictionary
+        this.listContainer.className = 'ag-theme-alpine';
+
+        const sourceAccounts = (window.AccountAllocator && AccountAllocator.getAllAccounts)
+            ? AccountAllocator.getAllAccounts()
+            : DEFAULT_CHART_OF_ACCOUNTS;
+
+        const gridOptions = {
+            rowData: sourceAccounts,
+            columnDefs: [
+                {
+                    headerName: 'Code',
+                    field: 'code',
+                    sortable: true,
+                    filter: true,
+                    width: 100,
+                    pinned: 'left',
+                    cellStyle: { fontWeight: 'bold' }
+                },
+                { headerName: 'Account Name', field: 'name', sortable: true, filter: true, flex: 1 },
+                {
+                    headerName: 'Action',
+                    width: 90,
+                    cellRenderer: (params) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-secondary'; // Minimal styling
+                        btn.innerHTML = '🗑️'; // Trash icon
+                        btn.title = "Delete Account";
+                        btn.style.cssText = 'padding: 2px 8px; font-size: 1rem; border: none; background: transparent; cursor: pointer;';
+
+                        btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
+                        btn.onmouseout = () => btn.style.transform = 'scale(1)';
+
+                        btn.addEventListener('click', async (e) => {
+                            e.stopPropagation(); // Prevent row selection
+                            const accountName = params.data.name;
+                            const accountCode = params.data.code;
+
+                            if (confirm(`Are you sure you want to delete "${accountName}" (${accountCode})?`)) {
+                                if (window.AccountAllocator && AccountAllocator.deleteAccount) {
+                                    const success = await AccountAllocator.deleteAccount(accountCode);
+                                    if (success) {
+                                        // Update AG Grid locally to reflect change instantly
+                                        params.api.applyTransaction({ remove: [params.data] });
+                                        console.log(`Deleted account: ${accountCode}`);
+                                    }
+                                } else {
+                                    alert('Account deletion logic not found (AccountAllocator).');
+                                }
+                            }
+                        });
+                        return btn;
+                    },
+                    cellStyle: { textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                }
+            ],
+            defaultColDef: {
+                resizable: true,
+                sortable: true
+            },
+            animateRows: true,
+            onGridReady: (params) => {
+                this.gridApi = params.api;
+                params.api.sizeColumnsToFit();
+            },
+            // UI MATCH: Rainbow Rows
+            getRowStyle: (params) => {
+                const rainbowColors = ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'];
+                return { background: rainbowColors[params.node.rowIndex % rainbowColors.length] };
+            }
+        };
+
+        // Initialize AG Grid
+        agGrid.createGrid(this.listContainer, gridOptions);
+    },
+
+    filterList(text) {
+        if (this.gridApi) {
+            this.gridApi.setGridOption('quickFilterText', text);
+        }
+    }
+};

@@ -15,6 +15,8 @@
     <!-- AG Grid for interactive spreadsheet -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine-dark.min.css">
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
 
     <!-- Chart.js for Beautiful Visuals -->
@@ -178,7 +180,7 @@
                         <div class="search-controls"
                             style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
                             <input type="text" id="gridQuickFilter" placeholder="Quick search..."
-                                style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-primary); width: 200px; font-size: 0.9rem;">
+                                style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: #ffffff; color: #1e293b; width: 200px; font-size: 0.9rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
                                     Ref#:
@@ -187,8 +189,8 @@
                                     padding: 0.4rem 0.6rem;
                                     border: 1px solid var(--border-color);
                                     border-radius: 4px;
-                                    background: var(--input-bg);
-                                    color: var(--text-primary);
+                                    background: #ffffff;
+                                    color: #1e293b;
                                     width: 70px;
                                     font-size: 0.9rem;
                                 " />
@@ -202,8 +204,8 @@
                                         padding: 0.4rem 0.6rem;
                                         border: 1px solid var(--border-color);
                                         border-radius: 4px;
-                                        background: var(--input-bg);
-                                        color: var(--text-primary);
+                                        background: #ffffff;
+                                        color: #1e293b;
                                         font-size: 0.9rem;
                                         cursor: pointer;
                                         min-width: 180px;
@@ -414,7 +416,7 @@
 
                             <div class="settings-section">
                                 <label class="settings-label">Bank Accounts</label>
-                                <button id="settingsBankAccountsBtn" class="btn-primary full-width">
+                                <button id="settingsBankAccountsBtn" class="btn-secondary full-width">
                                     Manage Bank Accounts
                                 </button>
                             </div>
@@ -428,50 +430,55 @@
 
     <!-- Manage Accounts Modal -->
     <div id="manageAccountsModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h2>🏦 Manage Accounts</h2>
-                <button class="modal-close" id="closeManageAccountsModal">&times;</button>
+                <h2>Manage Bank Accounts</h2>
+                <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="accounts-toolbar">
-                    <button id="addAccountBtn" class="btn-primary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Account
-                    </button>
+                <div class="account-actions">
+                    <button id="addAccountBtn" class="btn-primary-small">+ Add Account</button>
+                    <!-- <button id="reorderAccountsBtn" class="btn-secondary-small">⇅ Reorder</button> -->
                 </div>
-                <!-- Mini-Manager Popover -->
-                <div id="accountManagerPopover">
-                    <div class="popover-arrow"></div>
-                    <div class="popover-header">
-                        <span>Manage Accounts</span>
-                        <span style="font-size: 0.8rem; color: #94a3b8; cursor: pointer;" id="closePopoverBtn">&times;
-                            Close</span>
-                    </div>
-
-                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Quick Add:</div>
-                    <div class="quick-add-grid">
-                        <div class="quick-add-btn" data-type="chequing">Chequing</div>
-                        <div class="quick-add-btn" data-type="savings">Savings</div>
-                        <div class="quick-add-btn" data-type="credit">Credit Card</div>
-                    </div>
-
-                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Active Accounts
-                        (Double-click to edit):</div>
-                    <div class="account-list-mini" id="miniAccountList">
-                        <!-- Dynamic Content -->
-                    </div>
-                </div>
-            </div>
-
-            <div id="accountsList" class="accounts-list">
-                <!-- Populated dynamically -->
+                <!-- Dynamic List -->
+                <div id="accountsList" class="accounts-list-container"></div>
             </div>
         </div>
     </div>
+
+    <!-- Chart of Accounts Modal -->
+    <div id="chartOfAccountsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Chart of Accounts</h2>
+                <div class="header-actions">
+                    <button id="addAccountChartBtn" class="btn-primary" title="Add New Account">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                        Add Account
+                    </button>
+                    <button id="refreshChartBtn" class="btn-secondary" title="Refresh">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    <button class="modal-close">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="toolbar" style="margin-bottom: 1rem; display: flex; gap: 10px;">
+                    <input type="text" id="chartSearch" placeholder="Search accounts..." class="search-input"
+                        style="flex: 1;">
+                    <!-- Future: Add Account Button -->
+                </div>
+                <div id="chartList" class="accounts-list-container" style="max-height: 60vh; overflow-y: auto;">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Add/Edit Account Modal -->
@@ -767,6 +774,7 @@
     <script src="csv-parser.js"></script>
     <script src="vendor-matcher.js"></script>
     <script src="transaction-pipeline.js"></script>
+    <script src="vendor-manager.js"></script>
     <script src="reports-engine.js"></script>
     <script src="dashboard-logic.js"></script>
     <script src="dashboard-manager.js"></script>
@@ -777,6 +785,7 @@
     <script src="grid-popout.js"></script>
 
     <!-- Cloud Sync -->
+    <script src="config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="auth-manager.js"></script>
