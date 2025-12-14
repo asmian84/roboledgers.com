@@ -85,10 +85,11 @@ window.TransactionGrid = {
                     state: [{ colId: 'date', sort: 'asc' }],
                     defaultState: { sort: null }
                 });
+                this.safelySizeColumnsToFit();
             },
+            // ⚡ Force Autoresize on first load
             onFirstDataRendered: (params) => {
-                // Size columns to fit once data is loaded
-                params.api.sizeColumnsToFit();
+                this.safelySizeColumnsToFit();
             },
             getRowStyle: (params) => {
                 return this.getRowStyle(params);
@@ -96,6 +97,35 @@ window.TransactionGrid = {
         };
 
         this.gridApi = agGrid.createGrid(container, gridOptions);
+
+        // Responsive Resize
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                if (entry.contentRect.width > 0 && this.gridApi) {
+                    this.safelySizeColumnsToFit();
+                }
+            }
+        });
+        resizeObserver.observe(container);
+    },
+
+    // ⚡ SMART RESIZE: Polls until grid is visible
+    safelySizeColumnsToFit() {
+        if (!this.gridApi) return;
+
+        const attemptResize = (attemptsLeft) => {
+            const container = document.getElementById('transactionGrid'); // Access container directly for VIG
+            if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+                // ✅ Visible! Resize now.
+                this.gridApi.sizeColumnsToFit();
+            } else if (attemptsLeft > 0) {
+                // ⏳ Not visible yet... wait and retry
+                requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
+            }
+        };
+
+        // Try for 300 frames (~5 seconds)
+        attemptResize(300);
     },
 
     addGridToolbar(container) {
@@ -1044,11 +1074,14 @@ window.VendorGrid = {
         };
 
         this.gridApi = agGrid.createGrid(container, gridOptions);
+        this.loadVendors(); // Load vendors after grid creation
 
-        // Auto-resize columns on window resize
-        const resizeObserver = new ResizeObserver(() => {
-            if (this.gridApi && !this.gridApi.destroyCalled) {
-                this.gridApi.sizeColumnsToFit();
+        // Responsive Resize
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                if (entry.contentRect.width > 0 && this.gridApi) {
+                    this.safelySizeColumnsToFit();
+                }
             }
         });
         resizeObserver.observe(container);
@@ -1169,10 +1202,10 @@ window.VendorGrid = {
 
 
     loadVendors() {
+        if (!this.gridApi) return;
         const vendors = VendorMatcher.getAllVendors();
-        if (this.gridApi) {
-            this.gridApi.setRowData(vendors);
-        }
+        this.gridApi.setRowData(vendors);
+        this.safelySizeColumnsToFit();
     },
 
     onCellValueChanged(event) {

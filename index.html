@@ -22,6 +22,8 @@
     <!-- Chart.js for Beautiful Visuals -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="super-modal.css?v=6">
+    <link rel="stylesheet" href="mobile.css?v=6">
     <link rel="stylesheet" href="styles.css?v=6">
     <link rel="stylesheet" href="ticker.css?v=6">
     <link rel="stylesheet" href="dashboard.css?v=1">
@@ -610,10 +612,10 @@
 
                 <!-- Report Display Area -->
                 <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
-                    <div class="report-placeholder"
-                        style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                        <p>Select a period and click "Generate Report" to view financial data</p>
-                    </div>
+                    <p class="section-desc" style="margin-bottom: 1rem;">
+                        Review all transactions grouped under this vendor. You can move items to other accounts before
+                        finalizing.
+                    </p>
                 </div>
             </div>
         </div>
@@ -690,6 +692,29 @@
                 <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
             </div>
             <!-- Footer removed -->
+        </div>
+    </div>
+
+    <!-- Drill Down Modal -->
+    <div id="drillDownModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2 id="drillDownModalTitle">Transactions for Vendor</h2>
+                <button class="modal-close" id="closeDrillDownModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
+                <p class="section-desc" style="margin-bottom: 1rem;">
+                    Review all transactions grouped under this vendor. You can move items to other accounts before
+                    finalizing.
+                </p>
+                <!-- Grid Container: 100% Height to fill modal -->
+                <div id="drillDownGridContainer" class="ag-theme-alpine"
+                    style="height: 100%; width: 100%; min-height: 500px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary"
+                    onclick="document.getElementById('drillDownModal').style.display='none'; document.getElementById('drillDownModal').classList.remove('active');">Close</button>
+            </div>
         </div>
     </div>
     <!-- 📊 FINANCIAL DASHBOARD OVERLAY -->
@@ -818,7 +843,9 @@
     <script src="vendor-import-export.js"></script>
 
     <!-- UI & Components -->
-    <script src="transaction-grid.js"></script>
+    <script src="transaction-grid.js?v=6"></script>
+    <script src="vendor-summary-grid.js?v=6"></script>
+    <script src="drill-down-grid.js?v=10"></script>
     <script src="grid-popout.js"></script>
 
     <!-- Cloud Sync -->
