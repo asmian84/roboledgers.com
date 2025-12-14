@@ -225,47 +225,46 @@ window.CSVParser = {
             rawCredit = Math.abs(Utils.parseCurrency(creditsColVal));
         }
 
-        // If no separate columns, look for a single "Amount" column with +/- signs
-        if (rawDebit === 0 && rawCredit === 0 && amountColVal !== null) {
-            const signedAmount = Utils.parseCurrency(amountColVal);
+        // --- ACCOUNT TYPE LOGIC FLIP 🧠 ---
+        // Use forced logic if valid boolean passed, otherwise check account object via Manager
+        let isLiability = false;
 
-            if (signedAmount < 0) {
-                rawCredit = Math.abs(signedAmount);
-            } else if (signedAmount > 0) {
-                rawDebit = signedAmount;
-            }
+        if (forceReversedLogic !== null) {
+            isLiability = forceReversedLogic;
+        } else if (targetAccount && targetAccount.type && window.BankAccountManager) {
+            isLiability = BankAccountManager.isLiability(targetAccount.type);
+            console.log(`🏦 Account Type Check: ${targetAccount.name} (${targetAccount.type}) -> isLiability=${isLiability}`);
         }
 
-        // --- ACCOUNT TYPE LOGIC FLIP 🧠 ---
-        // Use forced logic if valid boolean passed, otherwise check account object
-        const isLiability = (forceReversedLogic !== null)
-            ? forceReversedLogic
-            : (targetAccount && targetAccount.isReversedLogic && targetAccount.isReversedLogic());
+        // Handle Single Column "Amount" if separate columns weren't found
+        if (rawDebit === 0 && rawCredit === 0 && amountColVal !== null) {
+            const signedAmount = Utils.parseCurrency(amountColVal);
+            console.log(`💰 Parsing Amount: ${signedAmount} (isLiability: ${isLiability})`);
 
-        if (isLiability) {
-            // Credit Card Logic
-            // CSV 'Debit' Column or Positive Amount = Expense (Transaction.debits)
-            // CSV 'Credit' Column or Negative Amount = Payment (Transaction.amount)
-            debits = rawDebit;
-            credits = rawCredit;
-        } else {
-            // Checking Account Logic
-            if (rawDebit > 0 || rawCredit > 0) {
-                debits = rawDebit;
-                credits = rawCredit;
+            if (isLiability) {
+                // CREDIT CARD Logic
+                // Positive = Purchase (Expense/Debit)
+                // Negative = Payment (Credit)
+                if (signedAmount > 0) {
+                    rawDebit = signedAmount;
+                } else {
+                    rawCredit = Math.abs(signedAmount);
+                }
             } else {
-                if (amountColVal !== null) {
-                    const val = Utils.parseCurrency(amountColVal);
-                    if (val < 0) {
-                        debits = Math.abs(val); // Money OUT
-                        credits = 0;
-                    } else {
-                        credits = val; // Money IN
-                        debits = 0;
-                    }
+                // CHECKING Account Logic (Standard)
+                // Positive = Deposit (Credit/Income)
+                // Negative = Withdrawal (Expense/Debit)
+                if (signedAmount < 0) {
+                    rawDebit = Math.abs(signedAmount);
+                } else {
+                    rawCredit = signedAmount;
                 }
             }
         }
+
+        // Final Assignment safely
+        debits = rawDebit;
+        credits = rawCredit;
 
         // Required fields
         if (!dateVal || !payeeVal) {

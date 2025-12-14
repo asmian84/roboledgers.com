@@ -40,7 +40,12 @@ const App = {
 
             // Initialize Bank Account Manager 🏦
             if (typeof BankAccountManager !== 'undefined') {
-                BankAccountManager.initialize();
+                try {
+                    BankAccountManager.initialize();
+                    console.log('✅ BankAccountManager initialized.');
+                } catch (err) {
+                    console.error('❌ BankAccountManager Init Failed:', err);
+                }
             }
 
             // Initialize Settings
@@ -76,6 +81,9 @@ const App = {
 
             // Set up event listeners
             this.setupEventListeners();
+
+            // Initialize Headers
+            this.updateBankAccountSelector();
 
             // Show upload section
             this.showSection('upload');
@@ -221,27 +229,78 @@ const App = {
         console.log('✅ Unified AI Re-think complete:', { vendorResult, categorized, errors });
     },
 
-    updateBankAccountSelector() {
-        const selector = document.getElementById('bankAccountSelect');
-        if (!selector || !window.BankAccountManager) return;
+    updateBankAccountSelector(force = false) {
+        if (typeof BankAccountManager === 'undefined') return;
 
+        const selector = document.getElementById('bankAccountSelect');
+        if (!selector) return;
+
+        // Save current selection
+        const currentVal = selector.value;
+
+        // Get options from manager
         const options = BankAccountManager.getAccountOptions();
+
+        this.renderSelectorOptions(selector, options, currentVal);
+    },
+
+    renderSelectorOptions(selector, options, currentVal) {
+        // Clear and rebuild
         selector.innerHTML = '<option value="">Select Account...</option>';
 
         options.forEach(opt => {
-            const el = document.createElement('option');
-            el.value = opt.value;
-            el.textContent = opt.label;
-            if (opt.disabled) el.disabled = true;
-            if (opt.isUnused) el.style.color = '#9ca3af';
-            if (opt.action) el.style.fontWeight = 'bold';
-            selector.appendChild(el);
+            if (opt.disabled) {
+                // Separator
+                const op = document.createElement('option');
+                op.disabled = true;
+                op.textContent = opt.label;
+                selector.appendChild(op);
+            } else {
+                const op = document.createElement('option');
+                op.value = opt.value;
+                op.textContent = opt.label;
+                if (opt.isUnused) op.style.opacity = '0.6';
+                if (opt.action) op.style.fontWeight = 'bold';
+                selector.appendChild(op);
+            }
         });
 
-        // Restore selection if exists
-        if (this.currentAccountId) {
-            selector.value = this.currentAccountId;
+        // Restore selection if valid
+        if (currentVal) {
+            selector.value = currentVal;
+            // If value no longer exists (e.g. deleted), it will default to ""
         }
+    },
+
+    // New Method: Bulk assign all current transactions to an account
+    assignAllToAccount(accountId) {
+        console.log(`🔗 Linking ${this.transactions.length} transactions to account: ${accountId}`);
+
+        let updateCount = 0;
+        this.transactions.forEach(tx => {
+            // Only update if not already assigned (or re-assigning all? User said "apply that account to the given grid")
+            // Assuming we overwrite all current transactions in memory
+            tx.accountId = accountId;
+            updateCount++;
+        });
+
+        // Save
+        Storage.saveTransactions(this.transactions);
+
+        // Refresh Grid (Current filter will now match everything)
+        if (window.TransactionGrid) {
+            TransactionGrid.loadTransactions(this.transactions);
+        }
+
+        // Hide Button
+        const assignBtn = document.getElementById('assignGridToAccountBtn');
+        if (assignBtn) assignBtn.style.display = 'none';
+
+        // Feedback
+        this.updateStatistics(); // Update header stats
+
+        // Refresh Dropdown (Updates "(Unused)" status to used)
+        this.updateBankAccountSelector();
     },
 
     setupEventListeners() {
@@ -398,6 +457,68 @@ const App = {
             });
         }
 
+        // Match Account Context
+        const bankAccountSelect = document.getElementById('bankAccountSelect');
+        if (bankAccountSelect) {
+            bankAccountSelect.addEventListener('change', (e) => {
+                const accountId = e.target.value;
+
+                // Handle "Add New" Action
+                if (accountId === 'action_new') {
+                    const modal = document.getElementById('manageAccountsModal');
+                    if (modal && window.BankAccountManager) {
+                        modal.style.display = 'block';
+                        BankAccountManager.addAccount('New Account');
+                    }
+                    e.target.value = ''; // Reset dropdown
+                    return;
+                }
+
+                this.currentAccountId = accountId;
+
+                // --- Account Linking Logic ---
+                const assignBtn = document.getElementById('assignGridToAccountBtn');
+                console.log('🔍 Debug Link Button:', {
+                    accountId,
+                    totalTx: this.transactions.length,
+                    hasGrid: !!window.TransactionGrid,
+                    assignBtnExists: !!assignBtn
+                });
+
+                if (window.TransactionGrid) {
+                    TransactionGrid.setAccountContext(accountId);
+                    TransactionGrid.loadTransactions(this.transactions); // Reload with filter
+
+                    if (this.transactions.length > 0 && accountId && accountId !== 'all') {
+                        const filteredCount = this.transactions.filter(t => t.accountId === accountId).length;
+                        console.log('🔍 filtering:', filteredCount, 'matches for', accountId);
+
+                        // Treat 'undefined' or 'null' accountId in filtered items as NOT matching specific account
+                        // If filteredCount is 0, it means NO transactions are currently assigned to this account.
+
+                        if (filteredCount === 0 && assignBtn) {
+                            console.log('✅ SHOWING LINK BUTTON');
+                            assignBtn.style.display = 'inline-block';
+                            assignBtn.onclick = () => {
+                                if (confirm(`Link all ${this.transactions.length} current transactions to this account?`)) {
+                                    this.assignAllToAccount(accountId);
+                                }
+                            };
+                        } else if (assignBtn) {
+                            console.log('❌ HIDING LINK BUTTON (Has matches)');
+                            assignBtn.style.display = 'none';
+                        }
+                    } else if (assignBtn) {
+                        console.log('❌ HIDING LINK BUTTON (No tx or invalid account)');
+                        assignBtn.style.display = 'none';
+                    }
+                }
+                this.updateStatistics();
+            });
+        }
+
+
+
         // Account Type Dropdown (filter transactions)
         const accountTypeSelect = document.getElementById('accountTypeSelect');
         if (accountTypeSelect) {
@@ -507,9 +628,11 @@ const App = {
             this.updateProcessing('Parsing transactions...', 30);
 
             // Parse CSV with Account Awareness 🏦
-            // Parse CSV (Smart Account Detection enabled in Parser)
-            const selectedAccount = null; // Auto-detect
-
+            let selectedAccount = null;
+            if (this.currentAccountId && window.BankAccountManager) {
+                selectedAccount = BankAccountManager.getAccountById(this.currentAccountId);
+                console.log('🏦 Importing into Account:', selectedAccount ? selectedAccount.name : 'Unknown');
+            }
 
             const transactions = await CSVParser.parseFile(file, selectedAccount);
             console.log(`✅ Parsed ${transactions.length} transactions`);
@@ -865,6 +988,7 @@ const App = {
                     tx.allocatedAccount = vendor.defaultAccount;
                     tx.allocatedAccountName = vendor.defaultAccountName;
                     tx.category = vendor.category;
+                    tx.status = 'auto'; // ⚡ Set status to auto-matched
 
                     // Trigger Grid Refresh for this row
                     if (window.TransactionGrid) {

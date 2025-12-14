@@ -49,6 +49,7 @@ const ThemeManager = {
 };
 
 // Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-    ThemeManager.initialize();
-});
+// Initialize on load
+// document.addEventListener('DOMContentLoaded', () => {
+//     ThemeManager.initialize();
+// });

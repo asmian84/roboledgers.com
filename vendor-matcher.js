@@ -127,6 +127,7 @@ window.VendorMatcher = {
                 tx.category = match.vendor.category;
                 tx.allocatedAccount = match.vendor.defaultAccount;
                 tx.allocatedAccountName = match.vendor.defaultAccountName;
+                tx.status = 'auto'; // ⚡ Set status to auto-matched
             }
             return tx;
         });
@@ -284,6 +285,7 @@ window.VendorMatcher = {
                     tx.category = target.category;
                     tx.allocatedAccount = target.defaultAccount;
                     tx.allocatedAccountName = target.defaultAccountName;
+                    tx.status = 'auto'; // ⚡ Update status on merge
                     updates.push(tx);
                 }
             });

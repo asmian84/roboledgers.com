@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="dashboard.css?v=1">
 </head>
 
-<body>
+<body data-theme="arctic-dawn">
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
@@ -212,6 +212,19 @@
                                     ">
                                             <option value="">Select Account...</option>
                                         </select>
+
+                                        <!-- NEW: Assign Grid Button (Hidden by default) -->
+                                        <button id="assignGridToAccountBtn" class="btn-primary"
+                                            title="Assign ALL current transactions to this account" style="
+                                            display: none;
+                                            padding: 0.4rem 0.8rem;
+                                            font-size: 0.8rem;
+                                            white-space: nowrap;
+                                            background-color: var(--accent-color); 
+                                        ">
+                                            Link to Grid
+                                        </button>
+
                                         <button id="editAccountBtn" class="btn-icon" title="Manage Accounts" style="
                                         background: transparent;
                                         border: 1px solid var(--border-color);

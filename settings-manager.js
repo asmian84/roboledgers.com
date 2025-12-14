@@ -25,6 +25,14 @@ const Settings = {
         // Load settings from storage
         const saved = Storage.loadSettings();
         this.current = { ...this.defaults, ...saved };
+
+        // FORCE MIGRATION: If theme is 'cyber-night' or 'dark', force 'arctic-dawn'
+        if (this.current.theme === 'cyber-night' || this.current.theme === 'dark') {
+            console.log('🔄 Migrating theme to Arctic Dawn...');
+            this.current.theme = 'arctic-dawn';
+            this.save();
+        }
+
         this.apply();
         this.updateThemePicker();
         this.bindEvents();
@@ -77,8 +85,10 @@ const Settings = {
     },
 
     applyTheme() {
-        // Set theme data attribute on body
-        document.body.setAttribute('data-theme', this.current.theme || 'cyber-night');
+        // Set theme data attribute on body AND html (to override legacy ThemeManager)
+        const theme = this.current.theme || 'arctic-dawn';
+        document.body.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
     },
 
     setTheme(themeName) {

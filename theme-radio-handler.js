@@ -3,26 +3,34 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         // Handle theme radio buttons  
         const themeRadios = document.querySelectorAll('input[name="theme"]');
-        const savedTheme = localStorage.getItem('selectedTheme') || 'cyber-night';
 
-        // Set initial theme using data-theme attribute
-        document.body.setAttribute('data-theme', savedTheme);
+        // 1. Read the ACTUAL current theme from the body (set by SettingsManager)
+        const currentTheme = document.body.getAttribute('data-theme') || 'arctic-dawn';
 
-        // Set saved theme as checked
+        // 2. Sync the Radio Buttons to match reality
         themeRadios.forEach(radio => {
-            if (radio.value === savedTheme) {
+            if (radio.value === currentTheme) {
                 radio.checked = true;
             }
 
-            // Listen for changes
+            // Listen for user changes
             radio.addEventListener('change', (e) => {
                 if (e.target.checked) {
-                    console.log('Theme changed to:', e.target.value);
-                    // Use data-theme attribute for compatibility with existing CSS
-                    document.body.setAttribute('data-theme', e.target.value);
-                    localStorage.setItem('selectedTheme', e.target.value);
+                    const newTheme = e.target.value;
+                    console.log('Theme changed via Radio to:', newTheme);
+
+                    // Update DOM
+                    document.body.setAttribute('data-theme', newTheme);
+                    document.documentElement.setAttribute('data-theme', newTheme);
+
+                    // Update Settings Manager if available
+                    if (window.Settings) {
+                        Settings.setTheme(newTheme);
+                    } else {
+                        // Fallback - no longer using localStorage, relying on body attribute set above
+                    }
                 }
             });
         });
-    }, 100);
+    }, 500); // Wait for SettingsManager to do its job
 });

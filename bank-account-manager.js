@@ -12,17 +12,59 @@ const BankAccountManager = {
     },
 
     loadAccounts() {
-        if (window.Storage) {
-            this.accounts = Storage.loadBankAccounts();
+        // SAFETY: Ensure BankAccount class exists
+        if (typeof BankAccount === 'undefined') {
+            console.warn('⚠️ BankAccount class missing. defining fallback.');
+            window.BankAccount = class BankAccount {
+                constructor(data = {}) {
+                    this.id = data.id || `acc_${Date.now()}`;
+                    this.name = data.name || 'Unknown Account';
+                    this.type = data.type || 'CHECKING';
+                    this.currency = data.currency || 'CAD';
+                    this.color = data.color || '#9ca3af';
+                    this.isActive = true;
+                    this.isReversedLogic = (this.type === 'CREDIT_CARD');
+                }
+            };
         }
 
-        // Seed default if empty
-        if (this.accounts.length === 0) {
+        if (window.Storage) {
+            const loaded = Storage.loadBankAccounts();
+            if (Array.isArray(loaded)) {
+                this.accounts = loaded;
+            }
+        }
+
+        // Seed default if empty or invalid
+        this.ensureDefaults();
+    },
+
+    ensureDefaults() {
+        if (!this.accounts || this.accounts.length === 0) {
+            console.log('🏦 No accounts found. Seeding defaults...');
             this.accounts = [
-                new BankAccount({ name: 'Main Chequing', type: 'CHECKING', currency: 'CAD', color: '#3b82f6' }),
-                new BankAccount({ name: 'Visa Infinite', type: 'CREDIT_CARD', currency: 'CAD', color: '#ef4444' })
+                new BankAccount({
+                    id: 'default_checking',
+                    name: 'Main Chequing',
+                    type: 'CHECKING',
+                    currency: 'CAD',
+                    color: '#3b82f6',
+                    isActive: true,
+                    isReversedLogic: false
+                }),
+                new BankAccount({
+                    id: 'default_visa',
+                    name: 'Visa Infinite',
+                    type: 'CREDIT_CARD',
+                    currency: 'CAD',
+                    color: '#ef4444',
+                    isActive: true,
+                    isReversedLogic: true
+                })
             ];
             this.saveAccounts();
+        } else {
+            console.log(`🏦 ${this.accounts.length} accounts loaded.`);
         }
     },
 
@@ -32,6 +74,11 @@ const BankAccountManager = {
         }
         this.renderAccountsList();
         this.updateUploadSelector(); // update dropdown in upload area
+
+        // SYNC: Update the main header dropdown immediately
+        if (window.App && App.updateBankAccountSelector) {
+            App.updateBankAccountSelector();
+        }
     },
 
     getAllAccounts() {
@@ -60,7 +107,10 @@ const BankAccountManager = {
         const unusedAccounts = [];
 
         this.accounts.forEach(acc => {
-            if (acc.isActive) {
+            // Legacy support: undefined isActive means TRUE
+            const isActive = acc.isActive !== false;
+
+            if (isActive) {
                 if (usedAccountIds.has(acc.id)) {
                     usedAccounts.push(acc);
                 } else {

@@ -389,11 +389,25 @@ window.TransactionGrid = {
         ];
     },
 
+    currentAccountId: null,
+
+    setAccountContext(accountId) {
+        this.currentAccountId = accountId;
+        console.log('Context switched to account:', accountId);
+    },
+
     loadTransactions(transactions) {
-        this.transactions = transactions;
+        // Store FULL list externally if needed, but here we process what's passed
+        // Filter if context is set
+        let filteredTransactions = transactions;
+        if (this.currentAccountId && this.currentAccountId !== 'all') {
+            filteredTransactions = transactions.filter(t => t.accountId === this.currentAccountId);
+        }
+
+        this.transactions = filteredTransactions;
 
         // Sort transactions chronologically before loading
-        const sortedTransactions = [...transactions].sort((a, b) => {
+        const sortedTransactions = [...this.transactions].sort((a, b) => {
             return new Date(a.date) - new Date(b.date);
         });
 
@@ -403,7 +417,7 @@ window.TransactionGrid = {
             this.gridApi.setRowData(this.transactions);
             this.gridApi.sizeColumnsToFit();
 
-            // CRITICAL: Auto-calculate balances when loading transactions
+            // CRITICAL: Auto-calculate balances for THIS account view
             console.log('🔢 AUTO-CALCULATING BALANCES for', this.transactions.length, 'transactions');
             this.recalculateAllBalances();
 
