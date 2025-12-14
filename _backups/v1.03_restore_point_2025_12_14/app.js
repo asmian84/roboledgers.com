@@ -726,26 +726,6 @@ window.App = {
         if (closeVendorSummaryBtn) closeVendorSummaryBtn.addEventListener('click', closeSummary);
         if (closeVendorSummaryModal) closeVendorSummaryModal.addEventListener('click', closeSummary);
 
-        // 🟢 DRILL DOWN MODAL HANDLERS
-        const closeDrillDownBtn = document.getElementById('closeDrillDownModal');
-        const drillDownModal = document.getElementById('drillDownModal');
-
-        const closeDrillDown = () => {
-            if (drillDownModal) {
-                drillDownModal.classList.remove('active');
-                setTimeout(() => drillDownModal.style.display = 'none', 300);
-            }
-        };
-
-        if (closeDrillDownBtn) closeDrillDownBtn.addEventListener('click', closeDrillDown);
-
-        // Ensure clicking outside closes it too (optional, but good UX)
-        /*
-        window.addEventListener('click', (e) => {
-            if (e.target === drillDownModal) closeDrillDown();
-        });
-        */
-
         // File upload handling
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');

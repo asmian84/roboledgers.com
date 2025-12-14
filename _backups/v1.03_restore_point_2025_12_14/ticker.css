@@ -1,0 +1,47 @@
+/* Live Activity Ticker */
+.activity-ticker {
+    flex: 1;
+    margin: 0 20px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    /* Allow flex shrinking */
+}
+
+.ticker-item {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.ticker-item.success {
+    color: #10b981;
+}
+
+.ticker-item.processing {
+    color: #3b82f6;
+}
+
+.ticker-item.error {
+    color: #ef4444;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

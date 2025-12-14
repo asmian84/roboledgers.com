@@ -5,8 +5,9 @@
 .ag-header-cell-text,
 .ag-cell-value,
 .ag-group-value,
-.ag-cell *,
-/* ⚡ FORCE UNIVERSAL UPPERCASE ON EVERYTHING */
+.ag-cell span,
+.ag-cell div,
+.ag-cell a,
 .vendor-name-link {
     text-transform: uppercase !important;
     letter-spacing: 0.5px;

@@ -44,49 +44,27 @@
 
 /* The Card - Standard White Modal */
 #drillDownModal .modal-content,
+#vendorSummaryModal .modal-content,
 #vendorModal .modal-content {
     width: 95%;
+    /* Responsive width */
     max-width: 1400px;
-}
-
-/* ⚡ ADAPTIVE WIDTH for Vendor Summary (User Request: "fill white space") */
-/* Takes width from the grid's autosized columns */
-#vendorSummaryModal .modal-content,
-#drillDownModal .modal-content {
-    width: fit-content;
-    min-width: 50%;
-    /* Don't get too small */
-    max-width: 98%;
-    /* Allow full width if needed */
+    /* As requested "way it was before" */
     height: 90vh;
+    /* Taller */
     max-height: 90vh;
-
     background: var(--bg-secondary);
     border-radius: 12px;
+    /* Standard radius */
     border: 1px solid var(--border-color);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-/* Common Styles applied to all */
-#vendorModal .modal-content {
-    height: 90vh;
-    max-height: 90vh;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-position: relative;
-padding: 0 !important;
-/* Reset, handle in children */
-animation: slideUpLarge 0.4s ease-out;
+    position: relative;
+    padding: 0 !important;
+    /* Reset, handle in children */
+    animation: slideUpLarge 0.4s ease-out;
 }
 
 /* Header */

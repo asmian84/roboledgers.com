@@ -220,49 +220,22 @@ window.VendorSummaryGrid = {
         this.safelySizeColumnsToFit();
     },
 
-    // ⚡ SMART RESIZE: Shrink columns to content, allowing modal to shrink
+    // ⚡ SMART RESIZE: Polls until grid is visible
     safelySizeColumnsToFit() {
         if (!this.gridApi) return;
-
-        const autoSize = () => {
-            if (this.gridApi) {
-                // 1. Auto-size the columns content
-                const allColumns = this.gridApi.getColumns();
-                if (!allColumns || allColumns.length === 0) return;
-
-                const allColumnIds = allColumns.map(column => column.getColId());
-                this.gridApi.autoSizeColumns(allColumnIds, false);
-
-                // 2. ⚡ FORCE SNUG: Calculate exact pixel width needed
-                let totalWidth = 0;
-                // re-fetch columns to ensure we get new widths
-                const updatedColumns = this.gridApi.getColumns();
-                updatedColumns.forEach(col => {
-                    totalWidth += col.getActualWidth();
-                });
-
-                // 3. Apply exact width to container (plus small buffer for borders)
-                const container = document.getElementById('vendorSummaryGridContainer');
-                if (container) {
-                    // Cap at 90vw to prevent overflow off screen
-                    const maxWidth = window.innerWidth * 0.9;
-                    const finalWidth = Math.min(totalWidth + 40, maxWidth); // +40px buffer
-
-                    container.style.width = `${finalWidth}px`;
-                    console.log(`📏 Vendor Grid Force-Resized to: ${finalWidth}px`);
-                }
-            }
-        };
 
         const attemptResize = (attemptsLeft) => {
             const container = document.getElementById('vendorSummaryGridContainer');
             if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
-                setTimeout(autoSize, 100); // Slight delay for render
+                // ✅ Visible! Resize now.
+                this.gridApi.sizeColumnsToFit();
             } else if (attemptsLeft > 0) {
+                // ⏳ Not visible yet... wait and retry
                 requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
             }
         };
 
+        // Try for 300 frames (~5 seconds)
         attemptResize(300);
     },
 

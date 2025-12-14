@@ -1,0 +1,24 @@
+/* Fix Sticky Header */
+.review-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg-primary);
+    /* Ensure opaque background behind text */
+    padding: 1rem 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow for depth */
+}
+
+/* Ensure Parent Section allows sticky */
+#reviewSection {
+    overflow: visible;
+    /* Required for sticky children */
+}
+
+/* Ensure Grid Container handles its own scroll, not the page */
+.grid-container {
+    height: 600px;
+    /* Or calc(100vh - headerHeight) */
+    overflow-y: auto;
+}
