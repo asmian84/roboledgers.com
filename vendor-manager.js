@@ -8,9 +8,9 @@ window.VendorManager = {
     bulkIndexActive: false,
 
     initialize() {
-        this.modal = document.getElementById('vendorModal');
+        this.modal = document.getElementById('VDMModal');
         if (!this.modal) {
-            console.warn('VendorManager: vendorModal element not found, skipping initialization');
+            console.warn('VendorManager: VDMModal element not found, skipping initialization');
             return;
         }
 
@@ -38,11 +38,14 @@ window.VendorManager = {
             });
         }
 
+        // ModalManager handles closing via .modal-close and ESC
+        // We only need to ensure the button exists for ModalManager to find it
+        // OR we can explicitly call ModalManager.close('VDMModal') if needed
+        // For now, let's trust ModalManager or use explicit wiring if button ID is unique
         const closeVendorModal = document.getElementById('closeVendorModal');
         if (closeVendorModal) {
-            closeVendorModal.addEventListener('click', () => {
-                this.hideModal();
-            });
+            // Optional: If we want specific cleanup on close, we can listen.
+            // But ModalManager handles the display toggling.
         }
 
         const addVendorBtn = document.getElementById('addVendorBtn');
@@ -217,12 +220,8 @@ window.VendorManager = {
             });
         }
 
-        // Close modal on outside click
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) {
-                this.hideModal();
-            }
-        });
+        // ModalManager handles outside click
+
         // Initialize Real-Time Sync
         if (window.SupabaseClient) {
             SupabaseClient.subscribeToVendors((payload) => {
@@ -250,7 +249,12 @@ window.VendorManager = {
     },
 
     showModal() {
-        this.modal.classList.add('active');
+        if (window.ModalManager) {
+            ModalManager.open('VDMModal');
+        } else {
+            this.modal.classList.add('active'); // Fallback
+            this.modal.style.display = 'flex';
+        }
         VendorGrid.loadVendors();
         this.hideBulkIndex(); // Reset to normal view
 
@@ -272,7 +276,12 @@ window.VendorManager = {
     },
 
     hideModal() {
-        this.modal.classList.remove('active');
+        if (window.ModalManager) {
+            ModalManager.close('VDMModal');
+        } else {
+            this.modal.classList.remove('active');
+            this.modal.style.display = 'none';
+        }
     },
 
     toggleBulkIndex() {
@@ -290,9 +299,10 @@ window.VendorManager = {
             if (vendorGrid) vendorGrid.style.height = '300px';
             if (bulkBtn) {
                 bulkBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg> Back to List`;
+                    </svg>
+                    Back to List`;
             }
 
             // Re-bind click zone (Hard Fix)

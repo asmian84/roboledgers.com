@@ -13,10 +13,12 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <!-- AG Grid for interactive spreadsheet -->
-    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-grid.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-theme-alpine-dark.min.css">
-    <script src="https://unpkg.com/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
+    <!-- AG Grid for interactive spreadsheet -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
 
     <!-- Chart.js for Beautiful Visuals -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -70,10 +72,14 @@
                 <button class="nav-item" data-target="uploadSection" id="navUpload">
                     <i class="fas fa-cloud-upload-alt"></i> Upload
                 </button>
-                <button class="nav-item" data-target="reviewSection" id="navReview">
-                    <i class="fas fa-table"></i> Transactions
+                <button class="nav-item" data-target="reviewSection">
+                    <i class="fas fa-list"></i> Transactions
                 </button>
-                <button class="nav-item" data-target="vendorsSection" id="navVendors"> <!-- Placeholder target -->
+                <!-- Reconciliation moved here -->
+                <button class="nav-item" id="navReconciliation" data-target="reconciliationSection">
+                    <i class="fas fa-check-double" style="color: var(--success-color);"></i> Reconciliation
+                </button>
+                <button class="nav-item" data-target="vendors" id="navVendors">
                     <i class="fas fa-store"></i> Vendors
                 </button>
                 <button class="nav-item" data-target="reportsSection" id="navReports"> <!-- Placeholder target -->
@@ -94,17 +100,13 @@
                 </button>
             </div>
 
+            <!-- Sidebar Footer: Reconciliation & User -->
             <div class="sidebar-footer">
-                <button class="nav-item-footer" id="settingsBtn" data-target="settingsSection">
+                <button class="nav-item-footer" data-target="settingsSection" id="settingsBtn">
                     <i class="fas fa-cog"></i> Settings
                 </button>
-                <div class="nav-separator"></div>
-                <!-- Reconciliation Link Added Here -->
-                <button class="nav-item-footer" id="navReconciliation" data-target="reconciliationSection">
-                    <i class="fas fa-check-double"></i> Reconciliation
-                </button>
-
-                <div class="user-profile-widget">
+                <!-- User Profile (Mini) -->
+                <div class="user-profile-btn">
                     <div class="avatar-circle">AD</div>
                     <div class="user-info-mini">
                         <span class="name">Admin User</span>
@@ -196,6 +198,8 @@
                         display: none;">
                     </span>
                 </div>
+                <!-- Version Explorer Container -->
+                <div id="versionExplorer"></div>
                 <div class="upload-container">
                     <div class="upload-zone" id="uploadZone">
                         <div class="upload-icon">
@@ -208,6 +212,9 @@
 
                         <h2>Drop your CSV file here</h2>
                         <p class="upload-subtitle">or click to browse</p>
+
+
+
                         <p class="upload-hint">Supports CSV bank statement files</p>
                         <input type="file" id="fileInput" accept=".csv" hidden>
                     </div>
@@ -341,6 +348,130 @@
                             </div>
                         </div>
 
+                        <!-- Section: UI Appearance (New) -->
+                        <div class="settings-card full-width-card">
+                            <div class="card-header">
+                                <h3>🖥️ Interface Settings</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="settings-row">
+                                    <div class="setting-item">
+                                        <label>Platform Scale (Zoom)</label>
+                                        <select id="uiScaleSelect" class="form-select">
+                                            <option value="1.1">110% (Larger)</option>
+                                            <option value="1.0" selected>100% (Default)</option>
+                                            <option value="0.9">90% (Compact)</option>
+                                            <option value="0.8">80% (Small)</option>
+                                            <option value="0.7">70% (Tiny)</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Grid Theme</label>
+                                        <select id="gridThemeSelect" class="form-select">
+                                            <option value="default" selected>Default (System)</option>
+                                            <option value="vanilla">Vanilla (Clean)</option>
+                                            <option value="classic">Classic (High Contrast)</option>
+                                            <option value="ledger">Ledger Pad (Green/Yellow)</option>
+                                            <option value="postit">Post-it Note (Yellow)</option>
+                                            <option value="rainbow">Rainbow (Accents)</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label>Text Case</label>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn-group-item active"
+                                                data-case="sentence">Aa</button>
+                                            <button type="button" class="btn-group-item"
+                                                data-case="uppercase">AA</button>
+                                            <button type="button" class="btn-group-item"
+                                                data-case="lowercase">aa</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Placeholder Sections -->
+            <section id="vendors" class="section">
+                <div class="empty-state-container">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">🏪</div>
+                        <h2>Vendor Management</h2>
+                        <p>Advanced vendor tracking and consolidation.</p>
+                        <div style="margin-top: 20px;">
+                            <button class="btn-primary"
+                                onclick="window.ModalManager ? ModalManager.open('VDMModal') : document.getElementById('VDMModal').style.display='flex'">Open
+                                Vendor Dictionary</button>
+                            <!-- Also trigger grid render if possible -->
+                            <script>
+                                // Small inline script to ensure grid renders if opened this way
+                                // or rely on the button click opening the modal which might have listeners
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reportsSection" class="section">
+                <div class="empty-state-container">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">📈</div>
+                        <h2>Financial Reports</h2>
+                        <p>Comprehensive reporting suite.</p>
+                        <button class="btn-primary"
+                            onclick="document.getElementById('reportsModal').style.display='flex'">Open
+                            Reports Panel</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="teamSection" class="section">
+                <div class="empty-state-container">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">👥</div>
+                        <h2>Team Management</h2>
+                        <p>Multi-user collaboration features coming soon.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="subscriptionSection" class="section">
+                <div class="empty-state-container">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">💳</div>
+                        <h2>Subscription</h2>
+                        <p>Manage your RoboLedgers plan and billing.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="auditSection" class="section">
+                <!-- Audit Log Header -->
+                <div class="card-header"
+                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h3>🛡️ System Audit Log</h3>
+                    <div>
+                        <button class="btn-secondary" onclick="AuditManager.clearLogs()">Clear</button>
+                        <button class="btn-primary" onclick="AuditManager.exportLogs()">Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Log Container -->
+                <div class="audit-container"
+                    style="background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden;">
+                    <div
+                        style="background: var(--bg-secondary); padding: 10px; display: grid; grid-template-columns: 150px 100px 150px 1fr; gap: 10px; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--border-color);">
+                        <div>Time</div>
+                        <div>Category</div>
+                        <div>Action</div>
+                        <div>Details</div>
+                    </div>
+                    <div id="auditLogList" style="max-height: 600px; overflow-y: auto;">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
             </section>
@@ -370,16 +501,7 @@
                         <div class="review-actions-wrapper">
                             <!-- Top Row: Buttons -->
                             <div class="review-buttons">
-                                <button id="reconciliationShortcutBtn" class="btn-secondary"
-                                    onclick="document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})"
-                                    title="Jump to Reconciliation">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                        <path d="M2 17l10 5 10-5"></path>
-                                        <path d="M2 12l10 5 10-5"></path>
-                                    </svg>
-                                    Reconciliation
-                                </button>
+
                                 <button id="popoutBtn" class="btn-secondary" title="Open grid in new window">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -425,7 +547,7 @@
                             </div>
                             <!-- Bottom Row: Search Controls -->
                             <div class="search-controls"
-                                style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
+                                style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.75rem;">
                                 <input type="text" id="gridQuickFilter" placeholder="Quick search..."
                                     style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: #ffffff; color: #1e293b; width: 200px; font-size: 0.9rem;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -521,94 +643,94 @@
                     </div>
 
                 </div>
+            </section>
 
-                <!-- Reconciliation Section (Moved from Modal/Dashboard) -->
-                <div id="reconciliationSection" class="section">
-                    <div class="section-header">
-                        <h1>Reconciliation</h1>
-                        <p>Verify your bank balances against your records.</p>
-                    </div>
+            <!-- Reconciliation Section (Moved to Top Level) -->
+            <div id="reconciliationSection" class="section">
+                <div class="section-header">
+                    <h1>Reconciliation</h1>
+                    <p>Verify your bank balances against your records.</p>
+                </div>
 
-                    <!-- KPIs Moved Here -->
-                    <div class="kpi-row" style="margin-bottom: 2rem;">
-                        <div class="kpi-card glass-panel profit-card">
-                            <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
-                            <div class="kpi-info">
-                                <h3>Net Profit (YTD)</h3>
-                                <h2 id="kpiProfitRecon">$0.00</h2>
-                            </div>
-                        </div>
-                        <div class="kpi-card glass-panel cash-card">
-                            <div class="icon-wrapper"><i class="fas fa-coins"></i></div>
-                            <div class="kpi-info">
-                                <h3>Cash on Hand</h3>
-                                <h2 id="kpiCashRecon">$0.00</h2>
-                                <p class="trend neutral">Latest Balance</p>
-                            </div>
+                <!-- KPIs Moved Here -->
+                <div class="kpi-row" style="margin-bottom: 2rem;">
+                    <div class="kpi-card glass-panel profit-card">
+                        <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
+                        <div class="kpi-info">
+                            <h3>Net Profit (YTD)</h3>
+                            <h2 id="kpiProfitRecon">$0.00</h2>
                         </div>
                     </div>
+                    <div class="kpi-card glass-panel cash-card">
+                        <div class="icon-wrapper"><i class="fas fa-coins"></i></div>
+                        <div class="kpi-info">
+                            <h3>Cash on Hand</h3>
+                            <h2 id="kpiCashRecon">$0.00</h2>
+                            <p class="trend neutral">Latest Balance</p>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Bank Reconciliation Panel (Moved from Review Section) -->
-                    <div id="reconciliationPanel" class="reconciliation-panel">
-                        <h3>🏦 Bank Reconciliation</h3>
-                        <div class="reconciliation-grid">
-                            <div class="reconciliation-section">
-                                <h4>Opening Balance</h4>
-                                <div class="reconciliation-input-group">
-                                    <label>Expected</label>
-                                    <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
-                                        class="currency-input">
-                                </div>
-                                <div class="reconciliation-value">
-                                    <label>Calculated</label>
-                                    <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
-                                </div>
+                <!-- Bank Reconciliation Panel (Moved from Review Section) -->
+                <div id="reconciliationPanel" class="reconciliation-panel">
+                    <h3>🏦 Bank Reconciliation</h3>
+                    <div class="reconciliation-grid">
+                        <div class="reconciliation-section">
+                            <h4>Opening Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
+                                    class="currency-input">
                             </div>
-                            <div class="reconciliation-section">
-                                <h4>Ending Balance</h4>
-                                <div class="reconciliation-input-group">
-                                    <label>Expected</label>
-                                    <input type="text" id="expectedEndingBalance" placeholder="$0.00"
-                                        class="currency-input">
-                                </div>
-                                <div class="reconciliation-value">
-                                    <label>Calculated</label>
-                                    <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
-                                </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
                             </div>
-                            <div class="reconciliation-section">
-                                <h4>Transaction Totals</h4>
-                                <div class="status-item">
-                                    <label>Total Credits</label>
-                                    <span id="totalCredits" class="calculated-value">$0.00</span>
-                                </div>
-                                <div class="status-item">
-                                    <label>Total Debits</label>
-                                    <span id="totalDebits" class="calculated-value">$0.00</span>
-                                </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Ending Balance</h4>
+                            <div class="reconciliation-input-group">
+                                <label>Expected</label>
+                                <input type="text" id="expectedEndingBalance" placeholder="$0.00"
+                                    class="currency-input">
                             </div>
-                            <div class="reconciliation-section">
-                                <h4>Discrepancy</h4>
-                                <div class="status-item">
-                                    <label>Opening</label>
-                                    <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
-                                </div>
-                                <div class="status-item">
-                                    <label>Ending</label>
-                                    <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
-                                </div>
-                                <div class="status-indicator" id="statusIndicator">
-                                    <span class="status-icon">⚪</span>
-                                    <span class="status-text">Enter expected balances</span>
-                                </div>
+                            <div class="reconciliation-value">
+                                <label>Calculated</label>
+                                <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Transaction Totals</h4>
+                            <div class="status-item">
+                                <label>Total Credits</label>
+                                <span id="totalCredits" class="calculated-value">$0.00</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Total Debits</label>
+                                <span id="totalDebits" class="calculated-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="reconciliation-section">
+                            <h4>Discrepancy</h4>
+                            <div class="status-item">
+                                <label>Opening</label>
+                                <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Ending</label>
+                                <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            </div>
+                            <div class="status-indicator" id="statusIndicator">
+                                <span class="status-icon">⚪</span>
+                                <span class="status-text">Enter expected balances</span>
                             </div>
                         </div>
                     </div>
                 </div>
-    </div> <!-- End reviewContent -->
+            </div>
 
-    <!-- Settings Modal (Deprecated - Moved to Page Section) -->
-    <!-- 
+            <!-- Settings Modal (Deprecated - Moved to Page Section) -->
+            <!-- 
                 <div id="settingsModal" class="modal">
                      ... Deprecated ...
                 </div> 
@@ -631,8 +753,7 @@
                 <button id="addAccountBtn" class="btn-primary">
                     <i class="fas fa-plus"></i> Add Account
                 </button>
-                <button class="btn-secondary"
-                    onclick="document.getElementById('manageAccountsModal').style.display='none'">Close</button>
+                <button class="btn-secondary modal-close">Close</button>
             </div>
         </div>
     </div>
@@ -749,6 +870,11 @@
                 <div class="report-controls"
                     style="margin: 1rem 0; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <label style="font-size: 0.9rem; color: var(--text-secondary);">Account:</label>
+                        <select id="reportAccountSelect" class="settings-select" style="min-width: 150px;">
+                            <option value="all">All Accounts</option>
+                        </select>
+
                         <label style="font-size: 0.9rem; color: var(--text-secondary);">Period:</label>
                         <select id="reportPeriod" class="settings-select">
                             <option value="monthly">Monthly</option>
@@ -766,7 +892,8 @@
                 <!-- Report Display Area -->
                 <div id="reportDisplay" class="report-display"
                     style="margin-top: 1rem; min-height: 400px; background: white; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <p style="text-align: center; color: var(--text-secondary); margin-top: 2rem;">Select parameters and
+                    <p style="text-align: center; color: var(--text-secondary); margin-top: 2rem;">Select parameters
+                        and
                         click Generate Report.</p>
                 </div>
             </div>
@@ -784,7 +911,7 @@
 
 
     <!-- Vendor Manager Modal (Standardized) -->
-    <div id="vendorModal" class="modal">
+    <div id="VDMModal" class="modal">
         <div class="modal-content large-modal"> <!-- Using large-modal variant for width -->
             <div class="modal-header">
                 <h2>Vendor Dictionary</h2>
@@ -795,11 +922,22 @@
                 <!-- Toolbar -->
                 <div class="account-actions"
                     style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
-                    <button id="addVendorBtn" class="btn-primary-small">
-                        <i class="fas fa-plus"></i> Add Vendor
+                    <button id="addVendorBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Add Vendor
                     </button>
-                    <button id="bulkIndexBtn" class="btn-secondary-small">
-                        <i class="fas fa-layer-group"></i> Bulk Index
+                    <button id="bulkIndexBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Bulk Index
                     </button>
 
                     <!-- Search Bar -->
@@ -839,7 +977,7 @@
     </div>
 
     <!-- Drill Down Modal (Standardized) -->
-    <div id="drillDownModal" class="modal">
+    <div id="VSMModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
                 <h2 id="drillDownModalTitle">Transactions for Vendor</h2>
@@ -874,8 +1012,7 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn-secondary"
-                    onclick="document.getElementById('drillDownModal').style.display='none'; document.getElementById('drillDownModal').classList.remove('active');">Close</button>
+                <button class="btn-secondary modal-close">Close</button>
             </div>
         </div>
     </div>
@@ -979,7 +1116,10 @@
     <script src="models.js"></script>
     <script src="utils.js"></script>
     <script src="storage.js"></script>
+    <script src="audit-manager.js"></script>
+    <script src="modal-manager.js"></script>
     <script src="session-manager.js"></script>
+
     <script src="undo-manager.js"></script>
     <script src="keyboard-handler.js"></script>
     <script src="settings-manager.js"></script>
@@ -1001,7 +1141,8 @@
     <script src="vendor-manager.js"></script>
     <script src="reports-engine.js"></script>
     <script src="dashboard-logic.js"></script>
-    <script src="dashboard-logic.js"></script>
+
+
     <script src="vendor-import-export.js"></script>
 
     <!-- UI & Components -->
@@ -1026,7 +1167,7 @@
         console.log('🔍 TEST: App loaded successfully.');
     </script>
     <!-- Vendor Summary Modal -->
-    <div id="vendorSummaryModal" class="modal">
+    <div id="VIGModal" class="modal">
         <div class="modal-content large-modal">
             <div class="modal-header">
                 <h2>Vendors in Current Grid</h2>
@@ -1040,10 +1181,12 @@
                     style="height: 100%; width: 100%; min-height: 500px;"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" id="closeVendorSummaryBtn">Close</button>
+                <button class="btn-secondary modal-close" id="closeVendorSummaryBtn">Close</button>
             </div>
         </div>
     </div>
+
+
 </body>
 
 </html>

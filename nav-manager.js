@@ -26,24 +26,29 @@ window.NavManager = {
     },
 
     switchSection(sectionId, activeLinkElement) {
-        // 1. Hide all sections
-        document.querySelectorAll('main .section').forEach(el => el.classList.remove('active'));
+        // 1. App.js handles the heavy lifting (logic initialization)
+        const coreSectionName = sectionId.replace('Section', '');
 
-        // 2. Show target section
+        // This bridge ensures that if App.js has specialized logic (like loadReviewSection), it gets triggered
+        if (window.App && typeof App.showSection === 'function') {
+            App.showSection(coreSectionName);
+        }
+
+        // 2. UI Update (Sidebar Active State)
+        document.querySelectorAll('.nav-item, .nav-item-footer').forEach(el => el.classList.remove('active'));
+        if (activeLinkElement) activeLinkElement.classList.add('active');
+
+        // 3. Fallback: If App.js didn't handle the DOM visibility (unlikely), NavManager ensures it
+        document.querySelectorAll('main .section').forEach(el => el.classList.remove('active'));
         const target = document.getElementById(sectionId);
         if (target) {
             target.classList.add('active');
+            target.style.display = 'block';
+
             // Update Title
             const title = document.getElementById('pageTitle');
-            if (title) title.innerText = activeLinkElement.innerText.trim();
+            if (title && activeLinkElement) title.innerText = activeLinkElement.innerText.trim();
         }
-
-        // 3. Update Sidebar Active State
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        if (activeLinkElement) activeLinkElement.classList.add('active');
-
-        // 4. Close Modals (if any were open)
-        // document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     },
 
     openVendors() {

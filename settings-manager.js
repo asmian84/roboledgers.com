@@ -7,6 +7,9 @@ const Settings = {
         fontFamily: 'Inter',
         theme: 'arctic-dawn',
         accentColor: 'blue',
+        uiScale: '1.0',
+        gridTheme: 'default',
+        textCase: 'sentence',
         googleApiKey: 'AIzaSyDNWQtND6ISB_LFyoOQbAycGzFdSPFN604',
         googleSearchCx: '61ed0fb52fe154bcf'
     },
@@ -65,6 +68,22 @@ const Settings = {
 
         // Apply theme
         this.applyTheme();
+
+        // Apply UI Scale
+        if (this.current.uiScale) {
+            document.body.style.zoom = this.current.uiScale;
+        }
+
+        // Apply Appearance Classes
+        document.body.classList.remove('grid-theme-vanilla', 'grid-theme-classic', 'grid-theme-ledger', 'grid-theme-postit', 'grid-theme-rainbow');
+        if (this.current.gridTheme && this.current.gridTheme !== 'default') {
+            document.body.classList.add(`grid-theme-${this.current.gridTheme}`);
+        }
+
+        document.body.classList.remove('text-case-uppercase', 'text-case-lowercase', 'text-case-sentence');
+        if (this.current.textCase) {
+            document.body.classList.add(`text-case-${this.current.textCase}`);
+        }
 
         // Theme colors (for accent color picker - secondary to theme)
         const accentColors = {
@@ -192,6 +211,48 @@ const Settings = {
                 this.setTheme(e.target.value);
             });
         });
+
+
+        // --- Appearance Inputs ---
+
+        // 1. UI Scale
+        const scaleSelect = document.getElementById('uiScaleSelect');
+        if (scaleSelect) {
+            scaleSelect.value = this.current.uiScale || '1.0';
+            scaleSelect.addEventListener('change', (e) => {
+                this.set('uiScale', e.target.value);
+            });
+        }
+
+        // 2. Grid Theme
+        const gridThemeSelect = document.getElementById('gridThemeSelect');
+        if (gridThemeSelect) {
+            gridThemeSelect.value = this.current.gridTheme || 'default';
+            gridThemeSelect.addEventListener('change', (e) => {
+                this.set('gridTheme', e.target.value);
+            });
+        }
+
+        // 3. Text Case Buttons
+        const caseBtns = document.querySelectorAll('.btn-group-item[data-case]');
+        caseBtns.forEach(btn => {
+            const caseType = btn.dataset.case;
+            if (caseType === (this.current.textCase || 'sentence')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+
+            btn.addEventListener('click', () => {
+                // UI Toggle
+                caseBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Logic
+                this.set('textCase', caseType);
+            });
+        });
+
     },
 
     set(key, value) {

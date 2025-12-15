@@ -2856,3 +2856,310 @@ input.currency-input,
 .state-has-data #reviewContent {
     display: block !important;
 }
+
+/* Grid Table for Accounts */
+.grid-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grid-table th,
+.grid-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.grid-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.grid-table tr:hover {
+    background: var(--glass-bg);
+}
+
+/* File Explorer Items (Uploaded CSVs) */
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.file-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-tertiary);
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.file-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.edit-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.delete-btn:hover {
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+.restore-btn {
+    width: auto;
+    padding: 0 12px;
+    font-size: 0.85rem;
+    gap: 6px;
+    background: var(--bg-primary);
+}
+
+.restore-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* --- Appearance Settings Overrides --- */
+
+/* Text Case */
+body.text-case-uppercase {
+    text-transform: uppercase;
+}
+
+body.text-case-lowercase {
+    text-transform: lowercase;
+}
+
+body.text-case-sentence {
+    text-transform: none;
+}
+
+/* Grid Themes - AG Grid Overrides */
+
+/* Vanilla (Clean/White) */
+.grid-theme-vanilla .ag-root-wrapper,
+.grid-theme-vanilla .ag-header {
+    background-color: #ffffff !important;
+    border-color: #e0e0e0 !important;
+}
+
+.grid-theme-vanilla .ag-row {
+    background-color: #ffffff !important;
+    color: #333 !important;
+}
+
+.grid-theme-vanilla .ag-row-odd {
+    background-color: #f9f9f9 !important;
+}
+
+/* Classic (High Contrast / Serif headers maybe?) */
+.grid-theme-classic .ag-header {
+    background-color: #333 !important;
+    color: #fff !important;
+    font-family: 'Times New Roman', serif !important;
+}
+
+.grid-theme-classic .ag-cell {
+    border-right: 1px solid #ccc !important;
+}
+
+/* Ledger Pad (Greenish) */
+.grid-theme-ledger .ag-root-wrapper,
+.grid-theme-ledger .ag-header,
+.grid-theme-ledger .ag-body {
+    background-color: #fcfce5 !important;
+}
+
+.grid-theme-ledger .ag-header-cell {
+    border-right: 1px solid #dcdca3 !important;
+    border-bottom: 2px solid #888 !important;
+}
+
+.grid-theme-ledger .ag-row {
+    background-color: #fcfce5 !important;
+    border-bottom: 1px solid #d4d4b0 !important;
+}
+
+/* Post-it Note (Yellow) */
+.grid-theme-postit .ag-root-wrapper,
+.grid-theme-postit .ag-header-viewport,
+.grid-theme-postit .ag-body-viewport {
+    background-color: #fff7d1 !important;
+}
+
+.grid-theme-postit .ag-row {
+    background-color: #fff7d1 !important;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif !important;
+    /* Playful */
+}
+
+/* Rainbow (Colorful Headers) */
+.grid-theme-rainbow .ag-header {
+    background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%) !important;
+    color: #333 !important;
+}
+
+.grid-theme-rainbow .ag-row:hover {
+    background-color: #ffeef8 !important;
+}
+/* =========================================
+   TEXT CASE SETTINGS (Scoped to Grid)
+   ========================================= */
+
+/* Uppercase */
+body.text-case-uppercase .ag-center-cols-container .ag-cell-value,
+body.text-case-uppercase .ag-header-cell-text {
+    text-transform: uppercase !important;
+}
+
+/* Lowercase */
+body.text-case-lowercase .ag-center-cols-container .ag-cell-value,
+body.text-case-lowercase .ag-header-cell-text {
+    text-transform: lowercase !important;
+}
+
+/* Sentence/Normal Case (Default) */
+body.text-case-sentence .ag-center-cols-container .ag-cell-value,
+body.text-case-sentence .ag-header-cell-text {
+    text-transform: none !important;
+}
+
+
+/* =========================================
+   THEME OVERRIDES (Lighten Intensity)
+   ========================================= */
+
+/* Theme 1: Cyber Day (Light Futuristic) */
+[data-theme='cyber-night'], [data-theme='dark'] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --bg-elevated: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --primary-color: #0ea5e9;
+    --primary-dark: #0284c7;
+    --secondary-color: #8b5cf6;
+    --accent-color: #0ea5e9;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --border-color: #cbd5e1;
+    --border-light: #e2e8f0;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(14, 165, 233, 0.2);
+    --glow-color: rgba(14, 165, 233, 0.15);
+}
+
+/* Theme 3: Mint Fresh */
+[data-theme='neon-forest'] {
+    --bg-primary: #f0fdf4;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #dcfce7;
+    --bg-elevated: #bbf7d0;
+    --text-primary: #064e3b;
+    --text-secondary: #166534;
+    --text-tertiary: #15803d;
+    --primary-color: #16a34a;
+    --primary-dark: #15803d;
+    --secondary-color: #22c55e;
+    --accent-color: #14b8a6;
+    --success-color: #16a34a;
+    --warning-color: #eab308;
+    --error-color: #ef4444;
+    --border-color: #86efac;
+    --border-light: #bbf7d0;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(22, 163, 74, 0.2);
+    --glow-color: rgba(22, 163, 74, 0.15);
+}
+
+/* Theme 4: Lavender Mist */
+[data-theme='royal-amethyst'] {
+    --bg-primary: #faf5ff;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f3e8ff;
+    --bg-elevated: #e9d5ff;
+    --text-primary: #581c87;
+    --text-secondary: #7e22ce;
+    --text-tertiary: #9333ea;
+    --primary-color: #9333ea;
+    --primary-dark: #7e22ce;
+    --secondary-color: #a855f7;
+    --accent-color: #d946ef;
+    --success-color: #4ade80;
+    --warning-color: #fca5a5;
+    --error-color: #f43f5e;
+    --border-color: #d8b4fe;
+    --border-light: #e9d5ff;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(147, 51, 234, 0.2);
+    --glow-color: rgba(147, 51, 234, 0.15);
+}
+
+/* Theme 5: Peach Dawn */
+[data-theme='sunset-horizon'] {
+    --bg-primary: #fff7ed;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #ffedd5;
+    --bg-elevated: #fed7aa;
+    --text-primary: #7c2d12;
+    --text-secondary: #c2410c;
+    --text-tertiary: #ea580c;
+    --primary-color: #f97316;
+    --primary-dark: #ea580c;
+    --secondary-color: #fb923c;
+    --accent-color: #f43f5e;
+    --success-color: #22c55e;
+    --warning-color: #fcd34d;
+    --error-color: #ef4444;
+    --border-color: #fdba74;
+    --border-light: #fed7aa;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(249, 115, 22, 0.2);
+    --glow-color: rgba(249, 115, 22, 0.15);
+}

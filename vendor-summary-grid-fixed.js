@@ -71,7 +71,7 @@ window.VendorSummaryGrid = {
         // 1. Check for saved size (VSM Key)
         const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_VSM);
         if (savedSize && savedSize.width) {
-            console.log('💾 Restoring VSM Size:', savedSize);
+            console.log('💾 Restoring VIG Size:', savedSize);
             const container = document.getElementById('vendorSummaryGridContainer');
             if (container) {
                 const modalContent = container.closest('.modal-content');
@@ -117,7 +117,7 @@ window.VendorSummaryGrid = {
                             if (!window.Settings) return;
                             if (!Settings.current) Settings.current = {};
 
-                            Settings.current.modalSize_VSM = { width: w, height: h };
+                            Settings.current.modalSize_VIG = { width: w, height: h };
                             if (Settings.save) Settings.save();
 
                             this.userHasResized = true;
@@ -133,26 +133,6 @@ window.VendorSummaryGrid = {
 
     getColumnDefs() {
         return [
-            {
-                // "Ghost Column" for alignment with Drill Down checkboxes
-                width: 50,
-                minWidth: 50,
-                maxWidth: 50,
-                pinned: 'left',
-                lockPosition: true,
-                suppressMenu: true,
-                headerName: '',
-                cellRenderer: (params) => {
-                    // MOCK SYNC STATUS: Check if vendor has an ID or just assume 'Cloud' for now
-                    // User Request: "if sync to cloud... show sync icon"
-                    // We'll use a cloud icon. If we had a 'dirty' flag, we'd use offline.
-                    // For UI demo: Cloud by default.
-                    return `<div style="display:flex; justify-content:center; align-items:center; height:100%;">
-                        <i class="fas fa-cloud" style="color: #3b82f6; font-size: 0.8rem;" title="Synced to Cloud"></i>
-                    </div>`;
-                },
-                cellStyle: { background: '#ffffff', borderRight: '1px solid #e2e8f0', padding: 0 } // Force white background
-            },
             {
                 // Matches VIG Description style
                 headerName: 'Vendor Name', field: 'name', width: 260, minWidth: 200,

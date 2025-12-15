@@ -98,12 +98,21 @@ window.App = {
             // Initialize Headers
             this.updateBankAccountSelector();
 
+            // Initialize Version Explorer
+            this.renderVersionExplorer();
+
+
             // Show upload section
             this.showSection('upload');
 
             // Start Background AI Worker
             if (window.AIWorker) {
                 AIWorker.start();
+            }
+
+            // Initialize Audit Manager
+            if (window.AuditManager) {
+                AuditManager.init();
             }
 
             console.log('✅ Application initialized successfully');
@@ -132,6 +141,7 @@ window.App = {
             case 'processing': targetId = 'processingSection'; break;
             case 'review': targetId = 'reviewSection'; break;
             case 'settings': targetId = 'settingsSection'; break;
+            case 'reconciliation': targetId = 'reconciliationSection'; break;
             default: console.warn('Unknown section:', sectionName); return;
         }
 
@@ -145,6 +155,8 @@ window.App = {
         // Trigger Specific Loaders
         if (sectionName === 'review') {
             this.loadReviewSection();
+        } else if (sectionName === 'reconciliation') {
+            this.updateReconciliation();
         }
     },
 
@@ -331,6 +343,13 @@ window.App = {
         const options = BankAccountManager.getAccountOptions();
 
         this.renderSelectorOptions(selector, options, currentVal);
+
+        // Also update Upload Account Selector
+        const uploadSelector = document.getElementById('uploadAccountSelect');
+        if (uploadSelector) {
+            const uploadVal = uploadSelector.value;
+            this.renderSelectorOptions(uploadSelector, options, uploadVal);
+        }
     },
 
     renderSelectorOptions(selector, options, currentVal) {
@@ -338,25 +357,70 @@ window.App = {
         selector.innerHTML = '<option value="">Select Account...</option>';
 
         options.forEach(opt => {
-            if (opt.disabled) {
-                // Separator
-                const op = document.createElement('option');
-                op.disabled = true;
-                op.textContent = opt.label;
-                selector.appendChild(op);
-            } else {
-                const op = document.createElement('option');
-                op.value = opt.value;
-                op.textContent = opt.label;
-                if (opt.isUnused) op.style.opacity = '0.6';
-                if (opt.action) op.style.fontWeight = 'bold';
-                selector.appendChild(op);
-            }
-        });
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
 
-        // Restore selection if valid
-        if (currentVal) {
-            selector.value = currentVal;
+            if (opt.disabled) option.disabled = true;
+            if (opt.value === currentVal) option.selected = true;
+            if (opt.isUnused) option.style.color = 'var(--text-tertiary)';
+            if (opt.action) {
+                option.style.fontWeight = 'bold';
+                option.style.color = 'var(--primary-color)';
+            }
+
+            selector.appendChild(option);
+        });
+    },
+
+    renderVersionExplorer() {
+        const list = document.getElementById('fileList');
+        if (!list) return;
+
+        const history = SessionManager.getHistory();
+        if (history.length === 0) {
+            list.innerHTML = '<li class="empty-state">No recent files found.</li>';
+            return;
+        }
+
+        list.innerHTML = '';
+
+        history.forEach((session, index) => {
+            const date = new Date(parseInt(session.timestamp));
+            const timeStr = date.toLocaleString();
+
+            const item = document.createElement('li');
+            item.className = 'file-item';
+
+            item.innerHTML = `
+                <div class="file-info" style="flex:1;">
+                    <div style="font-weight:600; cursor:text;" contenteditable="true" 
+                         onblur="App.renameSession(${index}, this.innerText)"
+                         onclick="event.stopPropagation()">${session.filename}</div>
+                    <div style="font-size:0.85em; color:var(--text-secondary);">${timeStr} • ${session.count} entries</div>
+                </div>
+                <button class="restore-btn btn-secondary-small" style="margin-left:1rem;">Restore</button>
+            `;
+
+            const restoreBtn = item.querySelector('.restore-btn');
+            restoreBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Restore "${session.filename}"? Unsaved work will be lost.`)) {
+                    SessionManager.restoreFromHistory(index);
+                }
+            };
+
+            list.appendChild(item);
+        });
+    },
+
+    renameSession(index, newName) {
+        if (!newName || !newName.trim()) return;
+        const history = SessionManager.getHistory();
+        if (history[index]) {
+            history[index].filename = newName.trim();
+            SessionManager.saveHistory(history);
+            console.log('Renamed session to:', newName);
         }
     },
 
@@ -1075,9 +1139,10 @@ window.App = {
 
         // Verify Account Button
 
-        if (vendorSummaryModal) {
-            vendorSummaryModal.addEventListener('click', (e) => {
-                if (e.target.id === 'vendorSummaryModal') vendorSummaryModal.classList.remove('active');
+        if (VIGModal) {
+            VIGModal.addEventListener('click', (e) => {
+                // ModalManager handles this, but if we have specific logic:
+                if (e.target.id === 'VIGModal' && window.ModalManager) ModalManager.close('VIGModal');
             });
         }
         // Logo click - return to home
@@ -1706,9 +1771,11 @@ window.App = {
 
     // 🔍 DRILL DOWN: Open modal with transactions for specific vendor
     openDrillDown(vendorName) {
-        const modal = document.getElementById('drillDownModal');
+        const modalId = 'VSMModal';
         const title = document.getElementById('drillDownModalTitle');
 
+        // Check if modal exists directly or via ModalManager logic
+        const modal = document.getElementById(modalId);
         if (!modal) return;
 
         console.log(`🔍 Opening Drill-Down for: ${vendorName}`);
@@ -1732,11 +1799,15 @@ window.App = {
             DrillDownGrid.loadTransactions(filtered);
         }
 
-        // 4. Show Modal
-        modal.style.display = 'block';
-        requestAnimationFrame(() => {
+        // 4. Show Modal via Manager
+        if (window.ModalManager) {
+            ModalManager.open(modalId);
+        } else {
+            modal.style.display = 'block';
             modal.classList.add('active');
+        }
 
+        requestAnimationFrame(() => {
             // ⚡ Force Resize of DrillDownGrid after modal animation
             if (window.DrillDownGrid && DrillDownGrid.safelySizeColumnsToFit) {
                 DrillDownGrid.safelySizeColumnsToFit();
@@ -1766,6 +1837,10 @@ window.App = {
         // Trigger Specific Loaders
         if (sectionName === 'review') {
             this.loadReviewSection();
+        }
+
+        if (sectionName === 'audit') {
+            if (window.AuditManager) AuditManager.render();
         }
 
         if (sectionName === 'reconciliation') {
@@ -2052,44 +2127,78 @@ window.App = {
 
     renderVersionExplorer() {
         const explorer = document.getElementById('versionExplorer');
-        const list = document.getElementById('versionList');
+        const list = document.getElementById('fileList'); // Changing target to fileList in file-explorer-container
 
-        if (!explorer || !list || !SessionManager) return;
+        // User requested "right below this" (drag drop). The HTML has .file-explorer-container with #fileList there.
+        // Let's use THAT instead of the old #versionExplorer div inside the stats bar.
+
+        if (!list || !SessionManager) return;
 
         const history = SessionManager.getHistory();
+
+        // Populate the list
+        list.innerHTML = '';
+
         if (history.length === 0) {
-            explorer.style.display = 'none';
+            list.innerHTML = '<li class="empty-state">No recent files found.</li>';
             return;
         }
-
-        explorer.style.display = 'block';
-        list.innerHTML = '';
 
         history.forEach((session, index) => {
             const date = new Date(parseInt(session.timestamp));
             const timeStr = date.toLocaleString();
 
-            const item = document.createElement('div');
-            item.className = 'version-item card';
-            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; cursor: pointer; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;';
-            item.innerHTML = `
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-weight: 600; color: var(--text-primary);">${session.filename}</span>
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">${timeStr} • ${session.count} txns</span>
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.innerHTML = `
+                <div class="file-info">
+                    <span class="file-name">${session.filename}</span>
+                    <span class="file-meta">${timeStr} • ${session.count || 0} txns</span>
                 </div>
-                <button class="btn-secondary-small" style="pointer-events: none;">Restore</button>
+                <div class="file-actions">
+                    <button class="action-btn edit-btn" title="Edit Filename">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button class="action-btn delete-btn" title="Remove from History">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="action-btn restore-btn" title="Load this file">
+                        <i class="fas fa-upload"></i> Load
+                    </button>
+                </div>
             `;
 
-            item.onmouseover = () => { item.style.backgroundColor = 'var(--bg-tertiary)'; };
-            item.onmouseout = () => { item.style.backgroundColor = 'var(--bg-secondary)'; };
+            // DELETE Action
+            const deleteBtn = li.querySelector('.delete-btn');
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Remove "${session.filename}" from recent history?`)) {
+                    SessionManager.removeFromHistory(index);
+                    this.renderVersionExplorer(); // Re-render
+                }
+            };
 
-            item.onclick = () => {
-                if (confirm(`Restore session "${session.filename}"? Current unsaved work will be lost.`)) {
+            // EDIT Action (Rename)
+            const editBtn = li.querySelector('.edit-btn');
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                const newName = prompt("Rename file alias:", session.filename);
+                if (newName && newName.trim() !== "") {
+                    // Use new update method
+                    SessionManager.updateHistoryItem(index, { filename: newName.trim() });
+                    this.renderVersionExplorer();
+                }
+            };
+
+            // RESTORE Action
+            const restoreBtn = li.querySelector('.restore-btn');
+            restoreBtn.onclick = () => {
+                if (confirm(`Load "${session.filename}"? Current unsaved work will be lost.`)) {
                     SessionManager.restoreFromHistory(index);
                 }
             };
 
-            list.appendChild(item);
+            list.appendChild(li);
         });
     }
 };
@@ -2100,346 +2209,344 @@ document.addEventListener('DOMContentLoaded', () => {
     App.initialize();
 
     // Auto-Restore Session (Immediate Load)
-    setTimeout(() => {
-        if (SessionManager && SessionManager.autoRestore) {
-            SessionManager.autoRestore();
-            App.renderVersionExplorer(); // Just in case we stay on upload
+    if (SessionManager && SessionManager.autoRestore) {
+        SessionManager.autoRestore();
+        App.renderVersionExplorer(); // Just in case we stay on upload
+    }
+}, 100);
+
+// Initial Audit Log
+if (window.AuditManager && !localStorage.getItem('audit_log')) {
+    AuditManager.log('System', 'First Run', 'Application loaded for the first time');
+}
+
+// Setup settings tab switching
+const settingsTabs = document.querySelectorAll('.settings-tab');
+const settingsPanels = document.querySelectorAll('.settings-panel');
+
+settingsTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const targetPanel = tab.dataset.tab;
+
+        // Remove active from all tabs and panels
+        settingsTabs.forEach(t => t.classList.remove('active'));
+        settingsPanels.forEach(p => p.classList.remove('active'));
+
+        // Add active to clicked tab and corresponding panel
+        tab.classList.add('active');
+        const panel = document.querySelector(`[data-panel="${targetPanel}"]`);
+        if (panel) {
+            panel.classList.add('active');
         }
-    }, 100);
-
-    // Setup settings tab switching
-    const settingsTabs = document.querySelectorAll('.settings-tab');
-    const settingsPanels = document.querySelectorAll('.settings-panel');
-
-    settingsTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetPanel = tab.dataset.tab;
-
-            // Remove active from all tabs and panels
-            settingsTabs.forEach(t => t.classList.remove('active'));
-            settingsPanels.forEach(p => p.classList.remove('active'));
-
-            // Add active to clicked tab and corresponding panel
-            tab.classList.add('active');
-            const panel = document.querySelector(`[data-panel="${targetPanel}"]`);
-            if (panel) {
-                panel.classList.add('active');
-            }
-        });
     });
+});
 
-    // Dashboard Launch Button from Header
-    const dashboardBtn = document.getElementById('openDashboardBtn');
-    if (dashboardBtn) {
-        dashboardBtn.addEventListener('click', () => {
-            if (window.DashboardManager) {
-                DashboardManager.openDashboard();
-            } else {
-                console.error('DashboardManager not loaded');
-                alert('Dashboard module not loaded. Please refresh.');
-            }
-        });
-    }
-
-    // Settings Button from Header/Sidebar
-    const settingsBtn = document.getElementById('settingsBtn');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            App.showSection('settings');
-        });
-    }
-
-    // Reconciliation Button
-    const reconBtn = document.getElementById('navReconciliation');
-    if (reconBtn) {
-        reconBtn.addEventListener('click', () => {
-            App.showSection('reconciliation');
-        });
-    }
-
-    // Edit Account Button (Toolbar)
-    const editAcctBtn = document.getElementById('editAccountBtn');
-    if (editAcctBtn) {
-        editAcctBtn.addEventListener('click', () => {
-            console.log('✏️ Edit Account Clicked');
-            // Open Account Manager Modal
-            App.showAccountsModal();
-        });
-    }
-
-    // Link to Grid Button
-    const linkGridBtn = document.getElementById('assignGridToAccountBtn');
-    if (linkGridBtn) {
-        linkGridBtn.addEventListener('click', () => {
-            console.log('🔗 Link to Grid Clicked');
-            // Logic: Assign all displayed transactions to the currently selected bank account
-            const accountSelect = document.getElementById('bankAccountSelect');
-            if (accountSelect && accountSelect.value) {
-                const accountCode = accountSelect.value;
-                if (confirm(`Assign ALL current transactions to account ${accountCode}?`)) {
-                    // We need a method in TransactionGrid or App to do this bulk update
-                    // Assuming TransactionGrid.bulkAssignAccount exists or we create it.
-                    // For now, simpler implementation:
-                    App.transactions.forEach(t => {
-                        // Only update if unallocated or filtered view? 
-                        // User request implies "transactions displayed in grid" -> "Link to Grid"
-                        // Ideally we'd use the grid's filtered rows.
-                        // For MVP: Update ALL in memory match.
-                        t.allocatedAccount = accountCode;
-                        // Ideally find name too
-                    });
-                    Storage.saveTransactions(App.transactions);
-                    TransactionGrid.loadTransactions(App.transactions); // Refresh
-                    App.updateStatistics();
-                    alert('Assignments updated.');
-                }
-            } else {
-                alert('Please select an account first.');
-            }
-        });
-    }
-
-    // Start Over Button Logic
-    const startOverBtn = document.getElementById('startOverBtn');
-    console.log('🔍 Debug: Searching for startOverBtn...', startOverBtn);
-
-    if (startOverBtn) {
-        // Remove old listeners by replacing the element
-        const newBtn = startOverBtn.cloneNode(true);
-        startOverBtn.parentNode.replaceChild(newBtn, startOverBtn);
-
-        // Update reference
-        const btn = newBtn;
-
-        let resetTimeout;
-        btn.addEventListener('click', (e) => {
-            console.log('🖱️ Start Over Clicked!');
-
-            // Check if already in confirmation state
-            if (btn.classList.contains('confirm-state')) {
-                // CONFIRMED Action
-                console.log('✅ Reset confirmed. Clearing transactions only...');
-                btn.innerHTML = '♻️ Resetting...';
-
-                // ONLY Clear Transactions and Session Data (Preserve VENDORS)
-                localStorage.removeItem('autobookkeeping_transactions');
-                localStorage.removeItem('lastTransactions');
-                localStorage.removeItem('lastFileName');
-                localStorage.removeItem('lastFileTime');
-
-                // Keep 'autobookkeeping_vendors', 'autobookkeeping_accounts', and 'autobookkeeping_settings'
-
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-            } else {
-                // First Click: Ask for confirmation
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '⚠️ Click to Confirm';
-                btn.classList.add('confirm-state');
-                btn.style.backgroundColor = '#ef4444'; // Force red for visibility
-                btn.style.color = 'white';
-                btn.style.borderColor = '#dc2626';
-
-                // Reset after 3 seconds if not confirmed
-                resetTimeout = setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.classList.remove('confirm-state');
-                    btn.style.backgroundColor = '';
-                    btn.style.color = '';
-                    btn.style.borderColor = '';
-                }, 3000);
-            }
-        });
-    }
-
-
-    // Wire up Pop-out button (added dynamically)
-    const popoutBtn = document.getElementById('popoutBtn');
-    if (popoutBtn) {
-        popoutBtn.addEventListener('click', () => {
-            if (window.GridPopout) {
-                window.GridPopout.openPopout();
-            } else {
-                console.error('GridPopout module not loaded');
-                alert('Grid Pop-out module not loaded. Please refresh the page.');
-            }
-        });
-    }
-
-    // Setup theme dropdown with live preview
-    const themeSelect = document.getElementById('themeSelect');
-    const themePreview = document.getElementById('themePreview');
-
-    const themePreviews = {
-        'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
-        'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
-        'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
-        'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
-        'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
-    };
-
-    function updateThemePreview(theme) {
-        if (themePreview && themePreviews[theme]) {
-            themePreview.style.background = themePreviews[theme];
+// Dashboard Launch Button from Header
+const dashboardBtn = document.getElementById('openDashboardBtn');
+if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', () => {
+        if (window.DashboardManager) {
+            DashboardManager.openDashboard();
+        } else {
+            console.error('DashboardManager not loaded');
+            alert('Dashboard module not loaded. Please refresh.');
         }
+    });
+}
+
+// Settings Button from Header/Sidebar
+const settingsBtn = document.getElementById('settingsBtn');
+if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+        App.showSection('settings');
+    });
+}
+
+// Reconciliation Button
+const reconBtn = document.getElementById('navReconciliation');
+if (reconBtn) {
+    reconBtn.addEventListener('click', () => {
+        App.showSection('reconciliation');
+    });
+}
+
+// Edit Account Button (Toolbar)
+const editAcctBtn = document.getElementById('editAccountBtn');
+if (editAcctBtn) {
+    editAcctBtn.addEventListener('click', () => {
+        console.log('✏️ Edit Account Clicked');
+        // Open Account Manager Modal
+        App.showAccountsModal();
+    });
+}
+
+// Link to Grid Button
+const linkGridBtn = document.getElementById('assignGridToAccountBtn');
+if (linkGridBtn) {
+    linkGridBtn.addEventListener('click', () => {
+        console.log('🔗 Link to Grid Clicked');
+        // Logic: Assign all displayed transactions to the currently selected bank account
+        const accountSelect = document.getElementById('bankAccountSelect');
+        if (accountSelect && accountSelect.value) {
+            const accountCode = accountSelect.value;
+            if (confirm(`Assign ALL current transactions to account ${accountCode}?`)) {
+                // We need a method in TransactionGrid or App to do this bulk update
+                // Assuming TransactionGrid.bulkAssignAccount exists or we create it.
+                // For now, simpler implementation:
+                App.transactions.forEach(t => {
+                    // Only update if unallocated or filtered view? 
+                    // User request implies "transactions displayed in grid" -> "Link to Grid"
+                    // Ideally we'd use the grid's filtered rows.
+                    // For MVP: Update ALL in memory match.
+                    t.allocatedAccount = accountCode;
+                    // Ideally find name too
+                });
+                Storage.saveTransactions(App.transactions);
+                TransactionGrid.loadTransactions(App.transactions); // Refresh
+                App.updateStatistics();
+                alert('Assignments updated.');
+            }
+        } else {
+            alert('Please select an account first.');
+        }
+    });
+}
+
+// Start Over Button Logic
+const startOverBtn = document.getElementById('startOverBtn');
+console.log('🔍 Debug: Searching for startOverBtn...', startOverBtn);
+
+if (startOverBtn) {
+    // Remove old listeners by replacing the element
+    const newBtn = startOverBtn.cloneNode(true);
+    startOverBtn.parentNode.replaceChild(newBtn, startOverBtn);
+
+    // Update reference
+    const btn = newBtn;
+
+    let resetTimeout;
+    btn.addEventListener('click', (e) => {
+        console.log('🖱️ Start Over Clicked!');
+
+        // Check if already in confirmation state
+        if (btn.classList.contains('confirm-state')) {
+            // CONFIRMED Action
+            console.log('✅ Reset confirmed. Clearing transactions only...');
+            btn.innerHTML = '♻️ Resetting...';
+
+            // ONLY Clear Transactions and Session Data (Preserve VENDORS)
+            localStorage.removeItem('autobookkeeping_transactions');
+            localStorage.removeItem('lastTransactions');
+            localStorage.removeItem('lastFileName');
+            localStorage.removeItem('lastFileTime');
+
+            // Keep 'autobookkeeping_vendors', 'autobookkeeping_accounts', and 'autobookkeeping_settings'
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            // First Click: Ask for confirmation
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⚠️ Click to Confirm';
+            btn.classList.add('confirm-state');
+            btn.style.backgroundColor = '#ef4444'; // Force red for visibility
+            btn.style.color = 'white';
+            btn.style.borderColor = '#dc2626';
+
+            // Reset after 3 seconds if not confirmed
+            resetTimeout = setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('confirm-state');
+                btn.style.backgroundColor = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }, 3000);
+        }
+    });
+}
+
+
+// Wire up Pop-out button (added dynamically)
+const popoutBtn = document.getElementById('popoutBtn');
+if (popoutBtn) {
+    popoutBtn.addEventListener('click', () => {
+        if (window.GridPopout) {
+            window.GridPopout.openPopout();
+        } else {
+            console.error('GridPopout module not loaded');
+            alert('Grid Pop-out module not loaded. Please refresh the page.');
+        }
+    });
+}
+
+// Setup theme dropdown with live preview
+const themeSelect = document.getElementById('themeSelect');
+const themePreview = document.getElementById('themePreview');
+
+const themePreviews = {
+    'cyber-night': 'linear-gradient(135deg, #0a0e1a 0%, #00d4ff 100%)',
+    'arctic-dawn': 'linear-gradient(135deg, #f0f4f8 0%, #0077cc 100%)',
+    'neon-forest': 'linear-gradient(135deg, #0d1f12 0%, #00ff88 100%)',
+    'royal-amethyst': 'linear-gradient(135deg, #1a0d2e 0%, #b565d8 100%)',
+    'sunset-horizon': 'linear-gradient(135deg, #2d1810 0%, #ff6b35 100%)'
+};
+
+function updateThemePreview(theme) {
+    if (themePreview && themePreviews[theme]) {
+        themePreview.style.background = themePreviews[theme];
     }
+}
 
-    if (themeSelect && typeof Settings !== 'undefined') {
-        // Set initial preview
-        updateThemePreview(Settings.current.theme || 'cyber-night');
-        themeSelect.value = Settings.current.theme || 'cyber-night';
+if (themeSelect && typeof Settings !== 'undefined') {
+    // Set initial preview
+    updateThemePreview(Settings.current.theme || 'cyber-night');
+    themeSelect.value = Settings.current.theme || 'cyber-night';
 
-        // Handle theme changes
-        themeSelect.addEventListener('change', (e) => {
-            const theme = e.target.value;
-            Settings.setTheme(theme);
-            updateThemePreview(theme);
-        });
-    }
+    // Handle theme changes
+    themeSelect.addEventListener('change', (e) => {
+        const theme = e.target.value;
+        Settings.setTheme(theme);
+        updateThemePreview(theme);
+    });
+}
 
-    // Settings Logic - Handled by settings-manager.js
-    // Legacy code removed to prevent conflicts
+// Settings Logic - Handled by settings-manager.js
+// Legacy code removed to prevent conflicts
 
-    // Reports button (placeholder)
-    const reportsBtn = document.getElementById('reportsBtn');
-    if (reportsBtn) {
-        reportsBtn.addEventListener('click', () => {
-            alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
-        });
-    }
+// Reports button (placeholder)
+const reportsBtn = document.getElementById('reportsBtn');
+if (reportsBtn) {
+    reportsBtn.addEventListener('click', () => {
+        alert('📊 Reports feature coming soon!\n\nWill include:\n- Income Statement\n- Balance Sheet\n- Trial Balance\n- Custom Reports');
+    });
+}
 
-    // Settings Data tab buttons
-    const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
-    const settingsAccountsBtn = document.getElementById('settingsAccountsBtn'); // Fixed ID
-    const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn'); // Added correct var
+// Settings Data tab buttons
+const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
+const settingsAccountsBtn = document.getElementById('settingsAccountsBtn'); // Fixed ID
+const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn'); // Added correct var
 
-    if (settingsVendorDictBtn) {
-        settingsVendorDictBtn.addEventListener('click', async () => {
-            console.log('📚 Opening Vendor Dictionary from Settings...');
-            if (typeof VendorManager !== 'undefined') {
-                // Initialize Logic Engines
-                if (typeof VendorMatcher !== 'undefined') {
-                    await VendorMatcher.initialize();
-                }
+if (settingsVendorDictBtn) {
+    settingsVendorDictBtn.addEventListener('click', async () => {
+        console.log('📚 Opening Vendor Dictionary from Settings...');
+        if (typeof VendorManager !== 'undefined') {
+            // Initialize Logic Engines
+            if (typeof VendorMatcher !== 'undefined') {
+                await VendorMatcher.initialize();
+            }
 
-                // Initialize UI Managers and show modal
-                if (typeof VendorManager.showModal === 'function') {
-                    VendorManager.showModal();
-                } else if (typeof VendorManager.initialize === 'function') {
-                    // Fallback if showModal is not directly available, but initialize is
-                    VendorManager.initialize();
-                    // If initialize doesn't show it, we might need to manually show it,
-                    // but the instruction implies showModal handles it.
-                    // For now, assume initialize might implicitly show it or we're missing a step.
-                    // If showModal is the new standard, this fallback might be removed later.
-                    console.warn('VendorManager.showModal() not found, falling back to initialize().');
-                } else {
-                    console.warn('⚠️ VendorManager not found or missing showModal()/initialize()');
-                }
+            // Initialize UI Managers and show modal
+            if (typeof VendorManager.showModal === 'function') {
+                VendorManager.showModal();
+            } else if (typeof VendorManager.initialize === 'function') {
+                // Fallback if showModal is not directly available, but initialize is
+                VendorManager.initialize();
+                // If initialize doesn't show it, we might need to manually show it,
+                // but the instruction implies showModal handles it.
+                // For now, assume initialize might implicitly show it or we're missing a step.
+                // If showModal is the new standard, this fallback might be removed later.
+                console.warn('VendorManager.showModal() not found, falling back to initialize().');
             } else {
-                console.error('VendorManager not found');
+                console.warn('⚠️ VendorManager not found or missing showModal()/initialize()');
             }
-        });
-    }
+        } else {
+            console.error('VendorManager not found');
+        }
+    });
+}
 
-    // Settings: Chart of Accounts
-    if (settingsAccountsBtn) {
-        settingsAccountsBtn.addEventListener('click', () => {
-            console.log('📊 Opening Chart of Accounts...');
-            // Try to use the grid's sidebar if available (User preference "Grid")
-            if (typeof TransactionGrid !== 'undefined' && TransactionGrid.gridApi) {
-                // Open AG Grid Tool Panel if possible as a quick "Grid" view
-                // But also offer the full list if that fails
-                // TransactionGrid.gridApi.openToolPanel('columns'); // This might be what they meant?
-            }
-
-            if (window.ChartManager) {
-                ChartManager.showModal();
-            } else {
-                console.error('ChartManager not found');
-            }
-        });
-    }
-
-    // Settings: Manage Bank Accounts
-    if (settingsBankAccountsBtn) {
-        settingsBankAccountsBtn.addEventListener('click', () => {
-            console.log('🏦 Opening Bank Accounts from Settings...');
-            const modal = document.getElementById('manageAccountsModal');
-            if (modal) {
-                if (typeof BankAccountManager !== 'undefined') {
-                    // Ensure listeners are set up (idempotent safe)
-                    if (typeof BankAccountManager.setupEventListeners === 'function') {
-                        BankAccountManager.setupEventListeners();
-                    }
-                    BankAccountManager.renderAccountsList();
-                }
-                modal.style.display = 'block';
-            }
-        });
-    }
-
-    // Edit Account Button (in Review Toolbar) -> Opens Manage Accounts Modal
-    const editAccountBtn = document.getElementById('editAccountBtn');
-    if (editAccountBtn) {
-        editAccountBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const manageAccountsModal = document.getElementById('manageAccountsModal');
-            if (manageAccountsModal && typeof BankAccountManager !== 'undefined') {
-                BankAccountManager.renderAccountsList();
-                manageAccountsModal.classList.add('active');
-            }
-        });
-    }
-
-    // Company Name Input
-    const companyNameInput = document.getElementById('companyNameInput');
-    if (companyNameInput && typeof Settings !== 'undefined') {
-        // Set initial value from settings
-        companyNameInput.value = Settings.current.companyName || '';
-
-        // Save on change
-        companyNameInput.addEventListener('blur', () => {
-            Settings.current.companyName = companyNameInput.value;
-            Storage.saveSettings(Settings.current);
-            console.log('💾 Company name saved:', companyNameInput.value);
-        });
-    }
-
-    // Year End Date Input
-    const yearEndDateInput = document.getElementById('yearEndDate');
-    if (yearEndDateInput) {
-        // Set initial value from localStorage
-        const savedYearEnd = localStorage.getItem('yearEndDate');
-        if (savedYearEnd) {
-            yearEndDateInput.value = savedYearEnd.split('T')[0];
+// Settings: Chart of Accounts
+if (settingsAccountsBtn) {
+    settingsAccountsBtn.addEventListener('click', () => {
+        console.log('📊 Opening Chart of Accounts...');
+        // Try to use the grid's sidebar if available (User preference "Grid")
+        if (typeof TransactionGrid !== 'undefined' && TransactionGrid.gridApi) {
+            // Open AG Grid Tool Panel if possible as a quick "Grid" view
+            // But also offer the full list if that fails
+            // TransactionGrid.gridApi.openToolPanel('columns'); // This might be what they meant?
         }
 
-        // Save on change
-        yearEndDateInput.addEventListener('change', () => {
-            localStorage.setItem('yearEndDate', yearEndDateInput.value);
-            console.log('💾 Year-end date saved:', yearEndDateInput.value);
-        });
+        if (window.ChartManager) {
+            ChartManager.showModal();
+        } else {
+            console.error('ChartManager not found');
+        }
+    });
+}
+
+// Settings: Manage Bank Accounts
+if (settingsBankAccountsBtn) {
+    settingsBankAccountsBtn.addEventListener('click', () => {
+        console.log('🏦 Opening Bank Accounts from Settings...');
+        if (typeof BankAccountManager !== 'undefined') {
+            BankAccountManager.renderAccountsList();
+            if (window.ModalManager) {
+                ModalManager.open('manageAccountsModal');
+            } else {
+                document.getElementById('manageAccountsModal').style.display = 'block';
+            }
+        }
+    });
+}
+
+// Edit Account Button (in Review Toolbar) -> Opens Manage Accounts Modal
+const editAccountBtn = document.getElementById('editAccountBtn');
+if (editAccountBtn) {
+    editAccountBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof BankAccountManager !== 'undefined') {
+            BankAccountManager.renderAccountsList();
+            if (window.ModalManager) {
+                ModalManager.open('manageAccountsModal');
+            }
+        }
+    });
+}
+
+// Company Name Input
+const companyNameInput = document.getElementById('companyNameInput');
+if (companyNameInput && typeof Settings !== 'undefined') {
+    // Set initial value from settings
+    companyNameInput.value = Settings.current.companyName || '';
+
+    // Save on change
+    companyNameInput.addEventListener('blur', () => {
+        Settings.current.companyName = companyNameInput.value;
+        Storage.saveSettings(Settings.current);
+        console.log('💾 Company name saved:', companyNameInput.value);
+    });
+}
+
+// Year End Date Input
+const yearEndDateInput = document.getElementById('yearEndDate');
+if (yearEndDateInput) {
+    // Set initial value from localStorage
+    const savedYearEnd = localStorage.getItem('yearEndDate');
+    if (savedYearEnd) {
+        yearEndDateInput.value = savedYearEnd.split('T')[0];
     }
 
-    // Duplicate listener removed (Fix for COA opening Bank Accounts)
+    // Save on change
+    yearEndDateInput.addEventListener('change', () => {
+        localStorage.setItem('yearEndDate', yearEndDateInput.value);
+        console.log('💾 Year-end date saved:', yearEndDateInput.value);
+    });
+}
 
-    // Close Manage Accounts Modal
-    const closeManageAccountsBtn = document.getElementById('closeManageAccountsModal');
-    if (closeManageAccountsBtn) {
-        closeManageAccountsBtn.addEventListener('click', () => {
-            const modal = document.getElementById('manageAccountsModal');
-            if (modal) modal.style.display = 'none';
-        });
-    }
+// Duplicate listener removed (Fix for COA opening Bank Accounts)
 
-    // Initialize the main application
-    if (typeof App !== 'undefined' && App.initialize) {
-        App.initialize();
-    } else {
-        console.error('❌ App object not found or initialize missing!');
-    }
+// Close Manage Accounts Modal - HANDLED BY MODALMANAGER now
+// Legacy logic removed to prevent conflicts
 
-    console.log('✅ App.js loaded and event listeners set up');
+
+// Initialize the main application - Duplicate call removed
+/*
+if (typeof App !== 'undefined' && App.initialize) {
+    App.initialize();
+}
+*/
+
+
+console.log('✅ App.js loaded and event listeners set up');
 });

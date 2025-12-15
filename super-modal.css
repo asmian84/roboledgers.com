@@ -49,12 +49,16 @@
     /* Default Width */
 
     /* Animation */
-    transform: scale(0.95);
-    transition: transform 0.2s ease-out;
+    /* transform: scale(0.95); Removed for no-zoom effect */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .modal.active .modal-content {
-    transform: scale(1);
+    /* transform: scale(1); Removed */
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Size Variants */
@@ -163,4 +167,8 @@
 .auth-modal-content {
     max-width: 400px;
     /* Glassmorphic overrides if needed, else inherit standard */
+}
+
+.modal-content.medium-modal {
+    max-width: 700px;
 }

@@ -2,7 +2,7 @@
  * BankAccountManager
  * Handles UI for creating and managing multiple bank accounts.
  */
-const BankAccountManager = {
+window.BankAccountManager = {
     accounts: [],
 
     initialize() {
@@ -89,6 +89,15 @@ const BankAccountManager = {
         return this.accounts.find(a => a.id === id);
     },
 
+    getActiveAccount() {
+        const selector = document.getElementById('bankAccountSelect');
+        if (selector && selector.value) {
+            return this.getAccountById(selector.value);
+        }
+        // Fallback: Return first active asset account usually, or null
+        return this.accounts.find(a => a.isActive) || null;
+    },
+
     /**
      * Get account options for dropdown (Sorted by Usage)
      * @returns {Array<{value:string, label:string, disabled:boolean}>}
@@ -166,12 +175,17 @@ const BankAccountManager = {
 
     // --- UI Methods ---
     showModal() {
-        const modal = document.getElementById('manageAccountsModal');
-        if (modal) {
-            modal.style.display = 'block';
+        if (window.ModalManager) {
+            ModalManager.open('manageAccountsModal');
             this.renderAccountsList();
         } else {
-            console.error('BankAccountManager: #manageAccountsModal not found');
+            console.error('ModalManager not found');
+            // Fallback
+            const modal = document.getElementById('manageAccountsModal');
+            if (modal) {
+                modal.style.display = 'block';
+                this.renderAccountsList();
+            }
         }
     },
 
@@ -190,15 +204,10 @@ const BankAccountManager = {
             });
         }
 
-        // Close Logic
+        // Close Logic - Handled by ModalManager
+        // We leave this empty or remove the block mostly.
         const modal = document.getElementById('manageAccountsModal');
-        if (modal) {
-            const closeBtn = modal.querySelector('.modal-close');
-            if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
-            window.addEventListener('click', (e) => {
-                if (e.target === modal) modal.style.display = 'none';
-            });
-        }
+        // Redundant listeners removed.
     },
 
     // --- STRICT TYPE ASSIGNMENT ---
@@ -230,6 +239,12 @@ const BankAccountManager = {
         newAccount.isNew = true;
 
         this.accounts.push(newAccount);
+
+        // Audit Log
+        if (window.AuditManager) {
+            AuditManager.log('Account', 'Create Account', `Created account: ${newAccount.name} (${newAccount.type})`);
+        }
+
         this.saveAccounts();
         this.renderAccountsList();
 

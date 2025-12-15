@@ -94,6 +94,38 @@ const ReportsModal = {
             }
         }
 
+        // Populate Account Selector
+        const accountSelect = document.getElementById('reportAccountSelect');
+        if (accountSelect && typeof AccountAllocator !== 'undefined') {
+            const accounts = AccountAllocator.getAllAccounts();
+            // Keep "All Accounts"
+            accountSelect.innerHTML = '<option value="all">All Accounts (Consolidated)</option>';
+
+            accounts.forEach(acc => {
+                const option = document.createElement('option');
+                option.value = acc.code; // Using Code or ID? App.transactions usually links via accountId or code. 
+                // Checks transaction-grid and models: transaction.accountId links to BankAccount.id. 
+                // But reports-engine uses 'allocatedAccount' (Code) for grouping. 
+                // Wait, the requirement is "Specific Account" (Bank Account), NOT "Specific Category".
+                // We need to filter by 'accountId' (The Bank Account ID), not the Allocated Category Code.
+
+                // Let's use BankAccountManager for Bank Accounts, not AccountAllocator (Chart of Accounts)
+            });
+        }
+
+        // Correct filters: We want Bank Accounts!
+        if (accountSelect && typeof BankAccountManager !== 'undefined') {
+            const bankAccounts = BankAccountManager.accounts;
+            accountSelect.innerHTML = '<option value="all">All Accounts (Consolidated)</option>';
+
+            bankAccounts.forEach(acc => {
+                const option = document.createElement('option');
+                option.value = acc.id;
+                option.textContent = `${acc.icon} ${acc.name}`;
+                accountSelect.appendChild(option);
+            });
+        }
+
         modal.classList.add('active');
     },
 
@@ -106,11 +138,26 @@ const ReportsModal = {
 
     generateReport() {
         // Get transactions from App
-        const transactions = App.transactions;
+        let transactions = App.transactions;
 
         if (!transactions || transactions.length === 0) {
             alert('No transactions loaded. Please upload a CSV file first.');
             return;
+        }
+
+        // FILTER: By Account (Bank Account)
+        const accountSelect = document.getElementById('reportAccountSelect');
+        if (accountSelect && accountSelect.value !== 'all') {
+            const selectedAccountId = accountSelect.value;
+            console.log('🔍 Filtering Report for Account ID:', selectedAccountId);
+
+            // Filter transactions that belong to this Bank Account
+            transactions = transactions.filter(t => t.accountId === selectedAccountId);
+
+            if (transactions.length === 0) {
+                alert('No transactions found for the selected bank account.');
+                return;
+            }
         }
 
         // Get active report type

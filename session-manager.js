@@ -31,11 +31,11 @@ const SessionManager = {
     addToHistory(session) {
         try {
             let history = this.getHistory();
-            
+
             // Remove duplicates (by filename generally, or just push to top)
             // We want unique filenames at top, or just latest versions?
             // Let's just keep last 3 saves for now, filtering out exact duplicates if needed.
-            
+
             // Simple: Remove if exact filename exists (overwrite effect)
             history = history.filter(h => h.filename !== session.filename);
 
@@ -49,7 +49,7 @@ const SessionManager = {
                 // Storing 3 full transaction sets might be heavy.
                 // LocalStorage is ~5MB. 
                 // If a file is 500KB, 3 files is 1.5MB. It's okay.
-                data: session.data 
+                data: session.data
             });
 
             // Limit to 3
@@ -111,12 +111,12 @@ const SessionManager = {
         if (history[index]) {
             const item = history[index];
             console.log('📂 Restoring from history:', item.filename);
-            
+
             // Update "Current" pointers
             localStorage.setItem('lastTransactions', item.data);
             localStorage.setItem('lastFileName', item.filename);
             localStorage.setItem('lastFileTime', item.timestamp);
-            
+
             // Load
             const transactions = JSON.parse(item.data);
             if (typeof App !== 'undefined') {
@@ -129,10 +129,36 @@ const SessionManager = {
         return false;
     },
 
+    // Remove specific item from history
+    removeFromHistory(index) {
+        let history = this.getHistory();
+        if (index >= 0 && index < history.length) {
+            history.splice(index, 1);
+            localStorage.setItem('session_history', JSON.stringify(history));
+        }
+    },
+
+    // Save modified history (e.g. after rename)
+    saveHistory(history) {
+        if (!history) return;
+        try {
+            localStorage.setItem('session_history', JSON.stringify(history));
+        } catch (e) {
+            console.error('Failed to save history:', e);
+        }
+    },
+
+    updateHistoryItem(index, updates) {
+        let history = this.getHistory();
+        if (history[index]) {
+            history[index] = { ...history[index], ...updates };
+            localStorage.setItem('session_history', JSON.stringify(history));
+        }
+    },
+
     clearSession() {
         localStorage.removeItem('lastTransactions');
         localStorage.removeItem('lastFileName');
         localStorage.removeItem('lastFileTime');
-        // Do we clear history? Maybe not, safety net.
     }
 };

@@ -520,6 +520,8 @@ window.TransactionGrid = {
                 state: [{ colId: 'date', sort: 'asc' }],
                 defaultState: { sort: null }
             });
+
+            if (window.AuditManager) AuditManager.log('Grid', 'Edit Date', `Transaction ${transaction.id || 'Unknown'} date changed to ${event.newValue}`);
         }
 
         // Handle payee change
@@ -527,6 +529,8 @@ window.TransactionGrid = {
             transaction.payee = event.newValue;
             transaction.status = 'manual';
             this.gridApi.refreshCells({ rowNodes: [event.node], force: true });
+
+            if (window.AuditManager) AuditManager.log('Grid', 'Edit Payee', `Ref ${transaction.id || ''}: Changed payee to "${event.newValue}"`);
         }
 
         // Handle debit change
@@ -543,6 +547,8 @@ window.TransactionGrid = {
             transaction.amount = newValue;
             transaction.status = 'manual';
             shouldRecalculateBalance = true;
+
+            if (window.AuditManager) AuditManager.log('Grid', 'Edit Amount', `Ref ${transaction.id || ''}: Changed amount to ${newValue}`);
         }
 
 
@@ -570,6 +576,10 @@ window.TransactionGrid = {
                 transaction.allocatedAccount = account.code;
                 transaction.allocatedAccountName = account.name;
                 transaction.status = 'manual';
+
+                if (window.AuditManager) {
+                    AuditManager.log('Grid', 'Reclassify', `Ref ${transaction.id || ''}: Reclassified to ${account.name} (${account.code})`);
+                }
 
                 // Learn from this manual categorization
                 VendorMatcher.learnFromTransaction(transaction);
@@ -868,9 +878,20 @@ window.TransactionGrid = {
             const debit = parseFloat(tx.debits) || 0;
             const credit = parseFloat(tx.amount) || 0;
 
-            // Balance calculation: Opening Balance - Debit + Credit
-            // Debits decrease balance (money out), Credits increase balance (money in)
-            runningBalance = runningBalance - debit + credit;
+            // Balance calculation
+            // Get Account Logic (Asset vs Liability)
+            const activeAccount = (typeof BankAccountManager !== 'undefined') ? BankAccountManager.getActiveAccount() : null;
+            // Use helper if available, otherwise check type manually
+            const isReversed = activeAccount ? (activeAccount.isReversedLogic ? activeAccount.isReversedLogic() : (activeAccount.type === 'CREDIT_CARD' || activeAccount.type === 'LINE_OF_CREDIT')) : false;
+
+            if (isReversed) {
+                // LIABILITY (Credit Card): Debits INCREASE balance (Debt), Credits DECREASE balance (Payment)
+                runningBalance = runningBalance + debit - credit;
+            } else {
+                // ASSET (Bank): Debits DECREASE balance, Credits INCREASE balance
+                runningBalance = runningBalance - debit + credit;
+            }
+
             tx.balance = runningBalance;
 
             // Debug first few transactions

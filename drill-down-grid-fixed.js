@@ -60,9 +60,9 @@ window.DrillDownGrid = {
     restoreOrFit() {
         if (!this.gridApi) return;
 
-        const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_VIG);
+        const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_VSM);
         if (savedSize && savedSize.width) {
-            console.log('💾 Restoring VIG Size:', savedSize);
+            console.log('💾 Restoring VSM Size:', savedSize);
             const container = document.getElementById('drillDownGridContainer');
             if (container) {
                 const modalContent = container.closest('.modal-content');
@@ -106,7 +106,7 @@ window.DrillDownGrid = {
                             if (!window.Settings) return;
                             if (!Settings.current) Settings.current = {};
 
-                            Settings.current.modalSize_VIG = { width: w, height: h };
+                            Settings.current.modalSize_VSM = { width: w, height: h };
                             if (Settings.save) Settings.save();
 
                             this.userHasResized = true;
