@@ -5,8 +5,47 @@
 window.AccountAllocator = {
     accounts: [],
 
-    initialize() {
+    async initialize() {
+        // 1. Load Local first (Instant UI)
         this.accounts = Storage.loadAccounts();
+
+        // 2. Cloud Sync ☁️
+        if (window.SupabaseClient) {
+            const isConnected = await SupabaseClient.initialize();
+            if (isConnected) {
+                const cloudAccounts = await SupabaseClient.fetchAccounts();
+
+                if (cloudAccounts && cloudAccounts.length > 0) {
+                    console.log(`☁️ Synced ${cloudAccounts.length} accounts from cloud.`);
+                    this.accounts = cloudAccounts;
+                    Storage.saveAccounts(this.accounts); // Update local cache
+                } else {
+                    // 3. SEEDING: Cloud is empty, push local defaults
+                    console.log('🌱 Cloud is empty. Seeding with default Chart of Accounts...');
+                    if (this.accounts.length > 0) {
+                        for (const acc of this.accounts) {
+                            await SupabaseClient.upsertAccount(acc);
+                        }
+                        console.log('✅ Seeding Complete.');
+                    }
+                }
+
+                // 4. Real-time Updates 📡
+                SupabaseClient.subscribeToAccounts(async (payload) => {
+                    console.log('🔄 Received Real-Time Account Update');
+                    // Simple Strategy: Refetch all to be safe and consistent
+                    const fresh = await SupabaseClient.fetchAccounts();
+                    if (fresh.length > 0) {
+                        this.accounts = fresh;
+                        Storage.saveAccounts(fresh);
+                        // Optional: Trigger UI refresh if we had a global event bus
+                        if (window.ChartManager && ChartManager.renderList) {
+                            ChartManager.renderList();
+                        }
+                    }
+                });
+            }
+        }
     },
 
     // Get all accounts
@@ -48,6 +87,11 @@ window.AccountAllocator = {
         if (index > -1) {
             this.accounts.splice(index, 1);
             Storage.saveAccounts(this.accounts);
+
+            // ☁️ Cloud Delete
+            if (window.SupabaseClient) {
+                SupabaseClient.deleteAccount(code);
+            }
             return true;
         }
         return false;

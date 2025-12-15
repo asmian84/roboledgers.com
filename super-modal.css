@@ -31,12 +31,14 @@
 
 /* 2. Modal Content Container */
 #vendorSummaryModal .modal-content,
-#drillDownModal .modal-content {
-    /* STRICT FIT-CONTENT to shrink wrap - RESTORED "NICE" STATE */
-    width: fit-content;
+#drillDownModal .modal-content,
+#vendorModal .modal-content {
+    /* Standardized Width for Consistent Margins */
+    width: 90vw;
     min-width: 300px;
-    max-width: 92vw;
-    /* 4% Margin on each side */
+    max-width: 1400px;
+    /* Cap specific width if needed, or keep 90vw limit */
+
     height: 90vh;
     max-height: 95vh;
 
@@ -56,6 +58,13 @@
     flex-direction: column;
 
     animation: slideUpLarge 0.2s ease-out;
+}
+
+/* Fix Manage Accounts Modal Centering */
+#manageAccountsModal .modal-content {
+    height: auto;
+    max-height: 85vh;
+    margin: auto;
 }
 
 #vendorSummaryModal .modal-content::-webkit-resizer,
@@ -122,4 +131,89 @@
 
 .modal-close:hover {
     color: var(--text-primary);
+}
+/* --- AUTH MODAL --- */
+.auth-modal-content {
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.auth-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+.auth-container h2 {
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+.btn-primary.full-width {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+.auth-footer {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.auth-footer a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.auth-message {
+    min-height: 20px;
+    font-size: 0.9rem;
+    margin: 10px 0;
+}
+
+/* Nav Button Style */
+.nav-item.special-auth {
+    margin-top: auto; /* Push to bottom */
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.nav-item.special-auth.logged-in {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
 }

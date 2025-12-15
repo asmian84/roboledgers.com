@@ -6,6 +6,13 @@ window.App = {
     transactions: [],
     currentFileName: null,
 
+    // Global Text Formatter for Grids
+    formatGridDescription(text) {
+        if (!text) return '';
+        // Future: Check Settings.current.gridTextCase
+        return String(text).toUpperCase();
+    },
+
     async initialize() {
         console.log('🚀 Initializing AutoBookkeeping v1.03...');
 

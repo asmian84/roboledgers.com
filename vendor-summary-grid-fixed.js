@@ -48,6 +48,11 @@ window.VendorSummaryGrid = {
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.restoreOrFit();
+                this.initializeBulkActions(); // NEW: Setup UI
+            },
+
+            onSelectionChanged: () => {
+                this.updateBulkUI(); // NEW: Handle checkbox clicks
             },
 
             onFirstDataRendered: () => {
@@ -129,6 +134,26 @@ window.VendorSummaryGrid = {
     getColumnDefs() {
         return [
             {
+                // "Ghost Column" for alignment with Drill Down checkboxes
+                width: 50,
+                minWidth: 50,
+                maxWidth: 50,
+                pinned: 'left',
+                lockPosition: true,
+                suppressMenu: true,
+                headerName: '',
+                cellRenderer: (params) => {
+                    // MOCK SYNC STATUS: Check if vendor has an ID or just assume 'Cloud' for now
+                    // User Request: "if sync to cloud... show sync icon"
+                    // We'll use a cloud icon. If we had a 'dirty' flag, we'd use offline.
+                    // For UI demo: Cloud by default.
+                    return `<div style="display:flex; justify-content:center; align-items:center; height:100%;">
+                        <i class="fas fa-cloud" style="color: #3b82f6; font-size: 0.8rem;" title="Synced to Cloud"></i>
+                    </div>`;
+                },
+                cellStyle: { background: '#ffffff', borderRight: '1px solid #e2e8f0', padding: 0 } // Force white background
+            },
+            {
                 // Matches VIG Description style
                 headerName: 'Vendor Name', field: 'name', width: 260, minWidth: 200,
                 sortable: true, filter: true,
@@ -183,6 +208,78 @@ window.VendorSummaryGrid = {
         if (params.colDef.field === 'currentAccount' && window.App?.bulkUpdateVendor) {
             window.App.bulkUpdateVendor(params.data.name, params.newValue);
             this.gridApi.flashCells({ rowNodes: [params.node], columns: ['currentAccount'] });
+        }
+    },
+
+    // --- NEW BULK ACTION LOGIC ---
+    initializeBulkActions() {
+        const bar = document.getElementById('vsmBulkActions');
+        const select = document.getElementById('vsmBulkAccountSelect');
+        const btn = document.getElementById('vsmApplyBulkBtn');
+
+        if (!bar || !select || !btn) return;
+
+        // Populate Dropdown
+        const accounts = AccountAllocator.getAllAccounts();
+        select.innerHTML = '<option value="">Assign Account...</option>' +
+            accounts.map(a => `<option value="${a.code}">${a.code} - ${a.name}</option>`).join('');
+
+        // Clean up old listener if exists (simple check)
+        btn.onclick = () => this.applyBulkUpdate();
+    },
+
+    updateBulkUI() {
+        const bar = document.getElementById('vsmBulkActions');
+        const countSpan = document.getElementById('vsmSelectedCount');
+        if (!bar || !this.gridApi) return;
+
+        const selected = this.gridApi.getSelectedRows();
+        if (selected.length > 0) {
+            bar.style.display = 'flex';
+            if (countSpan) countSpan.textContent = `${selected.length} selected`;
+        } else {
+            bar.style.display = 'none';
+        }
+    },
+
+    applyBulkUpdate() {
+        if (!this.gridApi || !window.App) return;
+
+        const select = document.getElementById('vsmBulkAccountSelect');
+        const accountCode = select.value;
+        const selectedRows = this.gridApi.getSelectedRows();
+
+        if (!accountCode) {
+            alert('Please select an account first.');
+            return;
+        }
+
+        if (selectedRows.length === 0) return;
+
+        if (confirm(`Assign account ${accountCode} to ${selectedRows.length} vendors?`)) {
+            let updatedCount = 0;
+
+            // 1. Update Data & App Logic
+            selectedRows.forEach(row => {
+                // Update App (Backend/Storage)
+                window.App.bulkUpdateVendor(row.name, accountCode);
+
+                // Update Grid Data Locally
+                row.currentAccount = accountCode;
+                updatedCount++;
+            });
+
+            // 2. Refresh Grid Display
+            this.gridApi.applyTransaction({ update: selectedRows });
+            this.gridApi.deselectAll();
+
+            // 3. Reset UI
+            select.value = "";
+            this.updateBulkUI();
+
+            // 4. Feedback
+            // Try to use App's toast if available, or just console
+            console.log(`✅ Bulk Updated ${updatedCount} vendors to ${accountCode}`);
         }
     }
 };

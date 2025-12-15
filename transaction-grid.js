@@ -1018,6 +1018,12 @@ window.VendorGrid = {
 
     initialize(containerId) {
         const container = document.getElementById(containerId);
+        if (!container) return;
+
+        // 1:1 Match with VIG/VSM Logic where possible
+        container.innerHTML = '';
+        container.style.height = '100%';
+        container.style.width = '100%';
 
         const gridOptions = {
             columnDefs: this.getColumnDefs(),
@@ -1026,63 +1032,132 @@ window.VendorGrid = {
                 sortable: true,
                 filter: true,
                 resizable: true,
-                editable: true
+                editable: true,
+                suppressSizeToFit: false // Match VIG
             },
             // Pagination settings
             pagination: true,
             paginationPageSize: 1000,
             paginationPageSizeSelector: [100, 500, 1000, 5000],
             paginationAutoPageSize: false,
-            suppressPaginationPanel: false, // Show controls
+            suppressPaginationPanel: false,
 
             animateRows: true,
-            // 🔑 CRITICAL: Use transaction ID as the Row ID
-            // This allows getRowNode(id) to work for live updates!
-            getRowId: (params) => {
-                return params.data.id;
-            },
+            getRowId: (params) => params.data.id,
+
             onCellValueChanged: (event) => {
                 const vendor = event.data;
-                VendorMatcher.updateVendor(vendor);
+                VendorMatcher.updateVendor(vendor.id, vendor);
             },
+
             onGridReady: (params) => {
                 this.gridApi = params.api;
+                this.restoreOrFit();
+                this.setupSaveListener();
                 this.loadVendors();
             },
-            // 🌈 Apply Rainbow Theme (Directly, identifying red border issue)
-            getRowStyle: (params) => {
-                // Fix: Do NOT use TransactionGrid.getRowStyle because it adds Red Borders to rows without 'allocatedAccount'
-                // Vendors use 'defaultAccount' so they always fail that check.
 
-                // Use standard color scheme
+            onFirstDataRendered: () => {
+                this.restoreOrFit();
+            },
+
+            // 🌈 Apply Rainbow Theme
+            getRowStyle: (params) => {
                 const scheme = (window.Settings && Settings.current.gridColorScheme) || 'rainbow';
                 const schemes = TransactionGrid.colorSchemes || { rainbow: ['#ffffff', '#f8fafc'] };
                 const colors = schemes[scheme] || schemes.rainbow;
-
-                const colorIndex = params.node.rowIndex % colors.length;
-                const style = { background: colors[colorIndex] };
-
-                // Optional font settings
-                if (window.Settings && Settings.current.gridFontSize) {
-                    style.fontSize = Settings.current.gridFontSize + 'px';
-                }
-
-                return style;
+                const index = params.node.rowIndex % colors.length;
+                return { background: colors[index] };
             }
         };
 
         this.gridApi = agGrid.createGrid(container, gridOptions);
-        this.loadVendors(); // Load vendors after grid creation
+    },
 
-        // Responsive Resize
-        const resizeObserver = new ResizeObserver(entries => {
+    // 1:1 Copy from VIG/VSM (Perfected Auto-Fit)
+    restoreOrFit() {
+        if (!this.gridApi) return;
+
+        // 1. Check for saved size (VDG Key)
+        const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_VDG);
+        if (savedSize && savedSize.width) {
+            console.log('💾 Restoring VDG Size:', savedSize);
+            const container = document.getElementById('vendorGrid');
+            if (container) {
+                const modalContent = container.closest('.modal-content');
+                if (modalContent) {
+                    modalContent.style.width = savedSize.width;
+                    if (savedSize.height) modalContent.style.height = savedSize.height;
+                }
+            }
+        } else {
+            // 2. Default Size
+            const container = document.getElementById('vendorGrid');
+            if (container) {
+                const modalContent = container.closest('.modal-content');
+                if (modalContent) {
+                    // Default to wider for Dictionary
+                    modalContent.style.width = '1200px';
+                    modalContent.style.maxWidth = '95vw';
+                }
+            }
+        }
+
+        // Force refresh
+        setTimeout(() => this.gridApi.sizeColumnsToFit(), 50);
+    },
+
+    // 1:1 Copy from VIG/VSM
+    setupSaveListener() {
+        const container = document.getElementById('vendorGrid');
+        if (!container) return;
+        const modalContent = container.closest('.modal-content');
+        if (!modalContent || modalContent.dataset.resizeListenerAttached) return;
+
+        const observer = new ResizeObserver(entries => {
             for (const entry of entries) {
-                if (entry.contentRect.width > 0 && this.gridApi) {
-                    this.safelySizeColumnsToFit();
+                if (this.gridApi) {
+                    this.gridApi.sizeColumnsToFit();
+
+                    // Save loop
+                    clearTimeout(this._saveTimer);
+                    this._saveTimer = setTimeout(() => {
+                        const w = entry.target.style.width;
+                        const h = entry.target.style.height;
+                        if (w && h && parseInt(w) > 300) {
+                            if (!window.Settings) return;
+                            if (!Settings.current) Settings.current = {};
+
+                            Settings.current.modalSize_VDG = { width: w, height: h };
+                            if (Settings.save) Settings.save();
+                        }
+                    }, 500);
                 }
             }
         });
-        resizeObserver.observe(container);
+
+        observer.observe(modalContent);
+        modalContent.dataset.resizeListenerAttached = 'true';
+    },
+
+
+    // ⚡ SMART RESIZE: Polls until grid is visible
+    safelySizeColumnsToFit() {
+        if (!this.gridApi) return;
+
+        const attemptResize = (attemptsLeft) => {
+            const container = document.getElementById('vendorGrid');
+            if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+                // ✅ Visible! Resize now.
+                this.gridApi.sizeColumnsToFit();
+            } else if (attemptsLeft > 0) {
+                // ⏳ Not visible yet... wait and retry
+                requestAnimationFrame(() => attemptResize(attemptsLeft - 1));
+            }
+        };
+
+        // Try for 300 frames (~5 seconds)
+        attemptResize(300);
     },
 
     getColumnDefs() {
@@ -1124,7 +1199,8 @@ window.VendorGrid = {
             {
                 headerName: 'Description',
                 field: 'name',
-                width: 250,
+                flex: 1, // Auto-expand
+                minWidth: 250,
                 pinned: 'left',
                 editable: false,
                 sortable: true,
@@ -1133,13 +1209,15 @@ window.VendorGrid = {
                 valueFormatter: (params) => {
                     if (!params.value) return '';
                     let cleanName = VendorAI.cleanGarbage(params.value);
-                    return VendorAI.toTitleCase(cleanName);
+                    // Use Global Formatter (Defaults to Uppercase)
+                    return App.formatGridDescription(cleanName);
                 }
             },
             {
                 headerName: 'Account # - Category',
                 field: 'defaultAccount',
-                width: 350,
+                flex: 1.5, // Expand more than description
+                minWidth: 350,
                 editable: true,
                 cellEditor: 'agSelectCellEditor',
                 cellEditorParams: {
@@ -1165,7 +1243,8 @@ window.VendorGrid = {
             {
                 headerName: '# of instances',
                 field: 'matchCount',
-                width: 130,
+                flex: 0.5, // 🔧 FIX: Allow this to flex responsibly
+                minWidth: 100,
                 editable: false,
                 sortable: true,
                 filter: true,
@@ -1175,8 +1254,10 @@ window.VendorGrid = {
             },
             {
                 headerName: 'Delete',
-                width: 100,
-                pinned: 'right',
+                width: 80,
+                minWidth: 80,
+                maxWidth: 100,
+                pinned: 'right', // ↩️ REVERT: User wants it pinned at the end
                 lockPosition: true,
                 suppressMenu: true,
                 filter: false,
@@ -1187,9 +1268,15 @@ window.VendorGrid = {
                     btn.className = 'btn-secondary';
                     btn.innerHTML = '🗑️';
                     btn.style.cssText = 'padding: 4px 12px; font-size: 14px; cursor: pointer;';
-                    btn.onclick = () => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation(); // Stop row selection
+                        e.preventDefault();
+                        console.log('🗑️ Delete Requested for:', params.data.name, params.data.id);
                         if (confirm(`Delete vendor "${params.data.name}"?`)) {
-                            this.deleteVendor(params.data.id);
+                            // Use VendorMatcher directly to be safe, but call Grid helper if exists
+                            if (window.VendorMatcher) {
+                                VendorMatcher.deleteVendor(params.data.id);
+                            }
                         }
                     };
                     return btn;

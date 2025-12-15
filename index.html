@@ -30,6 +30,31 @@
 </head>
 
 <body data-theme="arctic-dawn">
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content auth-modal-content">
+            <span class="modal-close" id="closeLoginModal">&times;</span>
+            <div class="auth-container">
+                <div class="auth-icon">🔐</div>
+                <h2 id="authTitle">Welcome Back</h2>
+                <form id="authForm">
+                    <div class="input-group">
+                        <input type="email" id="authEmail" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="authPassword" placeholder="Password" required>
+                    </div>
+                    <div id="authMessage" class="auth-message"></div>
+                    <button type="submit" id="authSubmit" class="btn-primary full-width">Sign In</button>
+                    <div class="auth-footer">
+                        <a href="#" id="authToggle">New here? <b>Create Account</b></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
@@ -700,6 +725,28 @@
         <div class="modal-content large-modal">
             <div class="modal-header">
                 <h2 id="drillDownModalTitle">Transactions for Vendor</h2>
+
+                <!-- NEW: Drill Down Bulk Actions (Hidden by default) -->
+                <div id="ddBulkActions" style="display: none; margin-left: 20px; align-items: center; gap: 10px;">
+                    <span id="ddSelectedCount" style="color: var(--text-secondary); font-size: 0.9rem;">0
+                        selected</span>
+
+                    <!-- Dropdown A: Vendor Reassign -->
+                    <select id="ddBulkVendorSelect"
+                        style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <option value="">(Optional) Move to Vendor...</option>
+                    </select>
+
+                    <!-- Dropdown B: Account Reclassify -->
+                    <select id="ddBulkAccountSelect"
+                        style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <option value="">(Optional) Assign Account...</option>
+                    </select>
+
+                    <button id="ddApplyBulkBtn" class="btn-primary"
+                        style="padding: 4px 12px; font-size: 0.9rem;">Apply</button>
+                </div>
+
                 <button class="modal-close" id="closeDrillDownModal">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
@@ -867,6 +914,7 @@
         <div class="modal-content large-modal">
             <div class="modal-header">
                 <h2>Vendors in Current Grid</h2>
+
                 <button class="modal-close" id="closeVendorSummaryModal">&times;</button>
             </div>
             <!-- Matches VIG Body Structure -->

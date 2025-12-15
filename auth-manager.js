@@ -1,69 +1,40 @@
-const AuthManager = {
+// Auth Manager - Handles Login, Signup, and Session State
+window.AuthManager = {
     user: null,
-    profile: null,
+    session: null,
 
     async initialize() {
-        console.log('🔒 Initializing AuthManager...');
-
         if (!window.SupabaseClient || !SupabaseClient.client) {
-            console.warn('⚠️ Supabase not initialized, skipping auth check.');
+            console.warn('AuthManager: Supabase not initialized.');
             return;
         }
 
+        // 1. Check current session
         const { data: { session } } = await SupabaseClient.client.auth.getSession();
+        this.handleSession(session);
 
-        if (session) {
-            this.user = session.user;
-            await this.checkApprovalStatus();
-        } else {
-            this.redirectToLogin();
-        }
-
-        // Listen for auth changes
-        SupabaseClient.client.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN') {
-                this.user = session.user;
-                await this.checkApprovalStatus();
-            } else if (event === 'SIGNED_OUT') {
-                this.user = null;
-                this.profile = null;
-                this.redirectToLogin();
-            }
+        // 2. Listen for changes
+        SupabaseClient.client.auth.onAuthStateChange((_event, session) => {
+            this.handleSession(session);
         });
+
+        this.setupUI();
     },
 
-    async checkApprovalStatus() {
-        if (!this.user) return;
+    handleSession(session) {
+        this.session = session;
+        this.user = session ? session.user : null;
+        window.CurrentUser = this.user;
 
-        console.log('🔍 Checking approval status for:', this.user.email);
+        this.updateUI();
 
-        const { data: profile, error } = await SupabaseClient.client
-            .from('profiles')
-            .select('approval_status')
-            .eq('id', this.user.id)
-            .single();
-
-        if (error) {
-            console.error('❌ Error fetching profile:', error);
-            // Fallback: If no profile exists, create one? Or just block?
-            // tailored for MVP: Assume trigger created it.
-            return;
-        }
-
-        this.profile = profile;
-        console.log('👤 Profile Status:', profile.approval_status);
-
-        if (profile.approval_status === 'approved') {
-            console.log('✅ User approved. Access granted.');
-            // Stop redirect loop if already on index
-            if (window.location.pathname.endsWith('login.html') || window.location.pathname.endsWith('pending.html')) {
-                window.location.href = 'index.html';
-            }
+        if (this.user) {
+            console.log('👤 User Logged In:', this.user.email);
+            // Trigger Data Load for User
+            if (window.AccountAllocator) AccountAllocator.initialize();
+            if (window.VendorMatcher) VendorMatcher.loadVendors();
         } else {
-            console.warn('⛔ User NOT approved. Redirecting to pending...');
-            if (!window.location.pathname.endsWith('pending.html')) {
-                window.location.href = 'pending.html';
-            }
+            console.log('👤 User Logged Out (Guest Mode)');
         }
     },
 
@@ -84,19 +55,102 @@ const AuthManager = {
     },
 
     async signOut() {
-        await SupabaseClient.client.auth.signOut();
-        window.location.href = 'login.html';
+        const { error } = await SupabaseClient.client.auth.signOut();
+        if (!error) {
+            window.location.reload(); // Clean state
+        }
     },
 
-    redirectToLogin() {
-        const path = window.location.pathname;
-        if (!path.endsWith('login.html') && !path.endsWith('signup.html')) {
-            window.location.href = 'login.html';
+    // UI Handling
+    setupUI() {
+        // Wiring up the Login Modal
+        const loginBtn = document.getElementById('btnLogin');
+        const loginModal = document.getElementById('loginModal');
+        const closeBtn = document.getElementById('closeLoginModal');
+
+        // Form Elements
+        const form = document.getElementById('authForm');
+        const emailInput = document.getElementById('authEmail');
+        const passInput = document.getElementById('authPassword');
+        const submitBtn = document.getElementById('authSubmit');
+        const toggleLink = document.getElementById('authToggle');
+        const msgBox = document.getElementById('authMessage');
+
+        let isSignUp = false;
+
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                if (this.user) {
+                    // If logged in, this button acts as Logout
+                    if (confirm('Log out?')) this.signOut();
+                } else {
+                    loginModal.style.display = 'block';
+                }
+            });
+        }
+
+        if (closeBtn) closeBtn.addEventListener('click', () => loginModal.style.display = 'none');
+
+        if (toggleLink) {
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                isSignUp = !isSignUp;
+                document.getElementById('authTitle').innerText = isSignUp ? 'Create Account' : 'Welcome Back';
+                submitBtn.innerText = isSignUp ? 'Sign Up' : 'Sign In';
+                toggleLink.innerHTML = isSignUp ? 'Already have an account? <b>Sign In</b>' : 'New here? <b>Create Account</b>';
+                msgBox.innerText = '';
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                submitBtn.disabled = true;
+                msgBox.innerText = 'Processing...';
+
+                const email = emailInput.value;
+                const pass = passInput.value;
+                let result;
+
+                if (isSignUp) {
+                    result = await this.signUp(email, pass);
+                    if (!result.error) {
+                        msgBox.style.color = 'green';
+                        msgBox.innerText = 'Account created! Please check your email to confirm.';
+                    }
+                } else {
+                    result = await this.signIn(email, pass);
+                    if (!result.error) {
+                        loginModal.style.display = 'none'; // Close on success
+                    }
+                }
+
+                if (result.error) {
+                    msgBox.style.color = 'red';
+                    msgBox.innerText = result.error.message;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    },
+
+    updateUI() {
+        const loginBtn = document.getElementById('btnLogin');
+        if (loginBtn) {
+            if (this.user) {
+                loginBtn.innerHTML = `<span>${this.user.email}</span>`;
+                loginBtn.title = "Click to Logout";
+                loginBtn.classList.add('logged-in');
+            } else {
+                loginBtn.innerText = 'Sign In';
+                loginBtn.classList.remove('logged-in');
+            }
         }
     }
 };
 
-// Auto-init if client is ready (handled in app.js usually, but good for standalone pages)
-if (window.SupabaseClient) {
-    // AuthManager.initialize(); // Let app.js call this to avoid race conditions
-}
+// Auto-init
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for Supabase
+    setTimeout(() => AuthManager.initialize(), 500);
+});

@@ -243,14 +243,111 @@ window.SupabaseClient = {
         console.log('📡 Subscribing to real-time vendor updates...');
 
         this.client
-            .channel('public:vendors')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, (payload) => {
-                console.log('📡 Real-time Vendor Update:', payload);
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ Real-time subscription active');
+                }
+            });
+    },
+
+    // --- ACCOUNT OPERATIONS (Chart of Accounts) ---
+
+    /**
+     * Fetch all accounts from Supabase
+     */
+    async fetchAccounts() {
+        if (!this.isConnected || !this.client) return [];
+
+        try {
+            const { data, error } = await this.client
+                .from('accounts')
+                .select('*')
+                .order('code');
+
+            if (error) throw error;
+
+            return data.map(row => ({
+                code: row.code,
+                name: row.name,
+                type: row.type || 'expense', // Fallback
+                category: row.category,
+                isActive: row.is_active !== false,
+                permission: 'read-write', // Default
+                _synced: true
+            }));
+        } catch (err) {
+            console.error('❌ Failed to fetch accounts:', err);
+            return [];
+        }
+    },
+
+    /**
+     * Upsert an account (Live Sync)
+     */
+    async upsertAccount(account) {
+        if (!this.isConnected || !this.client) return null;
+
+        const row = {
+            code: account.code,
+            name: account.name,
+            type: account.type || 'expense',
+            category: account.category,
+            is_active: account.isActive,
+            updated_at: new Date().toISOString()
+            // company_id is handled by RLS or default
+        };
+
+        try {
+            const { data, error } = await this.client
+                .from('accounts')
+                .upsert(row, { onConflict: 'code' })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        } catch (err) {
+            console.error('❌ Failed to upsert account:', err);
+            return null;
+        }
+    },
+
+    /**
+     * Delete an account
+     */
+    async deleteAccount(code) {
+        if (!this.isConnected || !this.client) return false;
+
+        try {
+            const { error } = await this.client
+                .from('accounts')
+                .delete()
+                .match({ code: code });
+
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            console.error('❌ Failed to delete account:', err);
+            return false;
+        }
+    },
+
+    /**
+     * Subscribe to Real-Time Account Updates
+     */
+    subscribeToAccounts(onUpdate) {
+        if (!this.isConnected) return;
+
+        console.log('accounts-live: Subscribing to updates...');
+        this.client
+            .channel('public:accounts')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts' }, (payload) => {
+                console.log('accounts-live: Update received:', payload);
                 if (onUpdate) onUpdate(payload);
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('✅ Real-time subscription active');
+                    console.log('✅ accounts-live: Connected');
                 }
             });
     }

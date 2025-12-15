@@ -41,12 +41,22 @@ window.VendorManager = {
 
 
 
-        const bulkIndexBtn = document.getElementById('bulkIndexBtn');
-        if (bulkIndexBtn) {
-            bulkIndexBtn.addEventListener('click', () => {
-                this.toggleBulkIndex();
-            });
-        }
+        // Robustly attach/reattach listener only once
+        const bindBulkIndex = () => {
+            const bulkIndexBtn = document.getElementById('bulkIndexBtn');
+            if (bulkIndexBtn && !bulkIndexBtn._listenerAttached) {
+                console.log('✅ Bulk Index Button Found & Wired');
+                bulkIndexBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleBulkIndex();
+                });
+                bulkIndexBtn._listenerAttached = true;
+            }
+        };
+        bindBulkIndex();
+        // Check again after a delay in case DOM was slow
+        setTimeout(bindBulkIndex, 1000);
 
         // Import Vendor Button - Toggle drop bucket
 
@@ -230,6 +240,22 @@ window.VendorManager = {
         this.modal.classList.add('active');
         VendorGrid.loadVendors();
         this.hideBulkIndex(); // Reset to normal view
+
+        // 🔧 FIX: Robust Loop to Force Resize until it works
+        // The grid needs to be visible and have width > 0
+        let attempts = 0;
+        const resizeInterval = setInterval(() => {
+            const gridDiv = document.getElementById('vendorGrid');
+            if (gridDiv && gridDiv.offsetWidth > 0 && VendorGrid.gridApi) {
+                VendorGrid.gridApi.sizeColumnsToFit();
+                attempts++;
+                // Try a few times to ensure it catches the transition end
+                if (attempts > 5) clearInterval(resizeInterval);
+            } else if (attempts > 20) {
+                clearInterval(resizeInterval); // Give up after 2 seconds
+            }
+            attempts++;
+        }, 100);
     },
 
     hideModal() {
@@ -237,19 +263,50 @@ window.VendorManager = {
     },
 
     toggleBulkIndex() {
+        // Debounce / Toggle State
         this.bulkIndexActive = !this.bulkIndexActive;
+        console.log('🔄 Toggling Bulk Index. Active:', this.bulkIndexActive);
 
         const bulkInfo = document.getElementById('bulkIndexInfo');
         const vendorGrid = document.getElementById('vendorGrid');
         const bulkBtn = document.getElementById('bulkIndexBtn');
 
         if (this.bulkIndexActive) {
-            bulkInfo.style.display = 'block';
-            vendorGrid.style.height = '300px';
-            bulkBtn.textContent = '← Back to List';
+            // SHOW BULK IMPORT
+            if (bulkInfo) bulkInfo.style.display = 'block';
+            if (vendorGrid) vendorGrid.style.height = '300px';
+            if (bulkBtn) {
+                bulkBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:8px;">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg> Back to List`;
+            }
+
+            // Re-bind click zone (Hard Fix)
+            const clickZone = document.getElementById('bulkUploadZone');
+            const fileInput = document.getElementById('bulkFileInput');
+            if (clickZone && fileInput) {
+                clickZone.onclick = (e) => {
+                    e.stopPropagation(); // Prevent bubbling
+                    console.log('📂 Bulk Upload Zone Clicked');
+                    fileInput.click();
+                };
+                // Also handle file change
+                fileInput.onchange = (e) => {
+                    console.log('📂 Files selected:', e.target.files.length);
+                    this.processBulkFiles(e.target.files);
+                };
+            }
+
         } else {
+            // HIDE BULK IMPORT (Return to List)
             this.hideBulkIndex();
         }
+
+        // Resize grid again as height changed
+        setTimeout(() => {
+            if (VendorGrid.gridApi) VendorGrid.gridApi.sizeColumnsToFit();
+        }, 300);
     },
 
     hideBulkIndex() {
