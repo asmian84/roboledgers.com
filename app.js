@@ -2070,38 +2070,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Settings Button Logic
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const closeSettingsBtn = document.getElementById('closeSettingsModal');
-
-    if (settingsBtn && settingsModal) {
-        settingsBtn.addEventListener('click', () => {
-            console.log('⚙️ Opening settings...');
-            settingsModal.style.display = '';
-            settingsModal.classList.add('active');
-
-            // Refresh settings UI if needed
-            if (typeof Settings !== 'undefined') {
-                Settings.updateCompanyName();
-                Settings.updateThemePicker();
-            }
-        });
-
-        // Close button
-        if (closeSettingsBtn) {
-            closeSettingsBtn.addEventListener('click', () => {
-                settingsModal.classList.remove('active');
-            });
-        }
-
-        // Click outside to close
-        window.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                settingsModal.classList.remove('active');
-            }
-        });
-    }
+    // Settings Logic - Handled by settings-manager.js
+    // Legacy code removed to prevent conflicts
 
     // Reports button (placeholder)
     const reportsBtn = document.getElementById('reportsBtn');
