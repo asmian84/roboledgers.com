@@ -56,48 +56,79 @@
     </div>
 
     <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo-section" id="logoHome"
-                    style="flex: 1; text-align: right; padding-right: 3rem; cursor: pointer;" title="Return to Home">
-                    <h1 style="font-size: 2.25rem; font-weight: 700;">RoboLedgers<span class="domain"
-                            style="font-weight: 400; opacity: 0.85;">.com</span>
-                    </h1>
-                </div>
-
-                <div class="header-actions">
-                    <button id="openDashboardBtn" class="btn-secondary" title="Executive Dashboard"
-                        onclick="if(window.DashboardManager) DashboardManager.openDashboard()">
-                        <i class="fas fa-chart-pie"></i>
-                        Dashboard
-                    </button>
-                    <button onclick="window.location.href='roadmap.html'" class="btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 11l3 3L22 4"></path>
-                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
-                        </svg>
-                        Roadmap
-                    </button>
-
-                    <button id="settingsBtn" class="btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path
-                                d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24">
-                            </path>
-                        </svg>
-                        Settings
-                    </button>
-                </div>
+        <!-- Sidebar Navigation -->
+        <nav class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">🤖</div>
+                <h2>RoboLedgers</h2>
             </div>
-        </header>
 
+            <div class="nav-group">
+                <p class="nav-label">Main</p>
+                <button class="nav-item active" data-target="dashboardSection" id="navDashboard">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </button>
+                <button class="nav-item" data-target="uploadSection" id="navUpload">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload
+                </button>
+                <button class="nav-item" data-target="reviewSection" id="navReview">
+                    <i class="fas fa-table"></i> Transactions
+                </button>
+                <button class="nav-item" data-target="vendorsSection" id="navVendors"> <!-- Placeholder target -->
+                    <i class="fas fa-store"></i> Vendors
+                </button>
+                <button class="nav-item" data-target="reportsSection" id="navReports"> <!-- Placeholder target -->
+                    <i class="fas fa-file-invoice-dollar"></i> Reports
+                </button>
+            </div>
+
+            <div class="nav-group">
+                <p class="nav-label">Admin</p>
+                <button class="nav-item" data-target="teamSection" id="navTeam">
+                    <i class="fas fa-users"></i> Team
+                </button>
+                <button class="nav-item" data-target="subscriptionSection" id="navSubscription">
+                    <i class="fas fa-credit-card"></i> Subscription
+                </button>
+                <button class="nav-item" data-target="auditSection" id="navAudit">
+                    <i class="fas fa-history"></i> Audit Log
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="nav-item-footer" id="settingsBtn">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="nav-item-footer user-profile-btn" id="userProfileBtn">
+                    <div class="avatar-circle">AD</div>
+                    <div class="user-info-mini">
+                        <span class="name">Admin User</span>
+                        <span class="role">Pro Plan</span>
+                    </div>
+                </button>
+            </div>
+        </nav>
 
         <!-- Main Content Area -->
         <main class="main-content">
+            <!-- Header for Mobile/Title -->
+            <header class="mobile-header">
+                <button id="mobileMenuBtn" class="icon-btn"><i class="fas fa-bars"></i></button>
+                <h2 id="pageTitle">Dashboard</h2>
+            </header>
+
+            <!-- Step 0: Dashboard (New) -->
+            <section id="dashboardSection" class="section active">
+                <div class="welcome-banner">
+                    <h1>Welcome back, <span class="highlight-text">Admin</span></h1>
+                    <p>Here's what's happening with your books today.</p>
+                </div>
+                <!-- KPI Cards moved here from overlay -->
+                <div class="dashboard-grid-placeholder" id="dashboardPlaceholder"></div>
+            </section>
+
             <!-- Step 1: Upload Zone -->
-            <section id="uploadSection" class="section active">
+            <section id="uploadSection" class="section">
                 <div class="stats-bar" id="statsBar">
 
                     <span id="fileTypeIndicator" style="
@@ -903,6 +934,7 @@
 
     <!-- Main App Entry -->
     <!-- Main App Entry -->
+    <script src="nav-manager.js"></script>
     <script src="app.js?v=3.3"></script>
 
     <script>
