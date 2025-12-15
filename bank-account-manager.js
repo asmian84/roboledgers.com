@@ -164,9 +164,16 @@ const BankAccountManager = {
     // Legacy render removed - using unified renderAccountsList below
 
 
-    // --- Mini-Popover UI ---
-
     // --- UI Methods ---
+    showModal() {
+        const modal = document.getElementById('manageAccountsModal');
+        if (modal) {
+            modal.style.display = 'block';
+            this.renderAccountsList();
+        } else {
+            console.error('BankAccountManager: #manageAccountsModal not found');
+        }
+    },
 
 
     setupEventListeners() {

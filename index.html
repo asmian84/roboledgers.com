@@ -249,6 +249,53 @@
             background: #1d4ed8;
         }
 
+        .separator-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .separator-text::before,
+        .separator-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .separator-text::before {
+            margin-right: .5em;
+        }
+
+        .separator-text::after {
+            margin-left: .5em;
+        }
+
+        .btn-dev-mode {
+            width: 100%;
+            padding: 12px;
+            background: #f1f5f9;
+            color: var(--text-light);
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-dev-mode:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+            border-color: #94a3b8;
+        }
+
         .auth-toggle {
             text-align: center;
             margin-top: 1.5rem;
@@ -365,6 +412,12 @@
                 <div id="authMessage" class="auth-message"></div>
 
                 <button type="submit" id="authSubmit" class="btn-submit">Sign In</button>
+
+                <div class="separator-text">or</div>
+
+                <button type="button" id="btnDevLogin" class="btn-dev-mode">
+                    <i class="fas fa-hammer"></i> Work Offline (Dev Mode)
+                </button>
 
                 <div class="auth-toggle">
                     <span id="authToggleText">New to RoboLedgers?</span>

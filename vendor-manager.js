@@ -17,6 +17,19 @@ window.VendorManager = {
         // Initialize vendor grid
         VendorGrid.initialize('vendorGrid');
 
+        // Wire up NEW Search Bar
+        const searchInput = document.getElementById('vendorSearch');
+        const bindSearch = () => {
+            if (searchInput && VendorGrid.gridApi) {
+                searchInput.addEventListener('input', (e) => {
+                    VendorGrid.gridApi.setGridOption('quickFilterText', e.target.value);
+                });
+            } else if (searchInput) {
+                setTimeout(bindSearch, 500);
+            }
+        };
+        bindSearch();
+
         // Set up event listeners with null checks
         const dictBtn = document.getElementById('dictBtn');
         if (dictBtn) {

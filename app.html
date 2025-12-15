@@ -13,11 +13,10 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <!-- AG Grid for interactive spreadsheet -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-grid.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/styles/ag-theme-alpine-dark.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-grid.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-theme-alpine.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community@31.0.1/styles/ag-theme-alpine-dark.min.css">
+    <script src="https://unpkg.com/ag-grid-community@31.0.1/dist/ag-grid-community.min.js"></script>
 
     <!-- Chart.js for Beautiful Visuals -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -99,6 +98,12 @@
                 <button class="nav-item-footer" id="settingsBtn" data-target="settingsSection">
                     <i class="fas fa-cog"></i> Settings
                 </button>
+                <div class="nav-separator"></div>
+                <!-- Reconciliation Link Added Here -->
+                <button class="nav-item-footer" id="navReconciliation" data-target="reconciliationSection">
+                    <i class="fas fa-check-double"></i> Reconciliation
+                </button>
+
                 <div class="user-profile-widget">
                     <div class="avatar-circle">AD</div>
                     <div class="user-info-mini">
@@ -207,22 +212,15 @@
                         <input type="file" id="fileInput" accept=".csv" hidden>
                     </div>
 
-                    <div class="upload-info">
-                        <div class="info-card">
-                            <div class="info-icon">📊</div>
-                            <h3>Smart Categorization</h3>
-                            <p>Automatically matches vendors to your dictionary and assigns accounts</p>
+                    <!-- Recent Files Explorer -->
+                    <div class="file-explorer-container">
+                        <div class="file-explorer-header">
+                            <h3><i class="fas fa-history"></i> Recent Uploads</h3>
                         </div>
-                        <div class="info-card">
-                            <div class="info-icon">✏️</div>
-                            <h3>Interactive Review</h3>
-                            <p>Edit transactions in a spreadsheet-like interface with real-time updates</p>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-icon">⚡</div>
-                            <h3>Export Ready</h3>
-                            <p>Generate Excel files formatted for QuickBooks and CASEWARE import</p>
-                        </div>
+                        <ul id="fileList" class="file-list">
+                            <!-- Populated by file-manager.js -->
+                            <li class="empty-state">No recent files found.</li>
+                        </ul>
                     </div>
                 </div>
             </section>
@@ -349,81 +347,93 @@
 
             <!-- Step 3: Transaction Review -->
             <section id="reviewSection" class="section">
-                <!-- Wrapper for Sticky Header -->
-                <div class="sticky-header-wrapper">
-                    <div class="review-header">
-                        <div class="review-title-center">
-                            <h2>Transaction Review</h2>
-                            <p id="reviewStats" class="review-stats"><span
-                                    style="color:var(--text-secondary); opacity:0.7;">Ready to import CSV...</span></p>
-                        </div>
+                <!-- Empty State Message (Shown when no transactions) -->
+                <div id="emptyTransactionState" class="empty-state-container">
+                    <div class="empty-state-content">
+                        <div class="empty-icon">📊</div>
+                        <h2>NO data found, upload CSV to review transactions</h2>
+
                     </div>
-                    <div class="review-actions-wrapper">
-                        <!-- Top Row: Buttons -->
-                        <div class="review-buttons">
-                            <button id="reconciliationShortcutBtn" class="btn-secondary"
-                                onclick="document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})"
-                                title="Jump to Reconciliation">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                    <path d="M2 17l10 5 10-5"></path>
-                                    <path d="M2 12l10 5 10-5"></path>
-                                </svg>
-                                Reconciliation
-                            </button>
-                            <button id="popoutBtn" class="btn-secondary" title="Open grid in new window">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Pop-Out
-                            </button>
-                            <button id="exportBtn" class="btn-secondary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Export XLS
-                            </button>
-                            <!-- NEW: Vendor Summary Button -->
-                            <button id="vendorSummaryBtn" class="btn-secondary"
-                                title="View/Edit unique vendors in grid">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                Vendors in Grid
-                            </button>
-                            <button id="addDataBtn" class="btn-secondary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Add Data
-                            </button>
-                            <button id="startOverBtn" class="btn-secondary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="1 4 1 10 7 10"></polyline>
-                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                                </svg>
-                                Start Over
-                            </button>
+                </div>
+
+                <div id="reviewContent" style="display: none;">
+                    <!-- Wrapper for Sticky Header -->
+                    <div class="sticky-header-wrapper">
+                        <div class="review-header">
+                            <div class="review-title-center">
+                                <h2>Transaction Review</h2>
+                                <p id="reviewStats" class="review-stats"><span
+                                        style="color:var(--text-secondary); opacity:0.7;">Ready to import CSV...</span>
+                                </p>
+                            </div>
                         </div>
-                        <!-- Bottom Row: Search Controls -->
-                        <div class="search-controls"
-                            style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
-                            <input type="text" id="gridQuickFilter" placeholder="Quick search..."
-                                style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: #ffffff; color: #1e293b; width: 200px; font-size: 0.9rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
-                                    Ref#:
-                                </label>
-                                <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
+                        <div class="review-actions-wrapper">
+                            <!-- Top Row: Buttons -->
+                            <div class="review-buttons">
+                                <button id="reconciliationShortcutBtn" class="btn-secondary"
+                                    onclick="document.getElementById('reconciliationPanel').scrollIntoView({behavior: 'smooth'})"
+                                    title="Jump to Reconciliation">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                        <path d="M2 17l10 5 10-5"></path>
+                                        <path d="M2 12l10 5 10-5"></path>
+                                    </svg>
+                                    Reconciliation
+                                </button>
+                                <button id="popoutBtn" class="btn-secondary" title="Open grid in new window">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Pop-Out
+                                </button>
+                                <button id="exportBtn" class="btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Export XLS
+                                </button>
+                                <!-- NEW: Vendor Summary Button -->
+                                <button id="vendorSummaryBtn" class="btn-secondary"
+                                    title="View/Edit unique vendors in grid">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    Vendors in Grid
+                                </button>
+                                <button id="addDataBtn" class="btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    Add Data
+                                </button>
+                                <button id="startOverBtn" class="btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                    </svg>
+                                    Start Over
+                                </button>
+                            </div>
+                            <!-- Bottom Row: Search Controls -->
+                            <div class="search-controls"
+                                style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;">
+                                <input type="text" id="gridQuickFilter" placeholder="Quick search..."
+                                    style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: #ffffff; color: #1e293b; width: 200px; font-size: 0.9rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <label for="refPrefixInput"
+                                        style="font-size: 0.9rem; color: var(--text-secondary);">
+                                        Ref#:
+                                    </label>
+                                    <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
                                     padding: 0.4rem 0.6rem;
                                     border: 1px solid var(--border-color);
                                     border-radius: 4px;
@@ -432,13 +442,13 @@
                                     width: 70px;
                                     font-size: 0.9rem;
                                 " />
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
 
-                                <div class="input-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <label style="margin: 0; white-space: nowrap;">Account:</label>
-                                    <div style="display: flex; gap: 0.25rem; align-items: center;">
-                                        <select id="bankAccountSelect" style="
+                                    <div class="input-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <label style="margin: 0; white-space: nowrap;">Account:</label>
+                                        <div style="display: flex; gap: 0.25rem; align-items: center;">
+                                            <select id="bankAccountSelect" style="
                                         padding: 0.4rem 0.6rem;
                                         border: 1px solid var(--border-color);
                                         border-radius: 4px;
@@ -448,22 +458,22 @@
                                         cursor: pointer;
                                         min-width: 180px;
                                     ">
-                                            <option value="">Select Account...</option>
-                                        </select>
+                                                <option value="">Select Account...</option>
+                                            </select>
 
-                                        <!-- NEW: Assign Grid Button (Hidden by default) -->
-                                        <button id="assignGridToAccountBtn" class="btn-primary"
-                                            title="Assign ALL current transactions to this account" style="
+                                            <!-- NEW: Assign Grid Button (Hidden by default) -->
+                                            <button id="assignGridToAccountBtn" class="btn-primary"
+                                                title="Assign ALL current transactions to this account" style="
                                             display: none;
                                             padding: 0.4rem 0.8rem;
                                             font-size: 0.8rem;
                                             white-space: nowrap;
                                             background-color: var(--accent-color); 
                                         ">
-                                            Link to Grid
-                                        </button>
+                                                Link to Grid
+                                            </button>
 
-                                        <button id="editAccountBtn" class="btn-icon" title="Manage Accounts" style="
+                                            <button id="editAccountBtn" class="btn-icon" title="Manage Accounts" style="
                                         background: transparent;
                                         border: 1px solid var(--border-color);
                                         border-radius: 4px;
@@ -474,101 +484,131 @@
                                         justify-content: center;
                                         color: var(--text-secondary);
                                     ">
-                                            ✏️
-                                        </button>
+                                                ✏️
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Bulk Actions Bar (appears when rows selected) -->
-                    <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
-                        <div class="bulk-actions-content">
-                            <span class="selection-count">
-                                <strong id="selectedCount">0</strong> transactions selected
-                            </span>
+                        <!-- Bulk Actions Bar (appears when rows selected) -->
+                        <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+                            <div class="bulk-actions-content">
+                                <span class="selection-count">
+                                    <strong id="selectedCount">0</strong> transactions selected
+                                </span>
 
-                            <div class="bulk-actions-controls">
-                                <select id="bulkAccountSelect" class="bulk-account-dropdown">
-                                    <option value="">Assign Account...</option>
-                                </select>
+                                <div class="bulk-actions-controls">
+                                    <select id="bulkAccountSelect" class="bulk-account-dropdown">
+                                        <option value="">Assign Account...</option>
+                                    </select>
 
-                                <button id="applyBulkAccount" class="bulk-action-btn primary">
-                                    Apply to Selected
-                                </button>
+                                    <button id="applyBulkAccount" class="bulk-action-btn primary">
+                                        Apply to Selected
+                                    </button>
 
-                                <button id="clearSelection" class="bulk-action-btn secondary">
-                                    Clear Selection
-                                </button>
+                                    <button id="clearSelection" class="bulk-action-btn secondary">
+                                        Clear Selection
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div> <!-- End Sticky Header Wrapper -->
+                    </div> <!-- End Sticky Header Wrapper -->
 
-                <div class="grid-container">
-                    <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                    <div class="grid-container">
+                        <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                    </div>
+
                 </div>
 
-                <!-- Bank Reconciliation Panel -->
-                <div id="reconciliationPanel" class="reconciliation-panel">
-                    <h3>🏦 Bank Reconciliation</h3>
-                    <div class="reconciliation-grid">
-                        <div class="reconciliation-section">
-                            <h4>Opening Balance</h4>
-                            <div class="reconciliation-input-group">
-                                <label>Expected</label>
-                                <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
-                                    class="currency-input">
-                            </div>
-                            <div class="reconciliation-value">
-                                <label>Calculated</label>
-                                <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
-                            </div>
-                        </div>
-                        <div class="reconciliation-section">
-                            <h4>Ending Balance</h4>
-                            <div class="reconciliation-input-group">
-                                <label>Expected</label>
-                                <input type="text" id="expectedEndingBalance" placeholder="$0.00"
-                                    class="currency-input">
-                            </div>
-                            <div class="reconciliation-value">
-                                <label>Calculated</label>
-                                <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                <!-- Reconciliation Section (Moved from Modal/Dashboard) -->
+                <div id="reconciliationSection" class="section">
+                    <div class="section-header">
+                        <h1>Reconciliation</h1>
+                        <p>Verify your bank balances against your records.</p>
+                    </div>
+
+                    <!-- KPIs Moved Here -->
+                    <div class="kpi-row" style="margin-bottom: 2rem;">
+                        <div class="kpi-card glass-panel profit-card">
+                            <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
+                            <div class="kpi-info">
+                                <h3>Net Profit (YTD)</h3>
+                                <h2 id="kpiProfitRecon">$0.00</h2>
                             </div>
                         </div>
-                        <div class="reconciliation-section">
-                            <h4>Transaction Totals</h4>
-                            <div class="status-item">
-                                <label>Total Credits</label>
-                                <span id="totalCredits" class="calculated-value">$0.00</span>
-                            </div>
-                            <div class="status-item">
-                                <label>Total Debits</label>
-                                <span id="totalDebits" class="calculated-value">$0.00</span>
+                        <div class="kpi-card glass-panel cash-card">
+                            <div class="icon-wrapper"><i class="fas fa-coins"></i></div>
+                            <div class="kpi-info">
+                                <h3>Cash on Hand</h3>
+                                <h2 id="kpiCashRecon">$0.00</h2>
+                                <p class="trend neutral">Latest Balance</p>
                             </div>
                         </div>
-                        <div class="reconciliation-section">
-                            <h4>Discrepancy</h4>
-                            <div class="status-item">
-                                <label>Opening</label>
-                                <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                    </div>
+
+                    <!-- Bank Reconciliation Panel (Moved from Review Section) -->
+                    <div id="reconciliationPanel" class="reconciliation-panel">
+                        <h3>🏦 Bank Reconciliation</h3>
+                        <div class="reconciliation-grid">
+                            <div class="reconciliation-section">
+                                <h4>Opening Balance</h4>
+                                <div class="reconciliation-input-group">
+                                    <label>Expected</label>
+                                    <input type="text" id="expectedOpeningBalance" placeholder="$0.00"
+                                        class="currency-input">
+                                </div>
+                                <div class="reconciliation-value">
+                                    <label>Calculated</label>
+                                    <span id="calculatedOpeningBalance" class="calculated-value">$0.00</span>
+                                </div>
                             </div>
-                            <div class="status-item">
-                                <label>Ending</label>
-                                <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                            <div class="reconciliation-section">
+                                <h4>Ending Balance</h4>
+                                <div class="reconciliation-input-group">
+                                    <label>Expected</label>
+                                    <input type="text" id="expectedEndingBalance" placeholder="$0.00"
+                                        class="currency-input">
+                                </div>
+                                <div class="reconciliation-value">
+                                    <label>Calculated</label>
+                                    <span id="calculatedEndingBalance" class="calculated-value">$0.00</span>
+                                </div>
                             </div>
-                            <div class="status-indicator" id="statusIndicator">
-                                <span class="status-icon">⚪</span>
-                                <span class="status-text">Enter expected balances</span>
+                            <div class="reconciliation-section">
+                                <h4>Transaction Totals</h4>
+                                <div class="status-item">
+                                    <label>Total Credits</label>
+                                    <span id="totalCredits" class="calculated-value">$0.00</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Total Debits</label>
+                                    <span id="totalDebits" class="calculated-value">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="reconciliation-section">
+                                <h4>Discrepancy</h4>
+                                <div class="status-item">
+                                    <label>Opening</label>
+                                    <span id="openingDiscrepancy" class="discrepancy-value">$0.00</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Ending</label>
+                                    <span id="endingDiscrepancy" class="discrepancy-value">$0.00</span>
+                                </div>
+                                <div class="status-indicator" id="statusIndicator">
+                                    <span class="status-icon">⚪</span>
+                                    <span class="status-text">Enter expected balances</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+    </div> <!-- End reviewContent -->
 
-                <!-- Settings Modal (Deprecated - Moved to Page Section) -->
-                <!-- 
+    <!-- Settings Modal (Deprecated - Moved to Page Section) -->
+    <!-- 
                 <div id="settingsModal" class="modal">
                      ... Deprecated ...
                 </div> 
@@ -577,61 +617,67 @@
     </div>
 
     <!-- Manage Accounts Modal -->
+    <!-- Manage Accounts Modal (Standardized) -->
     <div id="manageAccountsModal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2>Manage Bank Accounts</h2>
+                <h2>🏦 Manage Accounts</h2>
                 <button class="modal-close">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="account-actions">
-                    <button id="addAccountBtn" class="btn-primary-small">+ Add Account</button>
-                    <!-- <button id="reorderAccountsBtn" class="btn-secondary-small">⇅ Reorder</button> -->
-                </div>
-                <!-- Dynamic List -->
-                <div id="accountsList" class="accounts-list-container"></div>
+            <div class="modal-body" style="padding-bottom: 0;">
+                <div id="accountsList" style="width: 100%;"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="addAccountBtn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Add Account
+                </button>
+                <button class="btn-secondary"
+                    onclick="document.getElementById('manageAccountsModal').style.display='none'">Close</button>
             </div>
         </div>
     </div>
 
     <!-- Chart of Accounts Modal -->
     <div id="chartOfAccountsModal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-content large-modal">
             <div class="modal-header">
                 <h2>Chart of Accounts</h2>
-                <div class="header-actions">
-                    <button id="addAccountChartBtn" class="btn-primary" title="Add New Account">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 5v14M5 12h14"></path>
-                        </svg>
-                        Add Account
-                    </button>
-                    <button id="refreshChartBtn" class="btn-secondary" title="Refresh">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                        </svg>
-                        Refresh
-                    </button>
-                    <button class="modal-close">&times;</button>
-                </div>
+                <button class="modal-close">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="toolbar" style="margin-bottom: 1rem; display: flex; gap: 10px;">
-                    <input type="text" id="chartSearch" placeholder="Search accounts..." class="search-input"
-                        style="flex: 1;">
-                    <!-- Future: Add Account Button -->
+            <div class="modal-body" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Toolbar inside body but flush -->
+                <div class="toolbar"
+                    style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-secondary);">
+
+                    <div class="search-wrapper" style="flex: 1; position: relative;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                        <input type="text" id="chartSearch" placeholder="Search accounts..."
+                            style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <button id="addAccountChartBtn" class="btn-primary-small">
+                        <i class="fas fa-plus"></i> Add Account
+                    </button>
+                    <button id="refreshChartBtn" class="btn-secondary-small" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
-                <div id="chartList" class="accounts-list-container" style="max-height: 60vh; overflow-y: auto;">
+
+                <div id="chartList" class="accounts-list-container" style="flex: 1; overflow-y: auto; padding: 0;">
                     <!-- Dynamic Content -->
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary"
+                    onclick="document.getElementById('chartOfAccountsModal').style.display='none'">Close</button>
             </div>
         </div>
     </div>
 
     <!-- Add/Edit Account Modal -->
     <div id="accountFormModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content small-modal"> <!-- small-modal if defined, or just modal-content -->
             <div class="modal-header">
                 <h2 id="accountFormTitle">Add Account</h2>
                 <button class="modal-close" id="closeAccountFormModal">&times;</button>
@@ -642,12 +688,13 @@
 
                     <div class="form-group">
                         <label for="accountName">Account Name *</label>
-                        <input type="text" id="accountName" required placeholder="e.g., Main Chequing">
+                        <input type="text" id="accountName" required placeholder="e.g., Main Chequing"
+                            class="modal-input">
                     </div>
 
                     <div class="form-group">
                         <label for="accountType">Account Type *</label>
-                        <select id="accountType" required>
+                        <select id="accountType" required class="modal-select">
                             <option value="CHEQUING">Chequing Account</option>
                             <option value="SAVINGS">Savings Account</option>
                             <option value="CREDIT_CARD">Credit Card</option>
@@ -658,34 +705,36 @@
 
                     <div class="form-group">
                         <label for="accountOpeningBalance">Opening Balance</label>
-                        <input type="number" id="accountOpeningBalance" step="0.01" value="0" placeholder="0.00">
+                        <input type="number" id="accountOpeningBalance" step="0.01" value="0" placeholder="0.00"
+                            class="modal-input">
                     </div>
 
-                    <div class="form-group">
-                        <label>
+                    <div class="form-group checkbox-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                             <input type="checkbox" id="accountIsDefault">
                             Set as default account
                         </label>
                     </div>
 
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" id="cancelAccountForm">Cancel</button>
-                        <button type="submit" class="btn-primary">Save Account</button>
-                    </div>
+                    <!-- Form Actions moved to footer via JS or separate div, strictly footer is outside form usually but we can keep inside if needed for submit. 
+                         Actually standard is footer has the buttons. We will put buttons in footer and attach click handler to submit form. -->
                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelAccountForm">Cancel</button>
+                <button type="button" class="btn-primary"
+                    onclick="document.getElementById('accountForm').dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">Save
+                    Account</button>
             </div>
         </div>
     </div>
 
-    <!-- Reports Modal -->
+    <!-- Reports Modal (Standardized) -->
+    <!-- Reports Modal (Standardized) -->
     <div id="reportsModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content category-modal">
             <div class="modal-header">
                 <h2>📊 Financial Reports</h2>
-                <button class="export-pdf-btn" id="exportReportPDF">
-                    <span>📄</span>
-                    <span>Export PDF</span>
-                </button>
                 <button class="modal-close" id="closeReportsModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -698,34 +747,35 @@
 
                 <!-- Period Selector -->
                 <div class="report-controls"
-                    style="margin: 1rem 0; padding: 1rem; background: var(--panel-bg); border-radius: 8px;">
+                    style="margin: 1rem 0; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                        <div>
-                            <label
-                                style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Period:</label>
-                            <select id="reportPeriod" class="settings-select" style="padding: 0.5rem;">
-                                <option value="monthly">Monthly</option>
-                                <option value="quarterly">Quarterly</option>
-                                <option value="yearly" selected>Yearly</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">End
-                                Date:</label>
-                            <input type="date" id="reportEndDate" class="settings-input"
-                                style="padding: 0.5rem; width: auto;">
-                        </div>
+                        <label style="font-size: 0.9rem; color: var(--text-secondary);">Period:</label>
+                        <select id="reportPeriod" class="settings-select">
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly" selected>Yearly</option>
+                        </select>
+
+                        <label style="font-size: 0.9rem; color: var(--text-secondary);">End Date:</label>
+                        <input type="date" id="reportEndDate" class="settings-input" style="width: auto;">
+
                         <button id="generateReportBtn" class="btn-primary">Generate Report</button>
                     </div>
                 </div>
 
                 <!-- Report Display Area -->
-                <div id="reportDisplay" class="report-display" style="margin-top: 1rem; min-height: 400px;">
-                    <p class="section-desc" style="margin-bottom: 1rem;">
-                        Review all transactions grouped under this vendor. You can move items to other accounts before
-                        finalizing.
-                    </p>
+                <div id="reportDisplay" class="report-display"
+                    style="margin-top: 1rem; min-height: 400px; background: white; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <p style="text-align: center; color: var(--text-secondary); margin-top: 2rem;">Select parameters and
+                        click Generate Report.</p>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="exportReportPDF">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn-secondary"
+                    onclick="document.getElementById('reportsModal').style.display='none'">Close</button>
             </div>
         </div>
     </div>
@@ -733,50 +783,35 @@
 
 
 
-    <!-- Vendor Manager Modal (Restored) -->
+    <!-- Vendor Manager Modal (Standardized) -->
     <div id="vendorModal" class="modal">
-        <div class="modal-content large-modal">
+        <div class="modal-content large-modal"> <!-- Using large-modal variant for width -->
             <div class="modal-header">
                 <h2>Vendor Dictionary</h2>
-                <div class="header-actions">
-                    <button id="addVendorBtn" class="btn-primary" title="Add New Vendor">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 5v14M5 12h14"></path>
-                        </svg>
-                        Add Vendor
-                    </button>
-                    <button id="bulkIndexBtn" class="btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Bulk Index
-                    </button>
-
-
-                    <button id="closeVendorModal" class="modal-close">&times;</button>
-                </div>
-            </div>
-
-            <!-- Import Drop Zone (Hidden by default) -->
-            <div id="vendorImportDropZone" class="import-drop-zone" style="display: none;">
-                <div class="upload-zone">
-                    <div class="upload-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                    </div>
-                    <h3>Drop CSV/Excel Files Here</h3>
-                    <p>to build vendor dictionary</p>
-                    <input type="file" id="vendorImportInput" accept=".csv,.xlsx,.xls" multiple hidden>
-                </div>
+                <button id="closeVendorModal" class="modal-close">&times;</button>
             </div>
 
             <div class="modal-body">
-                <!-- Bulk Index Layout -->
+                <!-- Toolbar -->
+                <div class="account-actions"
+                    style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+                    <button id="addVendorBtn" class="btn-primary-small">
+                        <i class="fas fa-plus"></i> Add Vendor
+                    </button>
+                    <button id="bulkIndexBtn" class="btn-secondary-small">
+                        <i class="fas fa-layer-group"></i> Bulk Index
+                    </button>
+
+                    <!-- Search Bar -->
+                    <div class="search-wrapper" style="margin-left: auto; position: relative;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                        <input type="text" id="vendorSearch" placeholder="Search vendors..."
+                            style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; width: 250px;">
+                    </div>
+                </div>
+
+                <!-- Bulk Import/Index Infos -->
                 <div id="bulkIndexInfo" class="bulk-index-panel" style="display: none;">
                     <div class="bulk-upload-zone" id="bulkUploadZone">
                         <div class="icon">📂</div>
@@ -784,64 +819,60 @@
                         <p>Process years of data to build a master vendor list</p>
                         <input type="file" id="bulkFileInput" multiple hidden>
                     </div>
-
                     <div id="bulkProgress" class="progress-container" style="display: none;">
                         <div class="progress-bar">
                             <div id="bulkProgressFill" class="progress-fill" style="width: 0%"></div>
                         </div>
                         <p id="bulkProgressText">Processing...</p>
                     </div>
-
-                    <div id="bulkResults" class="results-panel" style="display: none;">
-                        <!-- Results injected here -->
-                    </div>
+                    <div id="bulkResults" class="results-panel" style="display: none;"></div>
                 </div>
 
                 <!-- Vendor Grid -->
-                <div id="vendorGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+                <div id="vendorGrid" class="ag-theme-alpine" style="height: 100%; width: 100%; min-height: 400px;">
+                </div>
             </div>
-            <!-- Footer removed -->
+
+            <!-- Optional Footer if needed -->
+            <!-- <div class="modal-footer"><button class="btn-secondary">Close</button></div> -->
         </div>
     </div>
 
-    <!-- Drill Down Modal -->
+    <!-- Drill Down Modal (Standardized) -->
     <div id="drillDownModal" class="modal">
-        <div class="modal-content large-modal">
+        <div class="modal-content modal-large">
             <div class="modal-header">
                 <h2 id="drillDownModalTitle">Transactions for Vendor</h2>
 
-                <!-- NEW: Drill Down Bulk Actions (Hidden by default) -->
+                <!-- Drill Down Bulk Actions -->
                 <div id="ddBulkActions" style="display: none; margin-left: 20px; align-items: center; gap: 10px;">
                     <span id="ddSelectedCount" style="color: var(--text-secondary); font-size: 0.9rem;">0
                         selected</span>
-
-                    <!-- Dropdown A: Vendor Reassign -->
                     <select id="ddBulkVendorSelect"
                         style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
                         <option value="">(Optional) Move to Vendor...</option>
                     </select>
-
-                    <!-- Dropdown B: Account Reclassify -->
                     <select id="ddBulkAccountSelect"
                         style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
                         <option value="">(Optional) Assign Account...</option>
                     </select>
-
                     <button id="ddApplyBulkBtn" class="btn-primary"
                         style="padding: 4px 12px; font-size: 0.9rem;">Apply</button>
                 </div>
 
                 <button class="modal-close" id="closeDrillDownModal">&times;</button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
+
+            <div class="modal-body">
                 <p class="section-desc" style="margin-bottom: 1rem;">
                     Review all transactions grouped under this vendor. You can move items to other accounts before
                     finalizing.
                 </p>
-                <!-- Grid Container: 100% Height to fill modal -->
+                <!-- Grid Container -->
                 <div id="drillDownGridContainer" class="ag-theme-alpine"
                     style="height: 100%; width: 100%; min-height: 500px;"></div>
             </div>
+
             <div class="modal-footer">
                 <button class="btn-secondary"
                     onclick="document.getElementById('drillDownModal').style.display='none'; document.getElementById('drillDownModal').classList.remove('active');">Close</button>

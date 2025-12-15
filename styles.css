@@ -508,6 +508,8 @@ body {
     gap: 1rem;
     align-items: center;
     padding: 0.5rem 0;
+    margin-top: 10vh;
+    /* Push down to middle */
 }
 
 .upload-zone {
@@ -593,44 +595,150 @@ body {
     display: inline-block;
 }
 
-.upload-info {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--spacing-md);
+/* File Explorer */
+.file-explorer-container {
     width: 100%;
-    max-width: 900px;
-}
-
-.info-card {
+    max-width: 600px;
+    /* Match upload zone width */
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     padding: 1rem;
-    text-align: center;
-    transition: all var(--transition-normal);
+    margin-top: 1.5rem;
+    height: auto;
+    max-height: 300px;
+    /* Cap height if list gets long */
+    display: none;
+    /* Default hidden, managed by JS */
+    flex-direction: column;
 }
 
-/* .info-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-color);
-} */
-
-.info-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+.file-explorer-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
 }
 
-.info-card h3 {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.info-card p {
+.file-explorer-header h3 {
+    font-size: 0.95rem;
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 0.5rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.file-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--glass-border);
+}
+
+.file-icon {
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    opacity: 0.7;
+}
+
+.file-details {
+    flex: 1;
+    overflow: hidden;
+}
+
+.file-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-name.editing {
+    border: 1px solid var(--primary-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 2px 4px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.file-meta {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    /* Hidden by default */
+    transition: opacity 0.2s;
+}
+
+.file-item:hover .file-actions {
+    opacity: 1;
+}
+
+.btn-action {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.btn-delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-load:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+/* Scrollbar for list */
+.file-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
 }
 
 /* Processing Section */
@@ -1415,9 +1523,7 @@ input:checked+.toggle-slider:before {
     border: 1px solid var(--border-light);
 }
 
-.modal-content {
-    border: 2px solid var(--border-color);
-}
+
 
 .btn-primary,
 .btn-secondary {
@@ -1468,8 +1574,7 @@ textarea:focus {
 
 /* Light theme enhancements */
 [data-theme="light"] .card,
-[data-theme="light"] .summary-card,
-[data-theme="light"] .modal-content {
+[data-theme="light"] .summary-card {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -1535,117 +1640,43 @@ textarea:focus {
     color: var(--text-secondary);
 }
 
-/* Settings Modal Styling */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    z-index: 10000;
-    /* Ensure this is safely above sticky header (z=50) */
+/* Toolbar Layout Fix */
+.search-controls {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    flex-wrap: nowrap;
+    /* Force one line */
+    width: 100%;
 }
 
-.modal.active {
-    display: flex;
+.search-controls .input-group,
+.search-controls div {
+    margin: 0;
+    /* Remove default margins that might cause wrap */
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
 
-    to {
-        opacity: 1;
-    }
+
+/* Theme Radio Buttons - Tight Wrap (3 in space of 2) */
+.theme-radio-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    max-width: 66%;
+    /* Constraint for tighter look */
 }
 
-.modal-content {
-    background: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-
-    /* Reverted to Standard Centered Sizing */
-    width: 90%;
-    max-width: 800px;
-    /* Responsive height limits */
-    max-height: 90vh;
-
-    display: flex;
-    flex-direction: column;
-    animation: slideUp 0.3s ease;
-    border: 1px solid var(--border-color);
-    margin: auto;
-    /* Robust centering fallback */
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(30px);
-        opacity: 0;
-    }
-
+.theme-radio-option {
     to {
         transform: translateY(0);
         opacity: 1;
     }
 }
 
-.modal-large {
-    width: 900px;
-}
 
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-primary);
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-}
-
-.modal-close:hover {
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-    transform: rotate(90deg);
-}
-
-.modal-body {
-    padding: var(--spacing-lg);
-    overflow-y: auto;
-    flex: 1;
-    /* Take remaining space */
-    min-height: 0;
-    /* Enable scrolling inside flex item */
-}
 
 /* Settings Tabs */
 .settings-tabs {
@@ -1975,6 +2006,8 @@ textarea:focus {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
     margin-top: 0.5rem;
+    max-width: 66%;
+    /* Fits 3 in the space of 2 per user request */
 }
 
 .theme-radio-option {
@@ -2769,4 +2802,57 @@ input.currency-input,
     font-weight: 700;
     margin-bottom: 1rem;
     margin-left: 0.5rem;
+}
+
+/* Empty Transaction State */
+.empty-state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    text-align: center;
+    background: var(--glass-bg);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-color);
+    margin: 2rem;
+}
+
+.empty-state-content {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.empty-state-content h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+/* State Toggling Utilities */
+.state-empty #emptyTransactionState {
+    display: flex !important;
+}
+
+.state-empty #reviewContent {
+    display: none !important;
+}
+
+.state-has-data #emptyTransactionState {
+    display: none !important;
+}
+
+.state-has-data #reviewContent {
+    display: block !important;
 }

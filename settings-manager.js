@@ -128,27 +128,43 @@ const Settings = {
     },
 
     bindEvents() {
-        // Modal logic removed for Page-Based Settings
-        /*
-        const btn = document.getElementById('settingsBtn');
-        const modal = document.getElementById('settingsModal');
-        const closeBtn = document.getElementById('closeSettingsModal');
+        // --- Wired Settings Page Buttons ---
 
-        if (btn && modal) {
-            btn.addEventListener('click', () => {
-                modal.classList.add('active'); // Use active class for animation
-                modal.style.display = 'flex';
-                this.updateThemePicker(); // Refresh UI state
+        // 1. Vendor Dictionary Manager (VDM)
+        const vendorBtn = document.getElementById('settingsVendorDictBtn');
+        if (vendorBtn) {
+            vendorBtn.addEventListener('click', () => {
+                if (window.VendorManager) {
+                    VendorManager.showModal();
+                } else {
+                    console.error('Settings: VendorManager not found');
+                }
             });
         }
 
-        if (closeBtn && modal) {
-            closeBtn.addEventListener('click', () => {
-                modal.classList.remove('active');
-                modal.style.display = 'none';
+        // 2. Chart of Accounts (COA/VSM)
+        const coaBtn = document.getElementById('settingsAccountsBtn');
+        if (coaBtn) {
+            coaBtn.addEventListener('click', () => {
+                if (window.ChartManager) {
+                    ChartManager.showModal();
+                } else {
+                    console.error('Settings: ChartManager not found');
+                }
             });
         }
-        */
+
+        // 3. Bank Account Manager (VGI/BAM)
+        const bankBtn = document.getElementById('settingsBankAccountsBtn');
+        if (bankBtn) {
+            bankBtn.addEventListener('click', () => {
+                if (window.BankAccountManager) {
+                    BankAccountManager.showModal();
+                } else {
+                    console.error('Settings: BankAccountManager not found');
+                }
+            });
+        }
 
         // Tab Switching Logic
         const tabs = document.querySelectorAll('.settings-tab');

@@ -13,6 +13,10 @@ window.SupabaseClient = {
     client: null,
     isConnected: false,
 
+    isOffline() {
+        return localStorage.getItem('devMode') === 'true';
+    },
+
     async initialize() {
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
             console.error('❌ Critical: Supabase credentials missing via config.js');
@@ -80,6 +84,11 @@ window.SupabaseClient = {
      * @param {Object} vendor - Application vendor object
      */
     async upsertVendor(vendor) {
+        if (this.isOffline()) {
+            console.log('🛠️ Offline Mode: Fake upsert success for', vendor.name);
+            return { ...vendor, id: vendor.id || 'dev-id-' + Date.now() };
+        }
+
         if (!this.isConnected || !this.client) return null;
 
         // Transform App object to SQL row
@@ -169,6 +178,7 @@ window.SupabaseClient = {
      * @param {string} vendorId 
      */
     async deleteVendor(vendorId) {
+        if (this.isOffline()) return true;
         if (!this.isConnected || !this.client) return false;
 
         try {
@@ -189,6 +199,8 @@ window.SupabaseClient = {
      * Sync local vendors to cloud (One-way push for MVP)
      */
     async syncVendors(vendors) {
+        if (this.isOffline()) return true;
+
         if (!this.isConnected) {
             alert('Supabase not connected. Please configure credentials.');
             return false;
@@ -238,6 +250,7 @@ window.SupabaseClient = {
      * @param {Function} onUpdate - Callback function (payload) => void
      */
     subscribeToVendors(onUpdate) {
+        if (this.isOffline()) return;
         if (!this.isConnected) return;
 
         console.log('📡 Subscribing to real-time vendor updates...');
@@ -261,6 +274,11 @@ window.SupabaseClient = {
      * Fetch all accounts from Supabase
      */
     async fetchAccounts() {
+        if (this.isOffline()) {
+            console.log('🛠️ Offline Mode: Fetching accounts skipped');
+            return [];
+        }
+
         if (!this.isConnected || !this.client) return [];
 
         try {
@@ -290,6 +308,11 @@ window.SupabaseClient = {
      * Upsert an account (Live Sync)
      */
     async upsertAccount(account) {
+        if (this.isOffline()) {
+            console.log('🛠️ Offline Mode: Mock Account Upsert:', account.name);
+            return { ...account };
+        }
+
         if (!this.isConnected || !this.client) return null;
 
         const row = {
@@ -321,6 +344,7 @@ window.SupabaseClient = {
      * Delete an account
      */
     async deleteAccount(code) {
+        if (this.isOffline()) return true;
         if (!this.isConnected || !this.client) return false;
 
         try {
@@ -341,6 +365,7 @@ window.SupabaseClient = {
      * Subscribe to Real-Time Account Updates
      */
     subscribeToAccounts(onUpdate) {
+        if (this.isOffline()) return;
         if (!this.isConnected) return;
 
         console.log('accounts-live: Subscribing to updates...');

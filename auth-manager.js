@@ -12,7 +12,14 @@ window.AuthManager = {
                 msgBox.style.color = '#ef4444';
                 msgBox.innerHTML = '<b>Setup Required:</b><br>You are opening this file directly.<br>Please use "Live Server" (localhost:3000) to log in.';
             }
-            // Allow dev to proceed but warn
+        }
+
+        // 0.5 Check for Dev Mode Persistence
+        if (localStorage.getItem('devMode') === 'true') {
+            console.log('🛠️ Restoring Offline Dev Session...');
+            this.loginAsDev(true); // true = restore
+            this.setupUI();
+            return;
         }
 
         if (window.SupabaseClient) {
@@ -36,17 +43,45 @@ window.AuthManager = {
         this.setupUI();
     },
 
+    loginAsDev(isRestore = false) {
+        // Create Mock Session
+        const devSession = {
+            user: {
+                id: 'dev-local-user',
+                email: 'developer@offline.local',
+                role: 'developer',
+                aud: 'authenticated',
+                created_at: new Date().toISOString()
+            },
+            access_token: 'mock-token',
+            expires_at: 9999999999
+        };
+
+        localStorage.setItem('devMode', 'true');
+        this.handleSession(devSession);
+
+        if (!isRestore) {
+            // If explicit login click, redirect immediately
+            window.location.href = 'app.html';
+        }
+    },
+
     handleSession(session) {
         this.session = session;
+        // ... rest of handleSession is fine, but let's make sure we don't break strict mode
         this.user = session ? session.user : null;
         window.CurrentUser = this.user;
 
         this.updateUI();
 
         if (this.user) {
-            console.log('👤 User Logged In:', this.user.email);
+            const isDev = localStorage.getItem('devMode') === 'true';
+            console.log(isDev ? '🛠️ Dev Mode Active' : '👤 User Logged In:', this.user.email);
+
             // Trigger Data Load (if on app)
             if (window.AccountAllocator) AccountAllocator.initialize();
+            if (window.VendorMatcher) VendorMatcher.initialize();
+            if (window.VendorManager) VendorManager.initialize();
 
             // REDIRECT: If on landing page, go to App
             if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
@@ -81,6 +116,13 @@ window.AuthManager = {
     },
 
     async signOut() {
+        // Clear Dev Mode
+        if (localStorage.getItem('devMode') === 'true') {
+            localStorage.removeItem('devMode');
+            window.location.reload();
+            return;
+        }
+
         const { error } = await SupabaseClient.client.auth.signOut();
         if (!error) {
             window.location.reload(); // Clean state
@@ -102,6 +144,13 @@ window.AuthManager = {
         const toggleLink = document.getElementById('authToggle');
         const toggleText = document.getElementById('authToggleText');
         const msgBox = document.getElementById('authMessage');
+        const devBtn = document.getElementById('btnDevLogin');
+
+        if (devBtn) {
+            devBtn.addEventListener('click', () => {
+                this.loginAsDev();
+            });
+        }
 
         let isSignUp = false;
 
@@ -201,5 +250,5 @@ window.AuthManager = {
 // Auto-init
 document.addEventListener('DOMContentLoaded', () => {
     // Wait for Supabase
-    setTimeout(() => AuthManager.initialize(), 500);
+    setTimeout(() => AuthManager.initialize(), 10);
 });

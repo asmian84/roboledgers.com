@@ -40,8 +40,9 @@ window.App = {
 
         try {
             // Initialize modules
-            AccountAllocator.initialize();
-            await VendorMatcher.initialize();
+            // Initialize modules - MOVED TO AUTH MANAGER
+            // AccountAllocator.initialize();
+            // await VendorMatcher.initialize();
 
 
 
@@ -61,6 +62,10 @@ window.App = {
             }
 
             // Initialize UI components  
+            if (typeof RecentFilesManager !== 'undefined') {
+                RecentFilesManager.init();
+            }
+
             if (typeof TransactionGrid === 'undefined') {
                 throw new Error('TransactionGrid not loaded. Check script order in index.html');
             }
@@ -76,7 +81,8 @@ window.App = {
             if (typeof VendorManager === 'undefined') {
                 console.warn('VendorManager not loaded yet');
             } else {
-                VendorManager.initialize();
+                // Initialized by AuthManager or when needed
+                // VendorManager.initialize();
             }
 
             // Initialize Settings
@@ -104,6 +110,41 @@ window.App = {
         } catch (error) {
             console.error('❌ INITIALIZATION ERROR:', error);
             alert('Application failed to initialize: ' + error.message);
+        }
+    },
+
+    // 📺 Section Switching Logic
+    showSection(sectionName) {
+        console.log('📺 Switching to section:', sectionName);
+        this.currentSection = sectionName;
+
+        // Hide all sections
+        document.querySelectorAll('.section').forEach(el => {
+            el.classList.remove('active');
+            el.style.display = 'none';
+        });
+
+        // Determine Target ID
+        let targetId = '';
+        switch (sectionName) {
+            case 'dashboard': targetId = 'dashboardSection'; break;
+            case 'upload': targetId = 'uploadSection'; break;
+            case 'processing': targetId = 'processingSection'; break;
+            case 'review': targetId = 'reviewSection'; break;
+            case 'settings': targetId = 'settingsSection'; break;
+            default: console.warn('Unknown section:', sectionName); return;
+        }
+
+        // Show Target
+        const target = document.getElementById(targetId);
+        if (target) {
+            target.classList.add('active');
+            target.style.display = 'block';
+        }
+
+        // Trigger Specific Loaders
+        if (sectionName === 'review') {
+            this.loadReviewSection();
         }
     },
 
@@ -615,6 +656,26 @@ window.App = {
     },
 
     setupEventListeners() {
+        // 🧭 Navigation Logic
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetBtn = e.currentTarget;
+                const targetSection = targetBtn.dataset.target;
+
+                // Update Active State
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                targetBtn.classList.add('active');
+
+                // Navigate
+                if (targetSection === 'dashboardSection') this.showSection('dashboard');
+                else if (targetSection === 'uploadSection') this.showSection('upload');
+                else if (targetSection === 'reviewSection') this.showSection('review');
+                else if (targetSection === 'settingsSection') this.showSection('settings');
+                // Vendors/Reports placeholder for now
+            });
+        });
+
+
         // 🟢 VENDOR SUMMARY BUTTON (Vendors in Grid)
         // Defined here to ensure it's bound during app init
         const vendorSummaryBtn = document.getElementById('vendorSummaryBtn');
@@ -1059,6 +1120,11 @@ window.App = {
         // Store filename for session management
         this.currentFileName = file.name;
 
+        // Add to Recent Files
+        if (typeof RecentFilesManager !== 'undefined') {
+            RecentFilesManager.addFile(file);
+        }
+
         if (!file.name.endsWith('.csv')) {
             alert('Please upload a CSV file');
             return;
@@ -1269,6 +1335,42 @@ window.App = {
     },
 
     loadReviewSection() {
+        // 🛡️ SANITIZATION: Clean invalid transactions before checking
+        if (this.transactions && Array.isArray(this.transactions)) {
+            // Filter out null/undefined/ghost objects
+            this.transactions = this.transactions.filter(t => t && t.id);
+        }
+
+        // Toggle Empty State using robust CSS classes
+        const section = document.getElementById('reviewSection');
+        const emptyState = document.getElementById('emptyTransactionState');
+        const reviewContent = document.getElementById('reviewContent');
+        const hasTransactions = this.transactions && this.transactions.length > 0;
+
+        console.log('👀 loadReviewSection: hasTransactions=', hasTransactions, 'Count:', this.transactions ? this.transactions.length : 0);
+
+        if (section) {
+            // Reset classes
+            section.classList.remove('state-empty', 'state-has-data');
+
+            if (hasTransactions) {
+                section.classList.add('state-has-data');
+                // 🛡️ Double-tap: Explicitly show content if JS is deciding
+                if (reviewContent) reviewContent.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'none';
+            } else {
+                section.classList.add('state-empty');
+                // 🛡️ Double-tap: Explicitly hide content
+                if (reviewContent) reviewContent.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'flex';
+            }
+        }
+
+        if (!hasTransactions) {
+            console.log('⚠️ No transactions to review. Showing empty state.');
+            return;
+        }
+
         // Load transactions into grid
         TransactionGrid.loadTransactions(this.transactions);
 
@@ -1331,13 +1433,12 @@ window.App = {
             expectedOpening.addEventListener('input', () => this.updateReconciliation());
             expectedOpening.addEventListener('blur', () => formatCurrencyInput(expectedOpening));
             // Clear on page load
-            expectedOpening.value = '';
+            // PRESERVE VALUES IF EXISTS
         }
         if (expectedEnding) {
             expectedEnding.addEventListener('input', () => this.updateReconciliation());
             expectedEnding.addEventListener('blur', () => formatCurrencyInput(expectedEnding));
-            // Clear on page load
-            expectedEnding.value = '';
+            // PRESERVE VALUES IF EXISTS
         }
     },
 
@@ -1644,19 +1745,37 @@ window.App = {
     },
 
     showSection(sectionName) {
-        // Remove active class from all sections
-        document.querySelectorAll('.section').forEach(section => {
-            section.classList.remove('active');
+        console.log('📺 Switching to section:', sectionName);
+        this.currentSection = sectionName;
+
+        // Hide all sections
+        document.querySelectorAll('.section').forEach(el => {
+            el.classList.remove('active');
+            el.style.display = 'none';
         });
 
-        // Add active class to requested section
-        const targetSection = document.getElementById(sectionName + 'Section');
-        if (targetSection) {
-            targetSection.classList.add('active');
+        // Determine Target ID
+        const targetId = sectionName + 'Section';
+        const target = document.getElementById(targetId);
+
+        if (target) {
+            target.classList.add('active');
+            target.style.display = 'block';
         }
 
-        this.currentSection = sectionName;
+        // Trigger Specific Loaders
+        if (sectionName === 'review') {
+            this.loadReviewSection();
+        }
+
+        if (sectionName === 'reconciliation') {
+            // Load reconciliation data
+            this.updateReconciliation();
+            // Setup listeners if not already done (idempotent usually)
+            this.setupReconciliationListeners();
+        }
     },
+
 
     showAccountsModal() {
         const modal = document.getElementById('accountsModal');
@@ -1929,6 +2048,49 @@ window.App = {
             };
             TransactionGrid.gridApi.setFilterModel(filterModel);
         }
+    },
+
+    renderVersionExplorer() {
+        const explorer = document.getElementById('versionExplorer');
+        const list = document.getElementById('versionList');
+
+        if (!explorer || !list || !SessionManager) return;
+
+        const history = SessionManager.getHistory();
+        if (history.length === 0) {
+            explorer.style.display = 'none';
+            return;
+        }
+
+        explorer.style.display = 'block';
+        list.innerHTML = '';
+
+        history.forEach((session, index) => {
+            const date = new Date(parseInt(session.timestamp));
+            const timeStr = date.toLocaleString();
+
+            const item = document.createElement('div');
+            item.className = 'version-item card';
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; cursor: pointer; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;';
+            item.innerHTML = `
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 600; color: var(--text-primary);">${session.filename}</span>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">${timeStr} • ${session.count} txns</span>
+                </div>
+                <button class="btn-secondary-small" style="pointer-events: none;">Restore</button>
+            `;
+
+            item.onmouseover = () => { item.style.backgroundColor = 'var(--bg-tertiary)'; };
+            item.onmouseout = () => { item.style.backgroundColor = 'var(--bg-secondary)'; };
+
+            item.onclick = () => {
+                if (confirm(`Restore session "${session.filename}"? Current unsaved work will be lost.`)) {
+                    SessionManager.restoreFromHistory(index);
+                }
+            };
+
+            list.appendChild(item);
+        });
     }
 };
 
@@ -1936,6 +2098,14 @@ window.App = {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📋 DOM Content Loaded - Initializing App...');
     App.initialize();
+
+    // Auto-Restore Session (Immediate Load)
+    setTimeout(() => {
+        if (SessionManager && SessionManager.autoRestore) {
+            SessionManager.autoRestore();
+            App.renderVersionExplorer(); // Just in case we stay on upload
+        }
+    }, 100);
 
     // Setup settings tab switching
     const settingsTabs = document.querySelectorAll('.settings-tab');
@@ -1967,6 +2137,64 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('DashboardManager not loaded');
                 alert('Dashboard module not loaded. Please refresh.');
+            }
+        });
+    }
+
+    // Settings Button from Header/Sidebar
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            App.showSection('settings');
+        });
+    }
+
+    // Reconciliation Button
+    const reconBtn = document.getElementById('navReconciliation');
+    if (reconBtn) {
+        reconBtn.addEventListener('click', () => {
+            App.showSection('reconciliation');
+        });
+    }
+
+    // Edit Account Button (Toolbar)
+    const editAcctBtn = document.getElementById('editAccountBtn');
+    if (editAcctBtn) {
+        editAcctBtn.addEventListener('click', () => {
+            console.log('✏️ Edit Account Clicked');
+            // Open Account Manager Modal
+            App.showAccountsModal();
+        });
+    }
+
+    // Link to Grid Button
+    const linkGridBtn = document.getElementById('assignGridToAccountBtn');
+    if (linkGridBtn) {
+        linkGridBtn.addEventListener('click', () => {
+            console.log('🔗 Link to Grid Clicked');
+            // Logic: Assign all displayed transactions to the currently selected bank account
+            const accountSelect = document.getElementById('bankAccountSelect');
+            if (accountSelect && accountSelect.value) {
+                const accountCode = accountSelect.value;
+                if (confirm(`Assign ALL current transactions to account ${accountCode}?`)) {
+                    // We need a method in TransactionGrid or App to do this bulk update
+                    // Assuming TransactionGrid.bulkAssignAccount exists or we create it.
+                    // For now, simpler implementation:
+                    App.transactions.forEach(t => {
+                        // Only update if unallocated or filtered view? 
+                        // User request implies "transactions displayed in grid" -> "Link to Grid"
+                        // Ideally we'd use the grid's filtered rows.
+                        // For MVP: Update ALL in memory match.
+                        t.allocatedAccount = accountCode;
+                        // Ideally find name too
+                    });
+                    Storage.saveTransactions(App.transactions);
+                    TransactionGrid.loadTransactions(App.transactions); // Refresh
+                    App.updateStatistics();
+                    alert('Assignments updated.');
+                }
+            } else {
+                alert('Please select an account first.');
             }
         });
     }
