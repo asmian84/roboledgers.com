@@ -304,7 +304,7 @@ window.SupabaseClient = {
 
         try {
             const { data, error } = await this.client
-                .from('accounts')
+                .from('bank_accounts')
                 .upsert(row, { onConflict: 'code' })
                 .select()
                 .single();
@@ -325,7 +325,7 @@ window.SupabaseClient = {
 
         try {
             const { error } = await this.client
-                .from('accounts')
+                .from('bank_accounts')
                 .delete()
                 .match({ code: code });
 
