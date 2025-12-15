@@ -243,6 +243,11 @@ window.SupabaseClient = {
         console.log('📡 Subscribing to real-time vendor updates...');
 
         this.client
+            .channel('public:vendors')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, (payload) => {
+                console.log('📡 Real-time Vendor Update:', payload);
+                if (onUpdate) onUpdate(payload);
+            })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     console.log('✅ Real-time subscription active');
