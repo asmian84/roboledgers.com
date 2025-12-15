@@ -56,30 +56,22 @@ const DashboardManager = {
         }
     },
 
-    openDashboard() {
-        const overlay = document.getElementById('financialDashboard');
-        overlay.classList.remove('hidden'); // In case it was hidden by display:none
-        // Force reflow
-        void overlay.offsetWidth;
-        overlay.classList.add('visible');
-        this.isOpen = true;
-        this.updateData(); // Immediate update
-    },
-
-    closeDashboard() {
-        const overlay = document.getElementById('financialDashboard');
-        overlay.classList.remove('visible');
-        this.isOpen = false;
-        // Wait for animation
-        setTimeout(() => {
-            // overlay.classList.add('hidden');
-        }, 300);
+    // Simplified Visibility Logic for Sidebar Navigation
+    setMode(isActive) {
+        this.isOpen = isActive;
+        if (isActive) {
+            this.updateData();
+            // Force Chart Resize
+            if (this.charts.trend) this.charts.trend.resize();
+            if (this.charts.donut) this.charts.donut.resize();
+        }
     },
 
     startLiveUpdates() {
-        // Update math every 1 second if dashboard is open
+        // Update math every 1 second if dashboard is VISIBLE
         setInterval(() => {
-            if (this.isOpen) {
+            const section = document.getElementById('dashboardSection');
+            if (section && section.classList.contains('active')) {
                 this.updateData();
             }
         }, 1000);
