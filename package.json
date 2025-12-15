@@ -1,0 +1,31 @@
+{
+    "name": "roboledgers-client",
+    "version": "1.0.0",
+    "description": "Local test environment for RoboLedgers application",
+    "main": "app.js",
+    "scripts": {
+        "start": "live-server --port=3000 --entry-file=index.html",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "format": "prettier --write \"**/*.{html,js,css}\""
+    },
+    "keywords": [
+        "bookkeeping",
+        "finance",
+        "local-first"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "live-server": "^1.2.2",
+        "prettier": "^3.1.0"
+    },
+    "jest": {
+        "testEnvironment": "jsdom",
+        "setupFiles": [
+            "./jest.setup.js"
+        ]
+    }
+}

@@ -1,0 +1,6 @@
+# Redirect /app on pages.dev to the main custom domain
+# Format: /source /destination [code]
+/app https://roboledgers.com 301
+
+# Optional: Redirect index.html on pages.dev to main domain (Use with caution - can cause loops if not careful)
+# / https://roboledgers.com 301
