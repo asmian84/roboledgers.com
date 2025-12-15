@@ -128,6 +128,51 @@ const Settings = {
     },
 
     bindEvents() {
+        const btn = document.getElementById('settingsBtn');
+        const modal = document.getElementById('settingsModal');
+        const closeBtn = document.getElementById('closeSettingsModal');
+
+        if (btn && modal) {
+            btn.addEventListener('click', () => {
+                modal.classList.add('active'); // Use active class for animation
+                modal.style.display = 'flex';
+                this.updateThemePicker(); // Refresh UI state
+            });
+        }
+
+        if (closeBtn && modal) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            });
+        }
+
+        // Tab Switching Logic
+        const tabs = document.querySelectorAll('.settings-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add to clicked
+                tab.classList.add('active');
+
+                // Hide all panels
+                document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+
+                // Show target panel
+                const panelName = tab.getAttribute('data-tab');
+                const targetPanel = document.querySelector(`.settings-panel[data-panel="${panelName}"]`);
+                if (targetPanel) targetPanel.classList.add('active');
+            });
+        });
+
+        // Theme Radio Inputs
+        const themeInputs = document.querySelectorAll('input[name="theme"]');
+        themeInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                this.setTheme(e.target.value);
+            });
+        });
     },
 
     set(key, value) {

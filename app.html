@@ -124,7 +124,57 @@
                     <p>Here's what's happening with your books today.</p>
                 </div>
                 <!-- KPI Cards moved here from overlay -->
-                <div class="dashboard-grid-placeholder" id="dashboardPlaceholder"></div>
+                <!-- Dashboard Layout -->
+                <div class="dashboard-grid">
+                    <!-- Top Row: KPI Cards -->
+                    <div class="kpi-card glass-panel revenue-card">
+                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
+                        <div class="kpi-info">
+                            <h3>Revenue</h3>
+                            <h2 id="kpiRevenue">$0.00</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel expense-card">
+                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-down"></i></div>
+                        <div class="kpi-info">
+                            <h3>Expenses</h3>
+                            <h2 id="kpiExpenses">$0.00</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel profit-card">
+                         <div class="icon-wrapper"><i class="fas fa-wallet"></i></div>
+                        <div class="kpi-info">
+                            <h3>Net Profit</h3>
+                            <h2 id="kpiProfit">$0.00</h2>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: Charts -->
+                    <div class="chart-container glass-panel main-chart">
+                        <h3>Income vs Expenses (Trend)</h3>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container glass-panel donut-chart">
+                        <h3>Top Expense Categories</h3>
+                         <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="expenseDonutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: AI Insight -->
+                    <div class="insight-bar glass-panel full-width">
+                        <div class="insight-icon">🤖</div>
+                        <div class="insight-content">
+                            <h4>AI Financial Analysis</h4>
+                             <p id="aiInsightText">Analyzing your transactions...</p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Step 1: Upload Zone -->
