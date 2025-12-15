@@ -10,7 +10,7 @@ window.NavManager = {
     },
 
     setupListeners() {
-        const navItems = document.querySelectorAll('.nav-item');
+        const navItems = document.querySelectorAll('.nav-item, .nav-item-footer');
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 const targetId = item.getAttribute('data-target');

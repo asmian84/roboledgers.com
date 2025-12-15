@@ -2676,3 +2676,97 @@ input.currency-input,
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
 }
+
+/* User Profile Widget (Sidebar) */
+.user-profile-widget {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.logout-link {
+    color: var(--accent-color);
+    font-size: 0.85rem;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.logout-link:hover {
+    text-decoration: underline;
+}
+
+/* Settings Page Styles */
+.settings-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.settings-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.settings-card.full-width-card {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}
+
+.action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    margin-left: 0.5rem;
+}

@@ -128,6 +128,8 @@ const Settings = {
     },
 
     bindEvents() {
+        // Modal logic removed for Page-Based Settings
+        /*
         const btn = document.getElementById('settingsBtn');
         const modal = document.getElementById('settingsModal');
         const closeBtn = document.getElementById('closeSettingsModal');
@@ -146,6 +148,7 @@ const Settings = {
                 modal.style.display = 'none';
             });
         }
+        */
 
         // Tab Switching Logic
         const tabs = document.querySelectorAll('.settings-tab');
