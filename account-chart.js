@@ -470,12 +470,13 @@ window.ChartManager = {
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
+                // Initial fit
+                params.api.sizeColumnsToFit();
             },
 
-            // Bi-directional resize (optional, keep if working)
-            onColumnResized: (params) => {
-                if (!params.finished) return;
-                // Simple check to ensure we don't break layout
+            // Native AG Grid event: actively refits columns when container resizes
+            onGridSizeChanged: (params) => {
+                params.api.sizeColumnsToFit();
             },
 
             // UI MATCH: Dynamic Theme
