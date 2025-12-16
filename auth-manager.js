@@ -6,12 +6,13 @@ window.AuthManager = {
     async initialize() {
         // 0. Environment Check
         if (window.location.protocol === 'file:') {
-            console.error('❌ Error: Running via file:// protocol. Auth will not work.');
+            console.warn('⚠️ Running via file:// protocol. Standard Auth disabled.');
             const msgBox = document.getElementById('authMessage');
             if (msgBox) {
-                msgBox.style.color = '#ef4444';
-                msgBox.innerHTML = '<b>Setup Required:</b><br>You are opening this file directly.<br>Please use "Live Server" (localhost:3000) to log in.';
+                msgBox.style.color = '#eab308'; // Yellow/Orange
+                msgBox.innerHTML = '<b>Offline Mode Available:</b><br>You are opening this file directly.<br>Click <b>Work Offline</b> below to proceed.';
             }
+            // We do NOT return here, so the rest of the init (like listeners) still runs!
         }
 
         // 0.5 Check for Dev Mode Persistence
@@ -284,6 +285,24 @@ window.AuthManager = {
                 loginBtn.classList.remove('logged-in');
             }
         }
+    },
+    // --- New Auth Methods ---
+
+    async signInWithGoogle() {
+        const { data, error } = await SupabaseClient.client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + '/app.html'
+            }
+        });
+        return { data, error };
+    },
+
+    async resetPassword(email) {
+        const { data, error } = await SupabaseClient.client.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/app.html',
+        });
+        return { data, error };
     }
 };
 
@@ -292,22 +311,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for Supabase
     setTimeout(() => AuthManager.initialize(), 10);
 });
-
-    // --- New Auth Methods ---
-
-    async signInWithGoogle() {
-    const { data, error } = await SupabaseClient.client.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: window.location.origin + '/app.html'
-        }
-    });
-    return { data, error };
-},
-
-    async resetPassword(email) {
-    const { data, error } = await SupabaseClient.client.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/app.html',
-    });
-    return { data, error };
-},

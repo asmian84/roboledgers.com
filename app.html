@@ -307,7 +307,137 @@
                             <p class="review-stats" id="reviewStats">0 transactions • $0.00 volume</p>
                         </div>
                         <div class="review-buttons">
-                            <!-- Buttons injected by JS -->
+                            <button id="popoutBtn" class="btn-secondary" title="Open grid in new window">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                Pop-Out
+                            </button>
+                            <button id="exportBtn" class="btn-secondary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Export XLS
+                            </button>
+                            <!-- NEW: Vendor Summary Button -->
+                            <button id="vendorSummaryBtn" class="btn-secondary"
+                                title="View/Edit unique vendors in grid">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Vendors in Grid
+                            </button>
+                            <button id="addDataBtn" class="btn-secondary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Add Data
+                            </button>
+                            <button id="startOverBtn" class="btn-secondary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="1 4 1 10 7 10"></polyline>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                </svg>
+                                Start Over
+                            </button>
+                        </div>
+                        <!-- Bottom Row: Search Controls -->
+                        <div class="search-controls"
+                            style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.75rem;">
+                            <input type="text" id="gridQuickFilter" placeholder="Quick search..."
+                                style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: #ffffff; color: #1e293b; width: 200px; font-size: 0.9rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label for="refPrefixInput" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Ref#:
+                                </label>
+                                <input type="text" id="refPrefixInput" placeholder="CHQ" maxlength="5" style="
+                                    padding: 0.4rem 0.6rem;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 4px;
+                                    background: #ffffff;
+                                    color: #1e293b;
+                                    width: 70px;
+                                    font-size: 0.9rem;
+                                " />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+
+                                <div class="input-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <label style="margin: 0; white-space: nowrap;">Account:</label>
+                                    <div style="display: flex; gap: 0.25rem; align-items: center;">
+                                        <select id="bankAccountSelect" style="
+                                        padding: 0.4rem 0.6rem;
+                                        border: 1px solid var(--border-color);
+                                        border-radius: 4px;
+                                        background: #ffffff;
+                                        color: #1e293b;
+                                        font-size: 0.9rem;
+                                        cursor: pointer;
+                                        min-width: 180px;
+                                    ">
+                                            <option value="">Select Account...</option>
+                                        </select>
+
+                                        <!-- NEW: Assign Grid Button (Hidden by default) -->
+                                        <button id="assignGridToAccountBtn" class="btn-primary"
+                                            title="Assign ALL current transactions to this account" style="
+                                            display: none;
+                                            padding: 0.4rem 0.8rem;
+                                            font-size: 0.8rem;
+                                            white-space: nowrap;
+                                            background-color: var(--accent-color); 
+                                        ">
+                                            Link to Grid
+                                        </button>
+
+                                        <button id="editAccountBtn" class="btn-icon" title="Manage Accounts" style="
+                                        background: transparent;
+                                        border: 1px solid var(--border-color);
+                                        border-radius: 4px;
+                                        padding: 0.3rem;
+                                        cursor: pointer;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: var(--text-secondary);
+                                    ">
+                                            ✏️
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Actions Bar (appears when rows selected) -->
+                        <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+                            <div class="bulk-actions-content">
+                                <span class="selection-count">
+                                    <strong id="selectedCount">0</strong> transactions selected
+                                </span>
+
+                                <div class="bulk-actions-controls">
+                                    <select id="bulkAccountSelect" class="bulk-account-dropdown">
+                                        <option value="">Assign Account...</option>
+                                    </select>
+
+                                    <button id="applyBulkAccount" class="bulk-action-btn primary">
+                                        Apply to Selected
+                                    </button>
+
+                                    <button id="clearSelection" class="bulk-action-btn secondary">
+                                        Clear Selection
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1485,6 +1615,49 @@
     </div>
 
 
+    <!-- Drill Down Modal (Standardized) -->
+    <div id="VSMModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="drillDownModalTitle">Transactions for Vendor</h2>
+
+                <!-- Drill Down Bulk Actions -->
+                <div id="ddBulkActions" style="display: none; margin-left: 20px; align-items: center; gap: 10px;">
+                    <span id="ddSelectedCount" style="color: var(--text-secondary); font-size: 0.9rem;">0
+                        selected</span>
+                    <select id="ddBulkVendorSelect"
+                        style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <option value="">(Optional) Move to Vendor...</option>
+                    </select>
+                    <select id="ddBulkAccountSelect"
+                        style="max-width: 200px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <option value="">(Optional) Assign Account...</option>
+                    </select>
+                    <button id="ddApplyBulkBtn" class="btn-primary"
+                        style="padding: 4px 12px; font-size: 0.9rem;">Apply</button>
+                </div>
+
+                <button class="modal-close" id="closeDrillDownModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="section-desc" style="margin-bottom: 1rem;">
+                    Review all transactions grouped under this vendor. You can move items to other accounts before
+                    finalizing.
+                </p>
+                <!-- Grid Container -->
+                <div id="drillDownGridContainer" class="ag-theme-alpine"
+                    style="height: 100%; width: 100%; min-height: 500px;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="drill-down-grid-fixed.js?v=1.29"></script>
 </body>
 
 </html>
