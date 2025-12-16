@@ -150,10 +150,29 @@ window.VendorSummaryGrid = {
                     return `<div style="display:flex; align-items:center; justify-content: space-between; width: 100%;">${name}</div>`;
                 }
             },
+            { headerName: 'Count', field: 'count', width: 90, minWidth: 80, type: 'numericColumn' },
+            {
+                // MATCHING VIG FLEX LOGIC EXACTLY
+                headerName: 'Account', field: 'currentAccount',
+                flex: 1,
+                minWidth: 250,
+                editable: true,
+                cellEditor: 'agSelectCellEditor',
+                cellEditorParams: () => ({
+                    values: AccountAllocator.getAllAccounts().map(a => `${a.code} - ${a.name}`),
+                    valueListGap: 8
+                }),
+                valueFormatter: p => {
+                    const acc = AccountAllocator.getAccountByCode(p.value);
+                    return acc ? `${acc.code} - ${acc.name}` : (p.value || 'SELECT...');
+                },
+                singleClickEdit: true
+            },
             {
                 headerName: '',
                 field: 'delete',
                 width: 60,
+                headerClass: 'ag-right-aligned-header', // Optional if supported
                 cellRenderer: (params) => {
                     return `<button class="delete-vendor-btn" data-vendor="${params.data.name}" 
                     style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;"
@@ -171,28 +190,6 @@ window.VendorSummaryGrid = {
                         }
                     }
                 }
-            },
-            { headerName: 'Count', field: 'count', width: 90, minWidth: 80, type: 'numericColumn' },
-            {
-                headerName: 'Amount ($)', field: 'totalAmount', width: 110, minWidth: 100, type: 'numericColumn',
-                valueFormatter: p => Utils.formatCurrency(p.value)
-            },
-            {
-                // MATCHING VIG FLEX LOGIC EXACTLY
-                headerName: 'Account', field: 'currentAccount',
-                flex: 1,
-                minWidth: 250,
-                editable: true,
-                cellEditor: 'agSelectCellEditor',
-                cellEditorParams: () => ({
-                    values: AccountAllocator.getAllAccounts().map(a => `${a.code} - ${a.name}`),
-                    valueListGap: 8
-                }),
-                valueFormatter: p => {
-                    const acc = AccountAllocator.getAccountByCode(p.value);
-                    return acc ? `${acc.code} - ${acc.name}` : (p.value || 'SELECT...');
-                },
-                singleClickEdit: true
             }
         ];
     },
