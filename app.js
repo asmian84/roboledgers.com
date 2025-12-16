@@ -1150,6 +1150,18 @@ window.App = {
             });
         }
 
+        // Grid Pop-out
+        const popoutBtn = document.getElementById('popoutBtn');
+        if (popoutBtn) {
+            popoutBtn.addEventListener('click', () => {
+                if (window.GridPopout) {
+                    window.GridPopout.openPopout();
+                } else {
+                    alert('Grid Pop-out module not loaded. Please refresh.');
+                }
+            });
+        }
+
         // Reset button  
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) {
@@ -1372,6 +1384,86 @@ window.App = {
                 fileInput.click();
             });
         }
+
+        // --- RESTORED TOOLBAR LISTENERS (v123) ---
+
+        // Export button
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                if (typeof ExcelExporter !== 'undefined') {
+                    ExcelExporter.exportGeneralLedger(this.transactions);
+                } else {
+                    alert('Export module loading...');
+                }
+            });
+        }
+
+        // Add Data button (append new transactions)
+        const addDataBtn = document.getElementById('addDataBtn');
+        if (addDataBtn) {
+            addDataBtn.addEventListener('click', () => {
+                this.addData();
+            });
+        }
+
+        // Start Over button (clear all)
+        const startOverBtn = document.getElementById('startOverBtn');
+        if (startOverBtn) {
+            startOverBtn.addEventListener('click', () => {
+                this.startOver();
+            });
+        }
+
+        // Grid Pop-out
+        const popoutBtn = document.getElementById('popoutBtn');
+        if (popoutBtn) {
+            popoutBtn.addEventListener('click', () => {
+                if (window.GridPopout) {
+                    window.GridPopout.openPopout();
+                } else {
+                    alert('Grid Pop-out module not loaded. Please refresh.');
+                }
+            });
+        }
+
+        // Quick Search / Filter
+        const gridQuickFilter = document.getElementById('gridQuickFilter');
+        if (gridQuickFilter) {
+            gridQuickFilter.addEventListener('input', (e) => {
+                if (window.TransactionGrid && TransactionGrid.gridApi) {
+                    TransactionGrid.gridApi.setQuickFilter(e.target.value);
+                }
+            });
+        }
+
+        // Ref# Prefix Input
+        const refPrefixInput = document.getElementById('refPrefixInput');
+        if (refPrefixInput) {
+            refPrefixInput.addEventListener('input', (e) => {
+                const prefix = e.target.value.toUpperCase();
+                if (window.TransactionGrid) {
+                    TransactionGrid.setRefPrefix(prefix);
+                }
+            });
+        }
+
+        // Bank Account Select (Context)
+        const bankAccountSelect = document.getElementById('bankAccountSelect');
+        if (bankAccountSelect) {
+            bankAccountSelect.addEventListener('change', (e) => {
+                const accountId = e.target.value;
+                this.currentAccountId = accountId;
+                // Trigger Grid Filter/Context Update
+                if (window.TransactionGrid) {
+                    // Update grid context (simplified for now)
+                    console.log('Account Context Changed:', accountId);
+                    // TransactionGrid.setAccountContext(accountId); // If exists
+                    // For now just log, as full logic is complex
+                }
+            });
+        }
+
     },
 
     async handleFile(file) {
