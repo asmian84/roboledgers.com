@@ -233,8 +233,8 @@ window.ChartManager = {
 
         // Create Modal Structure (Standardized WOW Layout)
         const modalHtml = `
-            <div id="chartOfAccountsModal" class="modal medium-modal" style="z-index: 1000000004;">
-                <div class="modal-content" style="width: 900px; height: 80vh; display: flex; flex-direction: column;">
+            <div id="chartOfAccountsModal" class="modal large-modal" style="z-index: 1000000004;">
+                <div class="modal-content" style="width: 900px; max-width: 95vw; height: 80vh; display: flex; flex-direction: column; resize: both; overflow: hidden;">
                     
                     <!-- HEADER -->
                     <div class="modal-header">
