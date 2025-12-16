@@ -470,18 +470,26 @@ window.ChartManager = {
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
-                // Wait for modal and grid to have dimensions before sizing
-                const checkAndSize = () => {
-                    const gridWidth = this.listContainer?.offsetWidth || 0;
-                    if (gridWidth > 0 && params.api) {
+
+                // Size columns once grid is ready
+                const doSize = () => {
+                    if (params.api && this.listContainer?.offsetWidth > 0) {
                         params.api.sizeColumnsToFit();
-                    } else if (gridWidth === 0) {
-                        // Retry after a short delay if still no width
-                        setTimeout(checkAndSize, 100);
                     }
                 };
-                // Start checking after modal animation completes
-                setTimeout(checkAndSize, 500);
+
+                // Initial sizing after modal animation
+                setTimeout(doSize, 500);
+
+                // Watch for modal resize and refit columns
+                if (this.modal) {
+                    const resizeObserver = new ResizeObserver(() => {
+                        if (params.api) {
+                            params.api.sizeColumnsToFit();
+                        }
+                    });
+                    resizeObserver.observe(this.modal.querySelector('.modal-content'));
+                }
             },
 
             // UI MATCH: Dynamic Theme
