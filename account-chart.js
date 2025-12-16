@@ -407,9 +407,8 @@ window.ChartManager = {
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    minWidth: 150,
-                    flex: 1,
-                    pinned: 'left',
+                    width: 135,
+                    suppressSizeToFit: true,
                     cellStyle: { fontWeight: '600', color: '#1e293b' }
                 },
                 {
@@ -417,7 +416,7 @@ window.ChartManager = {
                     field: 'name',
                     sortable: true,
                     filter: true,
-                    flex: 3,
+                    flex: 1,
                     minWidth: 200,
                     cellStyle: { fontWeight: '400' }
                 },
