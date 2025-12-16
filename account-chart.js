@@ -245,18 +245,21 @@ window.ChartManager = {
                         <span class="modal-close">&times;</span>
                     </div>
 
-                    <!-- MODERN TOOLBAR -->
-                    <div class="coa-toolbar">
-                        
-                        <!-- Search Input -->
-                        <div class="modern-search-wrapper">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="coaSearchInput" placeholder="Search accounts..." autocomplete="off">
+                    <!-- Toolbar (The WOW Standard) -->
+                    <div class="modal-toolbar"
+                        style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0;">
+
+                        <!-- LEFT: Search -->
+                        <div class="search-wrapper" style="position: relative; flex: 1; max-width: 400px;">
+                            <span
+                                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
+                            <input type="text" id="coaSearchInput" placeholder="Search accounts..."
+                                style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         </div>
 
-                        <!-- Actions -->
-                        <div class="toolbar-actions">
-                            <button id="addAccountBtn" class="btn-primary" 
+                        <!-- RIGHT: Actions -->
+                        <div class="account-actions" style="display: flex; gap: 0.75rem; align-items: center;">
+                            <button id="addAccountBtn" class="btn-primary"
                                 style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
                                 <i class="fas fa-plus"></i>
                                 <span>Add Account</span>
@@ -429,8 +432,10 @@ window.ChartManager = {
                 },
                 {
                     headerName: '',
-                    width: 50,
-                    maxWidth: 50,
+                    width: 60,
+                    maxWidth: 60,
+                    pinned: 'right', // 🔒 Pinned to match Vendor Dictionary
+                    lockPosition: true,
                     suppressSizeToFit: true,
                     cellRenderer: (params) => {
                         const btn = document.createElement('button');
