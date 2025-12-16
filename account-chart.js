@@ -470,6 +470,26 @@ window.ChartManager = {
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
+
+                // Force layout recalculation
+                const forceLayout = () => {
+                    if (params.api) {
+                        params.api.sizeColumnsToFit();
+                    }
+                };
+
+                // Initial size
+                setTimeout(forceLayout, 100);
+
+                // Watch for modal resize
+                if (this.modal) {
+                    const resizeObserver = new ResizeObserver(() => {
+                        window.requestAnimationFrame(() => {
+                            forceLayout();
+                        });
+                    });
+                    resizeObserver.observe(this.modal.querySelector('.modal-content'));
+                }
             },
 
             // UI MATCH: Dynamic Theme
