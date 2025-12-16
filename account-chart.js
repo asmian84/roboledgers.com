@@ -407,7 +407,7 @@ window.ChartManager = {
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    width: 110,
+                    width: 140,
                     pinned: 'left',
                     cellStyle: { fontWeight: '600', color: '#1e293b' }
                 },
