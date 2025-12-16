@@ -1,61 +1,10 @@
 // Account UI Manager for Multi-Account Support
 const AccountUI = {
+    // Initialize the UI modules
     init() {
         this.renderHeaderControl(); // Add the dropdown/button to header
         this.setupEventListeners();
         this.updateHeaderDisplay(); // Show current account
-    },
-
-    setupEventListeners() {
-        // Manage Accounts Modal
-        const closeManageModal = document.getElementById('closeManageAccountsModal');
-        const manageModal = document.getElementById('manageAccountsModal');
-        const addAccountBtn = document.getElementById('addAccountBtn');
-
-        if (closeManageModal) {
-            closeManageModal.addEventListener('click', () => {
-                manageModal.classList.remove('active');
-            });
-        }
-
-        if (manageModal) {
-            manageModal.addEventListener('click', (e) => {
-                if (e.target === manageModal) {
-                    manageModal.classList.remove('active');
-                }
-            });
-        }
-
-        if (addAccountBtn) {
-            addAccountBtn.addEventListener('click', () => {
-                this.openAccountForm(); // New account
-            });
-        }
-
-        // Account Form Modal
-        const closeFormModal = document.getElementById('closeAccountFormModal');
-        const formModal = document.getElementById('accountFormModal');
-        const cancelFormBtn = document.getElementById('cancelAccountForm');
-        const accountForm = document.getElementById('accountForm');
-
-        if (closeFormModal) {
-            closeFormModal.addEventListener('click', () => {
-                formModal.classList.remove('active');
-            });
-        }
-
-        if (cancelFormBtn) {
-            cancelFormBtn.addEventListener('click', () => {
-                formModal.classList.remove('active');
-            });
-        }
-
-        if (accountForm) {
-            accountForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleFormSubmit();
-            });
-        }
     },
 
     // Inject the Accounts button/dropdown into the header
@@ -74,19 +23,15 @@ const AccountUI = {
 
         // Initial HTML
         container.innerHTML = `
-            <button id="accountDropdownBtn" class="btn-secondary account-dropdown-btn">
+            <button id="accountDropdownBtn" class="account-dropdown-btn btn-secondary" style="display: flex; align-items: center; gap: 8px;">
                 <span id="currentAccountIcon">🏦</span>
-                <span id="currentAccountName">Main Account</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                <span id="currentAccountName">Select Account</span>
+                <span class="dropdown-arrow">▼</span>
             </button>
-            <div id="accountDropdownMenu" class="account-dropdown-menu" style="display: none;">
-                <!-- Populated dynamically -->
-            </div>
+            <div id="accountDropdownMenu" class="account-dropdown-menu" style="display: none;"></div>
         `;
 
-        // Insert before Reports button if possible, otherwise append
+        // Insert before 'Reports' or append
         const reportsBtn = document.getElementById('reportsBtn');
         if (reportsBtn) {
             headerActions.insertBefore(container, reportsBtn);
@@ -111,6 +56,58 @@ const AccountUI = {
         });
     },
 
+    setupEventListeners() {
+        // Manage Accounts Modal
+        const closeManageModal = document.querySelector('#manageAccountsModal .modal-close');
+        const manageModal = document.getElementById('manageAccountsModal');
+        const addAccountBtn = document.getElementById('addAccountBtn');
+
+        if (closeManageModal) {
+            closeManageModal.addEventListener('click', () => {
+                manageModal.classList.remove('active');
+            });
+        }
+
+        if (manageModal) {
+            manageModal.addEventListener('click', (e) => {
+                if (e.target === manageModal) {
+                    manageModal.classList.remove('active');
+                }
+            });
+        }
+
+        if (addAccountBtn) {
+            addAccountBtn.addEventListener('click', () => {
+                this.openAccountForm();
+            });
+        }
+
+        // Account Form Modal
+        const closeFormModal = document.getElementById('closeAccountFormModal');
+        const cancelFormBtn = document.getElementById('cancelAccountForm');
+        const formModal = document.getElementById('accountFormModal');
+        const accountForm = document.getElementById('accountForm');
+
+        if (closeFormModal) {
+            closeFormModal.addEventListener('click', () => {
+                formModal.classList.remove('active');
+            });
+        }
+
+        if (cancelFormBtn) {
+            cancelFormBtn.addEventListener('click', () => {
+                formModal.classList.remove('active');
+            });
+        }
+
+        if (accountForm) {
+            accountForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleFormSubmit();
+            });
+        }
+    },
+
     addStyles() {
         const styleId = 'account-ui-styles';
         if (document.getElementById(styleId)) return;
@@ -133,15 +130,15 @@ const AccountUI = {
             .account-dropdown-menu {
                 position: absolute;
                 top: 100%;
-                right: 0; // Align right
-                margin-top: 5px;
-                background: var(--surface-card);
+                right: 0;
+                width: 250px;
+                background: white;
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 z-index: 1000;
-                min-width: 220px;
-                overflow: hidden;
+                padding: 5px 0;
+                margin-top: 5px;
             }
             .account-item {
                 padding: 10px 15px;
@@ -193,8 +190,8 @@ const AccountUI = {
                 background: var(--surface-hover);
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
-                padding: 1rem;
-                margin-bottom: 0.75rem;
+                padding: 0.6rem 1rem; /* Compact */
+                margin-bottom: 0.5rem; /* Compact */
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -254,7 +251,7 @@ const AccountUI = {
 
         html += `<div class="account-divider"></div>`;
         html += `
-            <button class="manage-accounts-btn" onclick="AccountUI.openManageAccounts()">
+            <button class="manage-accounts-btn" onclick="event.stopPropagation(); AccountUI.openManageAccounts()">
                 <span>⚙️</span> Manage Accounts
             </button>
         `;
@@ -290,6 +287,23 @@ const AccountUI = {
         if (modal) {
             this.renderAccountsList();
             modal.classList.add('active');
+
+            // 🔧 Standard Modal Logic: Snug & Resizable
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                // Remove fixed height from class, allow auto-fit
+                modalContent.style.height = 'auto';
+                modalContent.style.maxHeight = '80vh';
+
+                // Allow user resizing
+                modalContent.style.resize = 'both';
+                modalContent.style.overflow = 'auto'; // needed for resize to work effectively with content
+
+                // Set snug width (smaller than valid large-modal ~1200px)
+                modalContent.style.width = '600px';
+                modalContent.style.minWidth = '400px';
+                modalContent.style.minHeight = '300px';
+            }
         }
         document.getElementById('accountDropdownMenu').style.display = 'none';
     },

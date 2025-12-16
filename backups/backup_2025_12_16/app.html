@@ -1177,20 +1177,11 @@
             </div>
             <div class="modal-body">
                 <!-- Toolbar (Matches VDM Standard) -->
-                <!-- Toolbar (The WOW Standard) -->
-                <div class="modal-toolbar"
-                    style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 0;">
-
-                    <!-- LEFT: Search (Optional for Accounts list, adding placeholder for future) -->
-                    <!-- <div class="search-wrapper" style="flex: 1;"></div> -->
-
-                    <!-- RIGHT: Actions -->
-                    <div class="account-actions" style="display: flex; gap: 0.75rem; align-items: center;">
-                        <button id="addAccountBtn" class="btn-primary"
-                            style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                            <span style="font-size: 1.1rem;">➕</span> Add Bank Account
-                        </button>
-                    </div>
+                <div class="account-actions"
+                    style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+                    <button id="addAccountBtn" class="btn-primary">
+                        <i class="fas fa-plus"></i> Add Account
+                    </button>
                 </div>
 
                 <div id="accountsList" style="width: 100%;"></div>
@@ -1201,68 +1192,37 @@
 
     <!-- Chart of Accounts Modal -->
     <div id="chartOfAccountsModal" class="modal">
-        <div class="modal-content large-modal"
-            style="display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 600px; min-height: 400px;">
-            <!-- Header -->
-            <div class="modal-header"
-                style="flex-shrink: 0; padding: 1.5rem; background: white; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-color); font-weight: 700;">Chart of
-                    Accounts</h2>
-                <button class="modal-close"
-                    style="font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); background: none; border: none;">&times;</button>
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2>Chart of Accounts</h2>
+                <button class="modal-close">&times;</button>
             </div>
+            <div class="modal-body" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Toolbar inside body but flush -->
+                <div class="toolbar"
+                    style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-secondary);">
 
-            <!-- Toolbar (The WOW Part) -->
-            <div class="modal-toolbar"
-                style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <div class="search-wrapper" style="flex: 1; position: relative;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                        <input type="text" id="chartSearch" placeholder="Search accounts..."
+                            style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; box-sizing: border-box;">
+                    </div>
 
-                <!-- LEFT: Search -->
-                <div class="search-wrapper" style="position: relative; width: 300px; flex-shrink: 0;">
-                    <span
-                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
-                    <input type="text" id="accountSearch" placeholder="Search accounts..."
-                        style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                </div>
-
-                <!-- RIGHT: Actions -->
-                <div class="action-group" style="display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0;">
-                    <button id="addAccountBtn" class="btn-primary"
-                        style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                        <span style="font-size: 1.1rem;">➕</span> Add Account
+                    <button id="addAccountChartBtn" class="btn-primary-small">
+                        <i class="fas fa-plus"></i> Add Account
+                    </button>
+                    <button id="refreshChartBtn" class="btn-secondary-small" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
+
+                <div id="chartList" class="accounts-list-container" style="flex: 1; overflow-y: auto; padding: 0;">
+                    <!-- Dynamic Content -->
+                </div>
             </div>
-
-            <!-- BODY (Grid) -->
-            <div class="modal-body" id="accountsList">
-                <!-- AG Grid Injected Here -->
-            </div>
+            <!-- Footer removed for consistency -->
         </div>
-    </div>
-    <div class="toolbar"
-        style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-secondary);">
-
-        <div class="search-wrapper" style="flex: 1; position: relative;">
-            <i class="fas fa-search"
-                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
-            <input type="text" id="chartSearch" placeholder="Search accounts..."
-                style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; box-sizing: border-box;">
-        </div>
-
-        <button id="addAccountChartBtn" class="btn-primary-small">
-            <i class="fas fa-plus"></i> Add Account
-        </button>
-        <button id="refreshChartBtn" class="btn-secondary-small" title="Refresh">
-            <i class="fas fa-sync-alt"></i>
-        </button>
-    </div>
-
-    <div id="chartList" class="accounts-list-container" style="flex: 1; overflow-y: auto; padding: 0;">
-        <!-- Dynamic Content -->
-    </div>
-    </div>
-    <!-- Footer removed for consistency -->
-    </div>
     </div>
 
     <!-- Add/Edit Account Modal -->
@@ -1388,41 +1348,33 @@
             </div>
 
             <div class="modal-body">
-                <!-- Toolbar (The WOW Standard) -->
-                <div class="modal-toolbar"
-                    style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0;">
+                <!-- Toolbar -->
+                <div class="account-actions"
+                    style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+                    <button id="addVendorBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Add Vendor
+                    </button>
+                    <button id="bulkIndexBtn" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Bulk Index
+                    </button>
 
-                    <!-- LEFT: Search -->
-                    <div class="search-wrapper" style="position: relative; flex: 1; max-width: 400px;">
-                        <span
-                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
-                        <input type="text" id="vendorSearch" placeholder="Search vendors by name..."
-                            style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                    </div>
-
-                    <!-- RIGHT: Actions -->
-                    <div class="account-actions" style="display: flex; gap: 0.75rem; align-items: center;">
-                        <button id="addVendorBtn" class="btn-primary"
-                            style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                style="width: 1rem; height: 1rem;">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                            Add Vendor
-                        </button>
-                        <button id="bulkIndexBtn" class="btn-secondary"
-                            style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                style="width: 1rem; height: 1rem;">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            Bulk Index
-                        </button>
+                    <!-- Search Bar -->
+                    <div class="search-wrapper" style="margin-left: auto; position: relative;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                        <input type="text" id="vendorSearch" placeholder="Search vendors..."
+                            style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; width: 250px;">
                     </div>
                 </div>
 

@@ -15,14 +15,125 @@ window.VendorManager = {
         }
 
         // Initialize vendor grid
-        VendorGrid.initialize('vendorGrid');
+        if (window.VendorSummaryGrid) {
+            VendorSummaryGrid.initialize('vendorGrid');
+        }
+
+        // REPLACEMENT: Helper to load stats per account
+        this.loadVendorStats = () => {
+            if (!window.App || !App.transactions) return;
+
+            const accountId = App.currentAccountId;
+            const txs = App.transactions;
+            const vendorMap = new Map();
+
+            // 1. Aggregate
+            txs.forEach(tx => {
+                if (accountId && accountId !== 'all' && tx.accountId !== accountId) return;
+
+                const vName = tx.vendor || VendorNameUtils.extractVendorName(tx.description) || 'Unknown';
+                if (!vendorMap.has(vName)) {
+                    vendorMap.set(vName, {
+                        name: vName,
+                        count: 0,
+                        totalAmount: 0,
+                        currentAccount: null,
+                        accountMap: new Map() // Track frequency of accounts
+                    });
+                }
+                const stats = vendorMap.get(vName);
+                stats.count++;
+
+                // Fix Amount: Use signed amount or debit-credit
+                // If amount is string "$100.00", parseFloat handles it. 
+                // If amount is missing, try debits/credits
+                let val = 0;
+                if (tx.amount !== undefined && tx.amount !== null) {
+                    val = parseFloat(String(tx.amount).replace(/[^0-9.-]/g, ''));
+                } else {
+                    val = (parseFloat(tx.debits || 0) - parseFloat(tx.credits || 0));
+                }
+                if (isNaN(val)) val = 0;
+
+                stats.totalAmount += val;
+
+                // Fix Account: Track usage to find "Allocated Account"
+                // Check 'allocatedAccount' field (or 'categoryId'/'accountId' depending on model)
+                const acct = tx.allocatedAccount || tx.account || '';
+                if (acct && acct !== '9970' && acct !== 'Uncategorized') {
+                    stats.accountMap.set(acct, (stats.accountMap.get(acct) || 0) + 1);
+                }
+            });
+
+            // 2. Finalize (Pick Dominant Account)
+            vendorMap.forEach(v => {
+                // Format Amount
+                // v.totalAmount is raw number. Grid formatter will handle display.
+
+                // Determine Dominant Account
+                let bestAcct = null;
+                let maxCount = -1;
+                v.accountMap.forEach((count, acct) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        bestAcct = acct;
+                    }
+                });
+                // If no allocated account found in grid, check Dictionary?
+                if (!bestAcct && window.VendorMatcher) {
+                    const rule = VendorMatcher.getVendorByName(v.name);
+                    if (rule) bestAcct = rule.defaultAccount;
+                }
+                v.currentAccount = bestAcct;
+            });
+
+            // 2. Merge with Dictionary Logic
+            // The user might want to see ALL vendors from dictionary, even if 0 count in this account?
+            // "Vendors in Grid" implies vendors present in current view.
+            // Vendor Dict usually implies ALL known vendors.
+            // Let's assume VDM should show ALL vendors, but update counts for current account?
+            // OR VIG shows only vendors in grid.
+            // The user asked "Link to grid is still not working".
+            // If they are in VIG (Vendor Summary), they expect to see vendors IN THE GRID.
+            // So we should use the map.values().
+
+            // BUT, Vendor Dictionary (VDM) is typically "All Vendors".
+            // Let's separate VIG vs VDM loading?
+            // Actually, VIG and VDM share the same modal logic in this app structure based on previous edits.
+            // "Vendors in Grid" button opens "VIGModal".
+            // "Vendor Dictionary" button opens "VDMModal" (wait, they are different modals in HTML? Yes.)
+
+            // Checking VendorManager.showModal - it opens VDMModal.
+            // App.js opens VIGModal for "Vendors in Grid".
+
+            // IF this is VDM (Dictionary), it should show ALL.
+            // IF this is VIG (Summary), it should show only current account.
+
+            // Logic split:
+            // VendorDict: Load from VendorMatcher.getAllVendors().
+            // VIG: Load from aggregation.
+
+            // This function `loadVendorStats` is for VIG mode.
+            // VendorManager controls VDM.
+            // App.js controls VIG.
+
+            // So where should I put this? 
+            // VendorManager seems disconnected from VIG logic in App.js?
+            // app.js listener for `vendorSummaryBtn` calls `VendorGrid.initialize` (which is shimmed to SummaryGrid).
+            // But it DOESN'T call load data.
+
+            // I need to add this aggregation logic to wherever VIG is loaded.
+            // In app.js?
+
+            return Array.from(vendorMap.values());
+        };
 
         // Wire up NEW Search Bar
         const searchInput = document.getElementById('vendorSearch');
         const bindSearch = () => {
-            if (searchInput && VendorGrid.gridApi) {
+            if (searchInput && VendorSummaryGrid.gridApi) {
                 searchInput.addEventListener('input', (e) => {
-                    VendorGrid.gridApi.setGridOption('quickFilterText', e.target.value);
+                    VendorSummaryGrid.gridApi.setGridOption('quickFilterText', e.target.value);
                 });
             } else if (searchInput) {
                 setTimeout(bindSearch, 500);
@@ -50,7 +161,8 @@ window.VendorManager = {
 
         const addVendorBtn = document.getElementById('addVendorBtn');
         if (addVendorBtn) {
-            addVendorBtn.addEventListener('click', () => {
+            addVendorBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 🛡️ Prevent ModalManager from suppressing the prompt
                 this.showAddVendorDialog();
             });
         }
@@ -148,7 +260,7 @@ window.VendorManager = {
                 }
 
                 VendorMatcher.initialize();
-                VendorGrid.loadVendors();
+                VendorSummaryGrid.loadVendors();
 
                 vendorImportDropZone.style.display = 'none';
                 alert(`\u2705 Vendor Indexing Complete!\n\n` +
@@ -255,7 +367,42 @@ window.VendorManager = {
             this.modal.classList.add('active'); // Fallback
             this.modal.style.display = 'flex';
         }
-        VendorGrid.loadVendors();
+
+        const rawVendors = VendorMatcher.getAllVendors();
+
+        // 📏 Autofit Logic for Vendor Grid
+        const modal = document.getElementById('VDMModal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                const rowCount = rawVendors.length;
+                // Header(60) + Toolbar(50) + GridHeader(35) + Rows + Padding
+                const estimatedHeight = 60 + 50 + 35 + (rowCount * 32) + 40;
+                const maxAllowed = window.innerHeight * 0.85;
+                const finalHeight = Math.min(Math.max(estimatedHeight, 450), maxAllowed);
+
+                modalContent.style.height = `${finalHeight}px`;
+                // Set Snug Width
+                modalContent.style.width = '1000px';
+
+                // Enable Resize
+                modalContent.style.resize = 'both';
+                modalContent.style.overflow = 'hidden';
+                modalContent.style.minWidth = '600px';
+                modalContent.style.minHeight = '400px';
+            }
+        }
+
+        // MAP Data to Grid Definition (Fix for Empty Grid)
+        const gridData = rawVendors.map(v => ({
+            name: v.name,
+            count: v.matchCount || 0,
+            totalAmount: 0, // Dictionary doesn't track live totals usually
+            currentAccount: v.defaultAccount,
+            // Keep original for reference
+            ...v
+        }));
+        VendorSummaryGrid.loadVendors(gridData);
         this.hideBulkIndex(); // Reset to normal view
 
         // 🔧 FIX: Robust Loop to Force Resize until it works
@@ -263,8 +410,8 @@ window.VendorManager = {
         let attempts = 0;
         const resizeInterval = setInterval(() => {
             const gridDiv = document.getElementById('vendorGrid');
-            if (gridDiv && gridDiv.offsetWidth > 0 && VendorGrid.gridApi) {
-                VendorGrid.gridApi.sizeColumnsToFit();
+            if (gridDiv && gridDiv.offsetWidth > 0 && VendorSummaryGrid.gridApi) {
+                VendorSummaryGrid.gridApi.sizeColumnsToFit();
                 attempts++;
                 // Try a few times to ensure it catches the transition end
                 if (attempts > 5) clearInterval(resizeInterval);
@@ -328,7 +475,7 @@ window.VendorManager = {
 
         // Resize grid again as height changed
         setTimeout(() => {
-            if (VendorGrid.gridApi) VendorGrid.gridApi.sizeColumnsToFit();
+            if (VendorSummaryGrid.gridApi) VendorSummaryGrid.gridApi.sizeColumnsToFit();
         }, 300);
     },
 
@@ -403,7 +550,7 @@ window.VendorManager = {
                 `;
 
                 // Reload vendor grid
-                VendorGrid.loadVendors();
+                VendorSummaryGrid.loadVendors();
 
                 // Reset file input
                 document.getElementById('bulkFileInput').value = '';
@@ -432,7 +579,13 @@ window.VendorManager = {
             notes: ''
         };
 
-        VendorGrid.addVendor(vendorData);
+        if (window.VendorSummaryGrid && VendorSummaryGrid.addVendor) {
+            VendorSummaryGrid.addVendor(vendorData);
+        } else {
+            // Fallback
+            // Legacy VendorGrid removal - try VendorSummaryGrid anyway or warn
+            console.warn('VendorSummaryGrid.addVendor not found, check version');
+        }
     },
 
     showImportDialog() {
@@ -446,7 +599,7 @@ window.VendorManager = {
                 try {
                     const vendors = await Storage.importVendorDictionary(file);
                     VendorMatcher.initialize();
-                    VendorGrid.loadVendors();
+                    VendorSummaryGrid.loadVendors();
                     alert(`Successfully imported ${vendors.length} vendors`);
                 } catch (error) {
                     alert('Failed to import vendor dictionary: ' + error.message);
@@ -501,7 +654,7 @@ window.VendorManager = {
                 }
 
                 // Reload grid
-                VendorGrid.loadVendors();
+                VendorSummaryGrid.loadVendors();
 
                 alert(`✨ AI Re-think complete!\n\n${result.results.categorized} vendors categorized\n${result.results.allocated} accounts allocated\n${result.results.merged} similar vendors found`);
             }, 500);

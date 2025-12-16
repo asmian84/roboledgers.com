@@ -28,6 +28,7 @@ window.DrillDownGrid = {
             overlayNoRowsTemplate: '<span style="color:var(--text-secondary);">No transactions found.</span>',
 
             getRowStyle: (params) => {
+                // Modified: Removed red border logic as requested (1:1 standard)
                 const scheme = (window.Settings && Settings.current.gridColorScheme) || 'rainbow';
                 const schemes = (window.TransactionGrid && TransactionGrid.colorSchemes) || {
                     rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],

@@ -95,11 +95,8 @@ window.VendorSummaryGrid = {
             }
         }
 
-        // Force refresh ONLY if visible
-        const container = document.getElementById('vendorSummaryGridContainer');
-        if (container && container.offsetWidth > 0) {
-            setTimeout(() => this.gridApi.sizeColumnsToFit(), 50);
-        }
+        // Force refresh
+        setTimeout(() => this.gridApi.sizeColumnsToFit(), 50);
     },
 
     // 1:1 Copy from VIG

@@ -222,91 +222,28 @@ window.ChartManager = {
     searchOutput: null,
 
     initialize() {
-        if (document.getElementById('chartOfAccountsModal')) {
-            this.modal = document.getElementById('chartOfAccountsModal');
-            this.listContainer = document.getElementById('accountsList');
-            this.searchInput = document.getElementById('accountSearch');
-            // Re-bind listeners just in case
-            this.attachListeners();
-            return;
-        }
-
-        // Create Modal Structure (Standardized WOW Layout)
-        const modalHtml = `
-            <div id="chartOfAccountsModal" class="modal medium-modal" style="z-index: 1000000004;">
-                <div class="modal-content" style="display: flex; flex-direction: column; height: auto; max-height: 85vh; width: 900px; padding: 0; overflow: hidden; resize: both; min-width: 600px; min-height: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-                    
-                    <!-- HEADER -->
-                    <div class="modal-header" style="flex-shrink: 0; padding: 1.5rem; background: white; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                        <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-color); font-weight: 700; letter-spacing: -0.5px;">Chart of Accounts</h2>
-                        <span class="modal-close" style="font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</span>
-                    </div>
-
-                    <!-- TOOLBAR (The WOW Part) -->
-                    <div class="modal-toolbar" style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        
-                        <!-- LEFT: Search -->
-                        <div class="search-wrapper" style="position: relative; width: 300px; flex-shrink: 0;">
-                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
-                            <input type="text" id="accountSearch" placeholder="Search accounts..." 
-                                style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        </div>
-
-                        <!-- RIGHT: Actions -->
-                        <div class="action-group" style="display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0;">
-                            <button id="addAccountBtn" class="btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                                <span style="font-size: 1.1rem;">➕</span> Add Account
-                            </button>
-                            <button id="refreshAccountsBtn" class="btn-secondary" title="Refresh List" style="padding: 0.6rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
-                                🔄
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- BODY (Grid) -->
-                    <div class="modal-body" id="accountsList" style="flex: 1; min-height: 0; width: 100%; position: relative; background: white;">
-                        <!-- AG Grid Injected Here -->
-                    </div>
-
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
         this.modal = document.getElementById('chartOfAccountsModal');
-        this.listContainer = document.getElementById('accountsList');
-        this.searchInput = document.getElementById('accountSearch');
+        this.listContainer = document.getElementById('chartList');
+        this.searchInput = document.getElementById('chartSearch');
+        const refreshBtn = document.getElementById('refreshChartBtn');
 
-        this.attachListeners();
-    },
+        if (!this.modal) return;
 
-    attachListeners() {
+        // Close button logic
         const closeBtn = this.modal.querySelector('.modal-close');
-        const addBtn = document.getElementById('addAccountBtn');
-        const refreshBtn = document.getElementById('refreshAccountsBtn');
-
-        // Close logic
         if (closeBtn) {
-            closeBtn.onclick = () => this.close();
+            closeBtn.addEventListener('click', () => this.close());
         }
 
-        // Modal Overlay Close
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.close();
-        });
-
-        // Add Account logic
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
-                // Ensure AccountUI exists or show simple prompt for now
-                if (window.AccountUI && AccountUI.openAccountForm) {
-                    AccountUI.openAccountForm();
-                } else {
-                    alert('Account Form logic pending implementation in AccountUI.');
+        // Close on click outside - DELAYED to prevent immediate trigger
+        setTimeout(() => {
+            window.addEventListener('click', (e) => {
+                // Only close if active and target is the backdrop
+                if (this.modal.classList.contains('active') && e.target === this.modal) {
+                    this.close();
                 }
             });
-        }
+        }, 500);
 
         // Search logic
         if (this.searchInput) {
@@ -325,33 +262,16 @@ window.ChartManager = {
 
     showModal() {
         if (!this.modal) this.initialize();
+        if (this.modal) {
+            // Standard Modal Activation
+            this.modal.classList.add('active');
+            this.modal.style.display = 'flex'; // Explicit flex for centering
+            this.modal.style.zIndex = '1000000000 !important';
 
-        // Re-fetch references in case DOM was nuked/replaced
-        this.modal = document.getElementById('chartOfAccountsModal');
-        this.listContainer = document.getElementById('accountsList');
-        this.searchInput = document.getElementById('accountSearch');
-        if (!this.modal) return;
-
-        // Reset Search
-        if (this.searchInput) this.searchInput.value = '';
-
-        // Show Modal
-        this.modal.classList.add('active');
-
-        // CRITICAL FIX: Wait for container to have width before creating grid
-        // AG Grid can't initialize on zero-width elements
-        const waitForWidth = () => {
-            if (this.listContainer && this.listContainer.offsetWidth > 0) {
-                console.log(`✅ Container has width: ${this.listContainer.offsetWidth}px. Creating grid...`);
+            requestAnimationFrame(() => {
                 this.renderList();
-            } else {
-                console.log('⏳ Waiting for container width...');
-                requestAnimationFrame(waitForWidth);
-            }
-        };
-
-        // Start waiting for width
-        requestAnimationFrame(waitForWidth);
+            });
+        }
     },
 
     close() {
@@ -369,44 +289,21 @@ window.ChartManager = {
         // Clear previous content
         this.listContainer.innerHTML = '';
 
-        // 1. Theme Logic (Dynamic from Settings)
-        const scheme = (window.Settings && Settings.current && Settings.current.gridColorScheme) || 'classic';
-        const schemes = (window.TransactionGrid && TransactionGrid.colorSchemes) || {
-            rainbow: ['#FFD1DC', '#D1F2FF', '#D1FFD1', '#FFFACD', '#FFDAB9', '#E6E6FA'],
-            classic: ['#FFFFFF', '#F5F5F5']
-        };
-        const activeColors = schemes[scheme] || schemes.classic;
-
-        // 2. Data Source
-        let sourceAccounts = [];
-        if (window.AccountAllocator && AccountAllocator.getAllAccounts) {
-            sourceAccounts = AccountAllocator.getAllAccounts();
-        }
-
-        // Fallback to DEFAULT if empty (Critical for viewing grid when no data exists yet)
-        if (!sourceAccounts || sourceAccounts.length === 0) {
-            console.warn("⚠️ ChartManager: No accounts found in Allocator, using DEFAULTS.");
-            sourceAccounts = (typeof DEFAULT_CHART_OF_ACCOUNTS !== 'undefined') ? DEFAULT_CHART_OF_ACCOUNTS : [];
-        }
-
-        console.log(`📊 Rendering CoA with ${sourceAccounts.length} accounts.`);
-
-        // Set modal to a reasonable default height so grid has space to render
-        const modalContent = this.modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.height = '70vh';
-            modalContent.style.width = '900px';
-        }
-
-        // CRITICAL: Set explicit height on grid container so AG Grid can render
+        // Setup Grid Container - Match Vendor Grid Height/Width
+        this.listContainer.style.height = '60vh';
         this.listContainer.style.width = '100%';
-        this.listContainer.style.height = '500px'; // Explicit height for AG Grid
-        this.listContainer.classList.add('ag-theme-alpine');
+        // UI MATCH: Use Light Theme to match Vendor Dictionary
+        this.listContainer.className = 'ag-theme-alpine';
+
+        const sourceAccounts = (window.AccountAllocator && AccountAllocator.getAllAccounts)
+            ? AccountAllocator.getAllAccounts()
+            : DEFAULT_CHART_OF_ACCOUNTS;
 
         const gridOptions = {
             rowData: sourceAccounts,
             columnDefs: [
                 {
+                    // "Ghost Column" for alignment (Matches VIG)
                     width: 50,
                     minWidth: 50,
                     maxWidth: 50,
@@ -415,6 +312,7 @@ window.ChartManager = {
                     suppressMenu: true,
                     headerName: '',
                     cellRenderer: (params) => {
+                        // Mock Cloud Icon (Always synced for now)
                         return `<div style="display:flex; justify-content:center; align-items:center; height:100%;">
                             <i class="fas fa-cloud" style="color: #3b82f6; font-size: 0.8rem;" title="Synced to Cloud"></i>
                         </div>`;
@@ -436,8 +334,8 @@ window.ChartManager = {
                     width: 90,
                     cellRenderer: (params) => {
                         const btn = document.createElement('button');
-                        btn.className = 'btn-secondary';
-                        btn.innerHTML = '🗑️';
+                        btn.className = 'btn-secondary'; // Minimal styling
+                        btn.innerHTML = '🗑️'; // Trash icon
                         btn.title = "Delete Account";
                         btn.style.cssText = 'padding: 2px 8px; font-size: 1rem; border: none; background: transparent; cursor: pointer;';
 
@@ -445,7 +343,7 @@ window.ChartManager = {
                         btn.onmouseout = () => btn.style.transform = 'scale(1)';
 
                         btn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // Prevent row selection
                             const accountName = params.data.name;
                             const accountCode = params.data.code;
 
@@ -453,6 +351,7 @@ window.ChartManager = {
                                 if (window.AccountAllocator && AccountAllocator.deleteAccount) {
                                     const success = await AccountAllocator.deleteAccount(accountCode);
                                     if (success) {
+                                        // Update AG Grid locally to reflect change instantly
                                         params.api.applyTransaction({ remove: [params.data] });
                                         console.log(`Deleted account: ${accountCode}`);
                                     }
@@ -471,26 +370,27 @@ window.ChartManager = {
                 sortable: true
             },
             animateRows: true,
+            // Snug Sizing (1:1 with Vendor Dictionary)
             rowHeight: 32,
             headerHeight: 32,
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
-                // Double check sizing with a delay to ensure Modal animation finished
-                setTimeout(() => {
-                    params.api.sizeColumnsToFit();
-                }, 100);
+                // Double check sizing 
+                setTimeout(() => params.api.sizeColumnsToFit(), 50);
             },
 
-            // UI MATCH: Dynamic Theme
+            // UI MATCH: Classic Clean White (Consistent Theme)
             getRowStyle: (params) => {
-                const index = params.node.rowIndex % activeColors.length;
-                return { background: activeColors[index] };
+                if (params.node.rowIndex % 2 === 1) {
+                    return { background: '#F5F5F5' }; // Light grey for alternate rows
+                }
+                return { background: '#FFFFFF' }; // White for primary rows
             }
         };
 
-        // Create grid and save API reference (CRITICAL: must save return value!)
-        this.gridApi = agGrid.createGrid(this.listContainer, gridOptions);
+        // Initialize AG Grid
+        agGrid.createGrid(this.listContainer, gridOptions);
     },
 
     filterList(text) {

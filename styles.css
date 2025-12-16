@@ -2455,10 +2455,17 @@ input.currency-input,
 /* Ensure body takes up remaining space (for grid) ONLY in large/grid modals */
 .large-modal .modal-body {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     /* Let grid handle scroll */
     padding: 0 !important;
     /* Remove padding to let grid flush */
+}
+
+/* Ensure Chart of Accounts grid container fills modal */
+.modal-content #accountsList {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
 /* Ensure grid fits perfectly */
@@ -3871,4 +3878,13 @@ details[open] .toggle-icon {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 800;
+}
+
+/* Forced Z-Index Stacking */
+#VIGModal {
+    z-index: 9000;
+}
+
+#VSMModal {
+    z-index: 9050;
 }
