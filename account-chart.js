@@ -509,12 +509,14 @@ window.ChartManager = {
                 const columnState = this.gridApi.getColumnState();
                 const totalWidth = columnState.reduce((sum, col) => sum + (col.width || 0), 0);
 
-                // Add buffer for scrollbar/padding (approx 40-50px)
-                // Limit to screen width
-                const newWidth = Math.min(totalWidth + 50, window.innerWidth * 0.95);
+                // Enforce a healthy minimum width (800px) so it doesn't look anorexic
+                const newWidth = Math.max(totalWidth + 50, 800);
+
+                // Cap at window width
+                const finalWidth = Math.min(newWidth, window.innerWidth * 0.95);
 
                 // Configure modal to match
-                modalContent.style.width = `${newWidth}px`;
+                modalContent.style.width = `${finalWidth}px`;
 
                 setTimeout(() => { this.blockAutofit = false; }, 200);
             },
