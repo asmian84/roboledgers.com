@@ -407,7 +407,8 @@ window.ChartManager = {
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    width: 140,
+                    minWidth: 100,
+                    flex: 0.8,
                     pinned: 'left',
                     cellStyle: { fontWeight: '600', color: '#1e293b' }
                 },
@@ -416,12 +417,14 @@ window.ChartManager = {
                     field: 'name',
                     sortable: true,
                     filter: true,
-                    flex: 1,
+                    flex: 2,
+                    minWidth: 200,
                     cellStyle: { fontWeight: '400' }
                 },
                 {
                     headerName: '',
-                    width: 60,
+                    width: 50,
+                    maxWidth: 50,
                     cellRenderer: (params) => {
                         const btn = document.createElement('button');
                         btn.innerHTML = '<i class="fas fa-trash" style="font-size: 0.85rem;"></i>';

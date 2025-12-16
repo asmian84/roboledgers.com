@@ -222,12 +222,6 @@
     font-size: 14px;
 }
 
-#coaGrid .ag-cell {
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-}
-
 #chartOfAccountsModal .modal-body {
     margin: 0;
     padding: 0 !important;
