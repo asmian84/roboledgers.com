@@ -491,8 +491,8 @@ window.ChartManager = {
 
             // Bi-directional resize: when columns are resized, resize modal
             onColumnResized: (params) => {
-                // Only react to user dragging (source='uiColumnDragged') AND finished
-                if (!params.finished || params.source !== 'uiColumnDragged') return;
+                // React to user dragging OR double-clicking (autosize)
+                if (!params.finished || (params.source !== 'uiColumnDragged' && params.source !== 'autosizeColumns')) return;
 
                 const modalContent = this.modal?.querySelector('.modal-content');
                 if (!modalContent || !this.gridApi) return;
