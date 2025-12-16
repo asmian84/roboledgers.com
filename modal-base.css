@@ -211,9 +211,8 @@
 
 #coaGrid .ag-header-cell-text {
     font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
+    font-size: 12px;
+    letter-spacing: 0.3px;
     color: #64748b;
 }
 
