@@ -326,6 +326,9 @@ window.ChartManager = {
     showModal() {
         if (!this.modal) this.initialize();
 
+        // PERSIST STATE: Remember this modal is open
+        localStorage.setItem('activeModal', 'chartOfAccounts');
+
         // Re-fetch references in case DOM was nuked/replaced
         this.modal = document.getElementById('chartOfAccountsModal');
         this.listContainer = document.getElementById('coaGrid');
@@ -358,6 +361,9 @@ window.ChartManager = {
 
     close() {
         if (this.modal) {
+            // PERSIST STATE: Forget this modal
+            localStorage.removeItem('activeModal');
+
             this.modal.classList.remove('active');
             setTimeout(() => {
                 this.modal.style.display = 'none';

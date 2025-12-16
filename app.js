@@ -109,8 +109,20 @@ window.App = {
             /* Dead code removed (history button) */
 
 
-            // Listen for Uploads section
-            this.showSection('home');
+            // Restore Last Active Section
+            const lastSection = localStorage.getItem('activeSection');
+            if (lastSection) {
+                console.log(`🔄 Restoring active section: ${lastSection}`);
+                this.showSection(lastSection);
+            } else {
+                this.showSection('home');
+            }
+
+            // Restore Active Modal (Chart of Accounts)
+            const activeModal = localStorage.getItem('activeModal');
+            if (activeModal === 'chartOfAccounts' && window.ChartManager) {
+                setTimeout(() => ChartManager.showModal(), 500); // Small delay to allow CSS/Grid load
+            }
 
             // Start Background AI Worker
             if (window.AIWorker) {
