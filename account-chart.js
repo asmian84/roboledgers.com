@@ -467,8 +467,6 @@ window.ChartManager = {
                 sortable: true
             },
             animateRows: true,
-            rowHeight: 36,
-            headerHeight: 40,
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
