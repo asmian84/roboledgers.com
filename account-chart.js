@@ -403,26 +403,11 @@ window.ChartManager = {
             rowData: sourceAccounts,
             columnDefs: [
                 {
-                    width: 50,
-                    minWidth: 50,
-                    maxWidth: 50,
-                    pinned: 'left',
-                    lockPosition: true,
-                    suppressMenu: true,
-                    headerName: '',
-                    cellRenderer: (params) => {
-                        return `<div style="display:flex; justify-content:center; align-items:center; height:100%;">
-                            <i class="fas fa-cloud" style="color: #3b82f6; font-size: 0.8rem;" title="Synced to Cloud"></i>
-                        </div>`;
-                    },
-                    cellStyle: { background: '#ffffff', borderRight: '1px solid #e2e8f0', padding: 0 }
-                },
-                {
-                    headerName: 'Code',
+                    headerName: 'Account#',
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    width: 100,
+                    width: 120,
                     pinned: 'left',
                     cellStyle: { fontWeight: 'bold' }
                 },
