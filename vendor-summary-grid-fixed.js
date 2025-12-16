@@ -172,7 +172,10 @@ window.VendorSummaryGrid = {
                 headerName: '',
                 field: 'delete',
                 width: 60,
-                headerClass: 'ag-right-aligned-header', // Optional if supported
+                pinned: 'right', // 🔒 Standard "Action Column" behavior
+                lockPosition: true, // Prevent moving
+                suppressMenu: true,
+                cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
                 cellRenderer: (params) => {
                     return `<button class="delete-vendor-btn" data-vendor="${params.data.name}" 
                     style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;"
