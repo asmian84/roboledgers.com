@@ -183,16 +183,33 @@
     background: var(--bg-primary);
 }
 
-/* Grid Container (for AG Grid modals) */
-.modal-body .ag-theme-alpine {
-    width: 100%;
-    height: 100%;
-}
-
-/* CoA Grid - Edge to Edge (no gaps) */
+/* CoA Grid - Sleek Modern Design */
 #coaGrid {
     border-radius: 0;
     border: none;
+}
+
+#coaGrid.ag-theme-alpine {
+    --ag-border-color: #e2e8f0;
+    --ag-header-background-color: #f8fafc;
+    --ag-header-foreground-color: #475569;
+    --ag-font-size: 14px;
+    --ag-row-hover-color: #f1f5f9;
+}
+
+#coaGrid .ag-header {
+    border-bottom: 2px solid #e2e8f0;
+}
+
+#coaGrid .ag-header-cell-text {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#coaGrid .ag-row {
+    border-bottom: 1px solid #f1f5f9;
 }
 
 #chartOfAccountsModal .modal-body {

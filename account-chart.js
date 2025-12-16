@@ -407,23 +407,35 @@ window.ChartManager = {
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    width: 120,
+                    width: 110,
                     pinned: 'left',
-                    cellStyle: { fontWeight: 'bold' }
+                    cellStyle: { fontWeight: '600', color: '#1e293b' }
                 },
-                { headerName: 'Account Name', field: 'name', sortable: true, filter: true, flex: 1 },
                 {
-                    headerName: 'Action',
-                    width: 90,
+                    headerName: 'Account Name',
+                    field: 'name',
+                    sortable: true,
+                    filter: true,
+                    flex: 1,
+                    cellStyle: { fontWeight: '400' }
+                },
+                {
+                    headerName: '',
+                    width: 60,
                     cellRenderer: (params) => {
                         const btn = document.createElement('button');
-                        btn.className = 'btn-secondary';
-                        btn.innerHTML = '🗑️';
+                        btn.innerHTML = '<i class="fas fa-trash" style="font-size: 0.85rem;"></i>';
                         btn.title = "Delete Account";
-                        btn.style.cssText = 'padding: 2px 8px; font-size: 1rem; border: none; background: transparent; cursor: pointer;';
+                        btn.style.cssText = 'padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;';
 
-                        btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
-                        btn.onmouseout = () => btn.style.transform = 'scale(1)';
+                        btn.onmouseover = () => {
+                            btn.style.background = '#fee2e2';
+                            btn.style.color = '#dc2626';
+                        };
+                        btn.onmouseout = () => {
+                            btn.style.background = 'transparent';
+                            btn.style.color = '#64748b';
+                        };
 
                         btn.addEventListener('click', async (e) => {
                             e.stopPropagation();
@@ -452,8 +464,8 @@ window.ChartManager = {
                 sortable: true
             },
             animateRows: true,
-            rowHeight: 32,
-            headerHeight: 32,
+            rowHeight: 36,
+            headerHeight: 40,
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
