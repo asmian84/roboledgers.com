@@ -407,8 +407,8 @@ window.ChartManager = {
                     field: 'code',
                     sortable: true,
                     filter: true,
-                    minWidth: 100,
-                    flex: 0.8,
+                    width: 120, /* Fixed width to prevent gap */
+                    suppressSizeToFit: true, /* Don't stretch this column */
                     pinned: 'left',
                     cellStyle: { fontWeight: '600', color: '#1e293b' }
                 },
@@ -417,7 +417,7 @@ window.ChartManager = {
                     field: 'name',
                     sortable: true,
                     filter: true,
-                    flex: 2,
+                    flex: 1, /* Take all remaining space */
                     minWidth: 200,
                     cellStyle: { fontWeight: '400' }
                 },
@@ -425,41 +425,45 @@ window.ChartManager = {
                     headerName: '',
                     width: 50,
                     maxWidth: 50,
+                    suppressSizeToFit: true,
                     cellRenderer: (params) => {
                         const btn = document.createElement('button');
                         btn.innerHTML = '<i class="fas fa-trash" style="font-size: 0.85rem;"></i>';
-                        btn.title = "Delete Account";
-                        btn.style.cssText = 'padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;';
+                        btn.className = 'btn-icon delete-btn';
+                        btn.style.color = '#cbd5e1';
+                        btn.style.padding = '6px';
+                        btn.style.transition = 'all 0.2s';
 
                         btn.onmouseover = () => {
+                            btn.style.color = '#ef4444';
                             btn.style.background = '#fee2e2';
-                            btn.style.color = '#dc2626';
+                            btn.style.borderRadius = '4px';
                         };
                         btn.onmouseout = () => {
+                            btn.style.color = '#cbd5e1';
                             btn.style.background = 'transparent';
-                            btn.style.color = '#64748b';
                         };
 
-                        btn.addEventListener('click', async (e) => {
+                        btn.onclick = (e) => {
                             e.stopPropagation();
-                            const accountName = params.data.name;
-                            const accountCode = params.data.code;
-
-                            if (confirm(`Are you sure you want to delete "${accountName}" (${accountCode})?`)) {
+                            if (confirm(`Delete account ${params.data.name}?`)) {
                                 if (window.AccountAllocator && AccountAllocator.deleteAccount) {
-                                    const success = await AccountAllocator.deleteAccount(accountCode);
-                                    if (success) {
-                                        params.api.applyTransaction({ remove: [params.data] });
-                                        console.log(`Deleted account: ${accountCode}`);
-                                    }
+                                    AccountAllocator.deleteAccount(params.data.code).then(success => {
+                                        if (success) {
+                                            const rowData = [];
+                                            params.api.forEachNode(node => rowData.push(node.data));
+                                            const newData = rowData.filter(d => d.code !== params.data.code);
+                                            params.api.setGridOption('rowData', newData);
+                                        }
+                                    });
                                 } else {
-                                    alert('Account deletion logic not found (AccountAllocator).');
+                                    alert('Account deletion service unavailable (AccountAllocator).');
                                 }
                             }
-                        });
+                        };
                         return btn;
                     },
-                    cellStyle: { textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                    pinned: 'right'
                 }
             ],
             defaultColDef: {
@@ -484,7 +488,7 @@ window.ChartManager = {
                 // Watch for modal resize and refit columns
                 if (this.modal) {
                     const resizeObserver = new ResizeObserver(() => {
-                        if (params.api) {
+                        if (params.api && this.listContainer?.offsetWidth > 0) {
                             params.api.sizeColumnsToFit();
                         }
                     });
