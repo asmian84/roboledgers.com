@@ -480,6 +480,12 @@ window.ChartManager = {
                 params.api.sizeColumnsToFit();
             },
 
+            // ⚡ AUTO-STITCH: Automatically resize columns to content when data loads
+            onModelUpdated: (params) => {
+                const allColumnIds = params.api.getColumns().map(column => column.getId());
+                params.api.autoSizeColumns(allColumnIds, false); // false = don't skip header
+            },
+
             // Native AG Grid event: actively refits columns when container resizes
             // Native AG Grid event: actively refits columns when container resizes
             onGridSizeChanged: (params) => {
