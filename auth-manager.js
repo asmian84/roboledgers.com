@@ -130,8 +130,9 @@ window.AuthManager = {
     },
 
     // UI Handling
+    // UI Handling
     setupUI() {
-        // Wiring up the Login Modal
+        // Wiring up the Login UI
         const loginBtn = document.getElementById('btnLogin');
         const loginModal = document.getElementById('loginModal');
         const closeBtn = document.getElementById('closeLoginModal');
@@ -145,28 +146,68 @@ window.AuthManager = {
         const toggleText = document.getElementById('authToggleText');
         const msgBox = document.getElementById('authMessage');
         const devBtn = document.getElementById('btnDevLogin');
+        const googleBtn = document.getElementById('btnGoogleLogin');
+        const forgotLink = document.getElementById('forgotPasswordLink');
+
+        // --- Event Listeners ---
 
         if (devBtn) {
             devBtn.addEventListener('click', () => {
+                console.log('🔨 Dev Mode Clicked');
                 this.loginAsDev();
             });
         }
 
-        let isSignUp = false;
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async () => {
+                msgBox.innerText = 'Redirecting to Google...';
+                const { error } = await this.signInWithGoogle();
+                if (error) {
+                    msgBox.style.color = '#ef4444';
+                    msgBox.innerText = error.message;
+                }
+            });
+        }
+
+        if (forgotLink) {
+            forgotLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const email = emailInput.value;
+                if (!email) {
+                    msgBox.style.color = '#ef4444';
+                    msgBox.innerText = 'Please enter your email address first.';
+                    emailInput.focus();
+                    return;
+                }
+
+                if (confirm(`Send password reset link to ${email}?`)) {
+                    msgBox.innerText = 'Sending...';
+                    const { error } = await this.resetPassword(email);
+                    if (error) {
+                        msgBox.style.color = '#ef4444';
+                        msgBox.innerText = error.message;
+                    } else {
+                        msgBox.style.color = '#10b981';
+                        msgBox.innerHTML = '<b>Sent!</b> Check your email for the reset link.';
+                    }
+                }
+            });
+        }
 
         if (loginBtn) {
             loginBtn.addEventListener('click', () => {
                 if (this.user) {
-                    // If logged in, this button acts as Logout
                     if (confirm('Log out?')) this.signOut();
                 } else {
-                    loginModal.style.display = 'block';
+                    if (loginModal) loginModal.style.display = 'block';
                 }
             });
         }
 
         if (closeBtn) closeBtn.addEventListener('click', () => loginModal.style.display = 'none');
 
+        // Toggle Sign Up / Sign In
+        let isSignUp = false;
         if (toggleLink) {
             toggleLink.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -181,14 +222,14 @@ window.AuthManager = {
                     toggleText.innerText = isSignUp ? 'Already have an account?' : 'New to RoboLedgers?';
                     toggleLink.innerText = isSignUp ? 'Sign In' : 'Create Account';
                 } else {
-                    // Fallback for old modal structure if ID missing
                     toggleLink.innerHTML = isSignUp ? 'Already have an account? <b>Sign In</b>' : 'New here? <b>Create Account</b>';
                 }
 
-                msgBox.innerText = '';
+                if (msgBox) msgBox.innerText = '';
             });
         }
 
+        // Form Submit
         if (form) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -202,7 +243,7 @@ window.AuthManager = {
                 if (isSignUp) {
                     result = await this.signUp(email, pass);
                     if (!result.error) {
-                        msgBox.style.color = '#10b981'; // Green
+                        msgBox.style.color = '#10b981';
                         msgBox.innerHTML = '<b>Success!</b> Check your email to confirm your account.';
                     }
                 } else {
@@ -210,13 +251,12 @@ window.AuthManager = {
                     if (!result.error) {
                         msgBox.style.color = '#3b82f6';
                         msgBox.innerText = 'Success! Redirecting...';
-                        // Redirect logic is handled by onAuthStateChange, but we can force close modal
-                        loginModal.style.display = 'none';
+                        if (loginModal) loginModal.style.display = 'none';
                     }
                 }
 
                 if (result.error) {
-                    msgBox.style.color = '#ef4444'; // Red
+                    msgBox.style.color = '#ef4444';
                     console.error('Auth Error:', result.error);
 
                     if (result.error.message.includes('Email not confirmed')) {
@@ -252,3 +292,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for Supabase
     setTimeout(() => AuthManager.initialize(), 10);
 });
+
+    // --- New Auth Methods ---
+
+    async signInWithGoogle() {
+    const { data, error } = await SupabaseClient.client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin + '/app.html'
+        }
+    });
+    return { data, error };
+},
+
+    async resetPassword(email) {
+    const { data, error } = await SupabaseClient.client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/app.html',
+    });
+    return { data, error };
+},

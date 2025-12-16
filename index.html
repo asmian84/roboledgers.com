@@ -42,7 +42,6 @@
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             color: white;
             padding: 4rem 6rem;
-            /* More breathing room */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -180,6 +179,8 @@
             justify-content: center;
             background: #ffffff;
             padding: 2rem;
+            overflow-y: auto;
+            /* Enable scroll within panel if needed */
         }
 
         .auth-card {
@@ -316,21 +317,107 @@
             min-height: 20px;
         }
 
-        /* Responsive */
-        @media (max-width: 900px) {
+        /* --- RESPONSIVE DESIGN --- */
+
+        /* Tablet & Stacked Layout (max-width: 960px) */
+        @media (max-width: 960px) {
             body {
                 flex-direction: column;
+                height: auto;
+                min-height: 100vh;
                 overflow-y: auto;
+                /* Enable scroll for whole body */
             }
 
             .feature-panel {
-                padding: 3rem 2rem;
+                padding: 4rem 3rem;
+                min-height: auto;
+                /* Allow content to dictate height */
+            }
+
+            .brand-large {
+                font-size: 2.8rem;
+                justify-content: center;
+                margin-bottom: 2rem;
+            }
+
+            .feature-list {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                /* 2 Column Grid for tablet */
+                gap: 1.5rem;
+            }
+
+            .feature-item {
+                margin-bottom: 0;
+                /* Let grid handle gap */
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 1.5rem;
+            }
+
+            .feature-icon {
+                margin-right: 0;
+                margin-bottom: 1rem;
             }
 
             .auth-panel {
-                padding: 3rem 2rem;
-                flex: none;
-                min-height: 100vh;
+                padding: 4rem 2rem;
+                min-height: auto;
+            }
+
+            .auth-card {
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+                border-radius: 16px;
+                border: 1px solid #f1f5f9;
+            }
+        }
+
+        /* Mobile Layout (max-width: 600px) */
+        @media (max-width: 600px) {
+            .feature-panel {
+                padding: 3rem 1.5rem;
+            }
+
+            .brand-large {
+                font-size: 2.2rem;
+                gap: 0.75rem;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
+                /* 1 Column for mobile */
+            }
+
+            .feature-item {
+                flex-direction: row;
+                /* Horizontal again for mobile cards? Or keeping vertical? Let's try horizontal compact */
+                align-items: flex-start;
+                text-align: left;
+                padding: 1rem;
+            }
+
+            .feature-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+                margin-right: 1rem;
+                margin-bottom: 0;
+            }
+
+            .feature-text h3 {
+                font-size: 1.1rem;
+            }
+
+            .auth-panel {
+                padding: 2rem 1rem;
+            }
+
+            .auth-card {
+                padding: 1.5rem;
+                border: none;
+                box-shadow: none;
             }
         }
     </style>
@@ -411,7 +498,36 @@
 
                 <div id="authMessage" class="auth-message"></div>
 
+                <div class="forgot-password" style="text-align: right; margin-bottom: 1rem;">
+                    <a href="#" id="forgotPasswordLink"
+                        style="color: var(--primary); font-size: 0.85rem; text-decoration: none;">Forgot Password?</a>
+                </div>
+
                 <button type="submit" id="authSubmit" class="btn-submit">Sign In</button>
+
+                <div class="separator-text">or continue with</div>
+
+                <button type="button" id="btnGoogleLogin" class="btn-google" style="
+                    width: 100%;
+                    padding: 12px;
+                    background: white;
+                    color: #374151;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.2s;
+                    margin-bottom: 1rem;
+                ">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" height="20" alt="Google">
+                    Sign in with Google
+                </button>
+
 
                 <div class="separator-text">or</div>
 

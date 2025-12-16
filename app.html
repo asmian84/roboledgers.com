@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="super-modal.css?v=6">
     <!-- mobile.css removed as it does not exist -->
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="stylesheet" href="styles.css?v=102">
     <link rel="stylesheet" href="ticker.css?v=6">
     <link rel="stylesheet" href="dashboard.css?v=1">
 </head>
@@ -66,8 +66,11 @@
 
             <div class="nav-group">
                 <p class="nav-label">Main</p>
-                <button class="nav-item active" data-target="dashboardSection" id="navDashboard">
-                    <i class="fas fa-chart-pie"></i> Dashboard
+                <button class="nav-item active" data-target="homeSection" id="navHome">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="nav-item" data-target="dashboardSection" id="navDashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
                 </button>
                 <button class="nav-item" data-target="uploadSection" id="navUpload">
                     <i class="fas fa-cloud-upload-alt"></i> Upload
@@ -121,117 +124,344 @@
             <!-- Header for Mobile/Title -->
             <header class="mobile-header">
                 <button id="mobileMenuBtn" class="icon-btn"><i class="fas fa-bars"></i></button>
-                <h2 id="pageTitle">Dashboard</h2>
+                <h2 id="pageTitle">Home</h2>
             </header>
 
-            <!-- Step 0: Dashboard (New) -->
-            <section id="dashboardSection" class="section active">
+            <!-- Step 0.1: Home Section (Welcome) -->
+            <section id="homeSection" class="section active">
                 <div class="welcome-banner">
-                    <h1>Welcome back, <span class="highlight-text">Admin</span></h1>
-                    <p>Here's what's happening with your books today.</p>
-                </div>
-                <!-- KPI Cards moved here from overlay -->
-                <!-- Dashboard Layout -->
-                <div class="dashboard-grid">
-                    <!-- Top Row: KPI Cards -->
-                    <div class="kpi-card glass-panel revenue-card">
-                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
-                        <div class="kpi-info">
-                            <h3>Revenue</h3>
-                            <h2 id="kpiRevenue">$0.00</h2>
-                        </div>
-                    </div>
+                    <!-- Cleaned up: Removed redundant 'Welcome back Admin' to focus on centralized Hero -->
 
-                    <div class="kpi-card glass-panel expense-card">
-                        <div class="icon-wrapper"><i class="fas fa-arrow-trend-down"></i></div>
-                        <div class="kpi-info">
-                            <h3>Expenses</h3>
-                            <h2 id="kpiExpenses">$0.00</h2>
+                    <!-- Dashboard / Home Layout (v2 Clean) -->
+                    <div class="home-container">
+                        <!-- Hero (Centered & Clean) -->
+                        <div class="dashboard-hero slide-in"
+                            style="text-align: center; margin-bottom: 3rem; display: flex; flex-direction: column; align-items: center;">
+                            <h1 id="welcomeGreeting"
+                                style="font-size: 3rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">
+                                <span class="gradient-text">RoboLedgers</span>
+                            </h1>
+                            <p
+                                style="font-size: 1.1rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
+                                The robust, AI-driven ledger for modern business. <br>
+                                Current System Version: <span class="version-tag">v118</span>
+                            </p>
                         </div>
-                    </div>
 
-                    <div class="kpi-card glass-panel profit-card">
-                        <div class="icon-wrapper"><i class="fas fa-wallet"></i></div>
-                        <div class="kpi-info">
-                            <h3>Net Profit</h3>
-                            <h2 id="kpiProfit">$0.00</h2>
-                        </div>
-                    </div>
+                        <!-- Changelog Section -->
+                        <div class="changelog-section fade-in-up">
+                            <div class="changelog-header">
+                                <h3><i class="fas fa-history"></i> Development Timeline</h3>
+                                <span style="font-size: 0.85rem; color: var(--text-tertiary);">Daily Progress
+                                    Report</span>
+                            </div>
 
-                    <!-- Middle Row: Charts -->
-                    <div class="chart-container glass-panel main-chart">
-                        <h3>Income vs Expenses (Trend)</h3>
-                        <div style="position: relative; height: 300px; width: 100%;">
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                    </div>
+                            <!-- Dec 15 (Today) -->
+                            <details class="version-item" open>
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 15, 2025</span>
+                                    <span class="version-date">Today</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v118: Changelog Update</strong> - Refactored history to be strictly
+                                            date-based.</li>
+                                        <li><strong>v117: Home Redesign (Part 2)</strong> - Implemented Accordion UI.
+                                        </li>
+                                        <li><strong>v116: Logic Fix</strong> - Empty Transaction Review auto-redirects
+                                            to Upload.</li>
+                                        <li><strong>v115: UI Polish</strong> - "Wow" aesthetics upgrade (Gradient text).
+                                        </li>
+                                        <li><strong>v114: Dashboard Refactor</strong> - Split "Home" and "Dashboard".
+                                        </li>
+                                        <li><strong>v113: Themes</strong> - Added "Golden Hour" theme.</li>
+                                    </ul>
+                                </div>
+                            </details>
 
-                    <div class="chart-container glass-panel donut-chart">
-                        <h3>Top Expense Categories</h3>
-                        <div style="position: relative; height: 300px; width: 100%;">
-                            <canvas id="expenseDonutChart"></canvas>
-                        </div>
-                    </div>
+                            <!-- Dec 14 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 14, 2025</span>
+                                    <span class="version-date">Sunday</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v112: Settings UI</strong> - Cleaned up Appearance panel with grid
+                                            layout.</li>
+                                        <li><strong>v111: Bug Fix</strong> - Resolved navigation conflict in Upload
+                                            Sidebar.</li>
+                                        <li><strong>v110: UX</strong> - Added inline confirmation for session deletion.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </details>
 
-                    <!-- Bottom: AI Insight -->
-                    <div class="insight-bar glass-panel full-width">
-                        <div class="insight-icon">🤖</div>
-                        <div class="insight-content">
-                            <h4>AI Financial Analysis</h4>
-                            <p id="aiInsightText">Analyzing your transactions...</p>
+                            <!-- Dec 13 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 13, 2025</span>
+                                    <span class="version-date">Saturday</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v109: Upload Center</strong> - Implemented Sidebar Navigation.</li>
+                                        <li><strong>v108: Navigation</strong> - Fixed "Disappearing Content" bug.</li>
+                                        <li><strong>v107: Admin</strong> - Added placeholders for Team/Subscription.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <!-- Dec 12 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 12, 2025</span>
+                                    <span class="version-date">Foundation</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v105-106: Auth</strong> - Integrated Google Sign-In & Forgot
+                                            Password.</li>
+                                        <li><strong>v104: UI</strong> - Initial Mobile Responsive Tweaks.</li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <!-- Dec 10 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 10, 2025</span>
+                                    <span class="version-date">Core</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v103: Multi-Account</strong> - Added `AccountManager` model.</li>
+                                        <li><strong>v102: Data</strong> - Enhanced `BankAccount` class structures.</li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <!-- Dec 05 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 05, 2025</span>
+                                    <span class="version-date">Alpha</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v101: Mobile</strong> - Initial responsive grid layout.</li>
+                                        <li><strong>v100: Parser</strong> - Improved CSV detection logic.</li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <!-- Dec 01 -->
+                            <details class="version-item">
+                                <summary class="version-summary">
+                                    <span class="version-tag">Dec 01, 2025</span>
+                                    <span class="version-date">Inception</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </summary>
+                                <div class="version-content">
+                                    <ul>
+                                        <li><strong>v1.0: Launch</strong> - Initial release of RoboLedgers.</li>
+                                        <li><strong>Core:</strong> CSV/XLS Parsing Engine (SheetJS).</li>
+                                        <li><strong>Core:</strong> LocalStorage Persistence Layer.</li>
+                                        <li><strong>AI:</strong> Regex-based Vendor Classification.</li>
+                                    </ul>
+                                </div>
+                            </details>
+
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Step 1: Upload Zone -->
+            <!-- Step 0.2: Dashboard Section (Financial Overview) -->
+            <section id="dashboardSection" class="section">
+                <div class="dashboard-header" style="margin-bottom: 2rem;">
+                    <h2>Financial Dashboard</h2>
+                    <p>Real-time overview of your business performance.</p>
+                </div>
+                <!-- Placeholder for future charts -->
+                <div class="empty-state-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Analytics Coming Soon</h3>
+                </div>
+            </section>
+
+            <!-- Review Section (Separate Sibling for Grid) -->
+            <section id="reviewSection" class="section">
+
+                <div id="reviewContent">
+                    <div class="review-header">
+                        <div class="review-title-center">
+                            <h2>Transaction Review</h2>
+                            <p class="review-stats" id="reviewStats">0 transactions • $0.00 volume</p>
+                        </div>
+                        <div class="review-buttons">
+                            <!-- Buttons injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="grid-container summary-panel">
+                        <div class="summary-card" style="margin-bottom: 1rem;">
+                            <h3>Financial Overview</h3>
+                            <!-- KPI Cards Row -->
+                            <div class="kpi-row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                <div class="kpi-card glass-panel revenue-card" style="flex:1;">
+                                    <div class="icon-wrapper"><i class="fas fa-arrow-trend-up"></i></div>
+                                    <div class="kpi-info">
+                                        <h3>Revenue</h3>
+                                        <h2 id="kpiRevenue">$0.00</h2>
+                                    </div>
+                                </div>
+                                <div class="kpi-card glass-panel expense-card" style="flex:1;">
+                                    <div class="icon-wrapper"><i class="fas fa-arrow-trend-down"></i></div>
+                                    <div class="kpi-info">
+                                        <h3>Expenses</h3>
+                                        <h2 id="kpiExpenses">$0.00</h2>
+                                    </div>
+                                </div>
+                                <div class="kpi-card glass-panel net-card" style="flex:1;">
+                                    <div class="icon-wrapper"><i class="fas fa-wallet"></i></div>
+                                    <div class="kpi-info">
+                                        <h3>Net Income</h3>
+                                        <h2 id="kpiNet">$0.00</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Transaction Grid -->
+                        <div id="transactionGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State (Hidden when data exists) -->
+                <div id="emptyTransactionState" class="empty-state-large" style="display:none;">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No Transactions Found</h3>
+                    <p>Upload a CSV file or add a transaction to get started.</p>
+                    <button class="btn-primary" onclick="App.showSection('upload')">Go to Upload</button>
+                </div>
+
+            </section>
+
+            <!-- Step 1: Upload Zone (Refactored with Sidebar) -->
             <section id="uploadSection" class="section">
-                <div class="stats-bar" id="statsBar">
-
-                    <span id="fileTypeIndicator" style="
-                        margin-left: 1rem; 
-                        padding: 0.2rem 0.6rem; 
-                        border-radius: 999px; 
-                        font-size: 0.75rem; 
-                        font-weight: 700; 
-                        text-transform: uppercase;
-                        display: none;">
-                    </span>
-                </div>
-                <!-- Version Explorer Container -->
-                <div id="versionExplorer"></div>
-                <div class="upload-container">
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
+                <!-- Using settings-layout to ensure 1:1 match with Settings Page -->
+                <div class="settings-layout">
+                    <!-- Sidebar -->
+                    <div class="settings-sidebar">
+                        <div class="settings-sidebar-header">
+                            <h2>Upload Data</h2>
                         </div>
-
-                        <h2>Drop your CSV file here</h2>
-                        <p class="upload-subtitle">or click to browse</p>
-
-
-
-                        <p class="upload-hint">Supports CSV bank statement files</p>
-                        <input type="file" id="fileInput" accept=".csv" hidden>
+                        <nav class="settings-nav">
+                            <!-- 1. Restore (Moved Up) -->
+                            <button class="settings-nav-item active" onclick="App.switchUploadTab('restore')">
+                                <i class="fas fa-history"></i> Restore Session
+                            </button>
+                            <!-- 2. CSV Upload (Moved Down) -->
+                            <button class="settings-nav-item" onclick="App.switchUploadTab('csv')">
+                                <i class="fas fa-file-csv"></i> CSV/XLS Upload
+                            </button>
+                            <!-- 3. Bank Feed -->
+                            <button class="settings-nav-item" onclick="App.switchUploadTab('bank')">
+                                <i class="fas fa-university"></i> Bank Feed
+                            </button>
+                        </nav>
                     </div>
 
-                    <!-- Recent Files Explorer -->
-                    <div class="file-explorer-container">
-                        <div class="file-explorer-header">
-                            <h3><i class="fas fa-history"></i> Recent Uploads</h3>
+                    <!-- Content Area -->
+                    <div class="settings-content">
+
+                        <!-- Panel: Restore (Default) -->
+                        <div id="uploadTab-restore" class="settings-panel active" style="display: block;">
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <div class="upload-header" style="text-align: center;"> <!-- Centered Header -->
+                                        <h2>Restore Previous Session</h2>
+                                        <p>Recover a previously uploaded file and its categorization state.</p>
+                                    </div>
+                                    <div id="versionExplorer">
+                                        <!-- Version Explorer Rendered Here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <ul id="fileList" class="file-list">
-                            <!-- Populated by file-manager.js -->
-                            <li class="empty-state">No recent files found.</li>
-                        </ul>
+
+                        <!-- Panel: CSV Upload -->
+                        <div id="uploadTab-csv" class="settings-panel">
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <div class="upload-header" style="text-align: center;"> <!-- Centered Header -->
+                                        <h2>Import Transactions</h2>
+                                        <p>Upload your bank statements to begin categorization.</p>
+                                    </div>
+
+                                    <!-- Drop Zone (Cleaned Up) -->
+                                    <div class="upload-zone" id="uploadZone" style="cursor: pointer;">
+                                        <div class="upload-icon-wrapper">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <h3>DROP YOUR CSV FILE HERE</h3>
+                                        <!-- Removed "OR CLICK TO BROWSE" and Button as requested -->
+                                        <span class="upload-hint">SUPPORTS CSV/XLS BANK STATEMENT FILES</span>
+                                        <input type="file" id="fileInput" accept=".csv, .xls, .xlsx" hidden>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Bank Feed -->
+                        <div id="uploadTab-bank" class="settings-panel">
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <div class="empty-state-content">
+                                        <div class="empty-icon">🔨</div>
+                                        <h3>Under Construction</h3>
+                                        <p>Direct bank integration is coming soon.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
 
+            <!-- Admin Placeholders -->
+            <section id="teamSection" class="section">
+                <div class="empty-state-card">
+                    <i class="fas fa-users"></i>
+                    <h3>Team Management</h3>
+                    <p>Invite and manage team members (Coming Soon).</p>
+                </div>
+            </section>
+
+            <section id="subscriptionSection" class="section">
+                <div class="empty-state-card">
+                    <i class="fas fa-credit-card"></i>
+                    <h3>Subscription</h3>
+                    <p>Manage your billing and plan details (Coming Soon).</p>
+                </div>
+            </section>
+
+            <section id="auditSection" class="section">
+                <div class="empty-state-card">
+                    <i class="fas fa-history"></i>
+                    <h3>Audit Log</h3>
+                    <p>View system activity and changes (Coming Soon).</p>
+                </div>
+            </section>
             <!-- Step 2: Processing -->
             <section id="processingSection" class="section">
                 <div class="processing-container">
@@ -247,146 +477,215 @@
             </section>
 
             <!-- Step 3: Settings (Page Based) -->
+            <!-- Step 3: Settings (Sidebar Layout) -->
             <section id="settingsSection" class="section">
-                <div class="settings-page-container">
-                    <h1 class="page-title">Settings</h1>
+                <div class="settings-layout">
+                    <!-- Sidebar -->
+                    <div class="settings-sidebar">
+                        <div class="settings-sidebar-header">
+                            <h2>Settings</h2>
+                        </div>
+                        <nav class="settings-nav">
+                            <button class="settings-nav-item active" data-panel="general">
+                                <i class="fas fa-building"></i> General
+                            </button>
+                            <button class="settings-nav-item" data-panel="appearance">
+                                <i class="fas fa-paint-brush"></i> Appearance
+                            </button>
+                            <button class="settings-nav-item" data-panel="data">
+                                <i class="fas fa-database"></i> Data & Files
+                            </button>
+                            <button class="settings-nav-item" data-panel="subscription">
+                                <i class="fas fa-credit-card"></i> Subscription
+                            </button>
+                            <button class="settings-nav-item" data-panel="about">
+                                <i class="fas fa-info-circle"></i> About
+                            </button>
+                        </nav>
+                    </div>
 
-                    <div class="settings-grid-layout">
+                    <!-- Content Panels -->
+                    <div class="settings-content">
 
-                        <!-- Section: Company Info -->
-                        <div class="settings-card">
-                            <div class="card-header">
-                                <h3>🏢 Company Information</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label>Company Name</label>
-                                    <input type="text" id="companyNameInputPage" class="settings-input"
-                                        placeholder="e.g. My Fast Company Ltd.">
-                                    <small>Displayed on reports and transaction reviews.</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Fiscal Year End</label>
-                                    <input type="date" id="yearEndDate" class="settings-input">
+                        <!-- Panel: General -->
+                        <div id="panel-general" class="settings-panel active">
+                            <h3>🏢 Company Information</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Company Name</label>
+                                        <input type="text" id="companyNameInputPage" class="settings-input"
+                                            placeholder="e.g. My Fast Company Ltd.">
+                                        <small>Displayed on reports and transaction reviews.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fiscal Year End</label>
+                                        <input type="date" id="yearEndDate" class="settings-input">
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section: Data Management -->
-                        <div class="settings-card">
-                            <div class="card-header">
-                                <h3>💾 Data Management</h3>
+                        <!-- Panel: Appearance -->
+                        <!-- Panel: Appearance -->
+                        <div id="panel-appearance" class="settings-panel">
+                            <h3>🎨 Interface Customization</h3>
+
+                            <!-- Section 1: Display Preferences -->
+                            <div class="settings-card" style="margin-bottom: 1.5rem;">
+                                <div class="card-body">
+                                    <h4
+                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Display Preferences</h4>
+
+                                    <div class="settings-grid-3"
+                                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+                                        <!-- Scale -->
+                                        <div class="setting-item">
+                                            <label
+                                                style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Platform
+                                                Scale</label>
+                                            <select id="uiScaleSelect" class="form-select" style="width: 100%;">
+                                                <option value="1.1">110% (Larger)</option>
+                                                <option value="1.0" selected>100% (Default)</option>
+                                                <option value="0.9">90% (Compact)</option>
+                                                <option value="0.8">80% (Small)</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Grid Theme -->
+                                        <div class="setting-item">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Grid
+                                                Theme</label>
+                                            <select id="gridThemeSelect" class="form-select" style="width: 100%;">
+                                                <option value="default" selected>Default</option>
+                                                <option value="vanilla">Vanilla</option>
+                                                <option value="classic">Classic</option>
+                                                <option value="ledger">Ledger Pad</option>
+                                                <option value="postit">Post-it Note</option>
+                                                <option value="rainbow">Rainbow</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Text Case -->
+                                        <div class="setting-item">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Text
+                                                Case</label>
+                                            <div class="btn-group" role="group" style="display: flex; gap: 0.5rem;">
+                                                <button type="button" class="btn-group-item active" data-case="sentence"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">Aa</button>
+                                                <button type="button" class="btn-group-item" data-case="uppercase"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">AA</button>
+                                                <button type="button" class="btn-group-item" data-case="lowercase"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">aa</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <label>Dictionaries & Lists</label>
-                                <div class="action-list">
-                                    <button id="settingsVendorDictBtn" class="btn-secondary full-width">
-                                        <i class="fas fa-book"></i> Manage Vendor Dictionary
-                                    </button>
-                                    <button id="settingsAccountsBtn" class="btn-secondary full-width">
-                                        <i class="fas fa-list"></i> View Chart of Accounts
-                                    </button>
-                                    <button id="settingsBankAccountsBtn" class="btn-secondary full-width">
-                                        <i class="fas fa-university"></i> Manage Bank Accounts
-                                    </button>
+
+                            <!-- Section 2: Color Theme -->
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <h4
+                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Color Theme</h4>
+
+                                    <div class="theme-radio-group"
+                                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; max-width: 100%;">
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="cyber-night" checked>
+                                            <div class="theme-content">
+                                                <span class="theme-icon">☁️</span>
+                                                <span class="theme-name">Cyber Day</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="arctic-dawn">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">❄️</span>
+                                                <span class="theme-name">Arctic Dawn</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="neon-forest">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🌿</span>
+                                                <span class="theme-name">Mint Fresh</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="royal-amethyst">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🌸</span>
+                                                <span class="theme-name">Lavender Mist</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="sunset-horizon">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🍑</span>
+                                                <span class="theme-name">Peach Dawn</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="golden-hour">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">☀️</span>
+                                                <span class="theme-name">Golden Hour</span>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section: Appearance -->
-                        <div class="settings-card full-width-card">
-                            <div class="card-header">
-                                <h3>🎨 Appearance</h3>
-                            </div>
-                            <div class="card-body">
-                                <label>Color Theme</label>
-                                <!-- Reusing the radio structure but adapted for page -->
-                                <div class="theme-radio-group">
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="cyber-night" checked>
-                                        <div class="theme-content">
-                                            <span class="theme-icon">🌃</span>
-                                            <span class="theme-name">Cyber Night</span>
-                                        </div>
-                                    </label>
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="arctic-dawn">
-                                        <div class="theme-content">
-                                            <span class="theme-icon">❄️</span>
-                                            <span class="theme-name">Arctic Dawn</span>
-                                        </div>
-                                    </label>
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="neon-forest">
-                                        <div class="theme-content">
-                                            <span class="theme-icon">🌲</span>
-                                            <span class="theme-name">Neon Forest</span>
-                                        </div>
-                                    </label>
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="royal-amethyst">
-                                        <div class="theme-content">
-                                            <span class="theme-icon">💎</span>
-                                            <span class="theme-name">Royal Amethyst</span>
-                                        </div>
-                                    </label>
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="sunset-horizon">
-                                        <div class="theme-content">
-                                            <span class="theme-icon">🌅</span>
-                                            <span class="theme-name">Sunset Horizon</span>
-                                        </div>
-                                    </label>
-                                    <label class="theme-radio-option">
-                                        <input type="radio" name="theme" value="ocean-depths">
-                                        <div class="theme-content">
-                                            <span class="theme-icon">🌊</span>
-                                            <span class="theme-name">Ocean Depths</span>
-                                        </div>
-                                    </label>
+                        <!-- Panel: Data -->
+                        <div id="panel-data" class="settings-panel">
+                            <h3>💾 Data Management</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <div class="action-list">
+                                        <button id="settingsVendorDictBtn" class="btn-secondary full-width">
+                                            <i class="fas fa-book"></i> Manage Vendor Dictionary
+                                        </button>
+                                        <button id="settingsAccountsBtn" class="btn-secondary full-width">
+                                            <i class="fas fa-list"></i> View Chart of Accounts
+                                        </button>
+                                        <button id="settingsBankAccountsBtn" class="btn-secondary full-width">
+                                            <i class="fas fa-university"></i> Manage Bank Accounts
+                                        </button>
+                                        <button id="settingsAuditBtn" class="btn-secondary full-width"
+                                            onclick="App.showSection('audit')">
+                                            <i class="fas fa-shield-alt"></i> View Audit Log
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section: UI Appearance (New) -->
-                        <div class="settings-card full-width-card">
-                            <div class="card-header">
-                                <h3>🖥️ Interface Settings</h3>
+                        <!-- Panel: Subscription -->
+                        <div id="panel-subscription" class="settings-panel">
+                            <h3>💳 Subscription</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <p>Manage your RoboLedgers plan.</p>
+                                    <div class="empty-state-content">
+                                        <div class="empty-icon" style="font-size: 2rem;">🚀</div>
+                                        <p>Pro Plan Active</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="settings-row">
-                                    <div class="setting-item">
-                                        <label>Platform Scale (Zoom)</label>
-                                        <select id="uiScaleSelect" class="form-select">
-                                            <option value="1.1">110% (Larger)</option>
-                                            <option value="1.0" selected>100% (Default)</option>
-                                            <option value="0.9">90% (Compact)</option>
-                                            <option value="0.8">80% (Small)</option>
-                                            <option value="0.7">70% (Tiny)</option>
-                                        </select>
-                                    </div>
-                                    <div class="setting-item">
-                                        <label>Grid Theme</label>
-                                        <select id="gridThemeSelect" class="form-select">
-                                            <option value="default" selected>Default (System)</option>
-                                            <option value="vanilla">Vanilla (Clean)</option>
-                                            <option value="classic">Classic (High Contrast)</option>
-                                            <option value="ledger">Ledger Pad (Green/Yellow)</option>
-                                            <option value="postit">Post-it Note (Yellow)</option>
-                                            <option value="rainbow">Rainbow (Accents)</option>
-                                        </select>
-                                    </div>
-                                    <div class="setting-item">
-                                        <label>Text Case</label>
-                                        <div class="btn-group" role="group">
-                                            <button type="button" class="btn-group-item active"
-                                                data-case="sentence">Aa</button>
-                                            <button type="button" class="btn-group-item"
-                                                data-case="uppercase">AA</button>
-                                            <button type="button" class="btn-group-item"
-                                                data-case="lowercase">aa</button>
-                                        </div>
-                                    </div>
+                        </div>
+
+                        <!-- Panel: About -->
+                        <div id="panel-about" class="settings-panel">
+                            <h3>ℹ️ About AutoBookkeeping</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <p>Version 2.1.0 - Build 110</p>
+                                    <p>&copy; 2025 RoboLedgers Inc.</p>
+                                    <small>Built with ❤️ by Antigravity</small>
                                 </div>
                             </div>
                         </div>
@@ -1159,8 +1458,7 @@
 
     <!-- Main App Entry -->
     <!-- Main App Entry -->
-    <script src="nav-manager.js"></script>
-    <script src="app.js?v=3.3"></script>
+    <script src="app.js?v=122"></script>
 
     <script>
         console.log('🔍 TEST: JavaScript is executing!');

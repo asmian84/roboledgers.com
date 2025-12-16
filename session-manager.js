@@ -118,12 +118,8 @@ const SessionManager = {
             localStorage.setItem('lastFileTime', item.timestamp);
 
             // Load
-            const transactions = JSON.parse(item.data);
-            if (typeof App !== 'undefined') {
-                App.transactions = transactions;
-                App.showSection('review');
-                App.loadReviewSection();
-            }
+            // const transactions = JSON.parse(item.data);
+            // App update handled by caller (App.restoreSession) to decouple logic
             return true;
         }
         return false;

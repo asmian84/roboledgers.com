@@ -98,12 +98,19 @@ window.App = {
             // Initialize Headers
             this.updateBankAccountSelector();
 
-            // Initialize Version Explorer
-            this.renderVersionExplorer();
+            // Initialize Version Explorer (Static Card)
+            // Initialize Version Explorer (Static Card)
+            if (this.renderVersionExplorerV2) {
+                this.renderVersionExplorerV2();
+            } else {
+                console.error("renderVersionExplorerV2 missing!");
+            }
+
+            /* Dead code removed (history button) */
 
 
-            // Show upload section
-            this.showSection('upload');
+            // Listen for Uploads section
+            this.showSection('home');
 
             // Start Background AI Worker
             if (window.AIWorker) {
@@ -136,13 +143,30 @@ window.App = {
         // Determine Target ID
         let targetId = '';
         switch (sectionName) {
+            case 'home': targetId = 'homeSection'; break;
             case 'dashboard': targetId = 'dashboardSection'; break;
             case 'upload': targetId = 'uploadSection'; break;
             case 'processing': targetId = 'processingSection'; break;
             case 'review': targetId = 'reviewSection'; break;
             case 'settings': targetId = 'settingsSection'; break;
             case 'reconciliation': targetId = 'reconciliationSection'; break;
+            case 'vendors': targetId = 'VDMModal'; break; // Open Vendor Modal directly
+            case 'reports': targetId = 'reportsModal'; break; // Open Reports Modal directly
+            case 'team': targetId = 'teamSection'; break;
+            case 'subscription': targetId = 'subscriptionSection'; break;
+            case 'audit': targetId = 'auditSection'; break;
             default: console.warn('Unknown section:', sectionName); return;
+        }
+
+        // Special handling for Modals vs Sections
+        if (targetId.includes('Modal')) {
+            const modal = document.getElementById(targetId);
+            if (modal) {
+                modal.classList.add('active');
+                modal.style.display = 'block';
+                // Keep current background section active visually or do nothing
+                return;
+            }
         }
 
         // Show Target
@@ -157,6 +181,36 @@ window.App = {
             this.loadReviewSection();
         } else if (sectionName === 'reconciliation') {
             this.updateReconciliation();
+        } else if (sectionName === 'upload') {
+            // Fix for disappearing content: Force render of default tab (Restore)
+            this.switchUploadTab('restore');
+        }
+    },
+
+    // 🔄 Upload Section Sidebar Navigation
+    switchUploadTab(tabName) {
+        // 1. Update Buttons (using settings-nav-item class)
+        document.querySelectorAll('#uploadSection .settings-nav-item').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('onclick').includes(`('${tabName}')`)) {
+                btn.classList.add('active');
+            }
+        });
+
+        // 2. Update Content
+        ['csv', 'restore', 'bank'].forEach(name => {
+            const el = document.getElementById(`uploadTab-${name}`);
+            if (el) {
+                // Ensure proper display type
+                el.style.display = (name === tabName) ? 'block' : 'none';
+                if (name === tabName) el.classList.add('active');
+                else el.classList.remove('active');
+            }
+        });
+
+        // 3. Special Actions
+        if (tabName === 'restore') {
+            this.renderVersionExplorerV2();
         }
     },
 
@@ -368,50 +422,182 @@ window.App = {
                 option.style.fontWeight = 'bold';
                 option.style.color = 'var(--primary-color)';
             }
-
             selector.appendChild(option);
         });
     },
 
-    renderVersionExplorer() {
-        const list = document.getElementById('fileList');
-        if (!list) return;
+    renderVersionExplorerV2() {
+        try {
+            const container = document.getElementById('versionExplorer');
+            if (!container) return;
 
-        const history = SessionManager.getHistory();
-        if (history.length === 0) {
-            list.innerHTML = '<li class="empty-state">No recent files found.</li>';
-            return;
-        }
+            // Bulletproof: Ensure history is an array
+            let rawHistory = SessionManager.getHistory();
+            if (!Array.isArray(rawHistory)) rawHistory = [];
 
-        list.innerHTML = '';
+            const history = rawHistory.slice(0, 5);
 
-        history.forEach((session, index) => {
-            const date = new Date(parseInt(session.timestamp));
-            const timeStr = date.toLocaleString();
+            if (history.length === 0) {
+                container.innerHTML = `
+                    <div class="version-static-card empty">
+                       <div class="v-card-header">
+                            <h4>Recent CSV History</h4>
+                        </div>
+                        <div class="empty-state-card">
+                            <i class="fas fa-file-csv"></i>
+                            <p>No CSV found in history</p>
+                        </div>
+                    </div>`;
+                return;
+            }
 
-            const item = document.createElement('li');
-            item.className = 'file-item';
+            const listHTML = history.map((session, index) => {
+                const date = new Date(parseInt(session.timestamp));
+                const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-            item.innerHTML = `
-                <div class="file-info" style="flex:1;">
-                    <div style="font-weight:600; cursor:text;" contenteditable="true" 
-                         onblur="App.renameSession(${index}, this.innerText)"
-                         onclick="event.stopPropagation()">${session.filename}</div>
-                    <div style="font-size:0.85em; color:var(--text-secondary);">${timeStr} • ${session.count} entries</div>
-                </div>
-                <button class="restore-btn btn-secondary-small" style="margin-left:1rem;">Restore</button>
-            `;
-
-            const restoreBtn = item.querySelector('.restore-btn');
-            restoreBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (confirm(`Restore "${session.filename}"? Unsaved work will be lost.`)) {
-                    SessionManager.restoreFromHistory(index);
+                // Inline Confirmation Logic
+                if (App.confirmingDeleteIndex === index) {
+                    return `
+                        <div class="version-row-static confirm-delete-row" style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444;">
+                            <div class="v-icon-col">
+                                <i class="fas fa-trash-alt" style="color: #ef4444;"></i>
+                            </div>
+                            <div class="v-info-col">
+                                <span class="v-name" style="color: #ef4444; font-weight:bold;">Delete "${session.filename}"?</span>
+                                <span class="v-sub">This action cannot be undone.</span>
+                            </div>
+                            <div class="v-actions-col">
+                                <button class="btn-text-action confirm" onclick="App.performDelete(${index})" style="color: #ef4444; font-weight:bold; margin-right:8px;">
+                                    Confirm
+                                </button>
+                                <button class="btn-text-action cancel" onclick="App.cancelDelete()" style="color: var(--text-secondary);">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
-            };
 
-            list.appendChild(item);
-        });
+                return `
+                    <div class="version-row-static">
+                        <div class="v-icon-col">
+                            <i class="fas fa-file-csv"></i>
+                        </div>
+                        <div class="v-info-col" style="min-width: 0; padding-right: 10px;">
+                            <span class="v-name" id="v-name-${index}" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${session.filename}">${session.filename}</span>
+                            <input type="text" class="v-name-edit" id="v-edit-${index}" value="${session.filename}"
+                                   onblur="App.finishRename(${index})" onkeydown="if(event.key==='Enter') this.blur()">
+                            <span class="v-date">${dateStr}</span>
+                        </div>
+                        <div class="v-actions-col">
+                            <button class="btn-icon-action edit" onclick="App.startRename(${index})" title="Rename">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-icon-action delete" onclick="App.deleteSession(${index})" title="Delete">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn-icon-action restore" onclick="App.restoreSession(${index})" title="Restore">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="version-static-card">
+                    <div class="v-card-header">
+                        <h4>Last 5 Uploads</h4>
+                    </div>
+                    <div class="v-card-list">
+                        ${listHTML}
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            console.error('Render VE Error:', e);
+            const c = document.getElementById('versionExplorer');
+            if (c) c.innerHTML = `<div style="color:red; padding:1rem;">Error rendering version explorer: ${e.message}</div>`;
+        }
+    },
+
+    openVersionHistory() {
+        this.renderVersionExplorer();
+        const modal = document.getElementById('versionHistoryModal');
+        if (modal) modal.style.display = 'flex';
+    },
+
+    startRename(index) {
+        document.getElementById(`v-name-${index}`).style.display = 'none';
+        const input = document.getElementById(`v-edit-${index}`);
+        input.style.display = 'block';
+        input.focus();
+    },
+
+    finishRename(index) {
+        const input = document.getElementById(`v-edit-${index}`);
+        const newName = input.value;
+        if (newName && newName.trim()) {
+            this.renameSession(index, newName);
+        }
+        input.style.display = 'none';
+        document.getElementById(`v-name-${index}`).style.display = 'block';
+    },
+
+    restoreSession(index) {
+        console.log(`🔄 Attempting to restore session index ${index}...`);
+        const history = SessionManager.getHistory();
+        if (history[index]) {
+            if (confirm(`Restore "${history[index].filename}"? Current work will be overwritten.`)) {
+
+                // 1. Perform Restore (Updates LocalStorage)
+                // Use decoupled logic - SessionManager only handles storage
+                const success = SessionManager.restoreFromHistory(index);
+
+                if (success) {
+                    // 2. Hydrate App State from Storage (Reliable)
+                    const savedData = localStorage.getItem('lastTransactions');
+                    this.transactions = savedData ? JSON.parse(savedData) : [];
+                    this.currentFileName = localStorage.getItem('lastFileName');
+
+                    // 3. Switch to Review & Refresh Grid
+                    // IMPORTANT: Ensure we switch to the generic Review section, not Dashboard
+                    this.showSection('review');
+                    this.loadReviewSection();
+
+                    if (window.TransactionGrid) {
+                        try {
+                            TransactionGrid.forceRefresh(this.transactions);
+                            console.log('✅ Grid refreshed');
+                        } catch (e) { console.error('Grid refresh failed:', e); }
+                    }
+
+                    console.log(`✅ Restored "${this.currentFileName}" with ${this.transactions.length} transactions.`);
+                }
+
+                // 4. Update Explorer State
+                this.renderVersionExplorerV2();
+            }
+        }
+    },
+
+    // State for inline delete confirmation
+    confirmingDeleteIndex: null,
+
+    deleteSession(index) {
+        this.confirmingDeleteIndex = index;
+        this.renderVersionExplorerV2();
+    },
+
+    performDelete(index) {
+        SessionManager.removeFromHistory(index);
+        this.confirmingDeleteIndex = null;
+        this.renderVersionExplorerV2();
+    },
+
+    cancelDelete() {
+        this.confirmingDeleteIndex = null;
+        this.renderVersionExplorerV2();
     },
 
     renameSession(index, newName) {
@@ -420,7 +606,7 @@ window.App = {
         if (history[index]) {
             history[index].filename = newName.trim();
             SessionManager.saveHistory(history);
-            console.log('Renamed session to:', newName);
+            this.renderVersionExplorer();
         }
     },
 
@@ -873,41 +1059,6 @@ window.App = {
         });
         */
 
-        // File upload handling
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-
-        if (uploadZone && fileInput) {
-            uploadZone.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            uploadZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadZone.classList.add('dragging');
-            });
-
-            uploadZone.addEventListener('dragleave', () => {
-                uploadZone.classList.remove('dragging');
-            });
-
-            uploadZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadZone.classList.remove('dragging');
-
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    this.handleFile(files[0]);
-                }
-            });
-
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    this.handleFile(e.target.files[0]);
-                }
-            });
-        }
-
         // Settings button
         const settingsBtn = document.getElementById('settingsBtn');
         if (settingsBtn) {
@@ -1177,6 +1328,50 @@ window.App = {
                 }
             });
         }
+
+        // 🟢 FILE UPLOAD HANDLERS (Restored)
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+
+        if (uploadZone && fileInput) {
+            // Drag & Drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragging');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragging');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragging');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFile(files[0]);
+                }
+            });
+
+            // Click to browse
+            uploadZone.addEventListener('click', () => fileInput.click());
+
+            // File Input Change
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        if (browseBtn && fileInput) {
+            browseBtn.addEventListener('click', (e) => {
+                // Prevent bubbling if button is inside zone (it is)
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
     },
 
     async handleFile(file) {
@@ -1414,26 +1609,22 @@ window.App = {
 
         console.log('👀 loadReviewSection: hasTransactions=', hasTransactions, 'Count:', this.transactions ? this.transactions.length : 0);
 
-        if (section) {
-            // Reset classes
-            section.classList.remove('state-empty', 'state-has-data');
-
-            if (hasTransactions) {
-                section.classList.add('state-has-data');
-                // 🛡️ Double-tap: Explicitly show content if JS is deciding
-                if (reviewContent) reviewContent.style.display = 'block';
-                if (emptyState) emptyState.style.display = 'none';
-            } else {
-                section.classList.add('state-empty');
-                // 🛡️ Double-tap: Explicitly hide content
-                if (reviewContent) reviewContent.style.display = 'none';
-                if (emptyState) emptyState.style.display = 'flex';
-            }
+        // SIMPLE LOGIC: No Data -> Go to Upload
+        if (!hasTransactions) {
+            console.warn('⚠️ No transactions found. Redirecting to Upload.');
+            // Show a toast or small alert? Maybe just redirect for now as requested.
+            this.showSection('upload');
+            // Optional: Open the CSV tab specifically?
+            this.switchUploadTab('csv');
+            return;
         }
 
-        if (!hasTransactions) {
-            console.log('⚠️ No transactions to review. Showing empty state.');
-            return;
+        // HAS DATA -> Show Review Section
+        if (section) {
+            section.classList.remove('state-empty');
+            section.classList.add('state-has-data');
+            if (reviewContent) reviewContent.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
         }
 
         // Load transactions into grid
@@ -2549,4 +2740,11 @@ if (typeof App !== 'undefined' && App.initialize) {
 
 
 console.log('✅ App.js loaded and event listeners set up');
+
+
+// Initialize App on Load
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof App !== 'undefined' && App.initialize) {
+        App.initialize();
+    }
 });

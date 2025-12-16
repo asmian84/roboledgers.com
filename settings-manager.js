@@ -147,6 +147,36 @@ const Settings = {
     },
 
     bindEvents() {
+        // --- Settings Sidebar Navigation (Scoped to Settings Page) ---
+        const settingsSection = document.getElementById('settingsSection');
+        if (!settingsSection) return;
+
+        const navItems = settingsSection.querySelectorAll('.settings-nav-item');
+        const panels = settingsSection.querySelectorAll('.settings-panel');
+
+        console.log(`🔧 Settings: Found ${navItems.length} nav items and ${panels.length} panels.`);
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const panelName = item.dataset.panel;
+                console.log(`🔧 Settings: Clicked ${panelName}`);
+
+                // 1. Update Active Nav
+                navItems.forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+
+                // 2. Show Target Panel
+                const targetId = `panel-${panelName}`;
+                panels.forEach(p => {
+                    if (p.id === targetId) {
+                        p.classList.add('active');
+                    } else {
+                        p.classList.remove('active');
+                    }
+                });
+            });
+        });
+
         // --- Wired Settings Page Buttons ---
 
         // 1. Vendor Dictionary Manager (VDM)
