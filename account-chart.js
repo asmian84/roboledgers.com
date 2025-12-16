@@ -256,7 +256,8 @@ window.ChartManager = {
 
                         <!-- Actions -->
                         <div class="toolbar-actions">
-                            <button id="addAccountBtn" class="btn-modern-primary">
+                            <button id="addAccountBtn" class="btn-primary" 
+                                style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
                                 <i class="fas fa-plus"></i>
                                 <span>Add Account</span>
                             </button>
