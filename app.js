@@ -118,10 +118,15 @@ window.App = {
                 this.showSection('home');
             }
 
-            // Restore Active Modal (Chart of Accounts)
+            // Restore Active Modal (Chart of Accounts or Vendor Dictionary)
             const activeModal = localStorage.getItem('activeModal');
             if (activeModal === 'chartOfAccounts' && window.ChartManager) {
                 setTimeout(() => ChartManager.showModal(), 500); // Small delay to allow CSS/Grid load
+            } else if (activeModal === 'vendorDictionary') {
+                setTimeout(() => {
+                    const btn = document.getElementById('settingsVendorDictBtn');
+                    if (btn) btn.click();
+                }, 500);
             }
 
             // Start Background AI Worker
@@ -2590,6 +2595,7 @@ const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn
 if (settingsVendorDictBtn) {
     settingsVendorDictBtn.addEventListener('click', async () => {
         console.log('📚 Opening Vendor Dictionary from Settings...');
+        localStorage.setItem('activeModal', 'vendorDictionary');
         if (typeof VendorManager !== 'undefined') {
             // Initialize Logic Engines
             if (typeof VendorMatcher !== 'undefined') {
@@ -2613,6 +2619,13 @@ if (settingsVendorDictBtn) {
         } else {
             console.error('VendorManager not found');
         }
+    });
+}
+// Vendor Dictionary Close Handler (Persistence)
+const closeVendorModal = document.getElementById('closeVendorModal');
+if (closeVendorModal) {
+    closeVendorModal.addEventListener('click', () => {
+        localStorage.removeItem('activeModal');
     });
 }
 
