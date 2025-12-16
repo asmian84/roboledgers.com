@@ -475,9 +475,11 @@ window.ChartManager = {
             },
 
             // Native AG Grid event: actively refits columns when container resizes
+            // Native AG Grid event: actively refits columns when container resizes
             onGridSizeChanged: (params) => {
-                // If the resize came from our own modal expansion, we might not want to aggressively refit
-                // But generally safe to keep standardized
+                // If we are resizing based on column drag, don't auto-fit back!
+                if (this.blockAutofit) return;
+
                 params.api.sizeColumnsToFit();
             },
 
@@ -489,6 +491,8 @@ window.ChartManager = {
                 const modalContent = this.modal?.querySelector('.modal-content');
                 if (!modalContent || !this.gridApi) return;
 
+                this.blockAutofit = true;
+
                 // Calculate total width needed for all columns
                 const columnState = this.gridApi.getColumnState();
                 const totalWidth = columnState.reduce((sum, col) => sum + (col.width || 0), 0);
@@ -499,6 +503,8 @@ window.ChartManager = {
 
                 // Configure modal to match
                 modalContent.style.width = `${newWidth}px`;
+
+                setTimeout(() => { this.blockAutofit = false; }, 200);
             },
 
             // UI MATCH: Dynamic Theme
