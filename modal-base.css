@@ -1,0 +1,218 @@
+/* =========================================
+   MODAL BASE STYLES - Parent Template
+   ========================================= */
+
+/* Modal Backdrop Overlay */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+}
+
+.modal.active {
+    display: flex;
+}
+
+/* Modal Content Container - Base */
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp var(--transition-normal);
+}
+
+/* Size Variants */
+.modal-content.small-modal {
+    max-width: 400px;
+    width: 400px;
+}
+
+.modal-content.medium-modal {
+    max-width: 600px;
+    width: 600px;
+}
+
+.modal-content.large-modal {
+    max-width: 1200px;
+    width: 900px;
+    height: 70vh;
+    resize: both;
+    /* Allow user resize */
+    overflow: hidden;
+    /* Required for resize */
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    /* Don't shrink */
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    margin: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transform: rotate(90deg);
+}
+
+/* Modal Toolbar (for grid modals with search/actions) */
+.modal-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    gap: var(--spacing-md);
+    flex-shrink: 0;
+    /* Don't shrink */
+}
+
+.toolbar-left {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex: 1;
+    align-items: center;
+}
+
+.toolbar-right {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.modal-toolbar input[type="search"],
+.modal-toolbar input[type="text"] {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    min-width: 250px;
+    transition: all var(--transition-fast);
+}
+
+.modal-toolbar input[type="search"]:focus,
+.modal-toolbar input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Modal Body */
+.modal-body {
+    flex: 1;
+    /* Take all available space */
+    padding: var(--spacing-lg);
+    overflow: auto;
+    min-height: 0;
+    /* Critical for flex children */
+}
+
+/* Modal Body for Grid Modals */
+.large-modal .modal-body {
+    padding: 0 !important;
+    /* Let grid fill edge-to-edge */
+    overflow: hidden;
+    /* Grid handles its own scroll */
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    /* Don't shrink */
+    background: var(--bg-primary);
+}
+
+/* Grid Container (for AG Grid modals) */
+.modal-body .ag-theme-alpine {
+    width: 100%;
+    height: 100%;
+}
+
+/* Ensure Settings Modal stays below other modals */
+#settingsModal {
+    z-index: 1500 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-width: 95vw;
+    }
+
+    .modal-content.large-modal {
+        width: 95%;
+        height: 80vh;
+    }
+
+    .modal-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        width: 100%;
+    }
+}

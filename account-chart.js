@@ -275,8 +275,8 @@ window.ChartManager = {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
         this.modal = document.getElementById('chartOfAccountsModal');
-        this.listContainer = document.getElementById('accountsList');
-        this.searchInput = document.getElementById('accountSearch');
+        this.listContainer = document.getElementById('coaGrid');
+        this.searchInput = document.getElementById('coaSearchInput');
 
         this.attachListeners();
     },
@@ -328,8 +328,8 @@ window.ChartManager = {
 
         // Re-fetch references in case DOM was nuked/replaced
         this.modal = document.getElementById('chartOfAccountsModal');
-        this.listContainer = document.getElementById('accountsList');
-        this.searchInput = document.getElementById('accountSearch');
+        this.listContainer = document.getElementById('coaGrid');
+        this.searchInput = document.getElementById('coaSearchInput');
         if (!this.modal) return;
 
         // Reset Search
@@ -338,20 +338,22 @@ window.ChartManager = {
         // Show Modal
         this.modal.classList.add('active');
 
-        // CRITICAL FIX: Wait for container to have width before creating grid
-        // AG Grid can't initialize on zero-width elements
-        const waitForWidth = () => {
-            if (this.listContainer && this.listContainer.offsetWidth > 0) {
-                console.log(`✅ Container has width: ${this.listContainer.offsetWidth}px. Creating grid...`);
+        // VDM PATTERN: Set explicit dimensions
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.height = '70vh';
+            modalContent.style.width = '900px';
+        }
+
+        // Wait for modal transition, then render grid
+        setTimeout(() => {
+            if (this.listContainer) {
+                console.log(`✅ Creating CoA grid...`);
                 this.renderList();
             } else {
-                console.log('⏳ Waiting for container width...');
-                requestAnimationFrame(waitForWidth);
+                console.error("❌ ChartManager: coaGrid container not found!");
             }
-        };
-
-        // Start waiting for width
-        requestAnimationFrame(waitForWidth);
+        }, 500);
     },
 
     close() {
@@ -391,17 +393,11 @@ window.ChartManager = {
 
         console.log(`📊 Rendering CoA with ${sourceAccounts.length} accounts.`);
 
-        // Set modal to a reasonable default height so grid has space to render
-        const modalContent = this.modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.height = '70vh';
-            modalContent.style.width = '900px';
-        }
+        // Clear container
+        this.listContainer.innerHTML = '';
 
-        // CRITICAL: Set explicit height on grid container so AG Grid can render
-        this.listContainer.style.width = '100%';
-        this.listContainer.style.height = '500px'; // Explicit height for AG Grid
-        this.listContainer.classList.add('ag-theme-alpine');
+        // Container already has width/height from CSS, just ensure theme class
+        this.listContainer.className = 'ag-theme-alpine';
 
         const gridOptions = {
             rowData: sourceAccounts,

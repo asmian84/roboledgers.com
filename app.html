@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="super-modal.css?v=6">
     <!-- mobile.css removed as it does not exist -->
     <link rel="stylesheet" href="styles.css?v=102">
+    <link rel="stylesheet" href="modal-base.css?v=1">
     <link rel="stylesheet" href="ticker.css?v=6">
     <link rel="stylesheet" href="dashboard.css?v=1">
 </head>
@@ -1200,70 +1201,39 @@
     </div>
 
     <!-- Chart of Accounts Modal -->
+    <!-- Chart of Accounts Modal (REBUILT - VDM Pattern) -->
     <div id="chartOfAccountsModal" class="modal">
         <div class="modal-content large-modal"
-            style="display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 600px; min-height: 400px;">
+            style="display: flex; flex-direction: column; overflow: hidden; resize: both;">
+
             <!-- Header -->
-            <div class="modal-header"
-                style="flex-shrink: 0; padding: 1.5rem; background: white; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-color); font-weight: 700;">Chart of
-                    Accounts</h2>
-                <button class="modal-close"
-                    style="font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); background: none; border: none;">&times;</button>
+            <div class="modal-header">
+                <h2>CHART OF ACCOUNTS</h2>
+                <button class="modal-close">&times;</button>
             </div>
 
-            <!-- Toolbar (The WOW Part) -->
-            <div class="modal-toolbar"
-                style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-
+            <!-- Toolbar (WOW Pattern) -->
+            <div class="modal-toolbar">
                 <!-- LEFT: Search -->
-                <div class="search-wrapper" style="position: relative; width: 300px; flex-shrink: 0;">
-                    <span
-                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
-                    <input type="text" id="accountSearch" placeholder="Search accounts..."
-                        style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <div class="toolbar-left">
+                    <input type="search" id="coaSearchInput" placeholder="Search accounts...">
                 </div>
 
                 <!-- RIGHT: Actions -->
-                <div class="action-group" style="display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0;">
-                    <button id="addAccountBtn" class="btn-primary"
-                        style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
+                <div class="toolbar-right">
+                    <button id="addAccountBtn" class="btn-primary">
                         <span style="font-size: 1.1rem;">➕</span> Add Account
                     </button>
                 </div>
             </div>
 
-            <!-- BODY (Grid) -->
-            <div class="modal-body" id="accountsList">
-                <!-- AG Grid Injected Here -->
+            <!-- BODY: AG Grid Container -->
+            <div class="modal-body" style="flex: 1; padding: 0; overflow: hidden;">
+                <div id="coaGrid" class="ag-theme-alpine" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
     </div>
-    <div class="toolbar"
-        style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; background: var(--bg-secondary);">
 
-        <div class="search-wrapper" style="flex: 1; position: relative;">
-            <i class="fas fa-search"
-                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
-            <input type="text" id="chartSearch" placeholder="Search accounts..."
-                style="padding: 8px 10px 8px 32px; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; box-sizing: border-box;">
-        </div>
-
-        <button id="addAccountChartBtn" class="btn-primary-small">
-            <i class="fas fa-plus"></i> Add Account
-        </button>
-        <button id="refreshChartBtn" class="btn-secondary-small" title="Refresh">
-            <i class="fas fa-sync-alt"></i>
-        </button>
-    </div>
-
-    <div id="chartList" class="accounts-list-container" style="flex: 1; overflow-y: auto; padding: 0;">
-        <!-- Dynamic Content -->
-    </div>
-    </div>
-    <!-- Footer removed for consistency -->
-    </div>
-    </div>
 
     <!-- Add/Edit Account Modal -->
     <div id="accountFormModal" class="modal">
@@ -1504,6 +1474,7 @@
     <script src="storage.js"></script>
     <script src="audit-manager.js"></script>
     <script src="modal-manager.js"></script>
+    <script src="modal-controller.js?v=1"></script>
     <script src="session-manager.js"></script>
 
     <script src="undo-manager.js"></script>
