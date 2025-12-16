@@ -470,42 +470,6 @@ window.ChartManager = {
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
-
-                // Size columns once grid is ready
-                const doSize = () => {
-                    if (params.api && this.listContainer?.offsetWidth > 0) {
-                        params.api.sizeColumnsToFit();
-                    }
-                };
-
-                // Initial sizing after modal animation
-                setTimeout(doSize, 500);
-
-                // Watch for modal resize and refit columns
-                if (this.modal) {
-                    const resizeObserver = new ResizeObserver(() => {
-                        if (params.api) {
-                            params.api.sizeColumnsToFit();
-                        }
-                    });
-                    resizeObserver.observe(this.modal.querySelector('.modal-content'));
-                }
-            },
-
-            // Bi-directional resize: when columns are resized, resize modal
-            onColumnResized: (params) => {
-                if (!params.finished) return; // Only when user finishes dragging
-
-                const modalContent = this.modal?.querySelector('.modal-content');
-                if (!modalContent || !this.gridApi) return;
-
-                // Calculate total width needed for all columns
-                const columnState = this.gridApi.getColumnState();
-                const totalWidth = columnState.reduce((sum, col) => sum + (col.width || 0), 0);
-
-                // Add padding/margins (roughly 50px for modal padding + scrollbar)
-                const newWidth = Math.min(totalWidth + 50, window.innerWidth * 0.9);
-                modalContent.style.width = `${newWidth}px`;
             },
 
             // UI MATCH: Dynamic Theme
