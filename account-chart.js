@@ -476,7 +476,29 @@ window.ChartManager = {
 
             // Native AG Grid event: actively refits columns when container resizes
             onGridSizeChanged: (params) => {
+                // If the resize came from our own modal expansion, we might not want to aggressively refit
+                // But generally safe to keep standardized
                 params.api.sizeColumnsToFit();
+            },
+
+            // Bi-directional resize: when columns are resized, resize modal
+            onColumnResized: (params) => {
+                // Only react to user dragging (source='uiColumnDragged') AND finished
+                if (!params.finished || params.source !== 'uiColumnDragged') return;
+
+                const modalContent = this.modal?.querySelector('.modal-content');
+                if (!modalContent || !this.gridApi) return;
+
+                // Calculate total width needed for all columns
+                const columnState = this.gridApi.getColumnState();
+                const totalWidth = columnState.reduce((sum, col) => sum + (col.width || 0), 0);
+
+                // Add buffer for scrollbar/padding (approx 40-50px)
+                // Limit to screen width
+                const newWidth = Math.min(totalWidth + 50, window.innerWidth * 0.95);
+
+                // Configure modal to match
+                modalContent.style.width = `${newWidth}px`;
             },
 
             // UI MATCH: Dynamic Theme
