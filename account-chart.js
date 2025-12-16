@@ -234,38 +234,38 @@ window.ChartManager = {
         // Create Modal Structure (Standardized WOW Layout)
         const modalHtml = `
             <div id="chartOfAccountsModal" class="modal medium-modal" style="z-index: 1000000004;">
-                <div class="modal-content" style="display: flex; flex-direction: column; height: auto; max-height: 85vh; width: 900px; padding: 0; overflow: hidden; resize: both; min-width: 600px; min-height: 400px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+                <div class="modal-content" style="width: 900px; height: 80vh; display: flex; flex-direction: column;">
                     
                     <!-- HEADER -->
-                    <div class="modal-header" style="flex-shrink: 0; padding: 1.5rem; background: white; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                        <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-color); font-weight: 700; letter-spacing: -0.5px;">Chart of Accounts</h2>
-                        <span class="modal-close" style="font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</span>
+                    <div class="modal-header">
+                        <div class="header-title-group">
+                            <h2>Chart of Accounts</h2>
+                            <span class="header-subtitle">Manage your financial categories</span>
+                        </div>
+                        <span class="modal-close">&times;</span>
                     </div>
 
-                    <!-- TOOLBAR (The WOW Part) -->
-                    <div class="modal-toolbar" style="flex-shrink: 0; padding: 1rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <!-- MODERN TOOLBAR -->
+                    <div class="coa-toolbar">
                         
-                        <!-- LEFT: Search -->
-                        <div class="search-wrapper" style="position: relative; width: 300px; flex-shrink: 0;">
-                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">🔍</span>
-                            <input type="text" id="accountSearch" placeholder="Search accounts..." 
-                                style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <!-- Search Input -->
+                        <div class="modern-search-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="coaSearchInput" placeholder="Search accounts..." autocomplete="off">
                         </div>
 
-                        <!-- RIGHT: Actions -->
-                        <div class="action-group" style="display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0;">
-                            <button id="addAccountBtn" class="btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                                <span style="font-size: 1.1rem;">➕</span> Add Account
-                            </button>
-                            <button id="refreshAccountsBtn" class="btn-secondary" title="Refresh List" style="padding: 0.6rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
-                                🔄
+                        <!-- Actions -->
+                        <div class="toolbar-actions">
+                            <button id="addAccountBtn" class="btn-modern-primary">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Account</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- BODY (Grid) -->
-                    <div class="modal-body" id="accountsList" style="flex: 1; min-height: 0; width: 100%; position: relative; background: white;">
-                        <!-- AG Grid Injected Here -->
+                    <div class="modal-body" id="coaGridWrapper">
+                        <div id="coaGrid" class="ag-theme-alpine" style="width: 100%; height: 100%;"></div>
                     </div>
 
                 </div>
@@ -490,6 +490,22 @@ window.ChartManager = {
                     });
                     resizeObserver.observe(this.modal.querySelector('.modal-content'));
                 }
+            },
+
+            // Bi-directional resize: when columns are resized, resize modal
+            onColumnResized: (params) => {
+                if (!params.finished) return; // Only when user finishes dragging
+
+                const modalContent = this.modal?.querySelector('.modal-content');
+                if (!modalContent || !this.gridApi) return;
+
+                // Calculate total width needed for all columns
+                const columnState = this.gridApi.getColumnState();
+                const totalWidth = columnState.reduce((sum, col) => sum + (col.width || 0), 0);
+
+                // Add padding/margins (roughly 50px for modal padding + scrollbar)
+                const newWidth = Math.min(totalWidth + 50, window.innerWidth * 0.9);
+                modalContent.style.width = `${newWidth}px`;
             },
 
             // UI MATCH: Dynamic Theme
