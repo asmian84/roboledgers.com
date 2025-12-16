@@ -139,22 +139,36 @@ window.VendorSummaryGrid = {
     getColumnDefs() {
         return [
             {
-                // Matches VIG Description style
-                headerName: 'Vendor Name', field: 'name', width: 260, minWidth: 200,
-                sortable: true, filter: true,
+                headerName: 'Vendor Name',
+                field: 'name',
+                width: 260,
+                minWidth: 200,
+                sortable: true,
+                filter: true,
                 cellRenderer: (params) => {
-                    const link = `<span class="drill-down-link" style="color:#2563eb; text-decoration:underline; cursor:pointer; font-weight:bold;">${params.value}</span>`;
-                    const editIcon = `<span class="edit-icon" style="margin-left:8px; opacity:0.6; cursor:pointer;" title="Rename">✏️</span>`;
-                    return `<div style="display:flex; align-items:center;">${link}${editIcon}</div>`;
+                    const name = `<span style="font-weight: 500;">${params.value}</span>`;
+                    return `<div style="display:flex; align-items:center; justify-content: space-between; width: 100%;">${name}</div>`;
+                }
+            },
+            {
+                headerName: '',
+                field: 'delete',
+                width: 60,
+                cellRenderer: (params) => {
+                    return `<button class="delete-vendor-btn" data-vendor="${params.data.name}" 
+                    style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;"
+                    onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626';" 
+                    onmouseout="this.style.background='transparent'; this.style.color='#64748b';"
+                    title="Delete Vendor">
+                    <i class="fas fa-trash" style="font-size: 0.85rem;"></i>
+                </button>`;
                 },
                 onCellClicked: (params) => {
-                    const t = params.event.target;
-                    if (t.closest('.drill-down-link')) window.App?.openDrillDown(params.value);
-                    if (t.closest('.edit-icon')) {
-                        setTimeout(() => {
-                            const n = prompt(`Rename vendor "${params.value}" to:`, params.value);
-                            if (n && n !== params.value) window.App?.renameVendor(params.value, n);
-                        }, 10);
+                    if (params.event.target.closest('.delete-vendor-btn')) {
+                        const vendorName = params.data.name;
+                        if (confirm(`Delete vendor "${vendorName}"?\n\nThis will remove the vendor but keep all transactions.`)) {
+                            window.App?.deleteVendor(vendorName);
+                        }
                     }
                 }
             },
