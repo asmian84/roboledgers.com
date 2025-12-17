@@ -1018,7 +1018,9 @@ window.App = {
         });
         */
 
-        // Settings button
+        // Settings button - NOW HANDLED BY ROUTER (data-route="/settings")
+        // Removed old modal listener - router intercepts data-route clicks
+        /*
         const settingsBtn = document.getElementById('settingsBtn');
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
@@ -1028,6 +1030,7 @@ window.App = {
                 }
             });
         }
+        */
 
         // Features button
         const featuresBtn = document.getElementById('featuresBtn');
@@ -2419,13 +2422,16 @@ if (dashboardBtn) {
     });
 }
 
-// Settings Button from Header/Sidebar
+// Settings Button from Header/Sidebar - NOW HANDLED BY ROUTER (data-route="/settings")
+// Removed old section navigation - router intercepts data-route clicks
+/*
 const settingsBtn = document.getElementById('settingsBtn');
 if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
         App.showSection('settings');
     });
 }
+*/
 
 // Reconciliation Button
 const reconBtn = document.getElementById('navReconciliation');
