@@ -178,7 +178,7 @@
                 <button class="nav-item" id="navReconciliation" data-target="reconciliationSection">
                     <i class="fas fa-check-double" style="color: var(--success-color);"></i> Reconciliation
                 </button>
-                <button class="nav-item" data-target="vendors" id="navVendors">
+                <button class="nav-item" data-route="/vendors" id="navVendors">
                     <i class="fas fa-store"></i> Vendors
                 </button>
                 <button class="nav-item" data-target="reportsSection" id="navReports"> <!-- Placeholder target -->
@@ -201,7 +201,7 @@
 
             <!-- Sidebar Footer: Reconciliation & User -->
             <div class="sidebar-footer">
-                <button class="nav-item-footer" data-target="settingsSection" id="settingsBtn">
+                <button class="nav-item-footer" data-route="/settings" id="settingsBtn">
                     <i class="fas fa-cog"></i> Settings
                 </button>
                 <!-- User Profile (Mini) -->
@@ -1305,6 +1305,87 @@
         <div class="page-content" style="padding: 0;">
             <div id="coaGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 220px);"></div>
         </div>
+    </div>
+
+    <!-- Page: Vendors (VDM/VIG combined) -->
+    <div id="vendorsPage" data-page="vendors" class="app-page" style="display: none;">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="page-icon">🏢</span>
+                VENDOR DICTIONARY
+            </h1>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="modal-toolbar" style="border-top: 1px solid rgba(226, 232, 240, 0.6);">
+            <!-- LEFT: Search -->
+            <div class="toolbar-left">
+                <input type="search" id="vendorGridSearch" placeholder="Search vendors...">
+            </div>
+
+            <!-- RIGHT: Actions -->
+            <div class="toolbar-right">
+                <button id="exportVendorsBtn" class="btn-secondary">
+                    📤 Export
+                </button>
+                <button id="importVendorsBtn" class="btn-secondary">
+                    📥 Import
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content: AG Grid -->
+        <div class="page-content" style="padding: 0;">
+            <div id="vendorGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 220px);"></div>
+        </div>
+    </div>
+
+    <!-- Page: Vendor Detail (Drill Down) -->
+    <div id="vendorDetailPage" data-page="vendor-detail" class="app-page" style="display: none;">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="page-icon">🔍</span>
+                <span id="vendorDetailTitle">Vendor Transactions</span>
+            </h1>
+        </div>
+
+        <!-- Page Content: AG Grid -->
+        <div class="page-content" style="padding: 0;">
+            <div id="drillDownGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 180px);"></div>
+        </div>
+    </div>
+
+    <!-- Page: Bank Accounts -->
+    <div id="bankAccountsPage" data-page="bank-accounts" class="app-page" style="display: none;">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="page-icon">🏦</span>
+                MANAGE BANK ACCOUNTS
+            </h1>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="modal-toolbar" style="border-top: 1px solid rgba(226, 232, 240, 0.6);">
+            <div class="toolbar-right" style="margin-left: auto;">
+                <button id="addBankAccountBtn" class="btn-primary">
+                    <span style="font-size: 1.1rem;">➕</span> Add Bank Account
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div id="bankAccountsList" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Page: Settings -->
+    <div id="settingsPage" data-page="settings" class="app-page" style="display: none;">
+        <!-- Settings content will use existing settingsSection -->
+        <div id="settingsPageContent"></div>
     </div>
 
     <!-- ========================================

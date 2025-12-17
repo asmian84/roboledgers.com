@@ -2785,6 +2785,99 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Route: /vendors - Vendor Dictionary (VDM/VIG combined)
+        AppRouter.register('/vendors', () => {
+            console.log('🏢 Loading Vendors page');
+
+            // Show vendors page
+            document.querySelectorAll('[data-page]').forEach(page => {
+                page.style.display = 'none';
+            });
+
+            const vendorsPage = document.getElementById('vendorsPage');
+            if (vendorsPage) {
+                vendorsPage.style.display = 'block';
+            }
+
+            // Initialize VendorSummaryGrid
+            if (window.VendorSummaryGrid) {
+                VendorSummaryGrid.initialize('vendorGrid');
+            }
+        });
+
+        // Route: /vendors/:vendorId - Vendor Detail (Drill Down)
+        AppRouter.register('/vendors/:vendorId', (params) => {
+            console.log('🔍 Loading Vendor Detail page', params);
+
+            // Show vendor detail page
+            document.querySelectorAll('[data-page]').forEach(page => {
+                page.style.display = 'none';
+            });
+
+            const vendorDetailPage = document.getElementById('vendorDetailPage');
+            if (vendorDetailPage) {
+                vendorDetailPage.style.display = 'block';
+            }
+
+            // Update title with vendor name
+            const title = document.getElementById('vendorDetailTitle');
+            if (title && params.vendorId) {
+                const vendorName = decodeURIComponent(params.vendorId);
+                title.textContent = `${vendorName} - Transactions`;
+            }
+
+            // Initialize DrillDownGrid
+            if (window.DrillDownGrid && params.vendorId) {
+                const vendorName = decodeURIComponent(params.vendorId);
+                DrillDownGrid.openForVendor(vendorName, 'drillDownGrid');
+            }
+        });
+
+        // Route: /bank-accounts - Bank Accounts Management
+        AppRouter.register('/bank-accounts', () => {
+            console.log('🏦 Loading Bank Accounts page');
+
+            // Show bank accounts page
+            document.querySelectorAll('[data-page]').forEach(page => {
+                page.style.display = 'none';
+            });
+
+            const bankAccountsPage = document.getElementById('bankAccountsPage');
+            if (bankAccountsPage) {
+                bankAccountsPage.style.display = 'block';
+            }
+
+            // Initialize AccountUI
+            if (window.AccountUI) {
+                AccountUI.renderList('bankAccountsList');
+            }
+        });
+
+        // Route: /settings - Settings Panel
+        AppRouter.register('/settings', () => {
+            console.log('⚙️ Loading Settings page');
+
+            // Show settings page
+            document.querySelectorAll('[data-page]').forEach(page => {
+                page.style.display = 'none';
+            });
+
+            const settingsPage = document.getElementById('settingsPage');
+            if (settingsPage) {
+                settingsPage.style.display = 'block';
+            }
+
+            // Move existing settings section into the page
+            const settingsSection = document.getElementById('settingsSection');
+            const settingsContent = document.getElementById('settingsPageContent');
+            if (settingsSection && settingsContent) {
+                // Move settings content into page
+                settingsContent.innerHTML = settingsSection.innerHTML;
+                // Hide old section
+                settingsSection.style.display = 'none';
+            }
+        });
+
         // Start router
         console.log('🚀 Starting router...');
         AppRouter.start();
