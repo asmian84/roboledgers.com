@@ -361,7 +361,7 @@ window.ChartManager = {
             // Grid already exists, just refresh
             console.log('🔄 CoA grid already initialized, refreshing...');
         }
-    }
+    },
 
     // DEPRECATED: Old modal method (keep for backward compatibility during migration)
     showModal() {

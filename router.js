@@ -257,13 +257,32 @@ class Router {
     }
 
     /**
-     * Start the router (
-
- call on page load)
+     * Start the router (call on page load)
      */
     start() {
-        const path = window.location.pathname;
-        console.log(`🚀 Router starting with path: ${path}`);
+        // Check if using file:// protocol - use hash
+        const isFileProtocol = window.location.protocol === 'file:';
+
+        let path;
+        if (isFileProtocol && window.location.hash) {
+            // Use hash for file:// URLs
+            path = window.location.hash.substring(1);
+            console.log(`🚀 Router starting with hash: ${path}`);
+        } else if (!isFileProtocol) {
+            // Use pathname for http://
+            path = window.location.pathname;
+            console.log(`🚀 Router starting with path: ${path}`);
+        } else {
+            // file:// with no hash, default to home
+            path = '/transactions';
+            console.log(`🚀 Router starting (file://, no hash), defaulting to: ${path}`);
+        }
+
+        // Clean up path - if it includes .html, extract just the hash part or default
+        if (path.includes('.html')) {
+            path = '/transactions';
+            console.log(`🧹 Cleaned path (had .html): ${path}`);
+        }
 
         // Default to /transactions if root
         if (path === '/' || path === '') {
