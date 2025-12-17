@@ -359,9 +359,39 @@
       document.getElementById('app').innerHTML = renderAccountDetail(route.params);
     });
 
-    // Reports
+    // Reports - Dashboard
     router.register('/reports', () => {
-      document.getElementById('app').innerHTML = renderReports();
+      document.getElementById('app').innerHTML = renderReports({ report: 'dashboard' });
+    });
+
+    // Reports - Profit & Loss
+    router.register('/reports/profit-loss', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'profit-loss' });
+    });
+
+    // Reports - Balance Sheet
+    router.register('/reports/balance-sheet', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'balance-sheet' });
+    });
+
+    // Reports - Cash Flow
+    router.register('/reports/cash-flow', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'cash-flow' });
+    });
+
+    // Reports - Vendor Analysis
+    router.register('/reports/vendor-analysis', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'vendor-analysis' });
+    });
+
+    // Reports - Account Summary
+    router.register('/reports/account-summary', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'account-summary' });
+    });
+
+    // Reports - Custom Builder
+    router.register('/reports/custom', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'custom' });
     });
 
     // Settings routes
