@@ -329,46 +329,51 @@ window.ChartManager = {
         }
     },
 
-    // ⚡ NEW: Show page (route-based, replaces showModal)
-    showPage() {
-        if (!this.gridApi) {  // First time initialization
-            this.initialize();
-        }
+    showModal() {
+        if (!this.modal) this.initialize();
 
-        // Show the page
-        const page = document.getElementById('accountsPage');
-        if (!page) {
-            console.error('❌ accountsPage not found!');
-            return;
-        }
+        // PERSIST STATE: Remember this modal is open
+        localStorage.setItem('activeModal', 'chartOfAccounts');
 
-        // Re-fetch references
+        // Re-fetch references in case DOM was nuked/replaced
+        this.modal = document.getElementById('chartOfAccountsModal');
         this.listContainer = document.getElementById('coaGrid');
         this.searchInput = document.getElementById('coaSearchInput');
+        if (!this.modal) return;
 
         // Reset Search
         if (this.searchInput) this.searchInput.value = '';
 
-        // Show breadcrumb
-        const breadcrumb = document.getElementById('breadcrumbNav');
-        if (breadcrumb) breadcrumb.style.display = 'flex';
+        // Show Modal
+        this.modal.classList.add('active');
 
-        // Render grid if needed
-        if (this.listContainer && !this.gridApi) {
-            console.log(`✅ Creating CoA grid for route...`);
-            setTimeout(() => this.renderList(), 100);
-        } else if (this.gridApi) {
-            // Grid already exists, just refresh
-            console.log('🔄 CoA grid already initialized, refreshing...');
-        }
-    }
+        // ⚡ NEW: Restore saved size or use defaults
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (modalContent) {
+            const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_COA);
+            if (savedSize && savedSize.width) {
+                console.log('💾 Restoring Chart of Accounts size:', savedSize);
+                modalContent.style.width = savedSize.width;
+                modalContent.style.height = savedSize.height || '70vh';
+            } else {
+                // Default height only - width will be auto-sized after grid loads
+                modalContent.style.height = '70vh';
+                // Width will be set by fitModalToGrid() after autoSizeAllColumns()
+            }
 
-    // DEPRECATED: Old modal method (keep for backward compatibility during migration)
-    showModal() {
-        console.warn('⚠️ showModal() is deprecated, redirecting to route...');
-        if (window.AppRouter) {
-            window.AppRouter.navigate('/accounts');
+            // Setup resize listener
+            this.setupResizeListener();
         }
+
+        // Wait for modal transition, then render grid
+        setTimeout(() => {
+            if (this.listContainer) {
+                console.log(`✅ Creating CoA grid...`);
+                this.renderList();
+            } else {
+                console.error("❌ ChartManager: coaGrid container not found!");
+            }
+        }, 500);
     },
 
     close() {

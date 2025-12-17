@@ -1,0 +1,548 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - RoboLedgers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Auth Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="auth-manager.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        /* --- Left Side: Features --- */
+        .feature-panel {
+            flex: 1.2;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: white;
+            padding: 4rem 6rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle animated background mesh */
+        .feature-panel::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+            animation: pulse 10s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .brand-large {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 10;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-list {
+            list-style: none;
+            z-index: 10;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(0) scale(1.02);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-item:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .feature-item:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .feature-item:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .feature-item:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .feature-item:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .feature-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            font-size: 1.4rem;
+            color: #ffffff;
+            flex-shrink: 0;
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .feature-text h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: #f1f5f9;
+        }
+
+        .feature-text p {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        /* --- Right Side: Login --- */
+        .auth-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            padding: 2rem;
+            overflow-y: auto;
+            /* Enable scroll within panel if needed */
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            color: var(--text-light);
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .separator-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .separator-text::before,
+        .separator-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .separator-text::before {
+            margin-right: .5em;
+        }
+
+        .separator-text::after {
+            margin-left: .5em;
+        }
+
+        .btn-dev-mode {
+            width: 100%;
+            padding: 12px;
+            background: #f1f5f9;
+            color: var(--text-light);
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-dev-mode:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+            border-color: #94a3b8;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .auth-toggle a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-message {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+
+        /* Tablet & Stacked Layout (max-width: 960px) */
+        @media (max-width: 960px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                /* Enable scroll for whole body */
+            }
+
+            .feature-panel {
+                padding: 4rem 3rem;
+                min-height: auto;
+                /* Allow content to dictate height */
+            }
+
+            .brand-large {
+                font-size: 2.8rem;
+                justify-content: center;
+                margin-bottom: 2rem;
+            }
+
+            .feature-list {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                /* 2 Column Grid for tablet */
+                gap: 1.5rem;
+            }
+
+            .feature-item {
+                margin-bottom: 0;
+                /* Let grid handle gap */
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 1.5rem;
+            }
+
+            .feature-icon {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+
+            .auth-panel {
+                padding: 4rem 2rem;
+                min-height: auto;
+            }
+
+            .auth-card {
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+                border-radius: 16px;
+                border: 1px solid #f1f5f9;
+            }
+        }
+
+        /* Mobile Layout (max-width: 600px) */
+        @media (max-width: 600px) {
+            .feature-panel {
+                padding: 3rem 1.5rem;
+            }
+
+            .brand-large {
+                font-size: 2.2rem;
+                gap: 0.75rem;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
+                /* 1 Column for mobile */
+            }
+
+            .feature-item {
+                flex-direction: row;
+                /* Horizontal again for mobile cards? Or keeping vertical? Let's try horizontal compact */
+                align-items: flex-start;
+                text-align: left;
+                padding: 1rem;
+            }
+
+            .feature-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+                margin-right: 1rem;
+                margin-bottom: 0;
+            }
+
+            .feature-text h3 {
+                font-size: 1.1rem;
+            }
+
+            .auth-panel {
+                padding: 2rem 1rem;
+            }
+
+            .auth-card {
+                padding: 1.5rem;
+                border: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Left: Features -->
+    <div class="feature-panel">
+        <div class="brand-large">
+            <div style="-webkit-text-fill-color: initial;">🤖</div>
+            <div>RoboLedgers</div>
+        </div>
+
+        <ul class="feature-list">
+            <li class="feature-item">
+                <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                <div class="feature-text">
+                    <h3>AI-Powered Automation</h3>
+                    <p>Our intelligent engine learns significantly faster than you. It auto-categorizes your expenses
+                        with 95% accuracy.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="fas fa-globe"></i></div>
+                <div class="feature-text">
+                    <h3>Master List Intelligence</h3>
+                    <p>Benefit from a shared global dictionary of vendors and accounts. "Starbucks" is always "Meals",
+                        for everyone.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                <div class="feature-text">
+                    <h3>Real-Time Cloud Sync</h3>
+                    <p>Work seamlessly across multiple devices. Your data is encrypted and synced instantly to the
+                        secure cloud.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="fas fa-search-plus"></i></div>
+                <div class="feature-text">
+                    <h3>Deep Drill-Down</h3>
+                    <p>Audit your books with precision. Click any total to instantly see the transactions behind the
+                        numbers.</p>
+                </div>
+            </li>
+            <li class="feature-item">
+                <div class="feature-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div class="feature-text">
+                    <h3>Professional Reporting</h3>
+                    <p>Export audit-ready Income Statements and Balance Sheets in one click. Tax season just got easy.
+                    </p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Right: Login Form -->
+    <div class="auth-panel">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 id="authTitle">Welcome Back</h1>
+                <p>Enter your details to access your workspace.</p>
+            </div>
+
+            <!-- ID matches auth-manager.js expectations -->
+            <form id="authForm">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="authEmail" placeholder="name@company.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                </div>
+
+                <div id="authMessage" class="auth-message"></div>
+
+                <div class="forgot-password" style="text-align: right; margin-bottom: 1rem;">
+                    <a href="#" id="forgotPasswordLink"
+                        style="color: var(--primary); font-size: 0.85rem; text-decoration: none;">Forgot Password?</a>
+                </div>
+
+                <button type="submit" id="authSubmit" class="btn-submit">Sign In</button>
+
+                <div class="separator-text">or continue with</div>
+
+                <button type="button" id="btnGoogleLogin" class="btn-google" style="
+                    width: 100%;
+                    padding: 12px;
+                    background: white;
+                    color: #374151;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                    transition: all 0.2s;
+                    margin-bottom: 1rem;
+                ">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" height="20" alt="Google">
+                    Sign in with Google
+                </button>
+
+
+                <div class="separator-text">or</div>
+
+                <button type="button" id="btnDevLogin" class="btn-dev-mode">
+                    <i class="fas fa-hammer"></i> Work Offline (Dev Mode)
+                </button>
+
+                <div class="auth-toggle">
+                    <span id="authToggleText">New to RoboLedgers?</span>
+                    <a href="#" id="authToggle">Create Account</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>
