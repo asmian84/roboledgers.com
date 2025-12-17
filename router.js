@@ -19,6 +19,13 @@ class Router {
             this.loadRoute(window.location.pathname, false);
         });
 
+        // Listen to hash changes (for file:// URLs)
+        window.addEventListener('hashchange', (e) => {
+            console.log('🔗 Hash change detected');
+            const path = window.location.hash.substring(1) || '/transactions';
+            this.loadRoute(path, false);
+        });
+
         // Intercept link clicks
         document.addEventListener('click', (e) => {
             // Check for data-route attribute
@@ -51,8 +58,19 @@ class Router {
     navigate(path, addToHistory = true) {
         console.log(`\n🧭 Navigate to: ${path}`);
 
-        if (addToHistory) {
-            window.history.pushState({ path }, '', path);
+        // Detect file:// protocol (can't use pushState)
+        const isFileProtocol = window.location.protocol === 'file:';
+
+        if (addToHistory && !isFileProtocol) {
+            try {
+                window.history.pushState({ path }, '', path);
+            } catch (e) {
+                console.warn('⚠️ pushState failed (file:// protocol?), using hash fallback');
+                window.location.hash = path;
+            }
+        } else if (isFileProtocol) {
+            // Use hash for file:// URLs
+            window.location.hash = path;
         }
 
         this.loadRoute(path, addToHistory);
