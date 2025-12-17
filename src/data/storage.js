@@ -260,19 +260,39 @@ class StorageService {
     // ====================================
 
     async getAccounts() {
-        const accounts = this._get(this.keys.accounts);
+        let accounts = this._get(this.keys.accounts);
+
+        // Auto-initialize with DEFAULT_CHART_OF_ACCOUNTS if empty
+        if (accounts.length === 0 && window.DEFAULT_CHART_OF_ACCOUNTS) {
+            console.log('📊 Initializing Chart of Accounts from defaults...');
+            accounts = window.DEFAULT_CHART_OF_ACCOUNTS.map(acc => ({
+                id: acc.code,
+                accountNumber: acc.code,
+                name: acc.name,
+                type: acc.type || 'Expense',
+                parentId: null,
+                openingBalance: 0,
+                active: true,
+                createdAt: this._now(),
+                updatedAt: this._now()
+            }));
+            this._set(this.keys.accounts, accounts);
+            console.log(`✅ Initialized ${accounts.length} accounts`);
+        }
+
         const transactions = this._get(this.keys.transactions);
 
         // Compute currentBalance
         return accounts.map(account => {
             const accountTxns = transactions.filter(t => t.accountId === account.id);
-            const balance = account.openingBalance + accountTxns.reduce((sum, t) => {
+            const balance = (account.openingBalance || 0) + accountTxns.reduce((sum, t) => {
                 return sum + (t.type === 'credit' ? t.amount : -t.amount);
             }, 0);
 
             return {
                 ...account,
-                currentBalance: balance
+                currentBalance: balance,
+                isActive: account.active !== false
             };
         });
     }
