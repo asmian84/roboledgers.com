@@ -202,7 +202,7 @@
 
             <!-- Sidebar Footer: Reconciliation & User -->
             <div class="sidebar-footer">
-                <button class="nav-item-footer" data-route="/settings2" id="settingsBtn">
+                <button class="nav-item-footer" data-route="/settings" id="settingsBtn">
                     <i class="fas fa-cog"></i> Settings
                 </button>
                 <!-- User Profile (Mini) -->
@@ -710,225 +710,12 @@
 
             <!-- Step 3: Settings (Page Based) -->
             <!-- Step 3: Settings (Sidebar Layout) -->
+            <!-- ARCHIVED: Old Settings (Modal-based) - 2025-12-17 -->
+            <!--
             <section id="settingsSection" class="section">
-                <div class="settings-layout">
-                    <!-- Sidebar -->
-                    <div class="settings-sidebar">
-                        <div class="settings-sidebar-header">
-                            <h2>Settings</h2>
-                        </div>
-                        <nav class="settings-nav">
-                            <button class="settings-nav-item active" data-panel="general">
-                                <i class="fas fa-building"></i> General
-                            </button>
-                            <button class="settings-nav-item" data-panel="appearance">
-                                <i class="fas fa-paint-brush"></i> Appearance
-                            </button>
-                            <button class="settings-nav-item" data-panel="data">
-                                <i class="fas fa-database"></i> Data & Files
-                            </button>
-                            <button class="settings-nav-item" data-panel="subscription">
-                                <i class="fas fa-credit-card"></i> Subscription
-                            </button>
-                            <button class="settings-nav-item" data-panel="about">
-                                <i class="fas fa-info-circle"></i> About
-                            </button>
-                        </nav>
-                    </div>
-
-                    <!-- Content Panels -->
-                    <div class="settings-content">
-
-                        <!-- Panel: General -->
-                        <div id="panel-general" class="settings-panel active">
-                            <h3>🏢 Company Information</h3>
-                            <div class="settings-card" style="max-width: 500px;">
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label>Company Name</label>
-                                        <input type="text" id="companyNameInputPage" class="settings-input"
-                                            placeholder="e.g. My Fast Company Ltd.">
-                                        <small>Displayed on reports and transaction reviews.</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Fiscal Year End</label>
-                                        <input type="date" id="yearEndDate" class="settings-input">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel: Appearance -->
-                        <!-- Panel: Appearance -->
-                        <div id="panel-appearance" class="settings-panel">
-                            <h3>🎨 Interface Customization</h3>
-
-                            <!-- Section 1: Display Preferences -->
-                            <div class="settings-card" style="margin-bottom: 1.5rem; max-width: 500px;">
-                                <div class="card-body">
-                                    <h4
-                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                        Display Preferences</h4>
-
-                                    <div class="settings-grid-3"
-                                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
-                                        <!-- Scale -->
-                                        <div class="setting-item">
-                                            <label
-                                                style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Platform
-                                                Scale</label>
-                                            <select id="uiScaleSelect" class="form-select" style="width: 100%;">
-                                                <option value="1.1">110% (Larger)</option>
-                                                <option value="1.0" selected>100% (Default)</option>
-                                                <option value="0.9">90% (Compact)</option>
-                                                <option value="0.8">80% (Small)</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Grid Theme -->
-                                        <div class="setting-item">
-                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Grid
-                                                Theme</label>
-                                            <select id="gridThemeSelect" class="form-select" style="width: 100%;">
-                                                <option value="default" selected>Default</option>
-                                                <option value="vanilla">Vanilla</option>
-                                                <option value="classic">Classic</option>
-                                                <option value="ledger">Ledger Pad</option>
-                                                <option value="postit">Post-it Note</option>
-                                                <option value="rainbow">Rainbow</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Text Case -->
-                                        <div class="setting-item">
-                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Text
-                                                Case</label>
-                                            <div class="btn-group" role="group" style="display: flex; gap: 0.5rem;">
-                                                <button type="button" class="btn-group-item active" data-case="sentence"
-                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">Aa</button>
-                                                <button type="button" class="btn-group-item" data-case="uppercase"
-                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">AA</button>
-                                                <button type="button" class="btn-group-item" data-case="lowercase"
-                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">aa</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Section 2: Color Theme -->
-                            <div class="settings-card" style="max-width: 500px;">
-                                <div class="card-body">
-                                    <h4
-                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                        Color Theme</h4>
-
-                                    <div class="theme-radio-group"
-                                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; max-width: 100%;">
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="cyber-night" checked>
-                                            <div class="theme-content">
-                                                <span class="theme-icon">☁️</span>
-                                                <span class="theme-name">Cyber Day</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="arctic-dawn">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">❄️</span>
-                                                <span class="theme-name">Arctic Dawn</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="neon-forest">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌿</span>
-                                                <span class="theme-name">Mint Fresh</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="royal-amethyst">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🌸</span>
-                                                <span class="theme-name">Lavender Mist</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="sunset-horizon">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">🍑</span>
-                                                <span class="theme-name">Peach Dawn</span>
-                                            </div>
-                                        </label>
-                                        <label class="theme-radio-option">
-                                            <input type="radio" name="theme" value="golden-hour">
-                                            <div class="theme-content">
-                                                <span class="theme-icon">☀️</span>
-                                                <span class="theme-name">Golden Hour</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel: Data -->
-                        <div id="panel-data" class="settings-panel">
-                            <h3>💾 Data Management</h3>
-                            <div class="settings-card" style="max-width: 500px;">
-                                <div class="card-body">
-                                    <div class="action-list">
-                                        <button id="settingsVendorDictBtn" class="btn-secondary"
-                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
-                                            <i class="fas fa-book"></i> Manage Vendor Dictionary
-                                        </button>
-                                        <button id="settingsAccountsBtn" class="btn-secondary"
-                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
-                                            <i class="fas fa-list-ol"></i> View Chart of Accounts
-                                        </button>
-                                        <button id="settingsBankAccountsBtn" class="btn-secondary"
-                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
-                                            <i class="fas fa-university"></i> Manage Bank Accounts
-                                        </button>
-                                        <button id="settingsAuditBtn" class="btn-secondary"
-                                            onclick="App.showSection('audit')"
-                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
-                                            <i class="fas fa-shield-alt"></i> View Audit Log
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel: Subscription -->
-                        <div id="panel-subscription" class="settings-panel">
-                            <h3>💳 Subscription</h3>
-                            <div class="settings-card">
-                                <div class="card-body">
-                                    <p>Manage your RoboLedgers plan.</p>
-                                    <div class="empty-state-content">
-                                        <div class="empty-icon" style="font-size: 2rem;">🚀</div>
-                                        <p>Pro Plan Active</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel: About -->
-                        <div id="panel-about" class="settings-panel">
-                            <h3>ℹ️ About AutoBookkeeping</h3>
-                            <div class="settings-card">
-                                <div class="card-body">
-                                    <p>Version 2.1.0 - Build 110</p>
-                                    <p>&copy; 2025 RoboLedgers Inc.</p>
-                                    <small>Built with ❤️ by Antigravity</small>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
+                ARCHIVED - See Settings2 below (route-based implementation)
             </section>
+            -->
 
             <!-- Placeholder Sections -->
             <section id="vendors" class="section">
@@ -1466,21 +1253,21 @@
             <!-- Left Sidebar Navigation -->
             <nav class="settings2-sidebar">
                 <h3 class="settings2-sidebar-title">⚙️ Settings</h3>
-                <a href="#/settings2" data-route="/settings2" class="settings2-nav-item active" data-panel="general">
+                <a href="#/settings" data-route="/settings" class="settings2-nav-item active" data-panel="general">
                     <i class="fas fa-building"></i> General
                 </a>
-                <a href="#/settings2/appearance" data-route="/settings2/appearance" class="settings2-nav-item"
+                <a href="#/settings/appearance" data-route="/settings/appearance" class="settings2-nav-item"
                     data-panel="appearance">
                     <i class="fas fa-paint-brush"></i> Appearance
                 </a>
-                <a href="#/settings2/data" data-route="/settings2/data" class="settings2-nav-item" data-panel="data">
+                <a href="#/settings/data" data-route="/settings/data" class="settings2-nav-item" data-panel="data">
                     <i class="fas fa-database"></i> Data & Files
                 </a>
-                <a href="#/settings2/subscription" data-route="/settings2/subscription" class="settings2-nav-item"
+                <a href="#/settings/subscription" data-route="/settings/subscription" class="settings2-nav-item"
                     data-panel="subscription">
                     <i class="fas fa-credit-card"></i> Subscription
                 </a>
-                <a href="#/settings2/about" data-route="/settings2/about" class="settings2-nav-item" data-panel="about">
+                <a href="#/settings/about" data-route="/settings/about" class="settings2-nav-item" data-panel="about">
                     <i class="fas fa-info-circle"></i> About
                 </a>
             </nav>

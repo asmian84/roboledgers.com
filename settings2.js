@@ -38,24 +38,24 @@ function showSettings2Panel(panelName) {
     }
 }
 
-// Register Settings2 routes
-AppRouter.register('/settings2', () => {
+// Register Settings routes (formerly Settings2, now default)
+AppRouter.register('/settings', () => {
     showSettings2Panel('general');
 });
 
-AppRouter.register('/settings2/appearance', () => {
+AppRouter.register('/settings/appearance', () => {
     showSettings2Panel('appearance');
 });
 
-AppRouter.register('/settings2/data', () => {
+AppRouter.register('/settings/data', () => {
     showSettings2Panel('data');
 });
 
-AppRouter.register('/settings2/subscription', () => {
+AppRouter.register('/settings/subscription', () => {
     showSettings2Panel('subscription');
 });
 
-AppRouter.register('/settings2/about', () => {
+AppRouter.register('/settings/about', () => {
     showSettings2Panel('about');
 });
 
