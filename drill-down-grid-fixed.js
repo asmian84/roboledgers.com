@@ -74,18 +74,9 @@ window.DrillDownGrid = {
                 }
             }
         } else {
-            // Default size
-            const container = document.getElementById('drillDownGridContainer');
-            if (container) {
-                const modalContent = container.closest('.modal-content');
-                if (modalContent) {
-                    modalContent.style.width = '1000px';
-                    modalContent.style.maxWidth = '95vw';
-                }
-            }
+            // ⚡ NEW: Auto-size to content instead of fixed width
+            this.autoSizeAllColumns();
         }
-
-        setTimeout(() => this.gridApi.sizeColumnsToFit(), 50);
     },
 
     setupSaveListener() {
@@ -118,6 +109,49 @@ window.DrillDownGrid = {
         });
         observer.observe(modalContent);
         modalContent.dataset.resizeListenerAttached = 'true';
+    },
+
+    // ⚡ NEW: Auto-size columns to fit content (no wrapping)
+    autoSizeAllColumns() {
+        if (!this.gridApi) return;
+
+        // Get all column IDs
+        const allColumnIds = [];
+        this.gridApi.getColumns().forEach(column => {
+            allColumnIds.push(column.getColId());
+        });
+
+        // Auto-size all columns based on content
+        this.gridApi.autoSizeColumns(allColumnIds, false);
+
+        // Fit modal to grid width
+        setTimeout(() => this.fitModalToGrid(), 100);
+    },
+
+    // ⚡ NEW: Fit modal width to grid content
+    fitModalToGrid() {
+        if (!this.gridApi) return;
+
+        const container = document.getElementById('drillDownGridContainer');
+        if (!container) return;
+
+        const modalContent = container.closest('.modal-content');
+        if (!modalContent) return;
+
+        // Calculate total grid width
+        let totalWidth = 0;
+        this.gridApi.getColumns().forEach(col => {
+            totalWidth += col.getActualWidth();
+        });
+
+        // Add padding/scrollbar space (80px)
+        const optimalWidth = totalWidth + 80;
+
+        // Apply min/max constraints
+        const finalWidth = Math.max(800, Math.min(optimalWidth, window.innerWidth * 0.95));
+
+        modalContent.style.width = `${finalWidth}px`;
+        console.log(`📐 Auto-sized Drill Down modal: ${finalWidth}px (grid: ${totalWidth}px)`);
     },
 
     getColumnDefs() {
