@@ -7,6 +7,7 @@ window.VendorSummaryGrid = {
     columnApi: null,
     userHasResized: false,
     saveTimer: null,
+    resizeObserver: null, // ⚡ FIX: Store observer reference for cleanup
 
     initialize(containerId) {
         const container = document.getElementById(containerId);
@@ -112,9 +113,15 @@ window.VendorSummaryGrid = {
         const container = document.getElementById('vendorSummaryGridContainer');
         if (!container) return;
         const modalContent = container.closest('.modal-content');
-        if (!modalContent || modalContent.dataset.resizeListenerAttached) return;
+        if (!modalContent) return;
 
-        const observer = new ResizeObserver(entries => {
+        // ⚡ FIX: Cleanup old observer if exists
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+
+        this.resizeObserver = new ResizeObserver(entries => {
             for (const entry of entries) {
                 if (this.gridApi) {
                     this.gridApi.sizeColumnsToFit();
@@ -137,8 +144,32 @@ window.VendorSummaryGrid = {
             }
         });
 
-        observer.observe(modalContent);
-        modalContent.dataset.resizeListenerAttached = 'true';
+        this.resizeObserver.observe(modalContent);
+    },
+
+    // ⚡ FIX: Cleanup method to prevent memory leaks
+    cleanup() {
+        console.log('🧹 VendorSummaryGrid: Cleaning up resources...');
+
+        // Disconnect ResizeObserver
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+
+        // Clear timers
+        if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = null;
+        }
+
+        // Destroy grid
+        if (this.gridApi) {
+            this.gridApi.destroy();
+            this.gridApi = null;
+        }
+
+        console.log('✅ VendorSummaryGrid: Cleanup complete');
     },
 
     getColumnDefs() {

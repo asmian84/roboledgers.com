@@ -2640,6 +2640,11 @@ const closeVendorModal = document.getElementById('closeVendorModal');
 if (closeVendorModal) {
     closeVendorModal.addEventListener('click', () => {
         localStorage.removeItem('activeModal');
+
+        // ⚡ FIX: Cleanup grid resources to prevent memory leaks
+        if (window.VendorSummaryGrid && VendorSummaryGrid.cleanup) {
+            VendorSummaryGrid.cleanup();
+        }
     });
 }
 
