@@ -29,102 +29,6 @@
     <link rel="stylesheet" href="modal-base.css?v=1">
     <link rel="stylesheet" href="ticker.css?v=6">
     <link rel="stylesheet" href="dashboard.css?v=1">
-    <link rel="stylesheet" href="settings2.css">
-
-    <!-- Routes System -->
-    <script src="router.js?v=1"></script>
-
-    <style>
-        /* ========================================
-       BREADCRUMB NAVIGATION
-       ======================================== */
-
-        .breadcrumb-container {
-            padding: 1rem 2rem;
-            background: linear-gradient(to bottom, #f8fafc, #ffffff);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(8px);
-            min-height: 48px;
-        }
-
-        .breadcrumb-link {
-            color: #3b82f6;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .breadcrumb-link:hover {
-            color: #2563eb;
-            background: rgba(59, 130, 246, 0.1);
-        }
-
-        .breadcrumb-separator {
-            color: #cbd5e1;
-            font-weight: 300;
-            user-select: none;
-        }
-
-        .breadcrumb-current {
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        /* Responsive breadcrumbs */
-        @media (max-width: 767px) {
-            .breadcrumb-container {
-                font-size: 0.85rem;
-                padding: 0.75rem 1rem;
-                flex-wrap: wrap;
-            }
-        }
-
-        /* Page system */
-        .app-page {
-            min-height: calc(100vh - 120px);
-            background: #ffffff;
-            display: none;
-            /* Hidden by default */
-        }
-
-        .app-page.active {
-            display: block;
-        }
-
-        .page-header {
-            padding: 1.5rem 2rem;
-            background: linear-gradient(to bottom, #f8fafc, #ffffff);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .page-title {
-            margin: 0;
-            font-size: 1.75rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .page-icon {
-            font-size: 1.5rem;
-        }
-
-        .page-content {
-            padding: 2rem;
-        }
-    </style>
 </head>
 
 <body data-theme="arctic-dawn">
@@ -179,7 +83,7 @@
                 <button class="nav-item" id="navReconciliation" data-target="reconciliationSection">
                     <i class="fas fa-check-double" style="color: var(--success-color);"></i> Reconciliation
                 </button>
-                <button class="nav-item" data-route="/vendors" id="navVendors">
+                <button class="nav-item" data-target="vendors" id="navVendors">
                     <i class="fas fa-store"></i> Vendors
                 </button>
                 <button class="nav-item" data-target="reportsSection" id="navReports"> <!-- Placeholder target -->
@@ -202,7 +106,7 @@
 
             <!-- Sidebar Footer: Reconciliation & User -->
             <div class="sidebar-footer">
-                <button class="nav-item-footer" data-route="/settings" id="settingsBtn">
+                <button class="nav-item-footer" data-target="settingsSection" id="settingsBtn">
                     <i class="fas fa-cog"></i> Settings
                 </button>
                 <!-- User Profile (Mini) -->
@@ -223,11 +127,6 @@
                 <button id="mobileMenuBtn" class="icon-btn"><i class="fas fa-bars"></i></button>
                 <h2 id="pageTitle">Home</h2>
             </header>
-
-            <!-- Breadcrumb Navigation (global) -->
-            <div id="breadcrumbNav" class="breadcrumb-container" style="display: none;">
-                <!-- Breadcrumbs will be injected here by router -->
-            </div>
 
             <!-- Step 0.1: Home Section (Welcome) -->
             <section id="homeSection" class="section active">
@@ -710,12 +609,225 @@
 
             <!-- Step 3: Settings (Page Based) -->
             <!-- Step 3: Settings (Sidebar Layout) -->
-            <!-- ARCHIVED: Old Settings (Modal-based) - 2025-12-17 -->
-            <!--
             <section id="settingsSection" class="section">
-                ARCHIVED - See Settings2 below (route-based implementation)
+                <div class="settings-layout">
+                    <!-- Sidebar -->
+                    <div class="settings-sidebar">
+                        <div class="settings-sidebar-header">
+                            <h2>Settings</h2>
+                        </div>
+                        <nav class="settings-nav">
+                            <button class="settings-nav-item active" data-panel="general">
+                                <i class="fas fa-building"></i> General
+                            </button>
+                            <button class="settings-nav-item" data-panel="appearance">
+                                <i class="fas fa-paint-brush"></i> Appearance
+                            </button>
+                            <button class="settings-nav-item" data-panel="data">
+                                <i class="fas fa-database"></i> Data & Files
+                            </button>
+                            <button class="settings-nav-item" data-panel="subscription">
+                                <i class="fas fa-credit-card"></i> Subscription
+                            </button>
+                            <button class="settings-nav-item" data-panel="about">
+                                <i class="fas fa-info-circle"></i> About
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Content Panels -->
+                    <div class="settings-content">
+
+                        <!-- Panel: General -->
+                        <div id="panel-general" class="settings-panel active">
+                            <h3>🏢 Company Information</h3>
+                            <div class="settings-card" style="max-width: 500px;">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Company Name</label>
+                                        <input type="text" id="companyNameInputPage" class="settings-input"
+                                            placeholder="e.g. My Fast Company Ltd.">
+                                        <small>Displayed on reports and transaction reviews.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fiscal Year End</label>
+                                        <input type="date" id="yearEndDate" class="settings-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Appearance -->
+                        <!-- Panel: Appearance -->
+                        <div id="panel-appearance" class="settings-panel">
+                            <h3>🎨 Interface Customization</h3>
+
+                            <!-- Section 1: Display Preferences -->
+                            <div class="settings-card" style="margin-bottom: 1.5rem; max-width: 500px;">
+                                <div class="card-body">
+                                    <h4
+                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Display Preferences</h4>
+
+                                    <div class="settings-grid-3"
+                                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+                                        <!-- Scale -->
+                                        <div class="setting-item">
+                                            <label
+                                                style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Platform
+                                                Scale</label>
+                                            <select id="uiScaleSelect" class="form-select" style="width: 100%;">
+                                                <option value="1.1">110% (Larger)</option>
+                                                <option value="1.0" selected>100% (Default)</option>
+                                                <option value="0.9">90% (Compact)</option>
+                                                <option value="0.8">80% (Small)</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Grid Theme -->
+                                        <div class="setting-item">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Grid
+                                                Theme</label>
+                                            <select id="gridThemeSelect" class="form-select" style="width: 100%;">
+                                                <option value="default" selected>Default</option>
+                                                <option value="vanilla">Vanilla</option>
+                                                <option value="classic">Classic</option>
+                                                <option value="ledger">Ledger Pad</option>
+                                                <option value="postit">Post-it Note</option>
+                                                <option value="rainbow">Rainbow</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Text Case -->
+                                        <div class="setting-item">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Text
+                                                Case</label>
+                                            <div class="btn-group" role="group" style="display: flex; gap: 0.5rem;">
+                                                <button type="button" class="btn-group-item active" data-case="sentence"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">Aa</button>
+                                                <button type="button" class="btn-group-item" data-case="uppercase"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">AA</button>
+                                                <button type="button" class="btn-group-item" data-case="lowercase"
+                                                    style="flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); border-radius: 6px; cursor: pointer;">aa</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Color Theme -->
+                            <div class="settings-card" style="max-width: 500px;">
+                                <div class="card-body">
+                                    <h4
+                                        style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Color Theme</h4>
+
+                                    <div class="theme-radio-group"
+                                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; max-width: 100%;">
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="cyber-night" checked>
+                                            <div class="theme-content">
+                                                <span class="theme-icon">☁️</span>
+                                                <span class="theme-name">Cyber Day</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="arctic-dawn">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">❄️</span>
+                                                <span class="theme-name">Arctic Dawn</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="neon-forest">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🌿</span>
+                                                <span class="theme-name">Mint Fresh</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="royal-amethyst">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🌸</span>
+                                                <span class="theme-name">Lavender Mist</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="sunset-horizon">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">🍑</span>
+                                                <span class="theme-name">Peach Dawn</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-radio-option">
+                                            <input type="radio" name="theme" value="golden-hour">
+                                            <div class="theme-content">
+                                                <span class="theme-icon">☀️</span>
+                                                <span class="theme-name">Golden Hour</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Data -->
+                        <div id="panel-data" class="settings-panel">
+                            <h3>💾 Data Management</h3>
+                            <div class="settings-card" style="max-width: 500px;">
+                                <div class="card-body">
+                                    <div class="action-list">
+                                        <button id="settingsVendorDictBtn" class="btn-secondary"
+                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
+                                            <i class="fas fa-book"></i> Manage Vendor Dictionary
+                                        </button>
+                                        <button id="settingsAccountsBtn" class="btn-secondary"
+                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
+                                            <i class="fas fa-list-ol"></i> View Chart of Accounts
+                                        </button>
+                                        <button id="settingsBankAccountsBtn" class="btn-secondary"
+                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
+                                            <i class="fas fa-university"></i> Manage Bank Accounts
+                                        </button>
+                                        <button id="settingsAuditBtn" class="btn-secondary"
+                                            onclick="App.showSection('audit')"
+                                            style="width: 100%; max-width: 450px; justify-content: flex-start;">
+                                            <i class="fas fa-shield-alt"></i> View Audit Log
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Subscription -->
+                        <div id="panel-subscription" class="settings-panel">
+                            <h3>💳 Subscription</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <p>Manage your RoboLedgers plan.</p>
+                                    <div class="empty-state-content">
+                                        <div class="empty-icon" style="font-size: 2rem;">🚀</div>
+                                        <p>Pro Plan Active</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel: About -->
+                        <div id="panel-about" class="settings-panel">
+                            <h3>ℹ️ About AutoBookkeeping</h3>
+                            <div class="settings-card">
+                                <div class="card-body">
+                                    <p>Version 2.1.0 - Build 110</p>
+                                    <p>&copy; 2025 RoboLedgers Inc.</p>
+                                    <small>Built with ❤️ by Antigravity</small>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </section>
-            -->
 
             <!-- Placeholder Sections -->
             <section id="vendors" class="section">
@@ -1060,126 +1172,6 @@
     </div>
     </div>
 
-    <!-- ========================================
-         ROUTE-BASED PAGES
-         ======================================== -->
-
-    <!-- Page: Chart of Accounts -->
-    <div id="accountsPage" data-page="accounts" class="app-page" style="display: none;">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <span class="page-icon">📋</span>
-                CHART OF ACCOUNTS
-            </h1>
-        </div>
-
-        <!-- Toolbar -->
-        <div class="modal-toolbar" style="border-top: 1px solid rgba(226, 232, 240, 0.6);">
-            <!-- LEFT: Search -->
-            <div class="toolbar-left">
-                <input type="search" id="coaSearchInput" placeholder="Search accounts...">
-            </div>
-
-            <!-- RIGHT: Actions -->
-            <div class="toolbar-right">
-                <button id="addAccountBtn" class="btn-primary">
-                    <span style="font-size: 1.1rem;">➕</span> Add Account
-                </button>
-            </div>
-        </div>
-
-        <!-- Page Content: AG Grid -->
-        <div class="page-content" style="padding: 0;">
-            <div id="coaGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 220px);"></div>
-        </div>
-    </div>
-
-    <!-- Page: Vendors (VDM/VIG combined) -->
-    <div id="vendorsPage" data-page="vendors" class="app-page" style="display: none;">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <span class="page-icon">🏢</span>
-                VENDOR DICTIONARY
-            </h1>
-        </div>
-
-        <!-- Toolbar -->
-        <div class="modal-toolbar" style="border-top: 1px solid rgba(226, 232, 240, 0.6);">
-            <!-- LEFT: Search -->
-            <div class="toolbar-left">
-                <input type="search" id="vendorGridSearch" placeholder="Search vendors...">
-            </div>
-
-            <!-- RIGHT: Actions -->
-            <div class="toolbar-right">
-                <button id="exportVendorsBtn" class="btn-secondary">
-                    📤 Export
-                </button>
-                <button id="importVendorsBtn" class="btn-secondary">
-                    📥 Import
-                </button>
-            </div>
-        </div>
-
-        <!-- Page Content: AG Grid -->
-        <div class="page-content" style="padding: 0;">
-            <div id="vendorGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 220px);"></div>
-        </div>
-    </div>
-
-    <!-- Page: Vendor Detail (Drill Down) -->
-    <div id="vendorDetailPage" data-page="vendor-detail" class="app-page" style="display: none;">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <span class="page-icon">🔍</span>
-                <span id="vendorDetailTitle">Vendor Transactions</span>
-            </h1>
-        </div>
-
-        <!-- Page Content: AG Grid -->
-        <div class="page-content" style="padding: 0;">
-            <div id="drillDownGrid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 180px);"></div>
-        </div>
-    </div>
-
-    <!-- Page: Bank Accounts -->
-    <div id="bankAccountsPage" data-page="bank-accounts" class="app-page" style="display: none;">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <span class="page-icon">🏦</span>
-                MANAGE BANK ACCOUNTS
-            </h1>
-        </div>
-
-        <!-- Toolbar -->
-        <div class="modal-toolbar" style="border-top: 1px solid rgba(226, 232, 240, 0.6);">
-            <div class="toolbar-right" style="margin-left: auto;">
-                <button id="addBankAccountBtn" class="btn-primary">
-                    <span style="font-size: 1.1rem;">➕</span> Add Bank Account
-                </button>
-            </div>
-        </div>
-
-        <!-- Page Content -->
-        <div class="page-content">
-            <div id="bankAccountsList" style="width: 100%;"></div>
-        </div>
-    </div>
-
-    <!-- Page: Settings -->
-    <div id="settingsPage" data-page="settings" class="app-page" style="display: none;">
-        <!-- Settings content will use existing settingsSection -->
-        <div id="settingsPageContent"></div>
-    </div>
-
-    <!-- ========================================
-         MODALS (TO BE CONVERTED)
-         ======================================== -->
-
     <!-- Manage Accounts Modal -->
     <!-- Manage Accounts Modal (Standardized) -->
     <div id="manageAccountsModal" class="modal">
@@ -1242,152 +1234,6 @@
             <!-- BODY: AG Grid Container -->
             <div class="modal-body" style="flex: 1; padding: 0; overflow: hidden;">
                 <div id="coaGrid" class="ag-theme-alpine" style="width: 100%; height: 100%;"></div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Page: Settings2 (Route-Based - Clean Implementation) -->
-    <div id="settings2Page" data-page="settings2" class="app-page" style="display: none;">
-        <div class="settings2-container">
-            <!-- Left Sidebar Navigation -->
-            <nav class="settings2-sidebar">
-                <h3 class="settings2-sidebar-title">⚙️ Settings</h3>
-                <a href="#/settings" data-route="/settings" class="settings2-nav-item active" data-panel="general">
-                    <i class="fas fa-building"></i> General
-                </a>
-                <a href="#/settings/appearance" data-route="/settings/appearance" class="settings2-nav-item"
-                    data-panel="appearance">
-                    <i class="fas fa-paint-brush"></i> Appearance
-                </a>
-                <a href="#/settings/data" data-route="/settings/data" class="settings2-nav-item" data-panel="data">
-                    <i class="fas fa-database"></i> Data & Files
-                </a>
-                <a href="#/settings/subscription" data-route="/settings/subscription" class="settings2-nav-item"
-                    data-panel="subscription">
-                    <i class="fas fa-credit-card"></i> Subscription
-                </a>
-                <a href="#/settings/about" data-route="/settings/about" class="settings2-nav-item" data-panel="about">
-                    <i class="fas fa-info-circle"></i> About
-                </a>
-            </nav>
-
-            <!-- Right Content Area -->
-            <div class="settings2-content">
-                <!-- Panel: General -->
-                <div id="settings2-panel-general" class="settings2-panel">
-                    <h2>🏢 Company Information</h2>
-                    <div class="settings2-card">
-                        <label class="settings2-label">Company Name</label>
-                        <input type="text" id="companyName2" class="settings2-input"
-                            placeholder="e.g. My Fast Company Ltd.">
-                        <small class="settings2-help">Displayed on reports and transaction reviews</small>
-                    </div>
-                    <div class="settings2-card">
-                        <label class="settings2-label">Fiscal Year End</label>
-                        <input type="date" id="fiscalYear2" class="settings2-input">
-                        <small class="settings2-help">Your company's fiscal year end date</small>
-                    </div>
-                </div>
-
-                <!-- Panel: Appearance -->
-                <div id="settings2-panel-appearance" class="settings2-panel" style="display: none;">
-                    <h2>🎨 Appearance</h2>
-                    <div class="settings2-card">
-                        <label class="settings2-label">Theme</label>
-                        <select id="theme2" class="settings2-input">
-                            <option value="cyber-night">Cyber Night (Default)</option>
-                            <option value="arctic-dawn">Arctic Dawn</option>
-                            <option value="neon-forest">Neon Forest</option>
-                            <option value="royal-amethyst">Royal Amethyst</option>
-                            <option value="sunset-horizon">Sunset Horizon</option>
-                        </select>
-                        <small class="settings2-help">Choose your preferred color scheme</small>
-                    </div>
-                    <div class="settings2-card">
-                        <label class="settings2-label">Font Size</label>
-                        <input type="range" id="fontSize2" min="80" max="120" value="100" step="5"
-                            class="settings2-slider">
-                        <div id="fontSizeValue2" class="settings2-slider-value">100%</div>
-                        <small class="settings2-help">Adjust text size throughout the app</small>
-                    </div>
-                </div>
-
-                <!-- Panel: Data & Files -->
-                <div id="settings2-panel-data" class="settings2-panel" style="display: none;">
-                    <h2>💾 Data Management</h2>
-                    <div class="settings2-card">
-                        <h3>Export Data</h3>
-                        <button id="exportData2" class="btn-primary">📥 Download Backup (JSON)</button>
-                        <small class="settings2-help">Download all your data as a JSON file</small>
-                    </div>
-                    <div class="settings2-card">
-                        <h3>Import Data</h3>
-                        <input type="file" id="importData2" accept=".json" class="settings2-file-input">
-                        <small class="settings2-help">Restore from a previous backup file</small>
-                    </div>
-                    <div class="settings2-card">
-                        <h3>Clear All Data</h3>
-                        <button id="clearData2" class="btn-danger">🗑️ Delete Everything</button>
-                        <small class="settings2-help">⚠️ Warning: This action cannot be undone!</small>
-                    </div>
-                </div>
-
-                <!-- Panel: Subscription -->
-                <div id="settings2-panel-subscription" class="settings2-panel" style="display: none;">
-                    <h2>💳 Subscription & Billing</h2>
-                    <div class="settings2-card">
-                        <h3>Current Plan</h3>
-                        <div class="settings2-plan-badge">Free Plan</div>
-                        <p>You're currently on the free plan with basic features.</p>
-                        <button class="btn-primary">⬆️ Upgrade to Pro</button>
-                    </div>
-                    <div class="settings2-card">
-                        <h3>Features</h3>
-                        <ul class="settings2-features">
-                            <li>✅ Unlimited transactions</li>
-                            <li>✅ Basic reporting</li>
-                            <li>❌ Advanced AI categorization</li>
-                            <li>❌ Multi-user access</li>
-                            <li>❌ Priority support</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Panel: About -->
-                <div id="settings2-panel-about" class="settings2-panel" style="display: none;">
-                    <h2>ℹ️ About RoboLedgers</h2>
-                    <div class="settings2-card">
-                        <div class="settings2-logo">
-                            <h1
-                                style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin: 0;">
-                                ROBOLEDGERS</h1>
-                        </div>
-                        <p style="font-size: 1.1rem; color: var(--text-secondary); margin: 1rem 0;">THE ROBUST,
-                            AI-DRIVEN
-                            LEDGER FOR MODERN BUSINESS.</p>
-                        <div class="settings2-version">
-                            <strong>Current System Version:</strong> <span class="version-badge">v118</span>
-                        </div>
-                    </div>
-                    <div class="settings2-card">
-                        <h3>System Information</h3>
-                        <table class="settings2-info-table">
-                            <tr>
-                                <td>Environment:</td>
-                                <td><strong>DEV</strong></td>
-                            </tr>
-                            <tr>
-                                <td>Protocol:</td>
-                                <td><strong>file://</strong></td>
-                            </tr>
-                            <tr>
-                                <td>Router:</td>
-                                <td><strong>v1</strong></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1739,7 +1585,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="settings2.js"></script>
     <script src="drill-down-grid-fixed.js?v=1.29"></script>
 </body>
 

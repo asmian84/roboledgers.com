@@ -110,8 +110,6 @@ window.App = {
 
 
             // Restore Last Active Section
-            // DISABLED: Router now controls navigation
-            /*
             const lastSection = localStorage.getItem('activeSection');
             if (lastSection) {
                 console.log(`🔄 Restoring active section: ${lastSection}`);
@@ -119,8 +117,6 @@ window.App = {
             } else {
                 this.showSection('home');
             }
-            */
-
 
             // Restore Active Modal (Chart of Accounts or Vendor Dictionary)
             const activeModal = localStorage.getItem('activeModal');
@@ -1022,9 +1018,7 @@ window.App = {
         });
         */
 
-        // Settings button - NOW HANDLED BY ROUTER (data-route="/settings")
-        // Removed old modal listener - router intercepts data-route clicks
-        /*
+        // Settings button
         const settingsBtn = document.getElementById('settingsBtn');
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
@@ -1034,7 +1028,6 @@ window.App = {
                 }
             });
         }
-        */
 
         // Features button
         const featuresBtn = document.getElementById('featuresBtn');
@@ -2426,16 +2419,13 @@ if (dashboardBtn) {
     });
 }
 
-// Settings Button from Header/Sidebar - NOW HANDLED BY ROUTER (data-route="/settings")
-// Removed old section navigation - router intercepts data-route clicks
-/*
+// Settings Button from Header/Sidebar
 const settingsBtn = document.getElementById('settingsBtn');
 if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
         App.showSection('settings');
     });
 }
-*/
 
 // Reconciliation Button
 const reconBtn = document.getElementById('navReconciliation');
@@ -2753,123 +2743,5 @@ console.log('✅ App.js loaded and event listeners set up');
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof App !== 'undefined' && App.initialize) {
         App.initialize();
-    }
-
-    // ========================================
-    // ROUTES REGISTRATION
-    // ========================================
-
-    if (typeof AppRouter !== 'undefined') {
-        console.log('🧭 Registering routes...');
-
-        // Route: /transactions (default home)
-        AppRouter.register('/transactions', () => {
-            console.log('📊 Loading Transactions page');
-            // Show existing transactions section
-            const transactionsSection = document.querySelector('[data-target="reviewSection"]') ||
-                document.getElementById('reviewSection');
-            if (transactionsSection) {
-                // Use existing section navigation
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                transactionsSection.classList.add('active');
-            }
-        });
-
-        // Route: /accounts - Chart of Accounts
-        AppRouter.register('/accounts', () => {
-            console.log('📋 Loading Chart of Accounts page');
-
-            // Show accounts page
-            document.querySelectorAll('[data-page]').forEach(page => {
-                page.style.display = 'none';
-            });
-
-            const accountsPage = document.getElementById('accountsPage');
-            if (accountsPage) {
-                accountsPage.style.display = 'block';
-            }
-
-            // Initialize ChartManager
-            if (window.ChartManager) {
-                ChartManager.showPage();
-            }
-        });
-
-        // Route: /vendors - Vendor Dictionary (VDM/VIG combined)
-        AppRouter.register('/vendors', () => {
-            console.log('🏢 Loading Vendors page');
-
-            // Show vendors page
-            document.querySelectorAll('[data-page]').forEach(page => {
-                page.style.display = 'none';
-            });
-
-            const vendorsPage = document.getElementById('vendorsPage');
-            if (vendorsPage) {
-                vendorsPage.style.display = 'block';
-            }
-
-            // Initialize VendorSummaryGrid
-            if (window.VendorSummaryGrid) {
-                VendorSummaryGrid.initialize('vendorGrid');
-            }
-        });
-
-        // Route: /vendors/:vendorId - Vendor Detail (Drill Down)
-        AppRouter.register('/vendors/:vendorId', (params) => {
-            console.log('🔍 Loading Vendor Detail page', params);
-
-            // Show vendor detail page
-            document.querySelectorAll('[data-page]').forEach(page => {
-                page.style.display = 'none';
-            });
-
-            const vendorDetailPage = document.getElementById('vendorDetailPage');
-            if (vendorDetailPage) {
-                vendorDetailPage.style.display = 'block';
-            }
-
-            // Update title with vendor name
-            const title = document.getElementById('vendorDetailTitle');
-            if (title && params.vendorId) {
-                const vendorName = decodeURIComponent(params.vendorId);
-                title.textContent = `${vendorName} - Transactions`;
-            }
-
-            // Initialize DrillDownGrid
-            if (window.DrillDownGrid && params.vendorId) {
-                const vendorName = decodeURIComponent(params.vendorId);
-                DrillDownGrid.openForVendor(vendorName, 'drillDownGrid');
-            }
-        });
-
-        // Route: /bank-accounts - Bank Accounts Management
-        AppRouter.register('/bank-accounts', () => {
-            console.log('🏦 Loading Bank Accounts page');
-
-            // Show bank accounts page
-            document.querySelectorAll('[data-page]').forEach(page => {
-                page.style.display = 'none';
-            });
-
-            const bankAccountsPage = document.getElementById('bankAccountsPage');
-            if (bankAccountsPage) {
-                bankAccountsPage.style.display = 'block';
-            }
-
-            // Initialize AccountUI
-            if (window.AccountUI) {
-                AccountUI.renderList('bankAccountsList');
-            }
-        });
-
-        // Route: /settings - NOW HANDLED BY settings2.js
-        // (Old handler removed - see settings2.js for new implementation)
-
-        // Start router
-        console.log('🚀 Starting router...');
-        AppRouter.start();
-    } else {
-        console.error('❌ AppRouter not found! Make sure router.js is loaded.');
     }
 });
