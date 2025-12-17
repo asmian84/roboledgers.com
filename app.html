@@ -29,6 +29,101 @@
     <link rel="stylesheet" href="modal-base.css?v=1">
     <link rel="stylesheet" href="ticker.css?v=6">
     <link rel="stylesheet" href="dashboard.css?v=1">
+
+    <!-- Routes System -->
+    <script src="router.js?v=1"></script>
+
+    <style>
+        /* ========================================
+       BREADCRUMB NAVIGATION
+       ======================================== */
+
+        .breadcrumb-container {
+            padding: 1rem 2rem;
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            min-height: 48px;
+        }
+
+        .breadcrumb-link {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .breadcrumb-link:hover {
+            color: #2563eb;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .breadcrumb-separator {
+            color: #cbd5e1;
+            font-weight: 300;
+            user-select: none;
+        }
+
+        .breadcrumb-current {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        /* Responsive breadcrumbs */
+        @media (max-width: 767px) {
+            .breadcrumb-container {
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Page system */
+        .app-page {
+            min-height: calc(100vh - 120px);
+            background: #ffffff;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .app-page.active {
+            display: block;
+        }
+
+        .page-header {
+            padding: 1.5rem 2rem;
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-icon {
+            font-size: 1.5rem;
+        }
+
+        .page-content {
+            padding: 2rem;
+        }
+    </style>
 </head>
 
 <body data-theme="arctic-dawn">
@@ -127,6 +222,11 @@
                 <button id="mobileMenuBtn" class="icon-btn"><i class="fas fa-bars"></i></button>
                 <h2 id="pageTitle">Home</h2>
             </header>
+
+            <!-- Breadcrumb Navigation (global) -->
+            <div id="breadcrumbNav" class="breadcrumb-container" style="display: none;">
+                <!-- Breadcrumbs will be injected here by router -->
+            </div>
 
             <!-- Step 0.1: Home Section (Welcome) -->
             <section id="homeSection" class="section active">
