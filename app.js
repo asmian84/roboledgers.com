@@ -2882,12 +2882,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 settingsSection.style.display = 'block';
                 settingsSection.style.visibility = 'visible';
                 settingsSection.style.opacity = '1';
-
-                // Hide the main content area if it exists
-                const mainContent = document.querySelector('.main-content, #mainContent');
-                if (mainContent) {
-                    mainContent.style.display = 'none';
-                }
             } else {
                 console.error('❌ settingsSection not found!');
             }
