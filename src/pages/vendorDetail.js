@@ -207,7 +207,7 @@ function renderTabContent(tab) {
 // VENDOR DETAIL PAGE LOGIC
 // ==================================================
 
-let currentVendor = null;
+// Vendor detail state (module scope below) = null;
 let vendorTransactions = [];
 let vendorTransactionsGrid = null;
 

@@ -81,7 +81,7 @@ window.renderVendors = function () {
 
 let vendorsGrid = null;
 let allVendors = [];
-let allTransactions = [];
+// Vendors page transactions (moved to module scope below) = [];
 
 async function initVendorsPage() {
   console.log('🚀 Initializing Vendors Page...');
