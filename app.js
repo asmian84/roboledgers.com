@@ -2868,21 +2868,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 page.style.display = 'none';
             });
 
-            // Hide all old sections
+            // Hide all old sections first
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
+                section.style.display = 'none';
             });
 
             // Show settings section directly (it's already a full page)
             const settingsSection = document.getElementById('settingsSection');
             if (settingsSection) {
+                console.log('✅ Found settingsSection, making it visible');
                 settingsSection.classList.add('active');
                 settingsSection.style.display = 'block';
+                settingsSection.style.visibility = 'visible';
+                settingsSection.style.opacity = '1';
+
+                // Hide the main content area if it exists
+                const mainContent = document.querySelector('.main-content, #mainContent');
+                if (mainContent) {
+                    mainContent.style.display = 'none';
+                }
+            } else {
+                console.error('❌ settingsSection not found!');
             }
 
             // Show breadcrumb
             const breadcrumb = document.getElementById('breadcrumbNav');
-            if (breadcrumb) breadcrumb.style.display = 'flex';
+            if (breadcrumb) {
+                breadcrumb.style.display = 'flex';
+                console.log('✅ Breadcrumb shown');
+            }
         });
 
         // Start router
