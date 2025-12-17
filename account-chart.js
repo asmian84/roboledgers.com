@@ -356,9 +356,9 @@ window.ChartManager = {
                 modalContent.style.width = savedSize.width;
                 modalContent.style.height = savedSize.height || '70vh';
             } else {
-                // Default size
-                modalContent.style.width = '900px';
+                // Default height only - width will be auto-sized after grid loads
                 modalContent.style.height = '70vh';
+                // Width will be set by fitModalToGrid() after autoSizeAllColumns()
             }
 
             // Setup resize listener
@@ -435,6 +435,46 @@ window.ChartManager = {
             clearTimeout(this.saveTimer);
             this.saveTimer = null;
         }
+    },
+
+    // ⚡ NEW: Auto-size columns to fit content (no wrapping)
+    autoSizeAllColumns() {
+        if (!this.gridApi) return;
+
+        // Get all column IDs
+        const allColumnIds = [];
+        this.gridApi.getColumns().forEach(column => {
+            allColumnIds.push(column.getColId());
+        });
+
+        // Auto-size all columns based on content
+        this.gridApi.autoSizeColumns(allColumnIds, false);
+
+        // Fit modal to grid width
+        setTimeout(() => this.fitModalToGrid(), 100);
+    },
+
+    // ⚡ NEW: Fit modal width to grid content
+    fitModalToGrid() {
+        if (!this.gridApi || !this.modal) return;
+
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (!modalContent) return;
+
+        // Calculate total grid width
+        let totalWidth = 0;
+        this.gridApi.getColumns().forEach(col => {
+            totalWidth += col.getActualWidth();
+        });
+
+        // Add padding/scrollbar space (80px)
+        const optimalWidth = totalWidth + 80;
+
+        // Apply min/max constraints
+        const finalWidth = Math.max(600, Math.min(optimalWidth, window.innerWidth * 0.95));
+
+        modalContent.style.width = `${finalWidth}px`;
+        console.log(`📐 Auto-sized Chart of Accounts modal: ${finalWidth}px (grid: ${totalWidth}px)`);
     },
 
     renderList() {
@@ -544,8 +584,8 @@ window.ChartManager = {
 
             onGridReady: (params) => {
                 this.gridApi = params.api;
-                // Initial fit
-                params.api.sizeColumnsToFit();
+                // Auto-size columns to content (eliminates text wrapping)
+                this.autoSizeAllColumns();
             },
 
 
