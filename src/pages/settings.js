@@ -335,6 +335,8 @@ function renderDataPanel() {
 // ==================================================
 
 function renderIntegrationsPanel() {
+  const supabaseUrl = 'https://rpwbfaahsbkfhtexaxuv.supabase.co';
+
   return `
     <div class="settings-panel">
       <h2>Integrations</h2>
@@ -356,15 +358,17 @@ function renderIntegrationsPanel() {
           
           <div class="form-group">
             <label>Supabase URL</label>
-            <input type="url" id="supabase-url" placeholder="https://your-project.supabase.co">
+            <input type="url" id="supabase-url" value="${supabaseUrl}" readonly>
+            <small style="color: var(--text-secondary);">✓ Your project URL is configured</small>
           </div>
           
           <div class="form-group">
-            <label>API Key</label>
+            <label>API Key (anon/public)</label>
             <input type="password" id="supabase-key" placeholder="Enter your anon key">
+            <small style="color: var(--text-secondary);">Find this in your Supabase project settings</small>
           </div>
           
-          <button class="btn-primary" onclick="connectSupabase()">Connect Supabase</button>
+          <button class="btn-primary" onclick="connectSupabase()">🔗 Connect to Cloud</button>
         </div>
       </div>
       
