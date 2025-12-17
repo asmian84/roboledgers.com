@@ -1,0 +1,142 @@
+<!-- Page: Settings2 (Route-Based - Clean Implementation) -->
+<div id="settings2Page" data-page="settings2" class="app-page" style="display: none;">
+    <div class="settings2-container">
+        <!-- Left Sidebar Navigation -->
+        <nav class="settings2-sidebar">
+            <h3 class="settings2-sidebar-title">⚙️ Settings</h3>
+            <a href="#/settings2" data-route="/settings2" class="settings2-nav-item active" data-panel="general">
+                <i class="fas fa-building"></i> General
+            </a>
+            <a href="#/settings2/appearance" data-route="/settings2/appearance" class="settings2-nav-item"
+                data-panel="appearance">
+                <i class="fas fa-paint-brush"></i> Appearance
+            </a>
+            <a href="#/settings2/data" data-route="/settings2/data" class="settings2-nav-item" data-panel="data">
+                <i class="fas fa-database"></i> Data & Files
+            </a>
+            <a href="#/settings2/subscription" data-route="/settings2/subscription" class="settings2-nav-item"
+                data-panel="subscription">
+                <i class="fas fa-credit-card"></i> Subscription
+            </a>
+            <a href="#/settings2/about" data-route="/settings2/about" class="settings2-nav-item" data-panel="about">
+                <i class="fas fa-info-circle"></i> About
+            </a>
+        </nav>
+
+        <!-- Right Content Area -->
+        <div class="settings2-content">
+            <!-- Panel: General -->
+            <div id="settings2-panel-general" class="settings2-panel">
+                <h2>🏢 Company Information</h2>
+                <div class="settings2-card">
+                    <label class="settings2-label">Company Name</label>
+                    <input type="text" id="companyName2" class="settings2-input"
+                        placeholder="e.g. My Fast Company Ltd.">
+                    <small class="settings2-help">Displayed on reports and transaction reviews</small>
+                </div>
+                <div class="settings2-card">
+                    <label class="settings2-label">Fiscal Year End</label>
+                    <input type="date" id="fiscalYear2" class="settings2-input">
+                    <small class="settings2-help">Your company's fiscal year end date</small>
+                </div>
+            </div>
+
+            <!-- Panel: Appearance -->
+            <div id="settings2-panel-appearance" class="settings2-panel" style="display: none;">
+                <h2>🎨 Appearance</h2>
+                <div class="settings2-card">
+                    <label class="settings2-label">Theme</label>
+                    <select id="theme2" class="settings2-input">
+                        <option value="cyber-night">Cyber Night (Default)</option>
+                        <option value="arctic-dawn">Arctic Dawn</option>
+                        <option value="neon-forest">Neon Forest</option>
+                        <option value="royal-amethyst">Royal Amethyst</option>
+                        <option value="sunset-horizon">Sunset Horizon</option>
+                    </select>
+                    <small class="settings2-help">Choose your preferred color scheme</small>
+                </div>
+                <div class="settings2-card">
+                    <label class="settings2-label">Font Size</label>
+                    <input type="range" id="fontSize2" min="80" max="120" value="100" step="5" class="settings2-slider">
+                    <div id="fontSizeValue2" class="settings2-slider-value">100%</div>
+                    <small class="settings2-help">Adjust text size throughout the app</small>
+                </div>
+            </div>
+
+            <!-- Panel: Data & Files -->
+            <div id="settings2-panel-data" class="settings2-panel" style="display: none;">
+                <h2>💾 Data Management</h2>
+                <div class="settings2-card">
+                    <h3>Export Data</h3>
+                    <button id="exportData2" class="btn-primary">📥 Download Backup (JSON)</button>
+                    <small class="settings2-help">Download all your data as a JSON file</small>
+                </div>
+                <div class="settings2-card">
+                    <h3>Import Data</h3>
+                    <input type="file" id="importData2" accept=".json" class="settings2-file-input">
+                    <small class="settings2-help">Restore from a previous backup file</small>
+                </div>
+                <div class="settings2-card">
+                    <h3>Clear All Data</h3>
+                    <button id="clearData2" class="btn-danger">🗑️ Delete Everything</button>
+                    <small class="settings2-help">⚠️ Warning: This action cannot be undone!</small>
+                </div>
+            </div>
+
+            <!-- Panel: Subscription -->
+            <div id="settings2-panel-subscription" class="settings2-panel" style="display: none;">
+                <h2>💳 Subscription & Billing</h2>
+                <div class="settings2-card">
+                    <h3>Current Plan</h3>
+                    <div class="settings2-plan-badge">Free Plan</div>
+                    <p>You're currently on the free plan with basic features.</p>
+                    <button class="btn-primary">⬆️ Upgrade to Pro</button>
+                </div>
+                <div class="settings2-card">
+                    <h3>Features</h3>
+                    <ul class="settings2-features">
+                        <li>✅ Unlimited transactions</li>
+                        <li>✅ Basic reporting</li>
+                        <li>❌ Advanced AI categorization</li>
+                        <li>❌ Multi-user access</li>
+                        <li>❌ Priority support</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Panel: About -->
+            <div id="settings2-panel-about" class="settings2-panel" style="display: none;">
+                <h2>ℹ️ About RoboLedgers</h2>
+                <div class="settings2-card">
+                    <div class="settings2-logo">
+                        <h1
+                            style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin: 0;">
+                            ROBOLEDGERS</h1>
+                    </div>
+                    <p style="font-size: 1.1rem; color: var(--text-secondary); margin: 1rem 0;">THE ROBUST, AI-DRIVEN
+                        LEDGER FOR MODERN BUSINESS.</p>
+                    <div class="settings2-version">
+                        <strong>Current System Version:</strong> <span class="version-badge">v118</span>
+                    </div>
+                </div>
+                <div class="settings2-card">
+                    <h3>System Information</h3>
+                    <table class="settings2-info-table">
+                        <tr>
+                            <td>Environment:</td>
+                            <td><strong>DEV</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Protocol:</td>
+                            <td><strong>file://</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Router:</td>
+                            <td><strong>v1</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

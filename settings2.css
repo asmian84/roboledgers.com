@@ -1,0 +1,227 @@
+/* ========================================
+   SETTINGS2 - ROUTE-BASED IMPLEMENTATION
+   Clean, full-page settings without modal styling
+   ======================================== */
+
+/* Container */
+.settings2-container {
+    display: flex;
+    gap: 2rem;
+    height: 100%;
+    width: 100%;
+    padding: 2rem;
+}
+
+/* Sidebar Navigation */
+.settings2-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.settings2-sidebar-title {
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.settings2-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.settings2-nav-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.settings2-nav-item.active {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.settings2-nav-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Content Area */
+.settings2-content {
+    flex: 1;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+}
+
+.settings2-panel {
+    max-width: 800px;
+}
+
+.settings2-panel h2 {
+    font-size: 1.75rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+}
+
+.settings2-panel h3 {
+    font-size: 1.25rem;
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+}
+
+/* Cards */
+.settings2-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings2-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.settings2-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.settings2-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.settings2-help {
+    display: block;
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+}
+
+/* Slider */
+.settings2-slider {
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+.settings2-slider-value {
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0.5rem 0;
+}
+
+/* File Input */
+.settings2-file-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+/* Plan Badge */
+.settings2-plan-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--success-color);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    margin: 0.5rem 0;
+}
+
+/* Features List */
+.settings2-features {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.settings2-features li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+}
+
+/* Version Badge */
+.version-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+/* Info Table */
+.settings2-info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.settings2-info-table td {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings2-info-table td:first-child {
+    color: var(--text-tertiary);
+    width: 40%;
+}
+
+.settings2-info-table td:last-child {
+    color: var(--text-primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .settings2-container {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .settings2-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 1rem;
+    }
+
+    .settings2-sidebar-title {
+        display: none;
+    }
+
+    .settings2-nav-item {
+        white-space: nowrap;
+    }
+}
