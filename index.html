@@ -417,23 +417,27 @@
 
     // Settings routes
     router.register('/settings', () => {
-      document.getElementById('app').innerHTML = renderSettings({ tab: 'general' });
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'general' });
     });
 
     router.register('/settings/appearance', () => {
-      document.getElementById('app').innerHTML = renderSettings({ tab: 'appearance' });
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'appearance' });
     });
 
     router.register('/settings/data', () => {
-      document.getElementById('app').innerHTML = renderSettings({ tab: 'data' });
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'data' });
+    });
+
+    router.register('/settings/integrations', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'integrations' });
     });
 
     router.register('/settings/subscription', () => {
-      document.getElementById('app').innerHTML = renderSettings({ tab: 'subscription' });
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'subscription' });
     });
 
     router.register('/settings/about', () => {
-      document.getElementById('app').innerHTML = renderSettings({ tab: 'about' });
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'about' });
     });
 
     // Admin routes
