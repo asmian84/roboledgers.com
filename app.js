@@ -110,6 +110,8 @@ window.App = {
 
 
             // Restore Last Active Section
+            // DISABLED: Router now controls navigation
+            /*
             const lastSection = localStorage.getItem('activeSection');
             if (lastSection) {
                 console.log(`🔄 Restoring active section: ${lastSection}`);
@@ -117,6 +119,8 @@ window.App = {
             } else {
                 this.showSection('home');
             }
+            */
+
 
             // Restore Active Modal (Chart of Accounts or Vendor Dictionary)
             const activeModal = localStorage.getItem('activeModal');
