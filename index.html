@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoBookkeeping v3.0</title>
+  <link rel="stylesheet" href="src/styles/styles.css">
+</head>
+<body>
+  
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h1 class="logo">AutoBook<span>v3</span></h1>
+      <button id="sidebar-close" class="sidebar-close" aria-label="Close sidebar">
+        <span>✕</span>
+      </button>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a href="#/" class="nav-item active" data-route="/">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#/transactions" class="nav-item" data-route="/transactions">
+        <span class="nav-icon">💳</span>
+        <span class="nav-label">Transactions</span>
+      </a>
+      <a href="#/vendors" class="nav-item" data-route="/vendors">
+        <span class="nav-icon">🏢</span>
+        <span class="nav-label">Vendors</span>
+      </a>
+      <a href="#/rules" class="nav-item" data-route="/rules">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Rules</span>
+      </a>
+      <a href="#/reports" class="nav-item" data-route="/reports">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Reports</span>
+      </a>
+      <a href="#/settings" class="nav-item" data-route="/settings">
+        <span class="nav-icon">🔧</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <span class="user-avatar">👤</span>
+        <span class="user-name">User</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Hamburger -->
+  <button id="hamburger" class="hamburger" aria-label="Open menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- Breadcrumb Bar -->
+    <div id="breadcrumb" class="breadcrumb">
+      <a href="#/" class="breadcrumb-item">Home</a>
+    </div>
+    
+    <!-- Page Content (Router injects here) -->
+    <div id="app" class="app-container">
+      <!-- Route content will be injected here -->
+      <div class="page loading">
+        <p>Loading...</p>
+      </div>
+    </div>
+    
+  </main>
+
+  <!-- Auth Modal (only modal allowed) -->
+  <div id="auth-modal" class="auth-modal" style="display: none;">
+    <div class="auth-modal-content">
+      <h2>Authentication Required</h2>
+      <p>Please log in to continue.</p>
+      <button class="btn-primary">Log In</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="src/core/state.js"></script>
+  <script src="src/core/router.js"></script>
+  <script>
+    // Initialize application state
+    const appState = createStore({
+      currentUser: null,
+      theme: 'light',
+      sidebarOpen: false
+    }, {
+      storageKey: 'autobook_v3_state',
+      persist: true
+    });
+
+    // Update breadcrumb on route change
+    router.onChange((route) => {
+      updateBreadcrumb(route.path);
+      updateActiveNav(route.path);
+    });
+
+    // Breadcrumb updater
+    function updateBreadcrumb(path) {
+      const breadcrumb = document.getElementById('breadcrumb');
+      const parts = path.split('/').filter(Boolean);
+      
+      let html = '<a href="#/" class="breadcrumb-item">Home</a>';
+      let currentPath = '';
+      
+      parts.forEach((part, index) => {
+        currentPath += '/' + part;
+        const isLast = index === parts.length - 1;
+        const label = part.charAt(0).toUpperCase() + part.slice(1);
+        
+        if (isLast) {
+          html += `<span class="breadcrumb-separator">›</span><span class="breadcrumb-item active">${label}</span>`;
+        } else {
+          html += `<span class="breadcrumb-separator">›</span><a href="#${currentPath}" class="breadcrumb-item">${label}</a>`;
+        }
+      });
+      
+      breadcrumb.innerHTML = html;
+    }
+
+    // Active nav updater
+    function updateActiveNav(path) {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        const route = item.getAttribute('data-route');
+        if (route === path || (path !== '/' && path.startsWith(route) && route !== '/')) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    // Mobile sidebar toggle
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarClose = document.getElementById('sidebar-close');
+    const mainContent = document.querySelector('.main-content');
+
+    hamburger?.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      appState.setState({ sidebarOpen: true });
+    });
+
+    sidebarClose?.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      appState.setState({ sidebarOpen: false });
+    });
+
+    // Close sidebar when clicking outside on mobile
+    mainContent?.addEventListener('click', () => {
+      if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        appState.setState({ sidebarOpen: false });
+      }
+    });
+
+    // Register default routes
+    router.register('/', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Dashboard</h1>
+          <p>Welcome to AutoBookkeeping v3.0</p>
+          <div class="card">
+            <h2>Quick Stats</h2>
+            <p>No data yet. Import transactions to get started.</p>
+          </div>
+        </div>
+      `;
+    });
+
+    router.register('/transactions', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Transactions</h1>
+          <p>Transaction list will appear here.</p>
+        </div>
+      `;
+    });
+
+    router.register('/vendors', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Vendors</h1>
+          <p>Vendor management will appear here.</p>
+        </div>
+      `;
+    });
+
+    router.register('/vendors/:vendorId', (route) => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Vendor Details</h1>
+          <p>Viewing vendor: <strong>${route.params.vendorId}</strong></p>
+          <button onclick="router.navigate('/vendors')">Back to Vendors</button>
+        </div>
+      `;
+    });
+
+    router.register('/rules', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Rules</h1>
+          <p>Automation rules will appear here.</p>
+        </div>
+      `;
+    });
+
+    router.register('/reports', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Reports</h1>
+          <p>Financial reports will appear here.</p>
+        </div>
+      `;
+    });
+
+    router.register('/settings', () => {
+      document.getElementById('app').innerHTML = `
+        <div class="page">
+          <h1>Settings</h1>
+          <p>Application settings will appear here.</p>
+        </div>
+      `;
+    });
+
+    console.log('✅ AutoBookkeeping v3.0 initialized');
+  </script>
+  
+</body>
+</html>
