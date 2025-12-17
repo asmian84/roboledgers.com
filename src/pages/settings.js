@@ -624,6 +624,35 @@ function connectSupabase() {
     return;
   }
 
-  // TODO: Implement actual Supabase connection
-  alert('Supabase connection coming soon!');
+  // Show loading state
+  const button = event.target;
+  const originalText = button.textContent;
+  button.textContent = 'Connecting...';
+  button.disabled = true;
+
+  // Connect to Supabase
+  window.SupabaseSync.connect(key).then(result => {
+    button.disabled = false;
+
+    if (result.success) {
+      button.textContent = '✓ Connected!';
+
+      // Update status badge
+      const statusBadge = document.querySelector('.integration-status');
+      if (statusBadge) {
+        statusBadge.textContent = 'Connected';
+        statusBadge.classList.remove('disconnected');
+        statusBadge.classList.add('connected');
+      }
+
+      alert('✅ ' + result.message + '\n\nYou can now sync your data to the cloud!');
+
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    } else {
+      button.textContent = originalText;
+      alert('❌ ' + result.message);
+    }
+  });
 }
