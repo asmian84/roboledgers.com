@@ -129,6 +129,7 @@
   <script src="src/pages/accounts.js"></script>
   <script src="src/pages/accountDetail.js"></script>
   <script src="src/pages/reports.js"></script>
+  <script src="src/pages/reconciliation.js"></script>
   <script src="src/pages/settings.js"></script>
 
   <!-- Vendor Pages -->
@@ -392,6 +393,11 @@
     // Reports - Custom Builder
     router.register('/reports/custom', () => {
       document.getElementById('app').innerHTML = renderReports({ report: 'custom' });
+    });
+
+    // Bank Reconciliation
+    router.register('/reconciliation', () => {
+      document.getElementById('app').innerHTML = renderReconciliation();
     });
 
     // Settings routes
