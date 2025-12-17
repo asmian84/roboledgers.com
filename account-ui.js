@@ -1,5 +1,7 @@
 // Account UI Manager for Multi-Account Support
 const AccountUI = {
+    resizeObserver: null, // ⚡ NEW: For resize persistence
+    saveTimer: null,
     // Initialize the UI modules
     init() {
         this.renderHeaderControl(); // Add the dropdown/button to header
@@ -64,6 +66,8 @@ const AccountUI = {
 
         if (closeManageModal) {
             closeManageModal.addEventListener('click', () => {
+                // \u26a1 NEW: Cleanup resize observer
+                this.cleanup();
                 manageModal.classList.remove('active');
             });
         }
@@ -71,6 +75,8 @@ const AccountUI = {
         if (manageModal) {
             manageModal.addEventListener('click', (e) => {
                 if (e.target === manageModal) {
+                    // \u26a1 NEW: Cleanup resize observer
+                    this.cleanup();
                     manageModal.classList.remove('active');
                 }
             });
@@ -288,24 +294,78 @@ const AccountUI = {
             this.renderAccountsList();
             modal.classList.add('active');
 
-            // 🔧 Standard Modal Logic: Snug & Resizable
+            // ⚡ NEW: Restore saved size or use defaults
             const modalContent = modal.querySelector('.modal-content');
             if (modalContent) {
-                // Remove fixed height from class, allow auto-fit
-                modalContent.style.height = 'auto';
-                modalContent.style.maxHeight = '80vh';
+                const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_BankAccounts);
+                if (savedSize && savedSize.width) {
+                    console.log('💾 Restoring Bank Accounts size:', savedSize);
+                    modalContent.style.width = savedSize.width;
+                    modalContent.style.height = savedSize.height || 'auto';
+                } else {
+                    // Default size
+                    modalContent.style.height = 'auto';
+                    modalContent.style.maxHeight = '80vh';
+                    modalContent.style.width = '600px';
+                }
 
                 // Allow user resizing
                 modalContent.style.resize = 'both';
-                modalContent.style.overflow = 'auto'; // needed for resize to work effectively with content
-
-                // Set snug width (smaller than valid large-modal ~1200px)
-                modalContent.style.width = '600px';
+                modalContent.style.overflow = 'auto';
                 modalContent.style.minWidth = '400px';
                 modalContent.style.minHeight = '300px';
+
+                // Setup resize listener
+                this.setupResizeListener(modal);
             }
         }
         document.getElementById('accountDropdownMenu').style.display = 'none';
+    },
+
+    // ⚡ NEW: Setup resize listener
+    setupResizeListener(modal) {
+        const modalContent = modal.querySelector('.modal-content');
+        if (!modalContent) return;
+
+        // Cleanup old observer if exists
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+
+        this.resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                clearTimeout(this.saveTimer);
+                this.saveTimer = setTimeout(() => {
+                    const w = entry.target.style.width;
+                    const h = entry.target.style.height;
+                    if (w && h && parseInt(w) > 300) {
+                        if (!window.Settings) return;
+                        if (!Settings.current) Settings.current = {};
+
+                        Settings.current.modalSize_BankAccounts = { width: w, height: h };
+                        if (Settings.save) {
+                            Settings.save();
+                            console.log('✅ Saved Bank Accounts size:', w, h);
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        this.resizeObserver.observe(modalContent);
+    },
+
+    // ⚡ NEW: Cleanup method
+    cleanup() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+        if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = null;
+        }
     },
 
     renderAccountsList() {

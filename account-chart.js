@@ -220,6 +220,8 @@ window.ChartManager = {
     modal: null,
     listContainer: null,
     searchOutput: null,
+    resizeObserver: null, // ⚡ NEW: For resize persistence
+    saveTimer: null,
 
     initialize() {
         if (document.getElementById('chartOfAccountsModal')) {
@@ -345,11 +347,22 @@ window.ChartManager = {
         // Show Modal
         this.modal.classList.add('active');
 
-        // VDM PATTERN: Set explicit dimensions
+        // ⚡ NEW: Restore saved size or use defaults
         const modalContent = this.modal.querySelector('.modal-content');
         if (modalContent) {
-            modalContent.style.height = '70vh';
-            modalContent.style.width = '900px';
+            const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_COA);
+            if (savedSize && savedSize.width) {
+                console.log('💾 Restoring Chart of Accounts size:', savedSize);
+                modalContent.style.width = savedSize.width;
+                modalContent.style.height = savedSize.height || '70vh';
+            } else {
+                // Default size
+                modalContent.style.width = '900px';
+                modalContent.style.height = '70vh';
+            }
+
+            // Setup resize listener
+            this.setupResizeListener();
         }
 
         // Wait for modal transition, then render grid
@@ -368,10 +381,59 @@ window.ChartManager = {
             // PERSIST STATE: Forget this modal
             localStorage.removeItem('activeModal');
 
+            // ⚡ NEW: Cleanup resize observer
+            this.cleanup();
+
             this.modal.classList.remove('active');
             setTimeout(() => {
                 this.modal.style.display = 'none';
             }, 300);
+        }
+    },
+
+    // ⚡ NEW: Setup resize listener to save dimensions
+    setupResizeListener() {
+        const modalContent = this.modal.querySelector('.modal-content');
+        if (!modalContent) return;
+
+        // Cleanup old observer if exists
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+
+        this.resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                clearTimeout(this.saveTimer);
+                this.saveTimer = setTimeout(() => {
+                    const w = entry.target.style.width;
+                    const h = entry.target.style.height;
+                    if (w && h && parseInt(w) > 300) {
+                        if (!window.Settings) return;
+                        if (!Settings.current) Settings.current = {};
+
+                        Settings.current.modalSize_COA = { width: w, height: h };
+                        if (Settings.save) {
+                            Settings.save();
+                            console.log('✅ Saved Chart of Accounts size:', w, h);
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        this.resizeObserver.observe(modalContent);
+    },
+
+    // ⚡ NEW: Cleanup method
+    cleanup() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
+        if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = null;
         }
     },
 
