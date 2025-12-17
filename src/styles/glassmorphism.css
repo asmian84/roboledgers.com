@@ -328,4 +328,314 @@ input::placeholder {
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* ============================================
+   UNIVERSAL GLASS APPLICATION
+   ============================================ */
+
+/* Main content wrapper */
+#app,
+.main-content,
+.content-area,
+.page-content {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+}
+
+/* All pages */
+.transactions-page,
+.vendors-page,
+.accounts-page,
+.reports-page,
+.settings-page,
+.reconciliation-page,
+.home-page {
+    background: transparent !important;
+}
+
+/* ============================================
+   STATS CARDS - GLASS
+   ============================================ */
+.stats-cards,
+.stat-card,
+.quick-stats,
+.vendor-stats {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15) !important;
+}
+
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25) !important;
+}
+
+/* ============================================
+   REPORT CARDS - PREMIUM GLASS
+   ============================================ */
+.report-card,
+.report-cards .card,
+.analytics-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 40px rgba(31, 38, 135, 0.2) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.report-card:hover,
+.analytics-card:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    transform: translateY(-6px) scale(1.02) !important;
+    box-shadow: 0 16px 50px rgba(31, 38, 135, 0.3) !important;
+}
+
+/* ============================================
+   TOOLBAR - GLASS
+   ============================================ */
+.toolbar,
+.accounts-toolbar,
+.page-header,
+.header-section {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 14px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* ============================================
+   PANELS & CONTAINERS - GLASS
+   ============================================ */
+.settings-panel,
+.settings-content,
+.panel-content,
+.account-tree-panel,
+.account-detail-panel,
+.reconciliation-panel {
+    background: rgba(255, 255, 255, 0.09) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 18px !important;
+    padding: 24px !important;
+}
+
+/* ============================================
+   FORMS - GLASS INPUTS
+   ============================================ */
+.form-group,
+.form-section {
+    margin-bottom: 20px;
+}
+
+label {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+select,
+textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    font-size: 15px;
+    transition: all 0.3s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
+    outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ============================================
+   TABLES & GRIDS - GLASS
+   ============================================ */
+.report-table,
+.transaction-list,
+.data-table {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+.report-table th,
+.data-table th {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: white !important;
+    font-weight: 600;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.report-table td,
+.data-table td {
+    color: rgba(255, 255, 255, 0.9) !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.report-table tr:hover,
+.data-table tr:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ============================================
+   BREADCRUMBS - GLASS
+   ============================================ */
+.breadcrumb-bar,
+#breadcrumb {
+    background: rgba(30, 41, 59, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.breadcrumb-item {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.breadcrumb-item.active {
+    color: rgba(255, 255, 255, 1) !important;
+    font-weight: 600;
+}
+
+/* ============================================
+   THEME GRID (Settings) - GLASS
+   ============================================ */
+.theme-grid,
+.theme-option {
+    background: rgba(255, 255, 255, 0.09) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+}
+
+.theme-option:hover,
+.theme-option.active {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* ============================================
+   FILTERS PANEL - GLASS
+   ============================================ */
+.filters-panel,
+.filter-section {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 14px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* ============================================
+   TEXT COLORS FOR GLASS BACKGROUND
+   ============================================ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+p,
+span,
+div {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.page-title {
+    color: white !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* ============================================
+   VENDOR DETAIL - GLASS
+   ============================================ */
+.vendor-header,
+.account-header {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+    margin-bottom: 20px !important;
+}
+
+/* ============================================
+   TAB NAVIGATION - GLASS
+   ============================================ */
+.tab-navigation {
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    display: flex;
+    gap: 8px;
+}
+
+.tab-link {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none;
+}
+
+.tab-link:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+.tab-link.active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4)) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+console.log('✨ Universal glassmorphism applied');
 console.log('✨ Glassmorphism UI loaded');
