@@ -30,10 +30,10 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-  /* Layout */
-  --sidebar-width: 260px;
-  --breadcrumb-height: 60px;
-  --spacing-unit: 8px;
+  /* Layout - COMPACT */
+  --sidebar-width: 220px;
+  --breadcrumb-height: 45px;
+  --spacing-unit: 4px;
 
   /* Typography */
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
