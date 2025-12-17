@@ -11,6 +11,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -127,6 +130,12 @@
   <script src="src/pages/accountDetail.js"></script>
   <script src="src/pages/reports.js"></script>
   <script src="src/pages/settings.js"></script>
+
+  <!-- Vendor Pages -->
+  <script src="src/utils/vendorMatcher.js"></script>
+  <script src="src/pages/vendors.js"></script>
+  <script src="src/pages/vendorDetail.js"></script>
+  <script src="src/pages/vendorNew.js"></script>
 
   <!-- Data Layer -->
   <script src="src/data/utils.js"></script>
@@ -315,9 +324,29 @@
       document.getElementById('app').innerHTML = renderVendors();
     });
 
-    // Vendor Detail
+    // New Vendor
+    router.register('/vendors/new', () => {
+      document.getElementById('app').innerHTML = renderVendorNew();
+    });
+
+    // Vendor Detail - Transactions Tab (default)
     router.register('/vendors/:vendorId', (route) => {
-      document.getElementById('app').innerHTML = renderVendorDetail(route.params);
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+    });
+
+    // Vendor Detail - Transactions Tab
+    router.register('/vendors/:vendorId/transactions', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+    });
+
+    // Vendor Detail - Analytics Tab
+    router.register('/vendors/:vendorId/analytics', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'analytics' });
+    });
+
+    // Vendor Detail - Settings Tab
+    router.register('/vendors/:vendorId/settings', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'settings' });
     });
 
     // Accounts (Chart of Accounts)
