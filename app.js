@@ -2863,25 +2863,26 @@ document.addEventListener('DOMContentLoaded', () => {
         AppRouter.register('/settings', () => {
             console.log('⚙️ Loading Settings page');
 
-            // Show settings page
+            // Hide all route pages
             document.querySelectorAll('[data-page]').forEach(page => {
                 page.style.display = 'none';
             });
 
-            const settingsPage = document.getElementById('settingsPage');
-            if (settingsPage) {
-                settingsPage.style.display = 'block';
+            // Hide all old sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show settings section directly (it's already a full page)
+            const settingsSection = document.getElementById('settingsSection');
+            if (settingsSection) {
+                settingsSection.classList.add('active');
+                settingsSection.style.display = 'block';
             }
 
-            // Move existing settings section into the page
-            const settingsSection = document.getElementById('settingsSection');
-            const settingsContent = document.getElementById('settingsPageContent');
-            if (settingsSection && settingsContent) {
-                // Move settings content into page
-                settingsContent.innerHTML = settingsSection.innerHTML;
-                // Hide old section
-                settingsSection.style.display = 'none';
-            }
+            // Show breadcrumb
+            const breadcrumb = document.getElementById('breadcrumbNav');
+            if (breadcrumb) breadcrumb.style.display = 'flex';
         });
 
         // Start router
