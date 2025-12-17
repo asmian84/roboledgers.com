@@ -5,6 +5,11 @@ window.TransactionGrid = {
     transactions: [],
     refPrefix: '',
 
+    // ⚡ FIX: Queue system to prevent race conditions
+    updateQueue: [],
+    isProcessing: false,
+    queueTimer: null,
+
     initialize(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return; // Safety check
@@ -680,12 +685,63 @@ window.TransactionGrid = {
         return this.transactions;
     },
 
+    // ⚡ FIX: Queue-based update to prevent race conditions
     updateTransaction(transactionId, updates) {
         const transaction = this.transactions.find(t => t.id === transactionId);
         if (transaction) {
             Object.assign(transaction, updates);
-            this.gridApi.applyTransaction({ update: [transaction] });
+            // Add to queue instead of immediate update
+            this.queueTransactionUpdate(transaction);
             Storage.saveTransactions(this.transactions);
+        }
+    },
+
+    // ⚡ NEW: Queue system with debouncing
+    queueTransactionUpdate(transaction) {
+        // Add or update transaction in queue
+        const existingIndex = this.updateQueue.findIndex(t => t.id === transaction.id);
+        if (existingIndex >= 0) {
+            this.updateQueue[existingIndex] = transaction;
+        } else {
+            this.updateQueue.push(transaction);
+        }
+
+        // Debounce: wait 10ms for more updates before processing
+        clearTimeout(this.queueTimer);
+        this.queueTimer = setTimeout(() => this.processUpdateQueue(), 10);
+    },
+
+    // ⚡ NEW: Process queued updates in batch
+    async processUpdateQueue() {
+        if (this.isProcessing || this.updateQueue.length === 0 || !this.gridApi) return;
+
+        this.isProcessing = true;
+        const batch = [...this.updateQueue];
+        this.updateQueue = [];
+
+        try {
+            // Batch update to AG Grid
+            const res = this.gridApi.applyTransaction({ update: batch });
+
+            // Flash updated rows
+            if (res && res.updated && res.updated.length > 0) {
+                this.gridApi.flashCells({
+                    rowNodes: res.updated,
+                    flashDelay: 300,
+                    fadeDelay: 500
+                });
+            }
+
+            console.log(`✅ Batch updated ${batch.length} transaction(s)`);
+        } catch (error) {
+            console.error('❌ Grid update failed:', error);
+        } finally {
+            this.isProcessing = false;
+
+            // Process any queued updates that arrived during processing
+            if (this.updateQueue.length > 0) {
+                setTimeout(() => this.processUpdateQueue(), 50);
+            }
         }
     },
 
