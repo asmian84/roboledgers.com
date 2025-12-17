@@ -1,9 +1,231 @@
 /**
- * Chart of Accounts Page - Hierarchical Tree View
+ * Chart of Accounts - Simple Table Format
+ * Account #, Account Description, Delete
  */
 
 window.renderAccounts = function () {
   return `
+    <div class="accounts-page">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1>💰 Chart of Accounts</h1>
+        <button class="btn-primary" onclick="addNewAccount()">
+          ➕ Add Account
+        </button>
+      </div>
+
+      <!-- Accounts Grid -->
+      <div id="accounts-grid" class="ag-theme-alpine grid-container"></div>
+    </div>
+    
+    <script>
+      if (typeof initAccountsPage === 'function') {
+        setTimeout(initAccountsPage, 100);
+      }
+    </script>
+  `;
+};
+
+// ==================================================
+// CHART OF ACCOUNTS DATA
+// ==================================================
+
+const DEFAULT_CHART_OF_ACCOUNTS = [
+  { accountNumber: '1000', description: 'ASSETS' },
+  { accountNumber: '1100', description: 'Current Assets' },
+  { accountNumber: '1110', description: 'Cash - Checking' },
+  { accountNumber: '1120', description: 'Cash - Savings' },
+  { accountNumber: '1130', description: 'Petty Cash' },
+  { accountNumber: '1200', description: 'Accounts Receivable' },
+  { accountNumber: '1300', description: 'Inventory' },
+  { accountNumber: '1400', description: 'Prepaid Expenses' },
+  { accountNumber: '1500', description: 'Fixed Assets' },
+  { accountNumber: '1510', description: 'Equipment' },
+  { accountNumber: '1520', description: 'Accumulated Depreciation - Equipment' },
+  { accountNumber: '1530', description: 'Furniture & Fixtures' },
+  { accountNumber: '1540', description: 'Vehicles' },
+  { accountNumber: '2000', description: 'LIABILITIES' },
+  { accountNumber: '2100', description: 'Current Liabilities' },
+  { accountNumber: '2110', description: 'Accounts Payable' },
+  { accountNumber: '2120', description: 'Credit Card - Business' },
+  { accountNumber: '2130', description: 'Sales Tax Payable' },
+  { accountNumber: '2140', description: 'Payroll Liabilities' },
+  { accountNumber: '2200', description: 'Long-term Liabilities' },
+  { accountNumber: '2210', description: 'Bank Loan' },
+  { accountNumber: '2220', description: 'Equipment Loan' },
+  { accountNumber: '3000', description: 'EQUITY' },
+  { accountNumber: '3100', description: 'Owner Capital' },
+  { accountNumber: '3200', description: 'Retained Earnings' },
+  { accountNumber: '3300', description: 'Owner Draws' },
+  { accountNumber: '4000', description: 'REVENUE' },
+  { accountNumber: '4100', description: 'Sales Revenue' },
+  { accountNumber: '4200', description: 'Service Revenue' },
+  { accountNumber: '4300', description: 'Interest Income' },
+  { accountNumber: '4400', description: 'Other Income' },
+  { accountNumber: '5000', description: 'EXPENSES' },
+  { accountNumber: '5100', description: 'Operating Expenses' },
+  { accountNumber: '5110', description: 'Rent Expense' },
+  { accountNumber: '5120', description: 'Utilities' },
+  { accountNumber: '5130', description: 'Telephone & Internet' },
+  { accountNumber: '5140', description: 'Office Supplies' },
+  { accountNumber: '5150', description: 'Insurance' },
+  { accountNumber: '5200', description: 'Payroll Expenses' },
+  { accountNumber: '5210', description: 'Salaries & Wages' },
+  { accountNumber: '5220', description: 'Payroll Taxes' },
+  { accountNumber: '5230', description: 'Employee Benefits' },
+  { accountNumber: '5300', description: 'Marketing & Advertising' },
+  { accountNumber: '5400', description: 'Professional Fees' },
+  { accountNumber: '5500', description: 'Depreciation Expense' },
+  { accountNumber: '5600', description: 'Bank Fees & Charges' },
+  { accountNumber: '5700', description: 'Meals & Entertainment' },
+  { accountNumber: '5800', description: 'Travel Expenses' },
+  { accountNumber: '5900', description: 'Miscellaneous Expenses' }
+];
+
+// ==================================================
+// ACCOUNTS PAGE LOGIC
+// ==================================================
+
+let accountsGrid = null;
+let allAccounts = [];
+
+async function initAccountsPage() {
+  console.log('🚀 Initializing Chart of Accounts...');
+
+  // Load accounts from storage or use defaults
+  allAccounts = await loadAccounts();
+
+  // Initialize AG Grid
+  initializeAccountsGrid();
+}
+
+async function loadAccounts() {
+  try {
+    const stored = await window.storage.getAccounts();
+    if (stored && stored.length > 0) {
+      return stored.map(a => ({
+        accountNumber: a.accountNumber || a.id,
+        description: a.name || a.description
+      }));
+    }
+  } catch (error) {
+    console.log('Using default COA');
+  }
+
+  return [...DEFAULT_CHART_OF_ACCOUNTS];
+}
+
+function initializeAccountsGrid() {
+  const gridDiv = document.getElementById('accounts-grid');
+  if (!gridDiv) return;
+
+  const columnDefs = [
+    {
+      headerName: 'Account #',
+      field: 'accountNumber',
+      width: 140,
+      sortable: true,
+      filter: true
+    },
+    {
+      headerName: 'Account Description',
+      field: 'description',
+      flex: 1,
+      sortable: true,
+      filter: true
+    },
+    {
+      headerName: 'Delete',
+      width: 100,
+      cellRenderer: params => {
+        return `<button class="btn-delete" onclick="deleteAccount('${params.data.accountNumber}')">🗑️</button>`;
+      }
+    }
+  ];
+
+  const gridOptions = {
+    columnDefs: columnDefs,
+    rowData: allAccounts,
+    pagination: true,
+    paginationPageSize: 50,
+    defaultColDef: {
+      resizable: true,
+      sortable: true,
+      filter: true
+    }
+  };
+
+  accountsGrid = agGrid.createGrid(gridDiv, gridOptions);
+  console.log(`✅ Loaded ${allAccounts.length} accounts`);
+}
+
+// ==================================================
+// ACCOUNT ACTIONS
+// ==================================================
+
+function addNewAccount() {
+  const accountNumber = prompt('Enter Account Number:');
+  if (!accountNumber) return;
+
+  const description = prompt('Enter Account Description:');
+  if (!description) return;
+
+  // Add to array
+  allAccounts.push({ accountNumber, description });
+
+  // Refresh grid
+  accountsGrid.setGridOption('rowData', allAccounts);
+
+  // Save to storage
+  saveAccounts();
+
+  console.log('✅ Account added');
+}
+
+async function deleteAccount(accountNumber) {
+  if (!confirm(`Delete account ${accountNumber}?`)) return;
+
+  // Remove from array
+  allAccounts = allAccounts.filter(a => a.accountNumber !== accountNumber);
+
+  // Refresh grid
+  accountsGrid.setGridOption('rowData', allAccounts);
+
+  // Save to storage
+  saveAccounts();
+
+  console.log('✅ Account deleted');
+}
+
+async function saveAccounts() {
+  try {
+    // Convert to storage format and save
+    const toSave = allAccounts.map(a => ({
+      id: a.accountNumber,
+      accountNumber: a.accountNumber,
+      name: a.description,
+      type: getAccountType(a.accountNumber),
+      isActive: true,
+      currentBalance: 0
+    }));
+
+    localStorage.setItem('ab3_accounts', JSON.stringify(toSave));
+  } catch (error) {
+    console.error('Failed to save accounts:', error);
+  }
+}
+
+function getAccountType(accountNumber) {
+  const num = parseInt(accountNumber);
+  if (num >= 1000 && num < 2000) return 'Asset';
+  if (num >= 2000 && num < 3000) return 'Liability';
+  if (num >= 3000 && num < 4000) return 'Equity';
+  if (num >= 4000 && num < 5000) return 'Revenue';
+  if (num >= 5000) return 'Expense';
+  return 'Other';
+}
+
+return `
     <div class="accounts-page">
       <!-- Toolbar -->
       <div class="accounts-toolbar">
