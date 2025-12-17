@@ -16,7 +16,12 @@ class Router {
         // Listen to browser back/forward
         window.addEventListener('popstate', (e) => {
             console.log('⬅️ Browser back/forward detected');
-            this.loadRoute(window.location.pathname, false);
+            // For file:// URLs, use hash instead of pathname
+            const isFileProtocol = window.location.protocol === 'file:';
+            const path = isFileProtocol
+                ? (window.location.hash.substring(1) || '/transactions')
+                : window.location.pathname;
+            this.loadRoute(path, false);
         });
 
         // Listen to hash changes (for file:// URLs)
