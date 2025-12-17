@@ -123,6 +123,13 @@
   <script src="src/pages/reports.js"></script>
   <script src="src/pages/settings.js"></script>
 
+  <!-- Data Layer -->
+  <script src="src/data/utils.js"></script>
+  <script src="src/data/models.js"></script>
+  <script src="src/data/storage.js"></script>
+  <script src="src/data/seed.js"></script>
+  <script src="src/data/supabase.js"></script>
+
   <script>
     // Initialize application state
     const appState = createStore({
@@ -133,6 +140,54 @@
       storageKey: 'autobook_v3_state',
       persist: true
     });
+
+    // ====================================
+    // DATA LAYER INITIALIZATION
+    // ====================================
+
+    async function initializeDataLayer() {
+      console.log('💾🌱 Initializing data layer...');
+
+      try {
+        // Check if database needs seeding
+        const transactions = await window.storage.getTransactions();
+
+        if (transactions.length === 0) {
+          console.log('🌱 No data found, seeding database...');
+          const counts = await window.seedDatabase();
+          console.log('✅ Database seeded:', counts);
+        } else {
+          console.log(`✅ Data loaded: ${transactions.length} transactions`);
+        }
+
+        // Load settings
+        const settings = await window.storage.getSettings();
+        console.log('⚙️ Settings loaded:', settings);
+
+        // Apply theme from settings
+        if (settings.theme) {
+          document.documentElement.setAttribute('data-theme', settings.theme);
+          appState.setState({ theme: settings.theme });
+        }
+
+        // Update state with loaded data counts
+        const vendors = await window.storage.getVendors();
+        const accounts = await window.storage.getAccounts();
+
+        console.log(`📊 Loaded: ${vendors.length} vendors, ${accounts.length} accounts`);
+
+      } catch (error) {
+        console.error('❌ Failed to initialize data layer:', error);
+      }
+    }
+
+    // Initialize data when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeDataLayer);
+    } else {
+      // Already loaded
+      setTimeout(initializeDataLayer, 0);
+    }
 
     // Active nav updater
     function updateActiveNav(path) {
