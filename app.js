@@ -2592,32 +2592,46 @@ const settingsVendorDictBtn = document.getElementById('settingsVendorDictBtn');
 const settingsAccountsBtn = document.getElementById('settingsAccountsBtn'); // Fixed ID
 const settingsBankAccountsBtn = document.getElementById('settingsBankAccountsBtn'); // Added correct var
 
+// ⚡ FIX: Helper to ensure VendorManager is loaded
+async function ensureVendorManagerLoaded() {
+    const maxWait = 5000; // 5 second timeout
+    const startTime = Date.now();
+    const checkInterval = 100;
+
+    while (typeof VendorManager === 'undefined') {
+        if (Date.now() - startTime > maxWait) {
+            throw new Error('VendorManager failed to load after 5 seconds');
+        }
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+    }
+
+    console.log('✅ VendorManager loaded successfully');
+    return true;
+}
+
 if (settingsVendorDictBtn) {
     settingsVendorDictBtn.addEventListener('click', async () => {
         console.log('📚 Opening Vendor Dictionary from Settings...');
         localStorage.setItem('activeModal', 'vendorDictionary');
-        if (typeof VendorManager !== 'undefined') {
-            // Initialize Logic Engines
-            if (typeof VendorMatcher !== 'undefined') {
+
+        try {
+            // ⚡ FIX: Wait for VendorManager to load
+            await ensureVendorManagerLoaded();
+
+            // Initialize VendorMatcher if available
+            if (typeof VendorMatcher !== 'undefined' && VendorMatcher.initialize) {
                 await VendorMatcher.initialize();
             }
 
-            // Initialize UI Managers and show modal
+            // Show modal
             if (typeof VendorManager.showModal === 'function') {
                 VendorManager.showModal();
-            } else if (typeof VendorManager.initialize === 'function') {
-                // Fallback if showModal is not directly available, but initialize is
-                VendorManager.initialize();
-                // If initialize doesn't show it, we might need to manually show it,
-                // but the instruction implies showModal handles it.
-                // For now, assume initialize might implicitly show it or we're missing a step.
-                // If showModal is the new standard, this fallback might be removed later.
-                console.warn('VendorManager.showModal() not found, falling back to initialize().');
             } else {
-                console.warn('⚠️ VendorManager not found or missing showModal()/initialize()');
+                console.warn('⚠️ VendorManager.showModal() not found');
             }
-        } else {
-            console.error('VendorManager not found');
+        } catch (error) {
+            console.error('❌ Failed to open Vendor Dictionary:', error);
+            alert('Vendor Dictionary failed to load. Please refresh the page and try again.');
         }
     });
 }
