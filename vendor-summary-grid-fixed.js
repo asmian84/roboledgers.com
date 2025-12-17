@@ -12,6 +12,11 @@ window.VendorSummaryGrid = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
+        // Detect Logic: Check if parent modal is "VDMModal" (Vendor Dictionary)
+        // If so, we are in VDM. If not, we are likely in VIG.
+        const modal = container.closest('.modal');
+        this.isVDM = (modal && modal.id === 'VDMModal');
+
         container.innerHTML = '';
         // 1:1 Match with VIG
         container.style.height = '100%';
@@ -137,7 +142,7 @@ window.VendorSummaryGrid = {
     },
 
     getColumnDefs() {
-        return [
+        const columns = [
             {
                 headerName: 'Vendor Name',
                 field: 'name',
@@ -167,34 +172,67 @@ window.VendorSummaryGrid = {
                     return acc ? `${acc.code} - ${acc.name}` : (p.value || 'SELECT...');
                 },
                 singleClickEdit: true
-            },
-            {
+            }
+        ];
+
+        // ➕ RESTORED: Drill Down (VIG ONLY)
+        // Feature logic: Only show if NOT in Vendor Dictionary
+        if (!this.isVDM) {
+            columns.push({
                 headerName: '',
-                field: 'delete',
-                width: 60,
-                pinned: 'right', // 🔒 Standard "Action Column" behavior
-                lockPosition: true, // Prevent moving
+                width: 50,
+                maxWidth: 50,
+                pinned: 'right',
                 suppressMenu: true,
-                cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+                cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0 },
                 cellRenderer: (params) => {
-                    return `<button class="delete-vendor-btn" data-vendor="${params.data.name}" 
-                    style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;"
-                    onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626';" 
-                    onmouseout="this.style.background='transparent'; this.style.color='#64748b';"
-                    title="Delete Vendor">
-                    <i class="fas fa-trash" style="font-size: 0.85rem;"></i>
-                </button>`;
+                    return `<button class="drill-down-btn" 
+                        style="border:none; background:transparent; cursor:pointer; color:var(--primary-color); padding: 4px; border-radius: 4px; transition: background 0.2s;"
+                        onmouseover="this.style.background='rgba(99, 102, 241, 0.1)'"
+                        onmouseout="this.style.background='transparent'"
+                        title="View Transactions">
+                        <i class="fas fa-search-plus" style="font-size: 0.9rem;"></i>
+                     </button>`;
                 },
                 onCellClicked: (params) => {
-                    if (params.event.target.closest('.delete-vendor-btn')) {
-                        const vendorName = params.data.name;
-                        if (confirm(`Delete vendor "${vendorName}"?\n\nThis will remove the vendor but keep all transactions.`)) {
-                            window.App?.deleteVendor(vendorName);
+                    if (params.event.target.closest('.drill-down-btn')) {
+                        if (window.App && App.openDrillDown) {
+                            App.openDrillDown(params.data.name);
                         }
                     }
                 }
+            });
+        }
+
+        // 🔒 DELETE (Always Last)
+        columns.push({
+            headerName: '',
+            field: 'delete',
+            width: 60,
+            pinned: 'right', // 🔒 Standard "Action Column" behavior
+            lockPosition: true, // Prevent moving
+            suppressMenu: true,
+            cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+            cellRenderer: (params) => {
+                return `<button class="delete-vendor-btn" data-vendor="${params.data.name}" 
+                style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: #64748b; border-radius: 4px; transition: all 0.2s;"
+                onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626';" 
+                onmouseout="this.style.background='transparent'; this.style.color='#64748b';"
+                title="Delete Vendor">
+                <i class="fas fa-trash" style="font-size: 0.85rem;"></i>
+            </button>`;
+            },
+            onCellClicked: (params) => {
+                if (params.event.target.closest('.delete-vendor-btn')) {
+                    const vendorName = params.data.name;
+                    if (confirm(`Delete vendor "${vendorName}"?\n\nThis will remove the vendor but keep all transactions.`)) {
+                        window.App?.deleteVendor(vendorName);
+                    }
+                }
             }
-        ];
+        });
+
+        return columns;
     },
 
     loadVendors(data) {
