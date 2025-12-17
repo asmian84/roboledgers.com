@@ -76,10 +76,11 @@ window.VendorSummaryGrid = {
     restoreOrFit() {
         if (!this.gridApi) return;
 
-        // 1. Check for saved size (VSM Key)
-        const savedSize = (window.Settings && Settings.current && Settings.current.modalSize_VSM);
+        // ⚡ FIX: Use correct Settings key based on modal type
+        const settingsKey = this.isVDM ? 'modalSize_VDM' : 'modalSize_VIG';
+        const savedSize = (window.Settings && Settings.current && Settings.current[settingsKey]);
         if (savedSize && savedSize.width) {
-            console.log('💾 Restoring VIG Size:', savedSize);
+            console.log(`💾 Restoring ${this.isVDM ? 'Vendor Dictionary' : 'Vendors In Grid'} Size:`, savedSize);
             const container = document.getElementById('vendorSummaryGridContainer');
             if (container) {
                 const modalContent = container.closest('.modal-content');
@@ -134,8 +135,13 @@ window.VendorSummaryGrid = {
                             if (!window.Settings) return;
                             if (!Settings.current) Settings.current = {};
 
-                            Settings.current.modalSize_VIG = { width: w, height: h };
-                            if (Settings.save) Settings.save();
+                            // ⚡ FIX: Save to correct key based on modal type
+                            const settingsKey = this.isVDM ? 'modalSize_VDM' : 'modalSize_VIG';
+                            Settings.current[settingsKey] = { width: w, height: h };
+                            if (Settings.save) {
+                                Settings.save();
+                                console.log(`✅ Saved ${this.isVDM ? 'Vendor Dictionary' : 'Vendors In Grid'} size:`, w, h);
+                            }
 
                             this.userHasResized = true;
                         }
