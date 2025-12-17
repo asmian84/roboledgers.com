@@ -2874,6 +2874,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 section.style.display = 'none';
             });
 
+            // CRITICAL: Hide the old settingsModal (we're using settingsSection now)
+            const settingsModal = document.getElementById('settingsModal');
+            if (settingsModal) {
+                settingsModal.classList.remove('active');
+                settingsModal.style.display = 'none';
+                console.log('🚫 Old settingsModal hidden');
+            }
+
             // Show settings section directly (it's already a full page)
             const settingsSection = document.getElementById('settingsSection');
             if (settingsSection) {
