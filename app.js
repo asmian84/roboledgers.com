@@ -2863,48 +2863,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Route: /settings - Settings Panel
-        AppRouter.register('/settings', () => {
-            console.log('⚙️ Loading Settings page');
-
-            // Hide all route pages
-            document.querySelectorAll('[data-page]').forEach(page => {
-                page.style.display = 'none';
-            });
-
-            // Hide all old sections first
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-                section.style.display = 'none';
-            });
-
-            // CRITICAL: Hide the old settingsModal (we're using settingsSection now)
-            const settingsModal = document.getElementById('settingsModal');
-            if (settingsModal) {
-                settingsModal.classList.remove('active');
-                settingsModal.style.display = 'none';
-                console.log('🚫 Old settingsModal hidden');
-            }
-
-            // Show settings section directly (it's already a full page)
-            const settingsSection = document.getElementById('settingsSection');
-            if (settingsSection) {
-                console.log('✅ Found settingsSection, making it visible');
-                settingsSection.classList.add('active');
-                settingsSection.style.display = 'block';
-                settingsSection.style.visibility = 'visible';
-                settingsSection.style.opacity = '1';
-            } else {
-                console.error('❌ settingsSection not found!');
-            }
-
-            // Show breadcrumb
-            const breadcrumb = document.getElementById('breadcrumbNav');
-            if (breadcrumb) {
-                breadcrumb.style.display = 'flex';
-                console.log('✅ Breadcrumb shown');
-            }
-        });
+        // Route: /settings - NOW HANDLED BY settings2.js
+        // (Old handler removed - see settings2.js for new implementation)
 
         // Start router
         console.log('🚀 Starting router...');
