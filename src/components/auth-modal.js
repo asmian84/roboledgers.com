@@ -9,57 +9,57 @@ let authModalElement = null;
 
 // Show auth modal
 function showAuthModal(mode = 'login') {
-    authModalMode = mode;
+  authModalMode = mode;
 
-    if (!authModalElement) {
-        createAuthModal();
-    }
+  if (!authModalElement) {
+    createAuthModal();
+  }
 
-    renderAuthModalContent();
-    authModalElement.style.display = 'flex';
+  renderAuthModalContent();
+  authModalElement.style.display = 'flex';
 
-    // Focus first input
-    setTimeout(() => {
-        const firstInput = authModalElement.querySelector('input');
-        if (firstInput) firstInput.focus();
-    }, 100);
+  // Focus first input
+  setTimeout(() => {
+    const firstInput = authModalElement.querySelector('input');
+    if (firstInput) firstInput.focus();
+  }, 100);
 }
 
 // Create auth modal container
 function createAuthModal() {
-    authModalElement = document.createElement('div');
-    authModalElement.id = 'auth-modal';
-    authModalElement.className = 'auth-modal';
+  authModalElement = document.createElement('div');
+  authModalElement.id = 'auth-modal';
+  authModalElement.className = 'auth-modal';
 
-    // Cannot be dismissed by clicking outside or ESC
-    authModalElement.addEventListener('click', (e) => {
-        if (e.target === authModalElement) {
-            // Do nothing - modal cannot be dismissed
-        }
-    });
+  // Cannot be dismissed by clicking outside or ESC
+  authModalElement.addEventListener('click', (e) => {
+    if (e.target === authModalElement) {
+      // Do nothing - modal cannot be dismissed
+    }
+  });
 
-    document.body.appendChild(authModalElement);
+  document.body.appendChild(authModalElement);
 }
 
 // Render modal content based on mode
 function renderAuthModalContent() {
-    if (!authModalElement) return;
+  if (!authModalElement) return;
 
-    let content = '';
+  let content = '';
 
-    if (authModalMode === 'login') {
-        content = renderLoginForm();
-    } else if (authModalMode === 'signup') {
-        content = renderSignupForm();
-    } else if (authModalMode === 'forgot') {
-        content = renderForgotPasswordForm();
-    } else if (authModalMode === 'check-email') {
-        content = renderCheckEmailMessage();
-    } else if (authModalMode === 'reset') {
-        content = renderResetPasswordForm();
-    }
+  if (authModalMode === 'login') {
+    content = renderLoginForm();
+  } else if (authModalMode === 'signup') {
+    content = renderSignupForm();
+  } else if (authModalMode === 'forgot') {
+    content = renderForgotPasswordForm();
+  } else if (authModalMode === 'check-email') {
+    content = renderCheckEmailMessage();
+  } else if (authModalMode === 'reset') {
+    content = renderResetPasswordForm();
+  }
 
-    authModalElement.innerHTML = `
+  authModalElement.innerHTML = `
     <div class="auth-modal-content">
       ${content}
     </div>
@@ -68,9 +68,9 @@ function renderAuthModalContent() {
 
 // Login Form
 function renderLoginForm() {
-    const isDev = window.Session?.isDevelopment;
+  const isDev = window.Session?.isDevelopment;
 
-    return `
+  return `
     <div class="auth-header">
       <h2>AutoBookkeeping</h2>
       <p>Welcome Back</p>
@@ -137,7 +137,7 @@ function renderLoginForm() {
 
 // Signup Form
 function renderSignupForm() {
-    return `
+  return `
     <div class="auth-header">
       <h2>Create Account</h2>
       <p class="auth-subtitle">Get started with AutoBookkeeping</p>
@@ -203,7 +203,7 @@ function renderSignupForm() {
 
 // Forgot Password Form
 function renderForgotPasswordForm() {
-    return `
+  return `
     <div class="auth-header">
       <h2>Reset Password</h2>
       <p class="auth-subtitle">Enter your email to receive password reset instructions</p>
@@ -230,9 +230,9 @@ function renderForgotPasswordForm() {
 
 // Check Email Message
 function renderCheckEmailMessage() {
-    const email = document.getElementById('forgot-email')?.value || 'your email';
+  const email = document.getElementById('forgot-email')?.value || 'your email';
 
-    return `
+  return `
     <div class="auth-header">
       <h2>Check Your Email</h2>
       <div class="email-icon">📧</div>
@@ -255,7 +255,7 @@ function renderCheckEmailMessage() {
 
 // Reset Password Form (from email link)
 function renderResetPasswordForm() {
-    return `
+  return `
     <div class="auth-header">
       <h2>Set New Password</h2>
       <p class="auth-subtitle">Choose a strong password for your account</p>
@@ -296,188 +296,191 @@ function renderResetPasswordForm() {
 // ==================================================
 
 async function handleLogin(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const rememberMe = document.getElementById('remember-me').checked;
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const rememberMe = document.getElementById('remember-me').checked;
 
-    const btn = document.getElementById('login-btn');
-    const errorEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  const errorEl = document.getElementById('login-error');
 
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-    errorEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+  errorEl.style.display = 'none';
 
-    const result = await window.Session.login(email, password, rememberMe);
+  const result = await window.Session.login(email, password, rememberMe);
 
-    if (result.success) {
-        onLoginSuccess();
-    } else {
-        errorEl.textContent = result.error;
-        errorEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-    }
+  if (result.success) {
+    onLoginSuccess();
+  } else {
+    errorEl.textContent = result.error;
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
 }
 
 async function handleSignup(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const name = document.getElementById('signup-name').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const confirm = document.getElementById('signup-confirm').value;
+  const name = document.getElementById('signup-name').value;
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
 
-    const errorEl = document.getElementById('signup-error');
+  const errorEl = document.getElementById('signup-error');
 
-    // Validate passwords match
-    if (password !== confirm) {
-        errorEl.textContent = 'Passwords do not match';
-        errorEl.style.display = 'block';
-        return;
-    }
+  // Validate passwords match
+  if (password !== confirm) {
+    errorEl.textContent = 'Passwords do not match';
+    errorEl.style.display = 'block';
+    return;
+  }
 
-    // Validate password strength
-    if (password.length < 8) {
-        errorEl.textContent = 'Password must be at least 8 characters';
-        errorEl.style.display = 'block';
-        return;
-    }
+  // Validate password strength
+  if (password.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
 
-    errorEl.style.display = 'none';
+  errorEl.style.display = 'none';
 
-    const result = await window.Session.signup(name, email, password);
+  const result = await window.Session.signup(name, email, password);
 
-    if (result.success) {
-        onLoginSuccess();
-    } else {
-        errorEl.textContent = result.error;
-        errorEl.style.display = 'block';
-    }
+  if (result.success) {
+    onLoginSuccess();
+  } else {
+    errorEl.textContent = result.error;
+    errorEl.style.display = 'block';
+  }
 }
 
 async function handleForgotPassword(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const email = document.getElementById('forgot-email').value;
-    const errorEl = document.getElementById('forgot-error');
+  const email = document.getElementById('forgot-email').value;
+  const errorEl = document.getElementById('forgot-error');
 
-    const result = await window.Session.requestPasswordReset(email);
+  const result = await window.Session.requestPasswordReset(email);
 
-    if (result.success) {
-        showAuthModal('check-email');
-    } else {
-        errorEl.textContent = result.message;
-        errorEl.style.display = 'block';
-    }
+  if (result.success) {
+    showAuthModal('check-email');
+  } else {
+    errorEl.textContent = result.message;
+    errorEl.style.display = 'block';
+  }
 }
 
 async function handleResetPassword(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const password = document.getElementById('reset-password').value;
-    const confirm = document.getElementById('reset-confirm').value;
-    const errorEl = document.getElementById('reset-error');
+  const password = document.getElementById('reset-password').value;
+  const confirm = document.getElementById('reset-confirm').value;
+  const errorEl = document.getElementById('reset-error');
 
-    if (password !== confirm) {
-        errorEl.textContent = 'Passwords do not match';
-        errorEl.style.display = 'block';
-        return;
-    }
+  if (password !== confirm) {
+    errorEl.textContent = 'Passwords do not match';
+    errorEl.style.display = 'block';
+    return;
+  }
 
-    // Get token from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+  // Get token from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
 
-    const result = await window.Session.resetPassword(token, password);
+  const result = await window.Session.resetPassword(token, password);
 
-    if (result.success) {
-        alert('Password reset successfully!');
-        showAuthModal('login');
-    } else {
-        errorEl.textContent = result.message;
-        errorEl.style.display = 'block';
-    }
+  if (result.success) {
+    alert('Password reset successfully!');
+    showAuthModal('login');
+  } else {
+    errorEl.textContent = result.message;
+    errorEl.style.display = 'block';
+  }
 }
 
 // OAuth Handlers
 async function signInWithGoogle() {
-    const result = await window.Session.signInWithProvider('google');
-    if (result.success) {
-        onLoginSuccess();
-    } else {
-        alert('Google sign-in failed: ' + (result.error || 'Unknown error'));
-    }
+  const result = await window.Session.signInWithProvider('google');
+  if (result.success) {
+    onLoginSuccess();
+  } else {
+    alert('Google sign-in failed: ' + (result.error || 'Unknown error'));
+  }
 }
 
 async function signInWithMicrosoft() {
-    const result = await window.Session.signInWithProvider('microsoft');
-    if (result.success) {
-        onLoginSuccess();
-    } else {
-        alert('Microsoft sign-in failed: ' + (result.error || 'Unknown error'));
-    }
+  const result = await window.Session.signInWithProvider('microsoft');
+  if (result.success) {
+    onLoginSuccess();
+  } else {
+    alert('Microsoft sign-in failed: ' + (result.error || 'Unknown error'));
+  }
 }
 
 // Dev Mode Quick Login
 function devLogin() {
-    document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
+  document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
 }
 
 // Password Utilities
 function togglePasswordVisibility(inputId) {
-    const input = document.getElementById(inputId);
-    if (input.type === 'password') {
-        input.type = 'text';
-    } else {
-        input.type = 'password';
-    }
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+  } else {
+    input.type = 'password';
+  }
 }
 
 function checkPasswordStrength() {
-    const password = document.getElementById('signup-password').value;
-    const strengthEl = document.getElementById('password-strength');
+  const password = document.getElementById('signup-password').value;
+  const strengthEl = document.getElementById('password-strength');
 
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[^a-zA-Z\d]/.test(password)) strength++;
+  let strength = 0;
+  if (password.length >= 8) strength++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+  if (/\d/.test(password)) strength++;
+  if (/[^a-zA-Z\d]/.test(password)) strength++;
 
-    const labels = ['Weak', 'Fair', 'Good', 'Strong'];
-    const colors = ['#ef4444', '#f59e0b', '#10b981', '#10b981'];
+  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['#ef4444', '#f59e0b', '#10b981', '#10b981'];
 
-    if (password.length > 0) {
-        strengthEl.textContent = labels[strength - 1] || 'Weak';
-        strengthEl.style.color = colors[strength - 1] || '#ef4444';
-        strengthEl.style.display = 'block';
-    } else {
-        strengthEl.style.display = 'none';
-    }
+  if (password.length > 0) {
+    strengthEl.textContent = labels[strength - 1] || 'Weak';
+    strengthEl.style.color = colors[strength - 1] || '#ef4444';
+    strengthEl.style.display = 'block';
+  } else {
+    strengthEl.style.display = 'none';
+  }
 }
 
 // On Login Success
 function onLoginSuccess() {
-    closeAuthModal();
+  closeAuthModal();
 
-    // Redirect to intended route or home
-    const intended = sessionStorage.getItem('intended_route') || '/';
-    sessionStorage.removeItem('intended_route');
+  // Redirect to intended route or home
+  const intended = sessionStorage.getItem('intended_route') || '/';
+  sessionStorage.removeItem('intended_route');
 
-    if (typeof router !== 'undefined') {
-        router.navigate(intended);
-    } else {
-        window.location.hash = intended;
-        window.location.reload();
-    }
+  // ALWAYS use router.navigate, never reload after login
+  if (typeof router !== 'undefined' && router.navigate) {
+    console.log('✅ Login successful, navigating to:', intended);
+    router.navigate(intended);
+  } else {
+    // Fallback: set hash without reload
+    console.log('⚠️ Router not found, using hash navigation');
+    window.location.hash = intended;
+  }
 }
 
 // Close Modal
 function closeAuthModal() {
-    if (authModalElement) {
-        authModalElement.style.display = 'none';
-    }
+  if (authModalElement) {
+    authModalElement.style.display = 'none';
+  }
 }
 
 // Expose globally
