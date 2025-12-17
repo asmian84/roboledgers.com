@@ -274,6 +274,28 @@ function renderDataPanel() {
       <p class="panel-description">Import, export, and manage your financial data</p>
       
       <div class="form-section">
+        <h3>📦 Data Migration</h3>
+        
+        <div class="export-options">
+          <button class="btn-export" onclick="if(window.DataMigration) DataMigration.runFullMigration().then(r => alert(r.success ? '✅ Migration complete!' : '❌ Migration failed')); else alert('Migration tool not loaded');">
+            <span class="export-icon">🚀</span>
+            <div>
+              <div class="export-title">Migrate from Old System</div>
+              <div class="export-desc">Import vendors, COA, and transactions</div>
+            </div>
+          </button>
+          
+          <button class="btn-export" onclick="if(window.DataMigration) DataMigration.exportV3Data(); else alert('Migration tool not loaded');">
+            <span class="export-icon">💾</span>
+            <div>
+              <div class="export-title">Backup v3 Data</div>
+              <div class="export-desc">Export all v3 data as JSON</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      
+      <div class="form-section">
         <h3>Export Data</h3>
         
         <div class="export-options">
