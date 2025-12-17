@@ -3529,4 +3529,23 @@ button {
   .controls-panel {
     display: flex;
   }
+} 
+ / *   R e s p o n s i v e   N a v i g a t i o n   B r e a k p o i n t s   * /  
+ 
+@media (max-width: 1280px) {
+  :root { --sidebar-width: 220px; }
+  .logo { font-size: 1.375rem; }
+  .nav-item { font-size: 0.875rem; }
+}
+
+@media (max-width: 1024px) {
+  :root { --sidebar-width: 200px; }
+  .logo { font-size: 1.25rem; }
+  .nav-item { font-size: 0.8125rem; }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-width: 70px; }
+  .logo span, .nav-item span { display: none; }
+  .nav-item { justify-content: center; }
 }
