@@ -120,9 +120,12 @@
   <script src="src/core/state.js"></script>
   <script src="src/core/router.js"></script>
   <script src="src/core/breadcrumb.js"></script>
+  <script src="src/core/session.js"></script>
+  <script src="src/components/auth-modal.js"></script>
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
+  <script src="src/pages/profile.js"></script>
   <script src="src/pages/transactions.js"></script>
   <script src="src/pages/vendors.js"></script>
   <script src="src/pages/vendorDetail.js"></script>
@@ -306,6 +309,13 @@
       `;
     }
 
+    // Initialize session on app load
+    Session.init().then(authenticated => {
+      if (!authenticated) {
+        console.log('No active session, will show login modal for protected routes');
+      }
+    });
+
     // Home/Dashboard
     router.register('/', () => {
       document.getElementById('app').innerHTML = renderHomePage();
@@ -313,6 +323,11 @@
 
     router.register('/home', () => {
       document.getElementById('app').innerHTML = renderHomePage();
+    });
+
+    // User Profile
+    router.register('/profile', () => {
+      document.getElementById('app').innerHTML = renderProfile();
     });
 
     // Transactions

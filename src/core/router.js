@@ -11,7 +11,7 @@ class Router {
     this.params = {};
     this.query = {};
     this.listeners = [];
-    
+
     // Initialize
     this._init();
   }
@@ -36,7 +36,7 @@ class Router {
     if (!path.startsWith('#')) {
       path = '#' + path;
     }
-    
+
     if (replace) {
       window.location.replace(path);
     } else {
@@ -70,10 +70,10 @@ class Router {
   _init() {
     // Listen to hash changes
     window.addEventListener('hashchange', () => this._handleRouteChange());
-    
+
     // Handle initial load
     window.addEventListener('DOMContentLoaded', () => this._handleRouteChange());
-    
+
     // Handle page load if DOMContentLoaded already fired
     if (document.readyState !== 'loading') {
       setTimeout(() => this._handleRouteChange(), 0);
@@ -87,35 +87,47 @@ class Router {
   _handleRouteChange() {
     const hash = window.location.hash.slice(1) || '/';
     const [pathPart, queryPart] = hash.split('?');
-    
+
     // Deduplication: don't reload same route
     if (this.currentPath === pathPart) {
       console.log(`🧭 Route unchanged: ${pathPart}`);
       return;
     }
-    
+
     // Parse query parameters
     this.query = this._parseQuery(queryPart);
-    
+
     // Match route
     const match = this._matchRoute(pathPart);
-    
+
     if (match) {
       this.currentPath = pathPart;
       this.params = match.params;
-      
+
       console.log(`🧭 Route changed to: ${pathPart}`, {
         params: this.params,
         query: this.query
       });
-      
+
+      // Check if route requires authentication
+      if (this._requiresAuth(pathPart)) {
+        if (!window.Session || !window.Session.isAuthenticated()) {
+          console.warn('🔒 Route requires authentication, showing login modal');
+          sessionStorage.setItem('intended_route', pathPart);
+          if (typeof showAuthModal === 'function') {
+            showAuthModal('login');
+          }
+          return;
+        }
+      }
+
       // Execute handler
       match.handler({
         path: pathPart,
         params: this.params,
         query: this.query
       });
-      
+
       // Notify listeners
       this.listeners.forEach(listener => {
         listener({
@@ -131,6 +143,24 @@ class Router {
   }
 
   /**
+   * Check if route requires authentication
+   * @private
+   */
+  _requiresAuth(path) {
+    // Public routes that don't require auth
+    const publicRoutes = [
+      '/',
+      '/login',
+      '/signup',
+      '/forgot-password',
+      '/reset-password'
+    ];
+
+    // Check if current path is public
+    return !publicRoutes.some(route => path === route || path.startsWith(route + '/'));
+  }
+
+  /**
    * Match path to registered routes
    * @private
    */
@@ -142,7 +172,7 @@ class Router {
         params: {}
       };
     }
-    
+
     // Try pattern matching
     for (const [pattern, handler] of this.routes) {
       const params = this._matchPattern(pattern, path);
@@ -150,7 +180,7 @@ class Router {
         return { handler, params };
       }
     }
-    
+
     return null;
   }
 
@@ -161,17 +191,17 @@ class Router {
   _matchPattern(pattern, path) {
     const patternParts = pattern.split('/').filter(Boolean);
     const pathParts = path.split('/').filter(Boolean);
-    
+
     if (patternParts.length !== pathParts.length) {
       return null;
     }
-    
+
     const params = {};
-    
+
     for (let i = 0; i < patternParts.length; i++) {
       const patternPart = patternParts[i];
       const pathPart = pathParts[i];
-      
+
       if (patternPart.startsWith(':')) {
         // Parameter
         const paramName = patternPart.slice(1);
@@ -181,7 +211,7 @@ class Router {
         return null;
       }
     }
-    
+
     return params;
   }
 
@@ -191,17 +221,17 @@ class Router {
    */
   _parseQuery(queryString) {
     if (!queryString) return {};
-    
+
     const params = {};
     const pairs = queryString.split('&');
-    
+
     for (const pair of pairs) {
       const [key, value] = pair.split('=');
       if (key) {
         params[decodeURIComponent(key)] = value ? decodeURIComponent(value) : '';
       }
     }
-    
+
     return params;
   }
 
