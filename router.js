@@ -87,6 +87,12 @@ class Router {
     loadRoute(path, addToHistory = true) {
         console.log(`📄 Loading route: ${path}`);
 
+        // Prevent redundant routing
+        if (this.currentRoute === path) {
+            console.log(`⏭️ Already on route: ${path}, skipping`);
+            return;
+        }
+
         // Hide all pages
         document.querySelectorAll('[data-page]').forEach(page => {
             page.style.display = 'none';
