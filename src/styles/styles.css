@@ -89,10 +89,61 @@ body {
 body {
   display: flex;
   overflow: hidden;
+  height: 100vh;
+  width: 100vw;
 }
 
 /* ============================================
-   Sidebar Navigation
+   RESPONSIVE LAYOUT - FILLS ALL SPACE
+   ============================================ */
+.main-content {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.breadcrumb {
+  flex-shrink: 0;
+  height: var(--breadcrumb-height);
+}
+
+.app-container,
+#app {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make all page containers fill available space */
+.transactions-page,
+.vendors-page,
+.accounts-page,
+.reports-page,
+.settings-page,
+.reconciliation-page,
+.home-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Grid containers expand to fill */
+.grid-container,
+.ag-theme-alpine {
+  flex: 1;
+  min-height: 400px;
+  height: auto !important;
+}
+
+/* ============================================
+   SIDEBAR NAVIGATION
    ============================================ */
 .sidebar {
   position: fixed;
