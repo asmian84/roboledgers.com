@@ -9,10 +9,10 @@ window.renderTransactions = function () {
       <!-- Toolbar -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <button class="btn-primary" onclick="importCSV()">
+          <button class="btn-primary" onclick="showCSVImportModal()">
             📥 Import CSV
           </button>
-          <button class="btn-primary" onclick="showAddTransactionForm()">
+          <button class="btn-primary" onclick="showAddTransactionModal()">
             ➕ Add Transaction
           </button>
           <div class="dropdown">
