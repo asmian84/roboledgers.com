@@ -150,7 +150,7 @@
 
 html,
 body {
-  height: 100%;
+  /* UNLOCKED: Removed height: 100% to enable window-level scrolling */
   font-family: var(--font-family);
   font-size: 16px;
   line-height: 1.5;
@@ -161,8 +161,9 @@ body {
 }
 
 body {
-  display: flex;
-  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  /* UNLOCKED: Removed overflow: hidden to allow natural browser scrolling */
   zoom: 0.66;
   /* Scale entire platform to 66% */
 }
@@ -171,16 +172,17 @@ body {
    Sidebar Navigation
    ============================================ */
 .sidebar {
+  /* FIXED: Keeps sidebar visible during window scroll */
   position: fixed;
   left: 0;
   top: 0;
-  bottom: 0;
   width: var(--sidebar-width);
+  height: 100vh;
   background-color: var(--bg-sidebar);
   color: var(--text-inverse);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   z-index: 100;
   transition: transform var(--transition-normal);
 }
@@ -286,12 +288,12 @@ body {
    Main Content Area
    ============================================ */
 .main-content {
-  flex: 1;
+  /* RELEASED: Content expands naturally, browser handles scrolling */
   margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  height: auto;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  /* Changed from height: 100vh */
   transition: margin-left var(--transition-normal);
 }
 
