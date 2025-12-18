@@ -151,12 +151,12 @@ function addNewAccount() {
 function deleteAccount(accountNumber) {
   if (!confirm(`Delete account ${accountNumber}?`)) return;
 
-  const index = CHART_OF_ACCOUNTS.findIndex(a => a.accountNumber === accountNumber);
+  const index = accountData.findIndex(a => a.accountNumber === accountNumber);
   if (index !== -1) {
-    CHART_OF_ACCOUNTS.splice(index, 1);
+    accountData.splice(index, 1);
 
     if (accountsGridApi) {
-      accountsGridApi.setGridOption('rowData', CHART_OF_ACCOUNTS);
+      accountsGridApi.setGridOption('rowData', accountData);
     }
 
     console.log('✅ Deleted account:', accountNumber);
