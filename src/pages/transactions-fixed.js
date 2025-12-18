@@ -53,8 +53,8 @@
       </div>
 
       <!-- Transaction Feed -->
-      <div class="content-area">
-        <div id="transactionFeed" class="transaction-feed"></div>
+      <div class="content-area" style="overflow: hidden; height: calc(100vh - 140px); display: flex; flex-direction: column;">
+        <div id="transactionFeed" class="transaction-feed" style="flex: 1; overflow-y: auto; padding-bottom: 20px;"></div>
       </div>
     </div>
   `;
