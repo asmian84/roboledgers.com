@@ -578,9 +578,22 @@ async function saveGeneralSettings(event) {
 }
 
 function applyTheme(themeName) {
-  // Theme application logic (to be implemented with CSS variables)
-  console.log('Applying theme:', themeName);
-  alert(`Theme "${themeName}" applied! (Theme switching coming soon)`);
+  // Apply theme by setting data-theme attribute on root element
+  document.documentElement.setAttribute('data-theme', themeName);
+
+  // Save preference to localStorage
+  localStorage.setItem('preferred_theme', themeName);
+
+  // Visual feedback
+  console.log('✓ Theme applied:', themeName);
+
+  // Update active state on theme cards
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.classList.remove('active');
+    if (card.getAttribute('data-theme') === themeName) {
+      card.classList.add('active');
+    }
+  });
 }
 
 function exportAllData(format) {
