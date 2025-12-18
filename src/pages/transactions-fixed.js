@@ -21,6 +21,12 @@
         </div>
         
         <div class="toolbar-right">
+          <div class="transaction-count" id="transaction-count-display" style="margin-right: 15px; font-weight: bold; color: #666;">
+            0 Items
+          </div>
+          <button class="btn-secondary" onclick="clearAllTransactions()" style="margin-right: 10px; color: #e74c3c; border-color: #e74c3c;">
+            🗑️ Clear Data
+          </button>
           <input 
             type="search" 
             id="search-input" 
@@ -537,6 +543,15 @@
   }
 
 
+  function clearAllTransactions() {
+    if (confirm('Are you sure you want to DELETE ALL transactions? This cannot be undone.')) {
+      transactionData = [];
+      renderTransactionFeed();
+      saveTransactions();
+      alert('All transactions deleted.');
+    }
+  }
+
   // ===========================================
   // EXPOSE FUNCTIONS TO WINDOW (Global Scope)
   // ===========================================
@@ -544,6 +559,7 @@
   window.hideCSVImport = hideCSVImport;
   window.handleFileSelect = handleFileSelect;
   window.addNewTransaction = addNewTransaction;
+  window.clearAllTransactions = clearAllTransactions; // Exported
   window.exportToCSV = exportToCSV;
   window.filterTransactionFeed = filterTransactionFeed;
   window.editTransaction = editTransaction;
