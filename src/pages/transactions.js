@@ -109,8 +109,7 @@ async function initTransactionsGrid() {
       editable: true,
       type: 'numericColumn',
       valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
-      cellStyle: { color: '#10b981', fontWeight: '600' },
-      aggFunc: 'sum'
+      cellStyle: { color: '#10b981', fontWeight: '600' }
     },
     {
       headerName: 'Account#',
@@ -169,17 +168,6 @@ async function initTransactionsGrid() {
 
     onFirstDataRendered: event => {
       event.api.sizeColumnsToFit();
-    },
-
-    statusBar: {
-      statusPanels: [
-        { statusPanel: 'agTotalRowCountComponent', align: 'left' },
-        { statusPanel: 'agFilteredRowCountComponent' },
-        {
-          statusPanel: 'agAggregationComponent',
-          statusPanelParams: { aggFuncs: ['sum'] }
-        }
-      ]
     },
 
     defaultColDef: {
