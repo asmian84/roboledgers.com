@@ -418,9 +418,30 @@ function exportToCSV() {
 
 function saveTransactions() {
   localStorage.setItem('transactions', JSON.stringify(transactionData));
+
+  // Also save to central storage if available
+  if (window.storage && typeof window.storage.saveTransactions === 'function') {
+    window.storage.saveTransactions(transactionData);
+  }
 }
 
-function loadSavedTransactions() {
+async function loadSavedTransactions() {
+  // Try window.storage first (central data system)
+  if (window.storage && typeof window.storage.getTransactions === 'function') {
+    try {
+      const data = await window.storage.getTransactions();
+      if (data && data.length > 0) {
+        transactionData = data;
+        renderTransactionFeed();
+        console.log(`📂 Loaded ${transactionData.length} transactions from storage`);
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Failed to load from storage:', error);
+    }
+  }
+
+  // Fallback to localStorage
   const saved = localStorage.getItem('transactions');
   if (saved) {
     transactionData = JSON.parse(saved);
@@ -431,3 +452,4 @@ function loadSavedTransactions() {
 
 // Load on startup
 loadSavedTransactions();
+
