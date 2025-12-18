@@ -225,6 +225,10 @@ function setupDragAndDrop() {
 }
 
 function showCSVImport() {
+  // Prompt for account type
+  const accountType = confirm('Is this a Credit Card account?\n\nClick OK for Credit Card\nClick Cancel for Bank Account');
+  localStorage.setItem('lastAccountType', accountType ? 'creditcard' : 'bank');
+
   const dropzone = document.getElementById('csv-dropzone');
   if (dropzone) {
     dropzone.style.display = 'flex';
@@ -287,16 +291,31 @@ function parseCSV(csv) {
       const amount = parseFloat(values[3]) || 0;
       const memo = values[4] || '';
 
+      // Prompt user for account type to determine debit/credit logic
+      let accountType = localStorage.getItem('lastAccountType') || 'bank';
+
       // Convert to our format
-      // BANKING CONVENTION:
-      // Negative amount = CREDIT (money coming IN, like payments/deposits)
-      // Positive amount = DEBIT (money going OUT, like expenses/charges)
+      // Account type determines debit/credit logic:
+      // BANK: Negative = Credit (IN), Positive = Debit (OUT)
+      // CREDIT CARD: Negative = Debit (charges), Positive = Credit (payments)
+
+      let debit, credit;
+      if (accountType === 'creditcard') {
+        // Credit Card logic
+        debit = amount < 0 ? Math.abs(amount) : 0;    // Negative = Debit (charges)
+        credit = amount > 0 ? amount : 0;              // Positive = Credit (payments)
+      } else {
+        // Bank Account logic (default)
+        debit = amount > 0 ? amount : 0;               // Positive = Debit (OUT)
+        credit = amount < 0 ? Math.abs(amount) : 0;    // Negative = Credit (IN)
+      }
+
       transaction = {
         refNumber: `REF${Date.now()}-${i}`,
         date: parseTransactionDate(date),
         description: payee,
-        debit: amount > 0 ? amount : 0,          // Positive = Debit (expense)
-        credit: amount < 0 ? Math.abs(amount) : 0,  // Negative = Credit (income)
+        debit: debit,
+        credit: credit,
         balance: 0,  // Will calculate running balance later
         accountNumber: '',
         accountDescription: memo ? memo.substring(0, 80) : '',
