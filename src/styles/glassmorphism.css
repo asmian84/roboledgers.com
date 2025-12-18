@@ -126,17 +126,30 @@ body {
     flex-direction: column;
 }
 
-.content-area {
+.app-container {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
+    border-radius: 20px 20px 0 0;
+    /* Remove bottom radius to look grounded */
     border: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: none;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-    margin: 20px;
+    margin: 20px 20px 0 20px;
+    /* Remove bottom margin to sit flush */
     padding: 30px;
     flex: 1;
-    min-height: calc(100vh - 140px);
+    overflow-y: auto;
+    /* Enable scrolling within the glass box */
+    height: 100%;
+    /* Force height fill */
+}
+
+/* Ensure reports page takes full width inside container */
+.reports-page {
+    min-height: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
 }
 
 /* Reports page specific - cover full height */
