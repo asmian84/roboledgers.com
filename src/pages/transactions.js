@@ -187,8 +187,8 @@ function renderTransactionFeed() {
 const observer = new MutationObserver(() => {
   const feedDiv = document.getElementById('transactionFeed');
   if (feedDiv) {
-    console.log('📍 Transaction feed container detected, rendering...');
-    renderTransactionFeed();
+    console.log('📍 Transaction feed container detected, loading data...');
+    loadSavedTransactions();
     setupDragAndDrop();
     observer.disconnect();
   }
@@ -449,7 +449,4 @@ async function loadSavedTransactions() {
     console.log(`📂 Loaded ${transactionData.length} transactions from localStorage`);
   }
 }
-
-// Load on startup
-loadSavedTransactions();
 
