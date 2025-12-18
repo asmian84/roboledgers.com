@@ -155,25 +155,25 @@ body.theme-royal-purple {
     transition: all 0.3s ease;
 }
 
-/* Specific gradients for the circles to match themes */
+/* Specific gradients for the circles to match themes - LIGHTER VARIATIONS */
 .theme-circle.cyber-night {
-    background: linear-gradient(135deg, #667eea, #f093fb);
+    background: linear-gradient(135deg, #a6c0fe, #f68084);
 }
 
 .theme-circle.ocean-breeze {
-    background: linear-gradient(135deg, #00c6fb, #005bea);
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
 }
 
 .theme-circle.forest-green {
-    background: linear-gradient(135deg, #11998e, #38ef7d);
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
 .theme-circle.sunset-orange {
-    background: linear-gradient(135deg, #ff0844, #ffb199);
+    background: linear-gradient(135deg, #ff9a9e, #fecfef);
 }
 
 .theme-circle.royal-purple {
-    background: linear-gradient(135deg, #240b36, #8e44ad);
+    background: linear-gradient(135deg, #a18cd1, #fbc2eb);
 }
 
 /* Active State */
