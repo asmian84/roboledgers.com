@@ -200,17 +200,22 @@
 
     // Accounts Dropdown Options
     let accountOptions = '<option value="" style="color: #94a3b8;">Uncategorized</option>';
-    // Try to get accounts from window.storage or fallback
-    const accounts = (window.storage && typeof window.storage.getAccounts === 'function')
-      ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') // Direct read for synchronous render 
-      : [];
+
+    // Use window.DEFAULT_CHART_OF_ACCOUNTS if available (from src/data/account-chart.js)
+    // Fallback to storage or empty list
+    const accounts = (typeof window.DEFAULT_CHART_OF_ACCOUNTS !== 'undefined')
+      ? window.DEFAULT_CHART_OF_ACCOUNTS
+      : (window.storage && typeof window.storage.getAccounts === 'function' ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') : []);
 
     // If empty, use defaults from accounts.js if accessible, or just manual list
-    if (accounts.length === 0) {
-      // Fallback or empty
-    } else {
+    if (accounts.length > 0) {
       accounts.forEach(acc => {
-        accountOptions += `<option value="${acc.accountNumber}">${acc.accountNumber} - ${acc.description}</option>`;
+        // Handle variations in field names (code vs accountNumber, name vs description)
+        const code = acc.code || acc.accountNumber;
+        const name = acc.name || acc.description;
+        if (code && name) {
+          accountOptions += `<option value="${code}">${code} - ${name}</option>`;
+        }
       });
     }
 
@@ -465,14 +470,22 @@
   }
 
   function parseCSV(csv) {
+    console.log('🚀🚀🚀 parseCSV CALLED! CSV length:', csv?.length);
+    console.log('🚀🚀🚀 First 100 chars:', csv?.substring(0, 100));
+
     const lines = csv.split('\n').filter(line => line.trim());
+    console.log('📊 Total lines after split:', lines.length);
 
     if (lines.length === 0) {
+      console.error('❌ CSV is empty after filtering');
       alert('CSV file is empty');
       return;
     }
 
     const headers = parseCSVLine(lines[0]);
+    console.log('📋 Headers:', headers);
+    console.log('CSV Headers:', headers);
+    console.log('First data line:', lines[1]);
 
     const newTransactions = [];
 
