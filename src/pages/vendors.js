@@ -2,8 +2,31 @@
  * Vendor Dictionary Page - Simple AG Grid Table
  */
 
-// Seed Data
-const VENDOR_DICTIONARY = [
+window.renderVendors = function () {
+  return `
+    <div class="vendors-page">
+      <div class="page-header">
+        <h1>🏢 Vendor Dictionary</h1>
+        <button class="btn-primary" onclick="addNewVendor()">➕ Add Vendor</button>
+      </div>
+      
+      <div class="content-area">
+        <div id="vendorsGrid" class="ag-theme-alpine grid-container"></div>
+      </div>
+    </div>
+    
+    <script>
+      if (typeof initVendorsGrid === 'function') {
+        setTimeout(initVendorsGrid, 100);
+      }
+    </script>
+  `;
+};
+
+let vendorsGridApi;
+
+// Local vendor data
+let vendorData = [
   { accountNumber: '5140', description: 'Office Depot' },
   { accountNumber: '5140', description: 'Staples' },
   { accountNumber: '5140', description: 'Amazon Business' },
@@ -30,29 +53,6 @@ const VENDOR_DICTIONARY = [
   { accountNumber: '1510', description: 'Dell' },
   { accountNumber: '1510', description: 'HP' }
 ];
-
-window.renderVendors = function () {
-  return `
-    <div class="vendors-page">
-      <div class="page-header">
-        <h1>🏢 Vendor Dictionary</h1>
-        <button class="btn-primary" onclick="addNewVendor()">➕ Add Vendor</button>
-      </div>
-      
-      <div class="content-area">
-        <div id="vendorsGrid" class="ag-theme-alpine grid-container"></div>
-      </div>
-    </div>
-    
-    <script>
-      if (typeof initVendorsGrid === 'function') {
-        setTimeout(initVendorsGrid, 100);
-      }
-    </script>
-  `;
-};
-
-let vendorsGridApi;
 
 async function initVendorsGrid() {
   console.log('🔷 Initializing Vendor Dictionary Grid...');
@@ -86,7 +86,7 @@ async function initVendorsGrid() {
 
   const gridOptions = {
     columnDefs: columnDefs,
-    rowData: VENDOR_DICTIONARY,
+    rowData: vendorData,
     defaultColDef: {
       sortable: true,
       filter: true,
@@ -116,10 +116,10 @@ function addNewVendor() {
   if (!description) return;
 
   const newVendor = { accountNumber, description };
-  VENDOR_DICTIONARY.push(newVendor);
+  vendorData.push(newVendor);
 
   if (vendorsGridApi) {
-    vendorsGridApi.setGridOption('rowData', VENDOR_DICTIONARY);
+    vendorsGridApi.setGridOption('rowData', vendorData);
   }
 
   console.log('✅ Added vendor:', newVendor);
@@ -128,12 +128,12 @@ function addNewVendor() {
 function deleteVendor(description) {
   if (!confirm(`Delete vendor "${description}"?`)) return;
 
-  const index = VENDOR_DICTIONARY.findIndex(v => v.description === description);
+  const index = vendorData.findIndex(v => v.description === description);
   if (index !== -1) {
-    VENDOR_DICTIONARY.splice(index, 1);
+    vendorData.splice(index, 1);
 
     if (vendorsGridApi) {
-      vendorsGridApi.setGridOption('rowData', VENDOR_DICTIONARY);
+      vendorsGridApi.setGridOption('rowData', vendorData);
     }
 
     console.log('✅ Deleted vendor:', description);

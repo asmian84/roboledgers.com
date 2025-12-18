@@ -2,8 +2,31 @@
  * Chart of Accounts Page - Simple AG Grid Table
  */
 
-// Seed Data
-const CHART_OF_ACCOUNTS = [
+window.renderAccounts = function () {
+  return `
+    <div class="accounts-page">
+      <div class="page-header">
+        <h1>💰 Chart of Accounts</h1>
+        <button class="btn-primary" onclick="addNewAccount()">➕ Add Account</button>
+      </div>
+      
+      <div class="content-area">
+        <div id="accountsGrid" class="ag-theme-alpine grid-container"></div>
+      </div>
+    </div>
+    
+    <script>
+      if (typeof initAccountsGrid === 'function') {
+        setTimeout(initAccountsGrid, 100);
+      }
+    </script>
+  `;
+};
+
+let accountsGridApi;
+
+// Local account data
+let accountData = [
   { accountNumber: '1000', description: 'ASSETS' },
   { accountNumber: '1100', description: 'Current Assets' },
   { accountNumber: '1110', description: 'Cash - Checking' },
@@ -55,29 +78,6 @@ const CHART_OF_ACCOUNTS = [
   { accountNumber: '5900', description: 'Miscellaneous Expenses' }
 ];
 
-window.renderAccounts = function () {
-  return `
-    <div class="accounts-page">
-      <div class="page-header">
-        <h1>💰 Chart of Accounts</h1>
-        <button class="btn-primary" onclick="addNewAccount()">➕ Add Account</button>
-      </div>
-      
-      <div class="content-area">
-        <div id="accountsGrid" class="ag-theme-alpine grid-container"></div>
-      </div>
-    </div>
-    
-    <script>
-      if (typeof initAccountsGrid === 'function') {
-        setTimeout(initAccountsGrid, 100);
-      }
-    </script>
-  `;
-};
-
-let accountsGridApi;
-
 async function initAccountsGrid() {
   console.log('🔷 Initializing Chart of Accounts Grid...');
 
@@ -109,7 +109,7 @@ async function initAccountsGrid() {
 
   const gridOptions = {
     columnDefs: columnDefs,
-    rowData: CHART_OF_ACCOUNTS,
+    rowData: accountData,
     defaultColDef: {
       sortable: true,
       filter: true,
@@ -139,10 +139,10 @@ function addNewAccount() {
   if (!description) return;
 
   const newAccount = { accountNumber, description };
-  CHART_OF_ACCOUNTS.push(newAccount);
+  accountData.push(newAccount);
 
   if (accountsGridApi) {
-    accountsGridApi.setGridOption('rowData', CHART_OF_ACCOUNTS);
+    accountsGridApi.setGridOption('rowData', accountData);
   }
 
   console.log('✅ Added account:', newAccount);
