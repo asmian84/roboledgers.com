@@ -28,26 +28,49 @@
     </div>
 
     <nav class="sidebar-nav">
-      <!-- Main Navigation -->
-      <div class="nav-section">
-        <a href="#/" class="nav-item active" data-route="/">
-          <span class="nav-icon">🏠</span>
-          <span class="nav-label">Home</span>
-        </a>
-        <a href="#/transactions" class="nav-item" data-route="/transactions">
-          <span class="nav-icon">💰</span>
-          <span class="nav-label">Transactions</span>
-        </a>
-        <a href="#/vendors" class="nav-item" data-route="/vendors">
-          <span class="nav-icon">🏢</span>
-          <span class="nav-label">Vendors</span>
-        </a>
-        <a href="#/accounts" class="nav-item" data-route="/accounts">
-          <span class="nav-icon">📊</span>
-          <span class="nav-label">Accounts</span>
-        </a>
-        <a href="#/reports" class="nav-item" data-route="/reports">
+      <nav class="sidebar-nav">
+        <!-- Main Section -->
+        <div class="nav-section">
+          <a href="#/" class="nav-item" data-route="/">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a href="#/transactions" class="nav-item" data-route="/transactions">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Transactions</span>
+          </a>
+          <a href="#/vendors" class="nav-item" data-route="/vendors">
+            <span class="nav-icon">🏢</span>
+            <span class="nav-label">Vendors</span>
+          </a>
+          <a href="#/accounts" class="nav-item" data-route="/accounts">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a href="#/reports" class="nav-item" data-route="/reports">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Reports</span>
+          </a>
+        </div>
+
+        <!-- Admin Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Admin</div>
+          <a href="#/team" class="nav-item" data-route="/team">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Team</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="#/settings" class="nav-item settings-item" data-route="/settings">
+          <span class="nav-icon">⚙️</span>
           <span class="nav-label">Settings</span>
+        </a>
+        <a href="#/audit" class="nav-item" data-route="/audit">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Audit Log</span>
         </a>
         <div class="user-info">
           <span class="user-avatar">👤</span>
