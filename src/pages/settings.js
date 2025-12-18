@@ -170,67 +170,52 @@ function renderAppearancePanel() {
       <p class="panel-description">Customize the look and feel of your application</p>
       
       <div class="form-section">
-        <h3>Theme Selection (Arctic Dawn Collection)</h3>
+        <h3>Theme Selection</h3>
+        <p class="section-hint">Select a color palette based on your business personality</p>
         
         <div class="theme-grid">
-          <!-- 1. Arctic Dawn -->
-          <div class="theme-card" data-theme="arctic-dawn" onclick="applyTheme('arctic-dawn')">
-            <div class="theme-preview" style="background: linear-gradient(120deg, #f0f9ff, #cbebff);">
+          <!-- 1. Trustworthy Corporate -->
+          <div class="theme-card" data-theme="trustworthy-corporate" onclick="applyTheme('trustworthy-corporate')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #4169e1, #ffffff);">
               <div class="preview-content"></div>
             </div>
-            <div class="theme-name">Arctic Dawn</div>
-            <div class="theme-desc">Soft morning light</div>
-            <button class="btn-apply" onclick="applyTheme('arctic-dawn'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Trustworthy Corporate</div>
+            <div class="theme-desc">Royal Blue & White. Safest bet for business.</div>
+            <div class="theme-psych">54% cite Blue as most trusted.</div>
+            <button class="btn-apply" onclick="applyTheme('trustworthy-corporate'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 2. Polar Night -->
-          <div class="theme-card" data-theme="polar-night" onclick="applyTheme('polar-night')">
-            <div class="theme-preview" style="background: linear-gradient(180deg, #0f172a, #1e293b);">
+          <!-- 2. Luxury Minimalist -->
+          <div class="theme-card" data-theme="luxury-minimalist" onclick="applyTheme('luxury-minimalist')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #000000, #ffffff);">
               <div class="preview-content"></div>
             </div>
-            <div class="theme-name">Polar Night</div>
-            <div class="theme-desc">Dark navy professional</div>
-            <button class="btn-apply" onclick="applyTheme('polar-night'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Luxury Minimalist</div>
+            <div class="theme-desc">Black & White. High contrast, elegant.</div>
+            <div class="theme-psych">Used by high-end fashion houses.</div>
+            <button class="btn-apply" onclick="applyTheme('luxury-minimalist'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 3. Glacial Ice -->
-          <div class="theme-card" data-theme="glacial-ice" onclick="applyTheme('glacial-ice')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #e0f2fe, #f0fdf4);">
+          <!-- 3. Nature/Growth -->
+          <div class="theme-card" data-theme="nature-growth" onclick="applyTheme('nature-growth')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #228b22, #fdfbf7);">
               <div class="preview-content"></div>
             </div>
-            <div class="theme-name">Glacial Ice</div>
-            <div class="theme-desc">Crisp teal & white</div>
-            <button class="btn-apply" onclick="applyTheme('glacial-ice'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Nature/Growth</div>
+            <div class="theme-desc">Forest Green & Cream. Health & money.</div>
+            <div class="theme-psych">Calming, signifies environment.</div>
+            <button class="btn-apply" onclick="applyTheme('nature-growth'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 4. Aurora -->
-          <div class="theme-card" data-theme="aurora" onclick="applyTheme('aurora')">
-            <div class="theme-preview" style="background: linear-gradient(45deg, #d8b4fe, #818cf8, #2dd4bf);">
+          <!-- 4. Energetic/Action -->
+          <div class="theme-card" data-theme="energetic-action" onclick="applyTheme('energetic-action')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #ff4500, #ffffff);">
               <div class="preview-content"></div>
             </div>
-            <div class="theme-name">Aurora</div>
-            <div class="theme-desc">Soft northern lights</div>
-            <button class="btn-apply" onclick="applyTheme('aurora'); event.stopPropagation();">Apply</button>
-          </div>
-          
-          <!-- 5. Tundra -->
-          <div class="theme-card" data-theme="tundra" onclick="applyTheme('tundra')">
-            <div class="theme-preview" style="background: linear-gradient(to right, #e2e8f0, #cbd5e1);">
-              <div class="preview-content"></div>
-            </div>
-            <div class="theme-name">Tundra</div>
-            <div class="theme-desc">Muted elegant grey</div>
-            <button class="btn-apply" onclick="applyTheme('tundra'); event.stopPropagation();">Apply</button>
-          </div>
-          
-          <!-- 6. Frostbite -->
-          <div class="theme-card" data-theme="frostbite" onclick="applyTheme('frostbite')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0);">
-              <div class="preview-content"></div>
-            </div>
-            <div class="theme-name">Frostbite</div>
-            <div class="theme-desc">Sharp silver & blue</div>
-            <button class="btn-apply" onclick="applyTheme('frostbite'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Energetic/Action</div>
+            <div class="theme-desc">Red/Orange & White. Urgent & bold.</div>
+            <div class="theme-psych">Creates urgency, triggers appetite.</div>
+            <button class="btn-apply" onclick="applyTheme('energetic-action'); event.stopPropagation();">Apply</button>
           </div>
         </div>
       </div>
