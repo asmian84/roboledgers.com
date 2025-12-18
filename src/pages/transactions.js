@@ -261,6 +261,35 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
+// Proper CSV parser that handles quoted fields
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current);
+  return result;
+}
+
 function parseCSV(csv) {
   const lines = csv.split('\n').filter(line => line.trim());
   if (lines.length === 0) {
@@ -268,27 +297,28 @@ function parseCSV(csv) {
     return;
   }
 
-  const headers = lines[0].split(',').map(h => h.trim());
+  const headers = parseCSVLine(lines[0]);
   console.log('CSV Headers:', headers);
+  console.log('First data line:', lines[1]);
 
   const newTransactions = [];
 
-  // Expected format: Date,,Payee,Amount,Memo,OrigPayee
-  // or: Ref#,Date,Description,Debit,Credit,Account#,Account Description
-
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+    const values = parseCSVLine(lines[i]);
 
     if (values.length < 3) continue;
 
     let transaction;
 
-    // Detect format by checking headers
     if (headers[0].toLowerCase() === 'date' && headers.length >= 4) {
-      // Bank statement format: Date,,Payee,Amount,Memo,OrigPayee
-      const date = values[0] || new Date().toISOString().split('T')[0];
+      const dateStr = values[0] || '';
       const payee = values[2] || 'Unknown';
-      const amount = parseFloat(values[3]) || 0;
+      const amountStr = values[3] || '0';
+      const memo = values[4] || '';
+
+      const amount = parseFloat(amountStr.replace(/[^0-9.-]/g, '')) || 0;
+
+      if (!dateStr) continue;
       const memo = values[4] || '';
 
       // Prompt user for account type to determine debit/credit logic
