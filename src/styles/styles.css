@@ -337,6 +337,8 @@ body {
    ============================================ */
 .app-container {
   flex: 1;
+  min-height: 100vh;
+  /* Ensure background fills viewport */
   background-color: var(--bg-secondary);
 }
 
