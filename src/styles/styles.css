@@ -2484,10 +2484,18 @@ button {
 }
 
 .theme-icon {
-  font-size: 3rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
   display: block;
   line-height: 1;
+  padding: 0.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  transition: transform var(--transition-fast);
+}
+
+.theme-card:hover .theme-icon {
+  transform: scale(1.1);
 }
 
 .theme-desc {
