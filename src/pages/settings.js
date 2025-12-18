@@ -171,71 +171,34 @@ function renderAppearancePanel() {
       
       <div class="form-section">
         <h3>Theme Selection</h3>
+        <p class="section-desc" style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+          Choose a visual style for your workspace. Adjustments apply instantly.
+        </p>
         
-        <div class="theme-grid">
-          <div class="theme-card" data-theme="cyber-night" onclick="applyTheme('cyber-night')">
-            <div class="theme-preview theme-preview-cyber">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Cyber Night</div>
-            <div class="theme-desc">Default dark theme</div>
-            <button class="btn-apply" onclick="applyTheme('cyber-night'); event.stopPropagation();">Apply</button>
+        <div class="theme-selector">
+          <div class="theme-option" onclick="applyTheme('cyber-night')" id="theme-opt-cyber-night">
+            <div class="theme-circle cyber-night"></div>
+            <div class="theme-label">Cyber</div>
           </div>
           
-          <div class="theme-card" data-theme="ocean-breeze" onclick="applyTheme('ocean-breeze')">
-            <div class="theme-preview theme-preview-ocean">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Ocean Breeze</div>
-            <div class="theme-desc">Cool blue tones</div>
-            <button class="btn-apply" onclick="applyTheme('ocean-breeze'); event.stopPropagation();">Apply</button>
+          <div class="theme-option" onclick="applyTheme('ocean-breeze')" id="theme-opt-ocean-breeze">
+            <div class="theme-circle ocean-breeze"></div>
+            <div class="theme-label">Ocean</div>
           </div>
           
-          <div class="theme-card" data-theme="forest-green" onclick="applyTheme('forest-green')">
-            <div class="theme-preview theme-preview-forest">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Forest Green</div>
-            <div class="theme-desc">Natural earth tones</div>
-            <button class="btn-apply" onclick="applyTheme('forest-green'); event.stopPropagation();">Apply</button>
+          <div class="theme-option" onclick="applyTheme('forest-green')" id="theme-opt-forest-green">
+            <div class="theme-circle forest-green"></div>
+            <div class="theme-label">Forest</div>
           </div>
           
-          <div class="theme-card" data-theme="sunset-orange" onclick="applyTheme('sunset-orange')">
-            <div class="theme-preview theme-preview-sunset">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Sunset Orange</div>
-            <div class="theme-desc">Warm vibrant colors</div>
-            <button class="btn-apply" onclick="applyTheme('sunset-orange'); event.stopPropagation();">Apply</button>
+          <div class="theme-option" onclick="applyTheme('sunset-orange')" id="theme-opt-sunset-orange">
+            <div class="theme-circle sunset-orange"></div>
+            <div class="theme-label">Sunset</div>
           </div>
           
-          <div class="theme-card" data-theme="royal-purple" onclick="applyTheme('royal-purple')">
-            <div class="theme-preview theme-preview-royal">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Royal Purple</div>
-            <div class="theme-desc">Rich luxury theme</div>
-            <button class="btn-apply" onclick="applyTheme('royal-purple'); event.stopPropagation();">Apply</button>
+          <div class="theme-option" onclick="applyTheme('royal-purple')" id="theme-opt-royal-purple">
+            <div class="theme-circle royal-purple"></div>
+            <div class="theme-label">Royal</div>
           </div>
         </div>
       </div>
@@ -586,11 +549,35 @@ async function saveGeneralSettings(event) {
   }
 }
 
-function applyTheme(themeName) {
-  // Theme application logic (to be implemented with CSS variables)
-  console.log('Applying theme:', themeName);
-  alert(`Theme "${themeName}" applied! (Theme switching coming soon)`);
-}
+// Initial load of theme state
+setTimeout(() => {
+  const savedTheme = localStorage.getItem('ab3_theme') || 'cyber-night';
+  applyTheme(savedTheme, false); // false = don't save again on init
+}, 500);
+
+window.applyTheme = function (themeName, save = true) {
+  // 1. Apply class to body instantly
+  document.body.className = ''; // clear previous
+  document.body.classList.add(`theme-${themeName}`);
+
+  // 2. Persist
+  if (save) {
+    localStorage.setItem('ab3_theme', themeName);
+  }
+
+  // 3. Update UI active state (if settings page is open)
+  const allOpts = document.querySelectorAll('.theme-option');
+  if (allOpts.length > 0) {
+    allOpts.forEach(el => el.classList.remove('active'));
+
+    const activeOpt = document.getElementById(`theme-opt-${themeName}`);
+    if (activeOpt) {
+      activeOpt.classList.add('active');
+    }
+  }
+
+  console.log(`✨ Theme applied: ${themeName}`);
+};
 
 function exportAllData(format) {
   if (format === 'json') {
