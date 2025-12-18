@@ -49,34 +49,33 @@ function renderReportsDashboard() {
         </div>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="quick-stats">
-        <div class="stat-card revenue">
-          <div class="stat-icon">💵</div>
+
+      <!-- Sleek Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
           <div class="stat-label">Total Revenue</div>
           <div class="stat-value" id="total-revenue">$0.00</div>
-          <div class="stat-period">This Month</div>
         </div>
         
-        <div class="stat-card expenses">
-          <div class="stat-icon">💸</div>
+        <div class="stat-divider"></div>
+        
+        <div class="stat-item">
           <div class="stat-label">Total Expenses</div>
           <div class="stat-value" id="total-expenses">$0.00</div>
-          <div class="stat-period">This Month</div>
         </div>
         
-        <div class="stat-card profit">
-          <div class="stat-icon">📊</div>
+        <div class="stat-divider"></div>
+        
+        <div class="stat-item">
           <div class="stat-label">Net Profit</div>
           <div class="stat-value" id="net-profit">$0.00</div>
-          <div class="stat-period">This Month</div>
         </div>
         
-        <div class="stat-card vendors">
-          <div class="stat-icon">🏢</div>
+        <div class="stat-divider"></div>
+        
+        <div class="stat-item">
           <div class="stat-label">Active Vendors</div>
           <div class="stat-value" id="active-vendors">0</div>
-          <div class="stat-period">This Month</div>
         </div>
       </div>
 

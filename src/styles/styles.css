@@ -1196,50 +1196,9 @@ button {
 }
 
 /* Stats Cards */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  padding: 1.5rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.stat-card {
-  background: var(--bg-primary);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.stat-card.income {
-  border-left-color: #10b981;
-}
-
-.stat-card.expense {
-  border-left-color: #ef4444;
-}
-
-.stat-card.net {
-  border-left-color: #8b5cf6;
-}
-
-.stat-card.count {
-  border-left-color: #3b82f6;
-}
-
-.stat-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 0.5rem;
 }
 
 .stat-value {
