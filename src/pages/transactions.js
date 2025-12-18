@@ -6,36 +6,6 @@
 window.renderTransactions = function () {
   return `
     <div class="transactions-page">
-      <!-- Stats Cards -->
-      <div class="stats-cards">
-        <div class="stat-card income">
-          <div class="stat-icon">💵</div>
-          <div class="stat-label">Total Income</div>
-          <div class="stat-value" id="stat-income">$0.00</div>
-          <div class="stat-period">This Month</div>
-        </div>
-        
-        <div class="stat-card expense">
-          <div class="stat-icon">💸</div>
-          <div class="stat-label">Total Expenses</div>
-          <div class="stat-value" id="stat-expenses">$0.00</div>
-          <div class="stat-period">This Month</div>
-        </div>
-        
-        <div class="stat-card net">
-          <div class="stat-icon">📊</div>
-          <div class="stat-label">Net Position</div>
-          <div class="stat-value" id="stat-net">$0.00</div>
-          <div class="stat-period">This Month</div>
-        </div>
-        
-        <div class="stat-card count">
-          <div class="stat-icon">📝</div>
-          <div class="stat-label">Transactions</div>
-          <div class="stat-value" id="stat-count">0</div>
-          <div class="stat-period">This Month</div>
-        </div>
-      </div>
 
       <!-- Toolbar -->
       <div class="toolbar">
