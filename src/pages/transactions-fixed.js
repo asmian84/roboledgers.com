@@ -9,6 +9,19 @@
   window.renderTransactions = function () {
     return `
     <div class="transactions-page">
+      <style>
+        .transactions-page {
+          width: 100% !important;
+          max-width: none !important;
+        }
+        .transactions-page .toolbar,
+        .transactions-page .content-area,
+        .transactions-page .transaction-feed,
+        .transactions-page table {
+          width: 100% !important;
+          max-width: none !important;
+        }
+      </style>
       <!-- Toolbar -->
       <div class="toolbar">
         <div class="toolbar-left">
