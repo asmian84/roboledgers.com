@@ -291,13 +291,20 @@ function parseCSVLine(line) {
 }
 
 function parseCSV(csv) {
+  console.log('🚀🚀🚀 parseCSV CALLED! CSV length:', csv?.length);
+  console.log('🚀🚀🚀 First 100 chars:', csv?.substring(0, 100));
+
   const lines = csv.split('\n').filter(line => line.trim());
+  console.log('📊 Total lines after split:', lines.length);
+
   if (lines.length === 0) {
+    console.error('❌ CSV is empty after filtering');
     alert('CSV file is empty');
     return;
   }
 
   const headers = parseCSVLine(lines[0]);
+  console.log('📋 Headers:', headers);
   console.log('CSV Headers:', headers);
   console.log('First data line:', lines[1]);
 
