@@ -255,51 +255,48 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
-function parseCSV(csv) {
-  const lines = csv.split('\n').filter(line => line.trim());
-  const headers = lines[0].split(',').map(h => h.trim());
 
-  console.log('CSV Headers:', headers);
+console.log('CSV Headers:', headers);
 
-  const newTransactions = [];
+const newTransactions = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+for (let i = 1; i < lines.length; i++) {
+  const values = lines[i].split(',').map(v => v.trim());
 
-    if (values.length >= 3) {
-      const transaction = {
-        refNumber: values[0] || `REF${Date.now()}-${i}`,
-        date: values[1] || new Date().toISOString().split('T')[0],
-        description: values[2] || '',
-        debit: parseFloat(values[3]) || 0,
-        credit: parseFloat(values[4]) || 0,
-        accountNumber: values[5] || '',
-        accountDescription: values[6] || ''
-      };
+  if (values.length >= 3) {
+    const transaction = {
+      refNumber: values[0] || `REF${Date.now()}-${i}`,
+      date: values[1] || new Date().toISOString().split('T')[0],
+      description: values[2] || '',
+      debit: parseFloat(values[3]) || 0,
+      credit: parseFloat(values[4]) || 0,
+      accountNumber: values[5] || '',
+      accountDescription: values[6] || ''
+    };
 
-      // Auto-match vendor and populate account if not provided
-      if (!transaction.accountNumber) {
-        matchVendor(transaction);
-      }
-
-      // Normalize debit/credit for credit cards (reverse them)
-      normalizeDebitCredit(transaction);
-
-      newTransactions.push(transaction);
+    // Auto-match vendor and populate account if not provided
+    if (!transaction.accountNumber) {
+      matchVendor(transaction);
     }
+
+    // Normalize debit/credit for credit cards (reverse them)
+    normalizeDebitCredit(transaction);
+
+    newTransactions.push(transaction);
   }
+}
 
-  // Add to existing data
-  transactionData = [...transactionData, ...newTransactions];
+// Add to existing data
+transactionData = [...transactionData, ...newTransactions];
 
-  if (transactionsGridApi) {
-    transactionsGridApi.setGridOption('rowData', transactionData);
-  }
+if (transactionsGridApi) {
+  transactionsGridApi.setGridOption('rowData', transactionData);
+}
 
-  saveTransactions();
+saveTransactions();
 
-  console.log(`✅ Imported ${newTransactions.length} transactions`);
-  alert(`Successfully imported ${newTransactions.length} transactions`);
+console.log(`✅ Imported ${newTransactions.length} transactions`);
+alert(`Successfully imported ${newTransactions.length} transactions`);
 }
 
 // Vendor Dictionary (from vendors.js)
