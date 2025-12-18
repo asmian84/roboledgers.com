@@ -259,17 +259,49 @@ function handleFile(file) {
 
 function parseCSV(csv) {
   const lines = csv.split('\n').filter(line => line.trim());
-  const headers = lines[0].split(',').map(h => h.trim());
+  if (lines.length === 0) {
+    alert('CSV file is empty');
+    return;
+  }
 
+  const headers = lines[0].split(',').map(h => h.trim());
   console.log('CSV Headers:', headers);
 
   const newTransactions = [];
 
+  // Expected format: Date,,Payee,Amount,Memo,OrigPayee
+  // or: Ref#,Date,Description,Debit,Credit,Account#,Account Description
+
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim());
 
-    if (values.length >= 3) {
-      const transaction = {
+    if (values.length < 3) continue;
+
+    let transaction;
+
+    // Detect format by checking headers
+    if (headers[0].toLowerCase() === 'date' && headers.length >= 4) {
+      // Bank statement format: Date,,Payee,Amount,Memo,OrigPayee
+      const date = values[0] || new Date().toISOString().split('T')[0];
+      const payee = values[2] || 'Unknown';
+      const amount = parseFloat(values[3]) || 0;
+      const memo = values[4] || '';
+
+      // Convert to our format
+      // Negative amount = expense (debit)
+      // Positive amount = income/payment (credit)
+      transaction = {
+        refNumber: `REF${Date.now()}-${i}`,
+        date: parseTransactionDate(date),
+        description: payee,
+        debit: amount < 0 ? Math.abs(amount) : 0,
+        credit: amount > 0 ? amount : 0,
+        accountNumber: '',
+        accountDescription: memo ? memo.substring(0, 50) : ''
+      };
+    } else {
+      // Standard format
+      transaction = {
         refNumber: values[0] || `REF${Date.now()}-${i}`,
         date: values[1] || new Date().toISOString().split('T')[0],
         description: values[2] || '',
@@ -278,9 +310,9 @@ function parseCSV(csv) {
         accountNumber: values[5] || '',
         accountDescription: values[6] || ''
       };
-
-      newTransactions.push(transaction);
     }
+
+    newTransactions.push(transaction);
   }
 
   transactionData = [...transactionData, ...newTransactions];
@@ -289,6 +321,21 @@ function parseCSV(csv) {
 
   console.log(`✅ Imported ${newTransactions.length} transactions`);
   alert(`Successfully imported ${newTransactions.length} transactions`);
+}
+
+// Helper to parse various date formats
+function parseTransactionDate(dateStr) {
+  // Try M/D/YYYY format first
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parts[0].padStart(2, '0');
+    const day = parts[1].padStart(2, '0');
+    const year = parts[2];
+    return `${year}-${month}-${day}`;
+  }
+
+  // Return as-is or current date
+  return dateStr || new Date().toISOString().split('T')[0];
 }
 
 function addNewTransaction() {
