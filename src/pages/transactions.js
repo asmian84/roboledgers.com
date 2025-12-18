@@ -98,8 +98,7 @@ async function initTransactionsGrid() {
       editable: true,
       type: 'numericColumn',
       valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
-      cellStyle: { color: '#ef4444', fontWeight: '600' },
-      aggFunc: 'sum'
+      cellStyle: { color: '#ef4444', fontWeight: '600' }
     },
     {
       headerName: 'Credit',
