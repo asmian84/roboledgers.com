@@ -400,17 +400,28 @@
 
   // Helper to parse various date formats
   function parseTransactionDate(dateStr) {
-    // Try M/D/YYYY format first
-    const parts = dateStr.split('/');
+    if (!dateStr) return new Date().toISOString().split('T')[0];
+
+    const cleanDate = dateStr.trim();
+
+    // Try M/D/YYYY or M/D/YY format
+    const parts = cleanDate.split('/');
     if (parts.length === 3) {
       const month = parts[0].padStart(2, '0');
       const day = parts[1].padStart(2, '0');
-      const year = parts[2];
+      let year = parts[2];
+
+      // Handle 2-digit year
+      if (year.length === 2) {
+        year = '20' + year;
+      }
+
+      console.log(`🔍 Parsing date: '${dateStr}' -> ${year}-${month}-${day}`);
       return `${year}-${month}-${day}`;
     }
 
     // Return as-is or current date
-    return dateStr || new Date().toISOString().split('T')[0];
+    return cleanDate || new Date().toISOString().split('T')[0];
   }
 
   function addNewTransaction() {
