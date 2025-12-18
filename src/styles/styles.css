@@ -2484,18 +2484,22 @@ button {
 }
 
 .theme-icon {
-  font-size: 1.75rem;
-  margin-bottom: 0.5rem;
-  display: block;
-  line-height: 1;
-  padding: 0.5rem;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  transition: transform var(--transition-fast);
+  font-size: 1.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all var(--transition-fast);
 }
 
 .theme-card:hover .theme-icon {
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .theme-desc {
