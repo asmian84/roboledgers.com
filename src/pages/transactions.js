@@ -288,16 +288,19 @@ function parseCSV(csv) {
       const memo = values[4] || '';
 
       // Convert to our format
-      // Negative amount = expense (debit)
-      // Positive amount = income/payment (credit)
+      // BANKING CONVENTION:
+      // Negative amount = CREDIT (money coming IN, like payments/deposits)
+      // Positive amount = DEBIT (money going OUT, like expenses/charges)
       transaction = {
         refNumber: `REF${Date.now()}-${i}`,
         date: parseTransactionDate(date),
         description: payee,
-        debit: amount < 0 ? Math.abs(amount) : 0,
-        credit: amount > 0 ? amount : 0,
+        debit: amount > 0 ? amount : 0,          // Positive = Debit (expense)
+        credit: amount < 0 ? Math.abs(amount) : 0,  // Negative = Credit (income)
+        balance: 0,  // Will calculate running balance later
         accountNumber: '',
-        accountDescription: memo ? memo.substring(0, 50) : ''
+        accountDescription: memo ? memo.substring(0, 80) : '',
+        status: 'unmatched'  // Will be set by vendor matching
       };
     } else {
       // Standard format
