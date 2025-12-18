@@ -170,35 +170,67 @@ function renderAppearancePanel() {
       <p class="panel-description">Customize the look and feel of your application</p>
       
       <div class="form-section">
-        <h3>Theme Selection</h3>
-        <p class="section-desc" style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
-          Choose a visual style for your workspace. Adjustments apply instantly.
-        </p>
+        <h3>Theme Selection (Arctic Dawn Collection)</h3>
         
-        <div class="theme-selector">
-          <div class="theme-option" onclick="applyTheme('cyber-night')" id="theme-opt-cyber-night">
-            <div class="theme-circle cyber-night"></div>
-            <div class="theme-label">Cyber</div>
+        <div class="theme-grid">
+          <!-- 1. Arctic Dawn -->
+          <div class="theme-card" data-theme="arctic-dawn" onclick="applyTheme('arctic-dawn')">
+            <div class="theme-preview" style="background: linear-gradient(120deg, #f0f9ff, #cbebff);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Arctic Dawn</div>
+            <div class="theme-desc">Soft morning light</div>
+            <button class="btn-apply" onclick="applyTheme('arctic-dawn'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-option" onclick="applyTheme('ocean-breeze')" id="theme-opt-ocean-breeze">
-            <div class="theme-circle ocean-breeze"></div>
-            <div class="theme-label">Ocean</div>
+          <!-- 2. Polar Night -->
+          <div class="theme-card" data-theme="polar-night" onclick="applyTheme('polar-night')">
+            <div class="theme-preview" style="background: linear-gradient(180deg, #0f172a, #1e293b);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Polar Night</div>
+            <div class="theme-desc">Dark navy professional</div>
+            <button class="btn-apply" onclick="applyTheme('polar-night'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-option" onclick="applyTheme('forest-green')" id="theme-opt-forest-green">
-            <div class="theme-circle forest-green"></div>
-            <div class="theme-label">Forest</div>
+          <!-- 3. Glacial Ice -->
+          <div class="theme-card" data-theme="glacial-ice" onclick="applyTheme('glacial-ice')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #e0f2fe, #f0fdf4);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Glacial Ice</div>
+            <div class="theme-desc">Crisp teal & white</div>
+            <button class="btn-apply" onclick="applyTheme('glacial-ice'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-option" onclick="applyTheme('sunset-orange')" id="theme-opt-sunset-orange">
-            <div class="theme-circle sunset-orange"></div>
-            <div class="theme-label">Sunset</div>
+          <!-- 4. Aurora -->
+          <div class="theme-card" data-theme="aurora" onclick="applyTheme('aurora')">
+            <div class="theme-preview" style="background: linear-gradient(45deg, #d8b4fe, #818cf8, #2dd4bf);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Aurora</div>
+            <div class="theme-desc">Soft northern lights</div>
+            <button class="btn-apply" onclick="applyTheme('aurora'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-option" onclick="applyTheme('royal-purple')" id="theme-opt-royal-purple">
-            <div class="theme-circle royal-purple"></div>
-            <div class="theme-label">Royal</div>
+          <!-- 5. Tundra -->
+          <div class="theme-card" data-theme="tundra" onclick="applyTheme('tundra')">
+            <div class="theme-preview" style="background: linear-gradient(to right, #e2e8f0, #cbd5e1);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Tundra</div>
+            <div class="theme-desc">Muted elegant grey</div>
+            <button class="btn-apply" onclick="applyTheme('tundra'); event.stopPropagation();">Apply</button>
+          </div>
+          
+          <!-- 6. Frostbite -->
+          <div class="theme-card" data-theme="frostbite" onclick="applyTheme('frostbite')">
+            <div class="theme-preview" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0);">
+              <div class="preview-content"></div>
+            </div>
+            <div class="theme-name">Frostbite</div>
+            <div class="theme-desc">Sharp silver & blue</div>
+            <button class="btn-apply" onclick="applyTheme('frostbite'); event.stopPropagation();">Apply</button>
           </div>
         </div>
       </div>
@@ -549,35 +581,36 @@ async function saveGeneralSettings(event) {
   }
 }
 
-// Initial load of theme state
-setTimeout(() => {
-  const savedTheme = localStorage.getItem('ab3_theme') || 'cyber-night';
-  applyTheme(savedTheme, false); // false = don't save again on init
-}, 500);
+function applyTheme(themeName) {
+  // Update data-theme on body
+  document.body.setAttribute('data-theme', themeName);
 
-window.applyTheme = function (themeName, save = true) {
-  // 1. Apply class to body instantly
-  document.body.className = ''; // clear previous
-  document.body.classList.add(`theme-${themeName}`);
+  // Save to storage
+  localStorage.setItem('ab3_theme', themeName);
 
-  // 2. Persist
-  if (save) {
-    localStorage.setItem('ab3_theme', themeName);
-  }
-
-  // 3. Update UI active state (if settings page is open)
-  const allOpts = document.querySelectorAll('.theme-option');
-  if (allOpts.length > 0) {
-    allOpts.forEach(el => el.classList.remove('active'));
-
-    const activeOpt = document.getElementById(`theme-opt-${themeName}`);
-    if (activeOpt) {
-      activeOpt.classList.add('active');
+  // Show active state in grid
+  document.querySelectorAll('.theme-card').forEach(card => {
+    if (card.dataset.theme === themeName) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
     }
-  }
+  });
 
-  console.log(`✨ Theme applied: ${themeName}`);
-};
+  // Show toast
+  const toast = document.createElement('div');
+  toast.className = 'glass-card fade-in-up';
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.right = '20px';
+  toast.style.padding = '16px 24px';
+  toast.style.border = '1px solid var(--theme-glass-border)';
+  toast.style.zIndex = '9999';
+  toast.innerHTML = `✅ Theme "${themeName.replace(/-/g, ' ')}" applied`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 3000);
+}
 
 function exportAllData(format) {
   if (format === 'json') {

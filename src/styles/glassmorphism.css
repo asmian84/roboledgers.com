@@ -1,77 +1,46 @@
 /**
- * AutoBookkeeping v3.0 - Premium Glassmorphism UI
- * Stunning glass effects, gradients, and animations
+ * AutoBookkeeping v3.0 - Arctic Dawn Glassmorphism
+ * Sleek, professional, and toned-down themes
  */
 
 /* ============================================
-   GLASSMORPHISM THEME VARIABLES
+   GLOBAL ZOOM & SCALING
    ============================================ */
-:root {
-    /* Glass Effect Colors */
-    --glass-white: rgba(255, 255, 255, 0.1);
-    --glass-light: rgba(255, 255, 255, 0.15);
-    --glass-medium: rgba(255, 255, 255, 0.25);
-    --glass-dark: rgba(0, 0, 0, 0.1);
-
-    /* Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-success: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
-    --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-
-    /* Glass Shadows */
-    --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    --shadow-glass-lg: 0 15px 50px 0 rgba(31, 38, 135, 0.25);
-    --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
-
-    /* Border Glass */
-    --border-glass: 1px solid rgba(255, 255, 255, 0.18);
-
-    /* Blur Amount */
-    --blur-light: blur(8px);
-    --blur-medium: blur(12px);
-    --blur-heavy: blur(20px);
+html {
+    /* Ensure the base font size scales correctly */
+    font-size: 16px;
 }
 
-/* ============================================
-   GLASS MORPHISM UTILITIES
-   ============================================ */
-.glass {
-    background: var(--glass-light);
-    backdrop-filter: var(--blur-medium);
-    -webkit-backdrop-filter: var(--blur-medium);
-    border: var(--border-glass);
-    box-shadow: var(--shadow-glass);
-}
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 15px 50px 0 rgba(31, 38, 135, 0.25);
-    transform: translateY(-4px);
-}
-
-/* ============================================
-   ANIMATED GRADIENT BACKGROUND
-   ============================================ */
 body {
-    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    /* 66% Zoom as requested for better visibility */
     zoom: 0.66;
     -moz-transform: scale(0.66);
     -moz-transform-origin: 0 0;
+    width: 151.5%;
+    /* Compensate for zoom (100 / 0.66) to fill width */
+    height: 151.5%;
+    overflow-x: hidden;
+    margin: 0;
+
+    /* Animated Background Base */
+    background-size: 400% 400%;
+    animation: gradientShift 20s ease infinite;
+
+    /* Default Theme: Arctic Dawn */
+    --theme-bg-gradient: linear-gradient(135deg, #e0eafe 0%, #cbd5e1 100%);
+    --theme-glass-color: rgba(255, 255, 255, 0.4);
+    --theme-glass-border: rgba(255, 255, 255, 0.6);
+    --theme-text-color: #1e293b;
+    --theme-primary-btn: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+
+    background: var(--theme-bg-gradient);
+    color: var(--theme-text-color);
+}
+
+/* Compensate sidebar fixed position */
+.sidebar {
+    height: 151.5vh;
+    /* Scale sidebar height */
 }
 
 @keyframes gradientShift {
@@ -89,370 +58,202 @@ body {
 }
 
 /* ============================================
-   THEME VARIANTS (Backgrounds)
+   THEME DEFINITIONS
    ============================================ */
 
-/* Cyber Night (Default) */
-body.theme-cyber-night {
-    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-    background-size: 400% 400%;
+/* 1. Arctic Dawn (Default) - Airy, light, morning sky */
+[data-theme="arctic-dawn"] {
+    --theme-bg-gradient: linear-gradient(120deg, #f0f9ff 0%, #cbebff 100%);
+    --theme-glass-color: rgba(255, 255, 255, 0.5);
+    --theme-glass-border: rgba(255, 255, 255, 0.7);
+    --theme-text-color: #0f172a;
+    --theme-primary-btn: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    --theme-sidebar-bg: rgba(240, 249, 255, 0.85);
 }
 
-/* Ocean Breeze */
-body.theme-ocean-breeze {
-    background: linear-gradient(-45deg, #00c6fb, #005bea, #a8edea, #0575e6);
-    background-size: 400% 400%;
+/* 2. Polar Night - Dark, professional navy */
+[data-theme="polar-night"] {
+    --theme-bg-gradient: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    --theme-glass-color: rgba(30, 41, 59, 0.7);
+    --theme-glass-border: rgba(148, 163, 184, 0.2);
+    --theme-text-color: #f8fafc;
+    --theme-primary-btn: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    --theme-sidebar-bg: rgba(15, 23, 42, 0.9);
 }
 
-/* Forest Green */
-body.theme-forest-green {
-    background: linear-gradient(-45deg, #11998e, #38ef7d, #00b09b, #96c93d);
-    background-size: 400% 400%;
+/* 3. Glacial Ice - Crisp cyan and white */
+[data-theme="glacial-ice"] {
+    --theme-bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+    --theme-glass-color: rgba(255, 255, 255, 0.6);
+    --theme-glass-border: rgba(255, 255, 255, 0.8);
+    --theme-text-color: #115e59;
+    --theme-primary-btn: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
+    --theme-sidebar-bg: rgba(224, 242, 254, 0.85);
 }
 
-/* Sunset Orange */
-body.theme-sunset-orange {
-    background: linear-gradient(-45deg, #ff0844, #ffb199, #f77062, #fe5196);
-    background-size: 400% 400%;
+/* 4. Aurora - Soft, muted teal and purple */
+[data-theme="aurora"] {
+    --theme-bg-gradient: linear-gradient(45deg, #d8b4fe 0%, #818cf8 50%, #2dd4bf 100%);
+    --theme-glass-color: rgba(255, 255, 255, 0.4);
+    --theme-glass-border: rgba(255, 255, 255, 0.5);
+    --theme-text-color: #1e1b4b;
+    --theme-primary-btn: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    --theme-sidebar-bg: rgba(255, 255, 255, 0.7);
+    /* Use fixed background attachment for aurora so it doesn't scroll wildly */
+    background-attachment: fixed;
 }
 
-/* Royal Purple */
-body.theme-royal-purple {
-    background: linear-gradient(-45deg, #240b36, #c31432, #512a5e, #8e44ad);
-    background-size: 400% 400%;
+/* 5. Tundra - Muted grey and taupe, elegant */
+[data-theme="tundra"] {
+    --theme-bg-gradient: linear-gradient(to right, #e2e8f0, #cbd5e1);
+    --theme-glass-color: rgba(241, 245, 249, 0.6);
+    --theme-glass-border: rgba(255, 255, 255, 0.6);
+    --theme-text-color: #334155;
+    --theme-primary-btn: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    --theme-sidebar-bg: rgba(226, 232, 240, 0.9);
 }
 
+/* 6. Frostbite - Sharp silver and blue */
+[data-theme="frostbite"] {
+    --theme-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    --theme-glass-color: rgba(255, 255, 255, 0.8);
+    --theme-glass-border: rgba(255, 255, 255, 0.9);
+    --theme-text-color: #0c4a6e;
+    --theme-primary-btn: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    --theme-sidebar-bg: rgba(248, 250, 252, 0.95);
+}
 
 /* ============================================
-   THEME SELECTOR UI (Icons)
+   GLASS COMPONENTS UPDATES
    ============================================ */
-.theme-selector {
-    display: flex;
-    gap: 20px;
-    padding: 24px 0;
-    align-items: center;
-}
 
-.theme-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.theme-option:hover {
-    transform: scale(1.1);
-}
-
-.theme-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-/* Specific gradients for the circles to match themes - LIGHTER VARIATIONS */
-.theme-circle.cyber-night {
-    background: linear-gradient(135deg, #a6c0fe, #f68084);
-}
-
-.theme-circle.ocean-breeze {
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
-}
-
-.theme-circle.forest-green {
-    background: linear-gradient(135deg, #43e97b, #38f9d7);
-}
-
-.theme-circle.sunset-orange {
-    background: linear-gradient(135deg, #ff9a9e, #fecfef);
-}
-
-.theme-circle.royal-purple {
-    background: linear-gradient(135deg, #a18cd1, #fbc2eb);
-}
-
-/* Active State */
-.theme-option.active .theme-circle {
-    border-color: #ffffff;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-    transform: scale(1.1);
-}
-
-.theme-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-
-/* ============================================
-   SIDEBAR - GLASS EFFECT
-   ============================================ */
+/* Update Sidebar to use theme vars */
 .sidebar {
-    background: rgba(30, 41, 59, 0.7) !important;
+    background: var(--theme-sidebar-bg) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    border-right: 1px solid var(--theme-glass-border);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
 }
 
-.nav-item {
-    background: transparent;
-    border-radius: 12px;
-    margin: 4px 8px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Update Glass Cards */
+.glass,
+.glass-card,
+.card,
+.stat-card,
+.report-card,
+.quick-stat {
+    background: var(--theme-glass-color) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--theme-glass-border) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05) !important;
+    color: var(--theme-text-color) !important;
 }
 
-.nav-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
+/* Ensure text legibility */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a {
+    color: var(--theme-text-color);
 }
 
-.nav-item.active {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+/* Subtitle opacity */
+.page-subtitle,
+.stat-period,
+.report-description,
+.theme-desc {
+    opacity: 0.7;
 }
 
-/* ============================================
-   MAIN CONTENT - GLASS CONTAINER
-   ============================================ */
-.main-content {
-    background: transparent !important;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+/* Hover effects */
+.glass-card:hover,
+.card:hover,
+.report-card:hover,
+.quick-stat:hover {
+    background: var(--theme-glass-color) !important;
+    filter: brightness(1.05);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
-.app-container {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px 20px 0 0;
-    /* Remove bottom radius to look grounded */
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-bottom: none;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-    margin: 20px 20px 0 20px;
-    /* Remove bottom margin to sit flush */
-    padding: 30px;
-    /* Remove internal scroll and fixed height for full responsiveness */
-    overflow: visible;
-    height: auto;
-    min-height: calc(100% - 20px);
-}
-
-/* Ensure reports page takes full width inside container */
-.reports-page {
-    min-height: 100%;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 16px;
-}
-
-/* Reports page specific - cover full height */
-.reports-page {
-    min-height: calc(100vh - 160px);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(8px);
-    border-radius: 16px;
-}
-
-/* ============================================
-   CARDS - PREMIUM GLASS
-   ============================================ */
-.card {
-    background: rgba(255, 255, 255, 0.09);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-    padding: 24px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card:hover {
-    background: rgba(255, 255, 255, 0.13);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 16px 48px rgba(31, 38, 135, 0.25);
-    transform: translateY(-6px) scale(1.02);
-}
-
-/* ============================================
-   BUTTONS - GLASS STYLE
-   ============================================ */
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    color: white;
-    padding: 12px 28px;
-    font-weight: 600;
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(10px);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
-    background: linear-gradient(135deg, #7c8fef 0%, #8659b0 100%);
-}
-
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    color: white;
-    padding: 12px 28px;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-/* ============================================
-   MODALS - GLASS OVERLAY
-   ============================================ */
-.auth-modal {
-    background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-.auth-modal-content {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-/* ============================================
-   INPUTS - GLASS STYLE
-   ============================================ */
+/* Inputs */
 input,
 select,
 textarea {
-    background: rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    color: white;
-    padding: 12px 16px;
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid var(--theme-glass-border) !important;
+    color: var(--theme-text-color) !important;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border-color: rgba(102, 126, 234, 0.5);
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-    outline: none;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-color: currentColor !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
 }
 
-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+/* Buttons */
+.btn-primary {
+    background: var(--theme-primary-btn) !important;
+    border: none !important;
+    color: white !important;
+    /* Always white text on primary buttons */
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.2) !important;
 }
 
-/* ============================================
-   AG GRID - GLASS THEME
-   ============================================ */
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.4) !important;
+    color: var(--theme-text-color) !important;
+    border: 1px solid var(--theme-glass-border) !important;
+}
+
+/* Modals */
+.auth-modal {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.auth-modal-content {
+    background: var(--theme-glass-color) !important;
+    border: 1px solid var(--theme-glass-border) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* AG Grid Overrides for Themes */
 .ag-theme-alpine {
-    --ag-background-color: rgba(255, 255, 255, 0.08);
-    --ag-header-background-color: rgba(255, 255, 255, 0.12);
-    --ag-odd-row-background-color: rgba(255, 255, 255, 0.04);
-    --ag-border-color: rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    --ag-background-color: transparent !important;
+    --ag-header-background-color: rgba(255, 255, 255, 0.2);
+    --ag-odd-row-background-color: rgba(255, 255, 255, 0.1);
+    --ag-border-color: var(--theme-glass-border);
+    --ag-foreground-color: var(--theme-text-color);
+    --ag-header-foreground-color: var(--theme-text-color);
 }
 
 .ag-header-cell {
-    backdrop-filter: blur(10px);
+    color: var(--theme-text-color) !important;
     font-weight: 600;
-    color: white !important;
 }
 
-.ag-cell {
-    color: rgba(255, 255, 255, 0.9) !important;
+/* Sidebar nav items */
+.nav-item {
+    color: var(--theme-text-color) !important;
 }
 
-.ag-row:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.3) !important;
+    font-weight: bold;
 }
 
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
 }
 
-@keyframes shimmer {
-    0% {
-        background-position: -1000px 0;
-    }
-
-    100% {
-        background-position: 1000px 0;
-    }
-}
-
-.fade-in-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================
-   SCROLLBAR - GLASS STYLE
-   ============================================ */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
-}
-
-/* ============================================
-   FOOTER - GLASS STYLE
-   ============================================ */
-.footer {
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
-}
-
-console.log('✨ Glassmorphism UI loaded');
+console.log('❄️ Arctic Dawn Themes Loaded');
