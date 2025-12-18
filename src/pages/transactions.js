@@ -255,34 +255,25 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
+const transaction = {
+  refNumber: values[0] || `REF${Date.now()}-${i}`,
+  date: values[1] || new Date().toISOString().split('T')[0],
+  description: values[2] || '',
+  debit: parseFloat(values[3]) || 0,
+  credit: parseFloat(values[4]) || 0,
+  accountNumber: values[5] || '',
+  accountDescription: values[6] || ''
+};
 
-console.log('CSV Headers:', headers);
+// Auto-match vendor and populate account if not provided
+if (!transaction.accountNumber) {
+  matchVendor(transaction);
+}
 
-const newTransactions = [];
+// Normalize debit/credit for credit cards (reverse them)
+normalizeDebitCredit(transaction);
 
-for (let i = 1; i < lines.length; i++) {
-  const values = lines[i].split(',').map(v => v.trim());
-
-  if (values.length >= 3) {
-    const transaction = {
-      refNumber: values[0] || `REF${Date.now()}-${i}`,
-      date: values[1] || new Date().toISOString().split('T')[0],
-      description: values[2] || '',
-      debit: parseFloat(values[3]) || 0,
-      credit: parseFloat(values[4]) || 0,
-      accountNumber: values[5] || '',
-      accountDescription: values[6] || ''
-    };
-
-    // Auto-match vendor and populate account if not provided
-    if (!transaction.accountNumber) {
-      matchVendor(transaction);
-    }
-
-    // Normalize debit/credit for credit cards (reverse them)
-    normalizeDebitCredit(transaction);
-
-    newTransactions.push(transaction);
+newTransactions.push(transaction);
   }
 }
 
