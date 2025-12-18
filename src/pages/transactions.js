@@ -1,5 +1,5 @@
 /**
- * Transactions Page - AG Grid with Full Features
+ * Transactions Page - CSV Import to Grid
  */
 
 window.renderTransactions = function () {
@@ -8,13 +8,12 @@ window.renderTransactions = function () {
       <!-- Toolbar -->
       <div class="toolbar">
         <div class="toolbar-left">
+          <button class="btn-primary" onclick="showCSVImport()">
+            📥 Import CSV
+          </button>
           <button class="btn-primary" onclick="addNewTransaction()">
             ➕ Add Transaction
           </button>
-          <button class="btn-secondary" id="bulk-delete-btn" onclick="bulkDelete()" disabled>
-            🗑️ Delete Selected
-          </button>
-          <span id="selection-count" class="selection-count"></span>
         </div>
         
         <div class="toolbar-right">
@@ -25,8 +24,21 @@ window.renderTransactions = function () {
             placeholder="Search transactions..." 
             oninput="onQuickFilterChange(this.value)"
           >
-          <button class="btn-secondary" onclick="exportToExcel()">📊 Export Excel</button>
           <button class="btn-secondary" onclick="exportToCSV()">📄 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- CSV Import Dropzone (hidden by default) -->
+      <div id="csv-dropzone" class="csv-dropzone" style="display: none;">
+        <div class="dropzone-content">
+          <div class="dropzone-icon">📂</div>
+          <h3>Drop CSV file here or click to browse</h3>
+          <p>Supported format: Ref#, Date, Description, Debit, Credit, Account#</p>
+          <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+          <button class="btn-primary" onclick="document.getElementById('csv-file-input').click()">
+            Choose File
+          </button>
+          <button class="btn-secondary" onclick="hideCSVImport()">Cancel</button>
         </div>
       </div>
 
@@ -45,106 +57,18 @@ window.renderTransactions = function () {
 };
 
 let transactionsGridApi;
-
-// Custom Cell Renderers
-class VendorCellRenderer {
-  init(params) {
-    this.eGui = document.createElement('div');
-    this.eGui.className = 'vendor-cell-content';
-
-    if (params.value) {
-      this.eGui.innerHTML = `<span class="vendor-name clickable">\ud83c\udfe2 ${params.value}</span>`;
-      this.eGui.querySelector('.vendor-name').addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log('Navigate to vendor:', params.value);
-      });
-    } else {
-      this.eGui.innerHTML = '<span class="no-vendor">No vendor</span>';
-    }
-  }
-
-  getGui() {
-    return this.eGui;
-  }
-
-  refresh() {
-    return false;
-  }
-}
-
-class AmountCellRenderer {
-  init(params) {
-    this.eGui = document.createElement('div');
-    this.eGui.className = 'amount-cell-content';
-
-    const amount = params.value || 0;
-    const type = params.data.type;
-    const isExpense = type === 'debit';
-
-    const className = isExpense ? 'amount-expense' : 'amount-income';
-    const formatted = window.DataUtils ? window.DataUtils.formatCurrency(amount) : `$${amount.toFixed(2)}`;
-
-    this.eGui.innerHTML = `<span class="${className}">${formatted}</span>`;
-  }
-
-  getGui() {
-    return this.eGui;
-  }
-
-  refresh() {
-    return false;
-  }
-}
-
-class ActionsCellRenderer {
-  init(params) {
-    this.eGui = document.createElement('div');
-    this.eGui.className = 'actions-cell-content';
-
-    this.eGui.innerHTML = `
-      <button class="btn-icon btn-edit" title="Edit">\u270f\ufe0f</button>
-      <button class="btn-icon btn-delete" title="Delete">\ud83d\uddd1\ufe0f</button>
-    `;
-
-    this.eGui.querySelector('.btn-edit').addEventListener('click', () => {
-      params.api.startEditingCell({
-        rowIndex: params.rowIndex,
-        colKey: 'description'
-      });
-    });
-
-    this.eGui.querySelector('.btn-delete').addEventListener('click', async () => {
-      if (confirm('Delete this transaction?')) {
-        params.api.applyTransaction({ remove: [params.data] });
-        console.log('Deleted transaction:', params.data.id);
-      }
-    });
-  }
-
-  getGui() {
-    return this.eGui;
-  }
-
-  refresh() {
-    return false;
-  }
-}
+let transactionData = [];
 
 async function initTransactionsGrid() {
-  console.log('\ud83d\udd37 Initializing Transactions Grid...');
+  console.log('🔷 Initializing Transactions Grid...');
 
   const columnDefs = [
     {
-      headerName: '',
-      field: 'selected',
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: 'left',
-      lockPosition: true,
-      suppressMenu: true,
-      sortable: false,
-      filter: false
+      headerName: 'Ref#',
+      field: 'refNumber',
+      width: 100,
+      filter: 'agTextColumnFilter',
+      pinned: 'left'
     },
     {
       headerName: 'Date',
@@ -153,97 +77,80 @@ async function initTransactionsGrid() {
       filter: 'agDateColumnFilter',
       editable: true,
       sort: 'desc',
-      pinned: 'left',
       valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
     {
       headerName: 'Description',
       field: 'description',
-      width: 250,
+      width: 300,
       filter: 'agTextColumnFilter',
       editable: true,
-      tooltipField: 'description'
+      flex: 1
     },
     {
-      headerName: 'Vendor',
-      field: 'vendor',
-      width: 180,
-      filter: 'agTextColumnFilter',
-      cellRenderer: VendorCellRenderer
-    },
-    {
-      headerName: 'Account',
-      field: 'accountName',
-      width: 200,
-      filter: 'agSetColumnFilter',
-      editable: true
-    },
-    {
-      headerName: 'Category',
-      field: 'category',
-      width: 150,
-      filter: 'agSetColumnFilter',
-      editable: true
-    },
-    {
-      headerName: 'Amount',
-      field: 'amount',
-      width: 130,
+      headerName: 'Debit',
+      field: 'debit',
+      width: 120,
       filter: 'agNumberColumnFilter',
       editable: true,
-      cellRenderer: AmountCellRenderer,
       type: 'numericColumn',
+      valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
+      cellStyle: { color: '#ef4444', fontWeight: '600' },
       aggFunc: 'sum'
     },
     {
-      headerName: 'Type',
-      field: 'type',
-      width: 100,
-      filter: 'agSetColumnFilter',
+      headerName: 'Credit',
+      field: 'credit',
+      width: 120,
+      filter: 'agNumberColumnFilter',
       editable: true,
-      cellRenderer: params => {
-        const badge = params.value === 'debit'
-          ? '<span class="badge badge-expense">Expense</span>'
-          : '<span class="badge badge-income">Income</span>';
-        return badge;
-      }
+      type: 'numericColumn',
+      valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
+      cellStyle: { color: '#10b981', fontWeight: '600' },
+      aggFunc: 'sum'
     },
     {
-      headerName: 'Reconciled',
-      field: 'reconciled',
-      width: 120,
-      filter: 'agSetColumnFilter',
-      cellRenderer: params => {
-        return params.value
-          ? '<span class="status-reconciled">\u2713 Reconciled</span>'
-          : '<span class="status-unreconciled">Unreconciled</span>';
-      }
+      headerName: 'Account#',
+      field: 'accountNumber',
+      width: 100,
+      filter: 'agTextColumnFilter',
+      editable: true
+    },
+    {
+      headerName: 'Account Description',
+      field: 'accountDescription',
+      width: 250,
+      filter: 'agTextColumnFilter',
+      editable: true
     },
     {
       headerName: 'Actions',
       field: 'actions',
       width: 100,
       pinned: 'right',
-      lockPosition: true,
-      suppressMenu: true,
-      cellRenderer: ActionsCellRenderer,
       sortable: false,
-      filter: false
+      filter: false,
+      cellRenderer: params => {
+        return `
+          <div class="actions-cell">
+            <button class="btn-icon btn-edit" onclick="editTransaction(${params.rowIndex})" title="Edit">✏️</button>
+            <button class="btn-icon btn-delete" onclick="deleteTransaction(${params.rowIndex})" title="Delete">🗑️</button>
+          </div>
+        `;
+      }
     }
   ];
 
   const gridOptions = {
     columnDefs: columnDefs,
-    rowData: [],
-
-    rowSelection: 'multiple',
-    suppressRowClickSelection: true,
+    rowData: transactionData,
 
     editType: 'fullRow',
     stopEditingWhenCellsLoseFocus: true,
 
-    onCellValueChanged: async event => {
-      console.log('Cell changed:', event);
+    onCellValueChanged: event => {
+      console.log('Transaction updated:', event.data);
+      saveTransactions();
     },
 
     pagination: true,
@@ -252,13 +159,9 @@ async function initTransactionsGrid() {
 
     animateRows: true,
 
-    onRowSelected: event => {
-      updateBulkActionsToolbar();
-    },
-
     onGridReady: event => {
-      console.log('\u2705 Transactions grid ready');
-      loadTransactions();
+      console.log('✅ Transactions grid ready');
+      loadSavedTransactions();
     },
 
     onFirstDataRendered: event => {
@@ -269,10 +172,9 @@ async function initTransactionsGrid() {
       statusPanels: [
         { statusPanel: 'agTotalRowCountComponent', align: 'left' },
         { statusPanel: 'agFilteredRowCountComponent' },
-        { statusPanel: 'agSelectedRowCountComponent' },
         {
           statusPanel: 'agAggregationComponent',
-          statusPanelParams: { aggFuncs: ['sum', 'avg', 'min', 'max'] }
+          statusPanelParams: { aggFuncs: ['sum'] }
         }
       ]
     },
@@ -288,53 +190,125 @@ async function initTransactionsGrid() {
   const gridDiv = document.querySelector('#transactionsGrid');
   if (gridDiv) {
     transactionsGridApi = agGrid.createGrid(gridDiv, gridOptions);
+
+    // Setup drag and drop
+    setupDragAndDrop();
   }
 }
 
-async function loadTransactions() {
-  try {
-    const transactions = await window.storage.getTransactions();
-    if (transactionsGridApi) {
-      transactionsGridApi.setGridOption('rowData', transactions);
+function setupDragAndDrop() {
+  const dropzone = document.getElementById('csv-dropzone');
+  if (!dropzone) return;
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.csv')) {
+      handleFile(files[0]);
+    } else {
+      alert('Please drop a CSV file');
     }
-  } catch (error) {
-    console.error('Failed to load transactions:', error);
+  });
+}
+
+function showCSVImport() {
+  const dropzone = document.getElementById('csv-dropzone');
+  if (dropzone) {
+    dropzone.style.display = 'flex';
   }
 }
 
-function updateBulkActionsToolbar() {
-  if (!transactionsGridApi) return;
+function hideCSVImport() {
+  const dropzone = document.getElementById('csv-dropzone');
+  if (dropzone) {
+    dropzone.style.display = 'none';
+  }
+}
 
-  const selectedRows = transactionsGridApi.getSelectedRows();
-  const count = selectedRows.length;
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    handleFile(file);
+  }
+}
 
-  const bulkBtn = document.getElementById('bulk-delete-btn');
-  const countSpan = document.getElementById('selection-count');
+function handleFile(file) {
+  const reader = new FileReader();
 
-  if (bulkBtn) {
-    bulkBtn.disabled = count === 0;
+  reader.onload = (e) => {
+    const csv = e.target.result;
+    parseCSV(csv);
+    hideCSVImport();
+  };
+
+  reader.readAsText(file);
+}
+
+function parseCSV(csv) {
+  const lines = csv.split('\n').filter(line => line.trim());
+  const headers = lines[0].split(',').map(h => h.trim());
+
+  console.log('CSV Headers:', headers);
+
+  const newTransactions = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(v => v.trim());
+
+    if (values.length >= 5) {
+      const transaction = {
+        refNumber: values[0] || `REF${Date.now()}-${i}`,
+        date: values[1] || new Date().toISOString().split('T')[0],
+        description: values[2] || '',
+        debit: parseFloat(values[3]) || 0,
+        credit: parseFloat(values[4]) || 0,
+        accountNumber: values[5] || '',
+        accountDescription: values[6] || ''
+      };
+
+      newTransactions.push(transaction);
+    }
   }
 
-  if (countSpan) {
-    countSpan.textContent = count > 0 ? `${count} selected` : '';
+  // Add to existing data
+  transactionData = [...transactionData, ...newTransactions];
+
+  if (transactionsGridApi) {
+    transactionsGridApi.setGridOption('rowData', transactionData);
   }
+
+  saveTransactions();
+
+  console.log(`✅ Imported ${newTransactions.length} transactions`);
+  alert(`Successfully imported ${newTransactions.length} transactions`);
 }
 
 function addNewTransaction() {
   const newTxn = {
-    id: Date.now(),
+    refNumber: `REF${Date.now()}`,
     date: new Date().toISOString().split('T')[0],
-    description: 'New Transaction',
-    vendor: '',
-    accountName: '',
-    category: '',
-    amount: 0,
-    type: 'debit',
-    reconciled: false
+    description: '',
+    debit: 0,
+    credit: 0,
+    accountNumber: '',
+    accountDescription: ''
   };
 
+  transactionData.unshift(newTxn);
+
   if (transactionsGridApi) {
-    transactionsGridApi.applyTransaction({ add: [newTxn], addIndex: 0 });
+    transactionsGridApi.setGridOption('rowData', transactionData);
     transactionsGridApi.startEditingCell({
       rowIndex: 0,
       colKey: 'description'
@@ -342,16 +316,26 @@ function addNewTransaction() {
   }
 }
 
-function bulkDelete() {
-  if (!transactionsGridApi) return;
-
-  const selectedRows = transactionsGridApi.getSelectedRows();
-  if (selectedRows.length === 0) return;
-
-  if (confirm(`Delete ${selectedRows.length} transactions?`)) {
-    transactionsGridApi.applyTransaction({ remove: selectedRows });
-    updateBulkActionsToolbar();
+function editTransaction(rowIndex) {
+  if (transactionsGridApi) {
+    transactionsGridApi.startEditingCell({
+      rowIndex: rowIndex,
+      colKey: 'description'
+    });
   }
+}
+
+function deleteTransaction(rowIndex) {
+  if (!confirm('Delete this transaction?')) return;
+
+  transactionData.splice(rowIndex, 1);
+
+  if (transactionsGridApi) {
+    transactionsGridApi.setGridOption('rowData', transactionData);
+  }
+
+  saveTransactions();
+  console.log('✅ Deleted transaction at index', rowIndex);
 }
 
 function onQuickFilterChange(searchText) {
@@ -360,19 +344,26 @@ function onQuickFilterChange(searchText) {
   }
 }
 
-function exportToExcel() {
+function exportToCSV() {
   if (transactionsGridApi) {
-    transactionsGridApi.exportDataAsExcel({
-      fileName: 'transactions.xlsx',
-      sheetName: 'Transactions'
+    transactionsGridApi.exportDataAsCsv({
+      fileName: 'transactions.csv',
+      columnKeys: ['refNumber', 'date', 'description', 'debit', 'credit', 'accountNumber', 'accountDescription']
     });
   }
 }
 
-function exportToCSV() {
-  if (transactionsGridApi) {
-    transactionsGridApi.exportDataAsCsv({
-      fileName: 'transactions.csv'
-    });
+function saveTransactions() {
+  localStorage.setItem('transactions', JSON.stringify(transactionData));
+}
+
+function loadSavedTransactions() {
+  const saved = localStorage.getItem('transactions');
+  if (saved) {
+    transactionData = JSON.parse(saved);
+    if (transactionsGridApi) {
+      transactionsGridApi.setGridOption('rowData', transactionData);
+    }
+    console.log(`📂 Loaded ${transactionData.length} saved transactions`);
   }
 }
