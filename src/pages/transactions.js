@@ -319,7 +319,6 @@ function parseCSV(csv) {
       const amount = parseFloat(amountStr.replace(/[^0-9.-]/g, '')) || 0;
 
       if (!dateStr) continue;
-      const memo = values[4] || '';
 
       // Prompt user for account type to determine debit/credit logic
       let accountType = localStorage.getItem('lastAccountType') || 'bank';
