@@ -526,4 +526,17 @@
   }
 
 
+  // ===========================================
+  // EXPOSE FUNCTIONS TO WINDOW (Global Scope)
+  // ===========================================
+  window.showCSVImport = showCSVImport;
+  window.hideCSVImport = hideCSVImport;
+  window.handleFileSelect = handleFileSelect;
+  window.addNewTransaction = addNewTransaction;
+  window.exportToCSV = exportToCSV;
+  window.filterTransactionFeed = filterTransactionFeed;
+  window.editTransaction = editTransaction;
+  window.deleteTransaction = deleteTransaction;
+
+
 })(); // End IIFE wrapper
