@@ -282,9 +282,6 @@ function parseCSV(csv) {
         matchVendor(transaction);
       }
 
-      // Normalize debit/credit for credit cards (reverse them)
-      normalizeDebitCredit(transaction);
-
       newTransactions.push(transaction);
     }
   }
@@ -466,7 +463,6 @@ function editTransaction(rowIndex) {
 function deleteTransaction(rowIndex) {
   if (!confirm('Delete this transaction?')) return;
 
-  const transaction = transactionData[rowIndex];
   transactionData.splice(rowIndex, 1);
 
   if (transactionsGridApi) {
@@ -474,12 +470,6 @@ function deleteTransaction(rowIndex) {
   }
 
   saveTransactions();
-
-  // Also delete from Supabase
-  if (transaction.id && window.supabase) {
-    window.supabase.deleteTransaction(transaction.id);
-  }
-
   console.log('✅ Deleted transaction at index', rowIndex);
 }
 
@@ -498,91 +488,17 @@ function exportToCSV() {
   }
 }
 
-/**
- * Detect if this is a credit card transaction based on description or account
- * Credit cards: Visa, Mastercard, MC, Amex, Discover, etc.
- */
-function isCreditCardTransaction(transaction) {
-  const desc = transaction.description.toLowerCase();
-  const keywords = ['visa', 'mastercard', 'mc', 'amex', 'discover', 'credit card', 'cc'];
-
-  // Check description
-  if (keywords.some(kw => desc.includes(kw))) {
-    return true;
-  }
-
-  // Check if account number matches credit card account (2120 = Credit Card - Business)
-  if (transaction.accountNumber === '2120') {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Reverse debit/credit for credit card transactions
- * Bank: Debit = expense, Credit = income
- * Credit Card: Debit = income (payment towards card), Credit = expense (charge on card)
- */
-function normalizeDebitCredit(transaction) {
-  if (isCreditCardTransaction(transaction)) {
-    // Swap debit and credit for credit cards
-    const temp = transaction.debit;
-    transaction.debit = transaction.credit;
-    transaction.credit = temp;
-
-    console.log(`🔄 Reversed debit/credit for credit card: ${transaction.description}`);
-  }
-}
-
-/**
- * Save transactions to both localStorage and Supabase
- */
-async function saveTransactions() {
-  // Save to localStorage as backup
+function saveTransactions() {
   localStorage.setItem('transactions', JSON.stringify(transactionData));
-
-  // Save to Supabase
-  if (window.supabase && typeof window.supabase.saveTransactions === 'function') {
-    try {
-      await window.supabase.saveTransactions(transactionData);
-      console.log('✅ Transactions saved to Supabase');
-    } catch (error) {
-      console.error('❌ Failed to save to Supabase:', error);
-    }
-  } else {
-    console.log('ℹ️ Supabase not available, saved to localStorage only');
-  }
 }
 
-/**
- * Load transactions from Supabase or localStorage
- */
-async function loadSavedTransactions() {
-  // Try Supabase first
-  if (window.supabase && typeof window.supabase.getTransactions === 'function') {
-    try {
-      const data = await window.supabase.getTransactions();
-      if (data && data.length > 0) {
-        transactionData = data;
-        if (transactionsGridApi) {
-          transactionsGridApi.setGridOption('rowData', transactionData);
-        }
-        console.log(`📂 Loaded ${transactionData.length} transactions from Supabase`);
-        return;
-      }
-    } catch (error) {
-      console.error('❌ Failed to load from Supabase:', error);
-    }
-  }
-
-  // Fallback to localStorage
+function loadSavedTransactions() {
   const saved = localStorage.getItem('transactions');
   if (saved) {
     transactionData = JSON.parse(saved);
     if (transactionsGridApi) {
       transactionsGridApi.setGridOption('rowData', transactionData);
     }
-    console.log(`📂 Loaded ${transactionData.length} transactions from localStorage`);
+    console.log(`📂 Loaded ${transactionData.length} saved transactions`);
   }
 }
