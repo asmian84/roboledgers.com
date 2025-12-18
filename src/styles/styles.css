@@ -290,8 +290,8 @@ body {
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  /* Changed from height: 100vh */
   transition: margin-left var(--transition-normal);
 }
 
