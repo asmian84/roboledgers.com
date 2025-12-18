@@ -1196,11 +1196,6 @@ button {
 }
 
 /* Stats Cards */
-text-transform: uppercase;
-letter-spacing: 0.05em;
-margin-bottom: 0.5rem;
-}
-
 .stat-value {
   font-size: 1.75rem;
   font-weight: 700;
