@@ -121,6 +121,9 @@ body {
    ============================================ */
 .main-content {
     background: transparent !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .content-area {
@@ -132,6 +135,16 @@ body {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
     margin: 20px;
     padding: 30px;
+    flex: 1;
+    min-height: calc(100vh - 140px);
+}
+
+/* Reports page specific - cover full height */
+.reports-page {
+    min-height: calc(100vh - 160px);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
 }
 
 /* ============================================
