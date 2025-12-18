@@ -171,51 +171,71 @@ function renderAppearancePanel() {
       
       <div class="form-section">
         <h3>Theme Selection</h3>
-        <p class="section-hint">Select a color palette based on your business personality</p>
         
         <div class="theme-grid">
-          <!-- 1. Trustworthy Corporate -->
-          <div class="theme-card" data-theme="trustworthy-corporate" onclick="applyTheme('trustworthy-corporate')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #4169e1, #ffffff);">
-              <div class="preview-content"></div>
+          <div class="theme-card" data-theme="cyber-night" onclick="applyTheme('cyber-night')">
+            <div class="theme-preview theme-preview-cyber">
+              <div class="preview-bar"></div>
+              <div class="preview-content">
+                <div class="preview-line"></div>
+                <div class="preview-line short"></div>
+              </div>
             </div>
-            <div class="theme-name">Trustworthy Corporate</div>
-            <div class="theme-desc">Royal Blue & White. Safest bet for business.</div>
-            <div class="theme-psych">54% cite Blue as most trusted.</div>
-            <button class="btn-apply" onclick="applyTheme('trustworthy-corporate'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Cyber Night</div>
+            <div class="theme-desc">Default dark theme</div>
+            <button class="btn-apply" onclick="applyTheme('cyber-night'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 2. Luxury Minimalist -->
-          <div class="theme-card" data-theme="luxury-minimalist" onclick="applyTheme('luxury-minimalist')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #000000, #ffffff);">
-              <div class="preview-content"></div>
+          <div class="theme-card" data-theme="ocean-breeze" onclick="applyTheme('ocean-breeze')">
+            <div class="theme-preview theme-preview-ocean">
+              <div class="preview-bar"></div>
+              <div class="preview-content">
+                <div class="preview-line"></div>
+                <div class="preview-line short"></div>
+              </div>
             </div>
-            <div class="theme-name">Luxury Minimalist</div>
-            <div class="theme-desc">Black & White. High contrast, elegant.</div>
-            <div class="theme-psych">Used by high-end fashion houses.</div>
-            <button class="btn-apply" onclick="applyTheme('luxury-minimalist'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Ocean Breeze</div>
+            <div class="theme-desc">Cool blue tones</div>
+            <button class="btn-apply" onclick="applyTheme('ocean-breeze'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 3. Nature/Growth -->
-          <div class="theme-card" data-theme="nature-growth" onclick="applyTheme('nature-growth')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #228b22, #fdfbf7);">
-              <div class="preview-content"></div>
+          <div class="theme-card" data-theme="forest-green" onclick="applyTheme('forest-green')">
+            <div class="theme-preview theme-preview-forest">
+              <div class="preview-bar"></div>
+              <div class="preview-content">
+                <div class="preview-line"></div>
+                <div class="preview-line short"></div>
+              </div>
             </div>
-            <div class="theme-name">Nature/Growth</div>
-            <div class="theme-desc">Forest Green & Cream. Health & money.</div>
-            <div class="theme-psych">Calming, signifies environment.</div>
-            <button class="btn-apply" onclick="applyTheme('nature-growth'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Forest Green</div>
+            <div class="theme-desc">Natural earth tones</div>
+            <button class="btn-apply" onclick="applyTheme('forest-green'); event.stopPropagation();">Apply</button>
           </div>
           
-          <!-- 4. Energetic/Action -->
-          <div class="theme-card" data-theme="energetic-action" onclick="applyTheme('energetic-action')">
-            <div class="theme-preview" style="background: linear-gradient(135deg, #ff4500, #ffffff);">
-              <div class="preview-content"></div>
+          <div class="theme-card" data-theme="sunset-orange" onclick="applyTheme('sunset-orange')">
+            <div class="theme-preview theme-preview-sunset">
+              <div class="preview-bar"></div>
+              <div class="preview-content">
+                <div class="preview-line"></div>
+                <div class="preview-line short"></div>
+              </div>
             </div>
-            <div class="theme-name">Energetic/Action</div>
-            <div class="theme-desc">Red/Orange & White. Urgent & bold.</div>
-            <div class="theme-psych">Creates urgency, triggers appetite.</div>
-            <button class="btn-apply" onclick="applyTheme('energetic-action'); event.stopPropagation();">Apply</button>
+            <div class="theme-name">Sunset Orange</div>
+            <div class="theme-desc">Warm vibrant colors</div>
+            <button class="btn-apply" onclick="applyTheme('sunset-orange'); event.stopPropagation();">Apply</button>
+          </div>
+          
+          <div class="theme-card" data-theme="royal-purple" onclick="applyTheme('royal-purple')">
+            <div class="theme-preview theme-preview-royal">
+              <div class="preview-bar"></div>
+              <div class="preview-content">
+                <div class="preview-line"></div>
+                <div class="preview-line short"></div>
+              </div>
+            </div>
+            <div class="theme-name">Royal Purple</div>
+            <div class="theme-desc">Rich luxury theme</div>
+            <button class="btn-apply" onclick="applyTheme('royal-purple'); event.stopPropagation();">Apply</button>
           </div>
         </div>
       </div>
@@ -567,34 +587,9 @@ async function saveGeneralSettings(event) {
 }
 
 function applyTheme(themeName) {
-  // Update data-theme on body
-  document.body.setAttribute('data-theme', themeName);
-
-  // Save to storage
-  localStorage.setItem('ab3_theme', themeName);
-
-  // Show active state in grid
-  document.querySelectorAll('.theme-card').forEach(card => {
-    if (card.dataset.theme === themeName) {
-      card.classList.add('active');
-    } else {
-      card.classList.remove('active');
-    }
-  });
-
-  // Show toast
-  const toast = document.createElement('div');
-  toast.className = 'glass-card fade-in-up';
-  toast.style.position = 'fixed';
-  toast.style.bottom = '20px';
-  toast.style.right = '20px';
-  toast.style.padding = '16px 24px';
-  toast.style.border = '1px solid var(--theme-glass-border)';
-  toast.style.zIndex = '9999';
-  toast.innerHTML = `✅ Theme "${themeName.replace(/-/g, ' ')}" applied`;
-  document.body.appendChild(toast);
-
-  setTimeout(() => toast.remove(), 3000);
+  // Theme application logic (to be implemented with CSS variables)
+  console.log('Applying theme:', themeName);
+  alert(`Theme "${themeName}" applied! (Theme switching coming soon)`);
 }
 
 function exportAllData(format) {

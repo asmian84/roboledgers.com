@@ -214,8 +214,8 @@ body {
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  /* overflow: hidden; Removed to allow content to expand */
+  height: 100vh;
+  overflow: hidden;
   transition: margin-left var(--transition-normal);
 }
 
@@ -1095,59 +1095,6 @@ button {
   .report-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-}
-
-/* ============================================
-   REPORTS & ANALYTICS PAGE
-   ============================================ */
-.reports-page {
-  padding: 0;
-  overflow-y: auto;
-  height: 100%;
-}
-
-.report-dashboard {
-  display: grid;
-  gap: 24px;
-  padding: 24px;
-}
-
-.dashboard-header {
-  margin-bottom: 20px;
-}
-
-.dashboard-header h1 {
-  font-size: 28px;
-  color: white;
-  margin-bottom: 8px;
-}
-
-.dashboard-subtitle {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-
-/* Quick Stats */
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 30px;
-}
-
-.quick-stat {
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 20px;
-  transition: all 0.3s ease;
-}
-
-.quick-stat:hover {
-  background: rgba(255, 255, 255, 0.13);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(31, 38, 135, 0.25);
 }
 
 /* ============================================
@@ -2466,62 +2413,6 @@ button {
 
 .btn-apply:hover {
   opacity: 0.9;
-}
-
-/* Report Cards Grid */
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.report-card {
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-decoration: none;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.report-card:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 16px 48px rgba(31, 38, 135, 0.3);
-}
-
-.report-icon {
-  font-size: 36px;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-
-.report-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-  margin: 0;
-}
-
-.report-description {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.report-arrow {
-  margin-top: auto;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 20px;
 }
 
 /* Export Options */
