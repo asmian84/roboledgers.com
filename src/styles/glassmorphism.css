@@ -240,11 +240,10 @@ body.theme-royal-purple {
     margin: 20px 20px 0 20px;
     /* Remove bottom margin to sit flush */
     padding: 30px;
-    flex: 1;
-    overflow-y: auto;
-    /* Enable scrolling within the glass box */
-    height: 100%;
-    /* Force height fill */
+    /* Remove internal scroll and fixed height for full responsiveness */
+    overflow: visible;
+    height: auto;
+    min-height: calc(100% - 20px);
 }
 
 /* Ensure reports page takes full width inside container */

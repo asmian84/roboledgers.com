@@ -214,8 +214,9 @@ body {
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
   transition: margin-left var(--transition-normal);
 }
 
