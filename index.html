@@ -7,7 +7,6 @@
   <title>AutoBookkeeping v3.0</title>
   <link rel="stylesheet" href="src/styles/styles.css">
   <link rel="stylesheet" href="src/styles/glassmorphism.css">
-  <link rel="stylesheet" href="src/styles/compact.css">
 
   <!-- AG Grid Community -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
@@ -101,164 +100,170 @@
 
     <!-- Page Content (Router injects here) -->
     <div id="app" class="app-container">
-    </div>
-
-    <!-- Auth Modal (only modal allowed) -->
-    <div id="auth-modal" class="auth-modal" style="display: none;">
-      <div class="auth-modal-content">
-        <h2>Authentication Required</h2>
-        <p>Please log in to continue.</p>
-        <button class="btn-primary">Log In</button>
+      <!-- Route content will be injected here -->
+      <div class="page loading">
+        <p>Loading...</p>
       </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="src/core/state.js"></script>
-    <script src="src/core/router.js"></script>
-    <script src="src/core/breadcrumb.js"></script>
-    <script src="src/core/session.js"></script>
-    <script src="src/components/auth-modal.js"></script>
-    <script src="src/components/csv-import-modal.js"></script>
-    <script src="src/components/add-transaction-modal.js"></script>
+  </main>
 
-    <!-- Page Modules -->
-    <script src="src/pages/home.js"></script>
-    <script src="src/pages/profile.js"></script>
-    <script src="src/pages/transactions.js"></script>
-    <script src="src/pages/vendors.js"></script>
-    <script src="src/pages/vendorDetail.js"></script>
-    <script src="src/pages/accounts.js"></script>
-    <script src="src/pages/accountDetail.js"></script>
-    <script src="src/pages/reports.js"></script>
-    <script src="src/pages/reconciliation.js"></script>
-    <script src="src/pages/settings.js"></script>
+  <!-- Auth Modal (only modal allowed) -->
+  <div id="auth-modal" class="auth-modal" style="display: none;">
+    <div class="auth-modal-content">
+      <h2>Authentication Required</h2>
+      <p>Please log in to continue.</p>
+      <button class="btn-primary">Log In</button>
+    </div>
+  </div>
 
-    <!-- Vendor Pages -->
-    <script src="src/utils/vendorMatcher.js"></script>
-    <script src="src/pages/vendors.js"></script>
-    <script src="src/pages/vendorDetail.js"></script>
-    <script src="src/pages/vendorNew.js"></script>
+  <!-- Scripts -->
+  <script src="src/core/state.js"></script>
+  <script src="src/core/router.js"></script>
+  <script src="src/core/breadcrumb.js"></script>
+  <script src="src/core/session.js"></script>
+  <script src="src/components/auth-modal.js"></script>
+  <script src="src/components/csv-import-modal.js"></script>
+  <script src="src/components/add-transaction-modal.js"></script>
 
-    <!-- Data Layer -->
-    <script src="src/data/utils.js"></script>
-    <script src="src/data/models.js"></script>
-    <script src="src/data/storage.js"></script>
-    <script src="src/data/seed.js"></script>
-    <script src="src/data/supabase.js"></script>
+  <!-- Page Modules -->
+  <script src="src/pages/home.js"></script>
+  <script src="src/pages/profile.js"></script>
+  <script src="src/pages/transactions.js"></script>
+  <script src="src/pages/vendors.js"></script>
+  <script src="src/pages/vendorDetail.js"></script>
+  <script src="src/pages/accounts.js"></script>
+  <script src="src/pages/accountDetail.js"></script>
+  <script src="src/pages/reports.js"></script>
+  <script src="src/pages/reconciliation.js"></script>
+  <script src="src/pages/settings.js"></script>
 
-    <script>
-      // Initialize application state
-      const appState = createStore({
-        currentUser: null,
-        theme: 'light',
-        sidebarOpen: false
-      }, {
-        storageKey: 'autobook_v3_state',
-        persist: true
-      });
+  <!-- Vendor Pages -->
+  <script src="src/utils/vendorMatcher.js"></script>
+  <script src="src/pages/vendors.js"></script>
+  <script src="src/pages/vendorDetail.js"></script>
+  <script src="src/pages/vendorNew.js"></script>
 
-      // ====================================
-      // DATA LAYER INITIALIZATION
-      // ====================================
+  <!-- Data Layer -->
+  <script src="src/data/utils.js"></script>
+  <script src="src/data/models.js"></script>
+  <script src="src/data/storage.js"></script>
+  <script src="src/data/seed.js"></script>
+  <script src="src/data/supabase.js"></script>
 
-      async function initializeDataLayer() {
-        console.log('💾🌱 Initializing data layer...');
+  <script>
+    // Initialize application state
+    const appState = createStore({
+      currentUser: null,
+      theme: 'light',
+      sidebarOpen: false
+    }, {
+      storageKey: 'autobook_v3_state',
+      persist: true
+    });
 
-        try {
-          // Check if database needs seeding
-          const transactions = await window.storage.getTransactions();
+    // ====================================
+    // DATA LAYER INITIALIZATION
+    // ====================================
 
-          if (transactions.length === 0) {
-            console.log('🌱 No data found, seeding database...');
-            const counts = await window.seedDatabase();
-            console.log('✅ Database seeded:', counts);
-          } else {
-            console.log(`✅ Data loaded: ${transactions.length} transactions`);
-          }
+    async function initializeDataLayer() {
+      console.log('💾🌱 Initializing data layer...');
 
-          // Load settings
-          const settings = await window.storage.getSettings();
-          console.log('⚙️ Settings loaded:', settings);
+      try {
+        // Check if database needs seeding
+        const transactions = await window.storage.getTransactions();
 
-          // Apply theme from settings
-          if (settings.theme) {
-            document.documentElement.setAttribute('data-theme', settings.theme);
-            appState.setState({ theme: settings.theme });
-          }
-
-          // Update state with loaded data counts
-          const vendors = await window.storage.getVendors();
-          const accounts = await window.storage.getAccounts();
-
-          console.log(`📊 Loaded: ${vendors.length} vendors, ${accounts.length} accounts`);
-
-        } catch (error) {
-          console.error('❌ Failed to initialize data layer:', error);
+        if (transactions.length === 0) {
+          console.log('🌱 No data found, seeding database...');
+          const counts = await window.seedDatabase();
+          console.log('✅ Database seeded:', counts);
+        } else {
+          console.log(`✅ Data loaded: ${transactions.length} transactions`);
         }
+
+        // Load settings
+        const settings = await window.storage.getSettings();
+        console.log('⚙️ Settings loaded:', settings);
+
+        // Apply theme from settings
+        if (settings.theme) {
+          document.documentElement.setAttribute('data-theme', settings.theme);
+          appState.setState({ theme: settings.theme });
+        }
+
+        // Update state with loaded data counts
+        const vendors = await window.storage.getVendors();
+        const accounts = await window.storage.getAccounts();
+
+        console.log(`📊 Loaded: ${vendors.length} vendors, ${accounts.length} accounts`);
+
+      } catch (error) {
+        console.error('❌ Failed to initialize data layer:', error);
       }
+    }
 
-      // Initialize data when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeDataLayer);
-      } else {
-        // Already loaded
-        setTimeout(initializeDataLayer, 0);
-      }
+    // Initialize data when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeDataLayer);
+    } else {
+      // Already loaded
+      setTimeout(initializeDataLayer, 0);
+    }
 
-      // Active nav updater
-      function updateActiveNav(path) {
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-          const route = item.getAttribute('data-route');
-          if (!route) return;
+    // Active nav updater
+    function updateActiveNav(path) {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        const route = item.getAttribute('data-route');
+        if (!route) return;
 
-          // Exact match or starts with (for nested routes)
-          if (route === path ||
-            (path !== '/' && path.startsWith(route) && route !== '/')) {
-            item.classList.add('active');
-          } else {
-            item.classList.remove('active');
-          }
-        });
-      }
-
-      // Update breadcrumb and nav on route change
-      router.onChange((route) => {
-        breadcrumbManager.update(route.path, route.params);
-        updateActiveNav(route.path);
+        // Exact match or starts with (for nested routes)
+        if (route === path ||
+          (path !== '/' && path.startsWith(route) && route !== '/')) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
       });
+    }
 
-      // Mobile sidebar toggle
-      const hamburger = document.getElementById('hamburger');
-      const sidebar = document.getElementById('sidebar');
-      const sidebarClose = document.getElementById('sidebar-close');
-      const mainContent = document.querySelector('.main-content');
+    // Update breadcrumb and nav on route change
+    router.onChange((route) => {
+      breadcrumbManager.update(route.path, route.params);
+      updateActiveNav(route.path);
+    });
 
-      hamburger?.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        appState.setState({ sidebarOpen: true });
-      });
+    // Mobile sidebar toggle
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarClose = document.getElementById('sidebar-close');
+    const mainContent = document.querySelector('.main-content');
 
-      sidebarClose?.addEventListener('click', () => {
+    hamburger?.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      appState.setState({ sidebarOpen: true });
+    });
+
+    sidebarClose?.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      appState.setState({ sidebarOpen: false });
+    });
+
+    // Close sidebar when clicking outside on mobile
+    mainContent?.addEventListener('click', () => {
+      if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
         sidebar.classList.remove('open');
         appState.setState({ sidebarOpen: false });
-      });
+      }
+    });
 
-      // Close sidebar when clicking outside on mobile
-      mainContent?.addEventListener('click', () => {
-        if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
-          sidebar.classList.remove('open');
-          appState.setState({ sidebarOpen: false });
-        }
-      });
+    // ====================================
+    // ROUTE REGISTRATION
+    // ====================================
 
-      // ====================================
-      // ROUTE REGISTRATION
-      // ====================================
-
-      // Home page renders inline for simplicity
-      function renderHomePage() {
-        return `
+    // Home page renders inline for simplicity
+    function renderHomePage() {
+      return `
         <div class="page">
           <div class="page-header">
             <h1 class="page-title">Welcome to AutoBookkeeping v3.0</h1>
@@ -305,142 +310,142 @@
           </div>
         </div>
       `;
+    }
+
+    // Initialize session on app load
+    Session.init().then(authenticated => {
+      if (!authenticated) {
+        console.log('No active session, will show login modal for protected routes');
       }
+    });
 
-      // Initialize session on app load
-      Session.init().then(authenticated => {
-        if (!authenticated) {
-          console.log('No active session, will show login modal for protected routes');
-        }
-      });
+    // Home/Dashboard
+    router.register('/', () => {
+      document.getElementById('app').innerHTML = renderHome();
+    });
 
-      // Home/Dashboard
-      router.register('/', () => {
-        document.getElementById('app').innerHTML = renderHome();
-      });
+    router.register('/home', () => {
+      document.getElementById('app').innerHTML = renderHome();
+    });
 
-      router.register('/home', () => {
-        document.getElementById('app').innerHTML = renderHome();
-      });
+    // User Profile
+    router.register('/profile', () => {
+      document.getElementById('app').innerHTML = renderProfile();
+    });
 
-      // User Profile
-      router.register('/profile', () => {
-        document.getElementById('app').innerHTML = renderProfile();
-      });
+    // Transactions
+    router.register('/transactions', () => {
+      document.getElementById('app').innerHTML = renderTransactions();
+    });
 
-      // Transactions
-      router.register('/transactions', () => {
-        document.getElementById('app').innerHTML = renderTransactions();
-      });
+    // Vendors List
+    router.register('/vendors', () => {
+      document.getElementById('app').innerHTML = renderVendors();
+    });
 
-      // Vendors List
-      router.register('/vendors', () => {
-        document.getElementById('app').innerHTML = renderVendors();
-      });
+    // New Vendor
+    router.register('/vendors/new', () => {
+      document.getElementById('app').innerHTML = renderVendorNew();
+    });
 
-      // New Vendor
-      router.register('/vendors/new', () => {
-        document.getElementById('app').innerHTML = renderVendorNew();
-      });
+    // Vendor Detail - Transactions Tab (default)
+    router.register('/vendors/:vendorId', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+    });
 
-      // Vendor Detail - Transactions Tab (default)
-      router.register('/vendors/:vendorId', (route) => {
-        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
-      });
+    // Vendor Detail - Transactions Tab
+    router.register('/vendors/:vendorId/transactions', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+    });
 
-      // Vendor Detail - Transactions Tab
-      router.register('/vendors/:vendorId/transactions', (route) => {
-        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
-      });
+    // Vendor Detail - Analytics Tab
+    router.register('/vendors/:vendorId/analytics', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'analytics' });
+    });
 
-      // Vendor Detail - Analytics Tab
-      router.register('/vendors/:vendorId/analytics', (route) => {
-        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'analytics' });
-      });
+    // Vendor Detail - Settings Tab
+    router.register('/vendors/:vendorId/settings', (route) => {
+      document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'settings' });
+    });
 
-      // Vendor Detail - Settings Tab
-      router.register('/vendors/:vendorId/settings', (route) => {
-        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'settings' });
-      });
+    // Accounts (Chart of Accounts)
+    router.register('/accounts', () => {
+      document.getElementById('app').innerHTML = renderAccounts();
+    });
 
-      // Accounts (Chart of Accounts)
-      router.register('/accounts', () => {
-        document.getElementById('app').innerHTML = renderAccounts();
-      });
+    // Account Detail
+    router.register('/accounts/:accountId', (route) => {
+      document.getElementById('app').innerHTML = renderAccountDetail(route.params);
+    });
 
-      // Account Detail
-      router.register('/accounts/:accountId', (route) => {
-        document.getElementById('app').innerHTML = renderAccountDetail(route.params);
-      });
+    // Reports - Dashboard
+    router.register('/reports', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'dashboard' });
+    });
 
-      // Reports - Dashboard
-      router.register('/reports', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'dashboard' });
-      });
+    // Reports - Profit & Loss
+    router.register('/reports/profit-loss', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'profit-loss' });
+    });
 
-      // Reports - Profit & Loss
-      router.register('/reports/profit-loss', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'profit-loss' });
-      });
+    // Reports - Balance Sheet
+    router.register('/reports/balance-sheet', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'balance-sheet' });
+    });
 
-      // Reports - Balance Sheet
-      router.register('/reports/balance-sheet', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'balance-sheet' });
-      });
+    // Reports - Cash Flow
+    router.register('/reports/cash-flow', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'cash-flow' });
+    });
 
-      // Reports - Cash Flow
-      router.register('/reports/cash-flow', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'cash-flow' });
-      });
+    // Reports - Vendor Analysis
+    router.register('/reports/vendor-analysis', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'vendor-analysis' });
+    });
 
-      // Reports - Vendor Analysis
-      router.register('/reports/vendor-analysis', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'vendor-analysis' });
-      });
+    // Reports - Account Summary
+    router.register('/reports/account-summary', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'account-summary' });
+    });
 
-      // Reports - Account Summary
-      router.register('/reports/account-summary', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'account-summary' });
-      });
+    // Reports - Custom Builder
+    router.register('/reports/custom', () => {
+      document.getElementById('app').innerHTML = renderReports({ report: 'custom' });
+    });
 
-      // Reports - Custom Builder
-      router.register('/reports/custom', () => {
-        document.getElementById('app').innerHTML = renderReports({ report: 'custom' });
-      });
+    // Bank Reconciliation
+    router.register('/reconciliation', () => {
+      document.getElementById('app').innerHTML = renderReconciliation();
+    });
 
-      // Bank Reconciliation
-      router.register('/reconciliation', () => {
-        document.getElementById('app').innerHTML = renderReconciliation();
-      });
+    // Settings routes
+    router.register('/settings', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'general' });
+    });
 
-      // Settings routes
-      router.register('/settings', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'general' });
-      });
+    router.register('/settings/appearance', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'appearance' });
+    });
 
-      router.register('/settings/appearance', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'appearance' });
-      });
+    router.register('/settings/data', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'data' });
+    });
 
-      router.register('/settings/data', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'data' });
-      });
+    router.register('/settings/integrations', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'integrations' });
+    });
 
-      router.register('/settings/integrations', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'integrations' });
-      });
+    router.register('/settings/subscription', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'subscription' });
+    });
 
-      router.register('/settings/subscription', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'subscription' });
-      });
+    router.register('/settings/about', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'about' });
+    });
 
-      router.register('/settings/about', () => {
-        document.getElementById('app').innerHTML = renderSettings({ panel: 'about' });
-      });
-
-      // Admin routes
-      router.register('/team', () => {
-        document.getElementById('app').innerHTML = `
+    // Admin routes
+    router.register('/team', () => {
+      document.getElementById('app').innerHTML = `
         <div class="page">
           <div class="page-header">
             <h1 class="page-title">Team Management</h1>
@@ -450,14 +455,14 @@
           </div>
         </div>
       `;
-      });
+    });
 
-      router.register('/subscription', () => {
-        document.getElementById('app').innerHTML = renderSettings({ tab: 'subscription' });
-      });
+    router.register('/subscription', () => {
+      document.getElementById('app').innerHTML = renderSettings({ tab: 'subscription' });
+    });
 
-      router.register('/audit', () => {
-        document.getElementById('app').innerHTML = `
+    router.register('/audit', () => {
+      document.getElementById('app').innerHTML = `
         <div class="page">
           <div class="page-header">
             <h1 class="page-title">Audit Log</h1>
@@ -471,10 +476,10 @@
           </div>
         </div>
       `;
-      });
+    });
 
-      console.log('✅ AutoBookkeeping v3.0 Navigation System initialized');
-    </script>
+    console.log('✅ AutoBookkeeping v3.0 Navigation System initialized');
+  </script>
 
 </body>
 
