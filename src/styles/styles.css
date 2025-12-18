@@ -335,8 +335,6 @@ body {
    ============================================ */
 .app-container {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
   background-color: var(--bg-secondary);
 }
 
