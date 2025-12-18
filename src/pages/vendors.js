@@ -16,27 +16,6 @@ window.renderVendors = function () {
         </button>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="vendor-stats">
-        <div class="stat-card">
-          <div class="stat-icon">🏢</div>
-          <div class="stat-value" id="total-vendors">0</div>
-          <div class="stat-label">Total Vendors</div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">✅</div>
-          <div class="stat-value" id="active-vendors">0</div>
-          <div class="stat-label">Active This Month</div>
-        </div>
-        
-        <div class="stat-card top-vendor">
-          <div class="stat-icon">👑</div>
-          <div class="stat-value" id="top-vendor-name">-</div>
-          <div class="stat-label">Top Vendor</div>
-          <div class="stat-sublabel" id="top-vendor-amount">$0.00</div>
-        </div>
-      </div>
 
       <!-- Toolbar -->
       <div class="toolbar">

@@ -1283,6 +1283,8 @@ button {
 .content-area {
   flex: 1;
   display: flex;
+  overflow: hidden;
+  /* CRITICAL: AG Grid needs this to display */
   position: relative;
 }
 
