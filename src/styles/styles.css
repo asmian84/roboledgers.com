@@ -44,23 +44,97 @@
   --transition-normal: 250ms ease;
 }
 
-/* Dark Mode */
-[data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-sidebar: #0a0f1a;
+/* Dark Mode (Midnight) */
+[data-theme="dark"],
+[data-theme="midnight"] {
+  --primary-color: #3b82f6;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #171717;
+  --bg-sidebar: #050505;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --border-color: #262626;
+  --panel-bg: #111111;
+}
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
+/* 3. Sage (Soft Green) */
+[data-theme="sage"] {
+  --primary-color: #10b981;
+  --bg-primary: #f0fdf4;
+  --bg-secondary: #dcfce7;
+  --bg-tertiary: #bbf7d0;
+  --bg-sidebar: #14532d;
+  --text-primary: #14532d;
+  --text-secondary: #166534;
+  --text-tertiary: #15803d;
+  --border-color: #86efac;
+}
+
+/* 4. Ocean (Calm Blue) */
+[data-theme="ocean"] {
+  --primary-color: #0ea5e9;
+  --bg-primary: #f0f9ff;
+  --bg-secondary: #e0f2fe;
+  --bg-tertiary: #bae6fd;
+  --bg-sidebar: #0c4a6e;
+  --text-primary: #0c4a6e;
+  --text-secondary: #0284c7;
+  --text-tertiary: #38bdf8;
+  --border-color: #7dd3fc;
+}
+
+/* 5. Rose (Warm Pink) */
+[data-theme="rose"] {
+  --primary-color: #e11d48;
+  --bg-primary: #fff1f2;
+  --bg-secondary: #ffe4e6;
+  --bg-tertiary: #fecdd3;
+  --bg-sidebar: #881337;
+  --text-primary: #881337;
+  --text-secondary: #9f1239;
+  --text-tertiary: #be123c;
+  --border-color: #fda4af;
+}
+
+/* 6. Cloud (Soft Grey/Blue) */
+[data-theme="cloud"] {
+  --primary-color: #64748b;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --bg-sidebar: #334155;
+  --text-primary: #334155;
+  --text-secondary: #475569;
   --text-tertiary: #64748b;
+  --border-color: #cbd5e1;
+}
 
-  --border-color: #334155;
-  --border-hover: #475569;
+/* 7. Lavender (Soft Purple) */
+[data-theme="lavender"] {
+  --primary-color: #8b5cf6;
+  --bg-primary: #f5f3ff;
+  --bg-secondary: #ede9fe;
+  --bg-tertiary: #ddd6fe;
+  --bg-sidebar: #4c1d95;
+  --text-primary: #4c1d95;
+  --text-secondary: #5b21b6;
+  --text-tertiary: #7c3aed;
+  --border-color: #c4b5fd;
+}
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+/* 8. Autumn (Warm Orange) */
+[data-theme="autumn"] {
+  --primary-color: #f97316;
+  --bg-primary: #fff7ed;
+  --bg-secondary: #ffedd5;
+  --bg-tertiary: #fed7aa;
+  --bg-sidebar: #7c2d12;
+  --text-primary: #7c2d12;
+  --text-secondary: #9a3412;
+  --text-tertiary: #c2410c;
+  --border-color: #fdba74;
 }
 
 /* ============================================
@@ -89,6 +163,8 @@ body {
 body {
   display: flex;
   overflow: hidden;
+  zoom: 0.66;
+  /* Scale entire platform to 66% */
 }
 
 /* ============================================
@@ -368,9 +444,15 @@ button {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-start;
+  /* Start from top to allow scrolling */
   z-index: 1000;
+  overflow-y: auto;
+  /* Enable scrolling */
+  padding: 2rem 0;
+  /* Add padding for scroll space */
+  backdrop-filter: blur(4px);
 }
 
 .auth-modal-content {

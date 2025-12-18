@@ -173,69 +173,60 @@ function renderAppearancePanel() {
         <h3>Theme Selection</h3>
         
         <div class="theme-grid">
-          <div class="theme-card" data-theme="cyber-night" onclick="applyTheme('cyber-night')">
-            <div class="theme-preview theme-preview-cyber">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Cyber Night</div>
-            <div class="theme-desc">Default dark theme</div>
-            <button class="btn-apply" onclick="applyTheme('cyber-night'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="daylight" onclick="applyTheme('daylight')">
+            <div class="theme-icon">☀️</div>
+            <div class="theme-name">Daylight</div>
+            <div class="theme-desc">Classic Light</div>
+            <button class="btn-apply" onclick="applyTheme('daylight'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-card" data-theme="ocean-breeze" onclick="applyTheme('ocean-breeze')">
-            <div class="theme-preview theme-preview-ocean">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Ocean Breeze</div>
-            <div class="theme-desc">Cool blue tones</div>
-            <button class="btn-apply" onclick="applyTheme('ocean-breeze'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="midnight" onclick="applyTheme('midnight')">
+            <div class="theme-icon">🌑</div>
+            <div class="theme-name">Midnight</div>
+            <div class="theme-desc">OLED Dark</div>
+            <button class="btn-apply" onclick="applyTheme('midnight'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-card" data-theme="forest-green" onclick="applyTheme('forest-green')">
-            <div class="theme-preview theme-preview-forest">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Forest Green</div>
-            <div class="theme-desc">Natural earth tones</div>
-            <button class="btn-apply" onclick="applyTheme('forest-green'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="sage" onclick="applyTheme('sage')">
+            <div class="theme-icon">🌿</div>
+            <div class="theme-name">Sage</div>
+            <div class="theme-desc">Soft Green</div>
+            <button class="btn-apply" onclick="applyTheme('sage'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-card" data-theme="sunset-orange" onclick="applyTheme('sunset-orange')">
-            <div class="theme-preview theme-preview-sunset">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Sunset Orange</div>
-            <div class="theme-desc">Warm vibrant colors</div>
-            <button class="btn-apply" onclick="applyTheme('sunset-orange'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="ocean" onclick="applyTheme('ocean')">
+            <div class="theme-icon">🌊</div>
+            <div class="theme-name">Ocean</div>
+            <div class="theme-desc">Calm Blue</div>
+            <button class="btn-apply" onclick="applyTheme('ocean'); event.stopPropagation();">Apply</button>
           </div>
           
-          <div class="theme-card" data-theme="royal-purple" onclick="applyTheme('royal-purple')">
-            <div class="theme-preview theme-preview-royal">
-              <div class="preview-bar"></div>
-              <div class="preview-content">
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-              </div>
-            </div>
-            <div class="theme-name">Royal Purple</div>
-            <div class="theme-desc">Rich luxury theme</div>
-            <button class="btn-apply" onclick="applyTheme('royal-purple'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="rose" onclick="applyTheme('rose')">
+            <div class="theme-icon">🌸</div>
+            <div class="theme-name">Rose</div>
+            <div class="theme-desc">Warm Pink</div>
+            <button class="btn-apply" onclick="applyTheme('rose'); event.stopPropagation();">Apply</button>
+          </div>
+
+          <div class="theme-card" data-theme="cloud" onclick="applyTheme('cloud')">
+            <div class="theme-icon">☁️</div>
+            <div class="theme-name">Cloud</div>
+            <div class="theme-desc">Soft Grey</div>
+            <button class="btn-apply" onclick="applyTheme('cloud'); event.stopPropagation();">Apply</button>
+          </div>
+
+          <div class="theme-card" data-theme="lavender" onclick="applyTheme('lavender')">
+            <div class="theme-icon">💜</div>
+            <div class="theme-name">Lavender</div>
+            <div class="theme-desc">Soft Purple</div>
+            <button class="btn-apply" onclick="applyTheme('lavender'); event.stopPropagation();">Apply</button>
+          </div>
+
+          <div class="theme-card" data-theme="autumn" onclick="applyTheme('autumn')">
+            <div class="theme-icon">🍂</div>
+            <div class="theme-name">Autumn</div>
+            <div class="theme-desc">Warm Orange</div>
+            <button class="btn-apply" onclick="applyTheme('autumn'); event.stopPropagation();">Apply</button>
           </div>
         </div>
       </div>
