@@ -1,5 +1,5 @@
 /**
- * Transactions Page - CSV Import to Grid
+ * Transactions Page - Modern Feed UI (Stripe/Apple Card style)
  */
 
 window.renderTransactions = function () {
@@ -22,7 +22,7 @@ window.renderTransactions = function () {
             id="search-input" 
             class="search-input" 
             placeholder="Search transactions..." 
-            oninput="onQuickFilterChange(this.value)"
+            oninput="filterTransactionFeed(this.value)"
           >
           <button class="btn-secondary" onclick="exportToCSV()">📄 Export CSV</button>
         </div>
@@ -42,161 +42,158 @@ window.renderTransactions = function () {
         </div>
       </div>
 
-      <!-- AG Grid Container -->
+      <!-- Transaction Feed -->
       <div class="content-area">
-        <div id="transactionsGrid" class="ag-theme-alpine grid-container"></div>
+        <div id="transactionFeed" class="transaction-feed"></div>
       </div>
     </div>
   `;
 };
 
-// Auto-initialize when page loads
-if (typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('transactionsGrid')) {
-      initTransactionsGrid();
-    }
-  });
-}
-
-let transactionsGridApi;
 let transactionData = [];
 
-async function initTransactionsGrid() {
-  console.log('🔷 Initializing Transactions Grid...');
+// Category icons
+const categoryIcons = {
+  'Office Supplies': '📦',
+  'Utilities': '💡',
+  'Rent': '🏠',
+  'Travel': '✈️',
+  'Meals': '🍽️',
+  'Insurance': '🛡️',
+  'Marketing': '📢',
+  'Professional': '💼',
+  'Software': '💻',
+  'Banking': '🏦',
+  'default': '💰'
+};
 
-  const columnDefs = [
-    {
-      headerName: 'Ref#',
-      field: 'refNumber',
-      width: 100,
-      filter: 'agTextColumnFilter',
-      pinned: 'left'
-    },
-    {
-      headerName: 'Date',
-      field: 'date',
-      width: 120,
-      filter: 'agDateColumnFilter',
-      editable: true,
-      sort: 'desc',
-      valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString() : ''
-    },
-    {
-      headerName: 'Description',
-      field: 'description',
-      width: 300,
-      filter: 'agTextColumnFilter',
-      editable: true,
-      flex: 1
-    },
-    {
-      headerName: 'Debit',
-      field: 'debit',
-      width: 120,
-      filter: 'agNumberColumnFilter',
-      editable: true,
-      type: 'numericColumn',
-      valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
-      cellStyle: { color: '#ef4444', fontWeight: '600' }
-    },
-    {
-      headerName: 'Credit',
-      field: 'credit',
-      width: 120,
-      filter: 'agNumberColumnFilter',
-      editable: true,
-      type: 'numericColumn',
-      valueFormatter: params => params.value ? `$${parseFloat(params.value).toFixed(2)}` : '',
-      cellStyle: { color: '#10b981', fontWeight: '600' }
-    },
-    {
-      headerName: 'Account#',
-      field: 'accountNumber',
-      width: 100,
-      filter: 'agTextColumnFilter',
-      editable: true
-    },
-    {
-      headerName: 'Account Description',
-      field: 'accountDescription',
-      width: 250,
-      filter: 'agTextColumnFilter',
-      editable: true
-    },
-    {
-      headerName: 'Actions',
-      field: 'actions',
-      width: 100,
-      pinned: 'right',
-      sortable: false,
-      filter: false,
-      cellRenderer: params => {
-        return `
-          <div class="actions-cell">
-            <button class="btn-icon btn-edit" onclick="editTransaction(${params.rowIndex})" title="Edit">✏️</button>
-            <button class="btn-icon btn-delete" onclick="deleteTransaction(${params.rowIndex})" title="Delete">🗑️</button>
-          </div>
-        `;
-      }
-    }
-  ];
+function getCategoryIcon(description, accountDesc) {
+  const text = (description + ' ' + (accountDesc || '')).toLowerCase();
 
-  const gridOptions = {
-    columnDefs: columnDefs,
-    rowData: transactionData,
+  if (text.includes('office') || text.includes('supplies') || text.includes('staples') || text.includes('depot')) return '📦';
+  if (text.includes('electric') || text.includes('water') || text.includes('utility')) return '💡';
+  if (text.includes('rent') || text.includes('property')) return '🏠';
+  if (text.includes('airline') || text.includes('hotel') || text.includes('travel') || text.includes('hertz')) return '✈️';
+  if (text.includes('restaurant') || text.includes('starbucks') || text.includes('grille') || text.includes('meal')) return '🍽️';
+  if (text.includes('insurance')) return '🛡️';
+  if (text.includes('ads') || text.includes('marketing')) return '📢';
+  if (text.includes('legal') || text.includes('cpa') || text.includes('professional')) return '💼';
+  if (text.includes('microsoft') || text.includes('adobe') || text.includes('software') || text.includes('salesforce')) return '💻';
+  if (text.includes('bank') || text.includes('wells fargo')) return '🏦';
+  if (text.includes('verizon') || text.includes('phone') || text.includes('internet')) return '📱';
 
-    editType: 'fullRow',
-    stopEditingWhenCellsLoseFocus: true,
+  return '💰';
+}
 
-    onCellValueChanged: event => {
-      console.log('Transaction updated:', event.data);
-      saveTransactions();
-    },
+function formatDateHeader(dateStr) {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-    pagination: true,
-    paginationPageSize: 50,
-    paginationPageSizeSelector: [25, 50, 100, 200],
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
 
-    animateRows: true,
-
-    onGridReady: event => {
-      console.log('✅ Transactions grid ready');
-      loadSavedTransactions();
-    },
-
-    onFirstDataRendered: event => {
-      event.api.sizeColumnsToFit();
-    },
-
-    defaultColDef: {
-      sortable: true,
-      filter: true,
-      resizable: true,
-      editable: false
-    }
-  };
-
-  const gridDiv = document.querySelector('#transactionsGrid');
-  if (gridDiv) {
-    transactionsGridApi = agGrid.createGrid(gridDiv, gridOptions);
-
-    // Setup drag and drop
-    setupDragAndDrop();
+  if (dateOnly.getTime() === todayOnly.getTime()) {
+    return 'Today';
+  } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 }
 
-// Watch for grid container to appear in DOM
+function groupTransactionsByDate(transactions) {
+  const grouped = {};
+
+  transactions.forEach(txn => {
+    const date = txn.date || 'Unknown';
+    if (!grouped[date]) {
+      grouped[date] = [];
+    }
+    grouped[date].push(txn);
+  });
+
+  // Sort dates descending
+  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+  return sortedDates.map(date => ({
+    date,
+    dateHeader: formatDateHeader(date),
+    transactions: grouped[date]
+  }));
+}
+
+function renderTransactionFeed() {
+  const feedContainer = document.getElementById('transactionFeed');
+  if (!feedContainer) return;
+
+  if (transactionData.length === 0) {
+    feedContainer.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No transactions yet</h3>
+        <p>Import a CSV file or add transactions manually to get started</p>
+      </div>
+    `;
+    return;
+  }
+
+  const groupedData = groupTransactionsByDate(transactionData);
+
+  let html = '';
+  groupedData.forEach(group => {
+    html += `
+      <div class="date-group">
+        <div class="date-header">${group.dateHeader}</div>
+        <div class="transaction-list">
+    `;
+
+    group.transactions.forEach((txn, index) => {
+      const amount = parseFloat(txn.debit || 0) || parseFloat(txn.credit || 0) || 0;
+      const isExpense = parseFloat(txn.debit || 0) > 0;
+      const amountClass = isExpense ? 'amount-expense' : 'amount-income';
+      const icon = getCategoryIcon(txn.description, txn.accountDescription);
+
+      html += `
+        <div class="transaction-item" data-index="${transactionData.indexOf(txn)}">
+          <div class="transaction-icon">${icon}</div>
+          <div class="transaction-details">
+            <div class="transaction-description">${txn.description || 'No description'}</div>
+            <div class="transaction-meta">${txn.accountDescription || txn.accountNumber || 'Uncategorized'}</div>
+          </div>
+          <div class="transaction-amount ${amountClass}">
+            ${isExpense ? '-' : '+'}$${amount.toFixed(2)}
+          </div>
+          <div class="transaction-actions">
+            <button class="btn-icon-tiny" onclick="editTransaction(${transactionData.indexOf(txn)})" title="Edit">✏️</button>
+            <button class="btn-icon-tiny" onclick="deleteTransaction(${transactionData.indexOf(txn)})" title="Delete">🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  feedContainer.innerHTML = html;
+}
+
+// Watch for feed container
 const observer = new MutationObserver(() => {
-  const gridDiv = document.getElementById('transactionsGrid');
-  if (gridDiv && !transactionsGridApi) {
-    console.log('📍 Transactions grid container detected, initializing...');
-    initTransactionsGrid();
+  const feedDiv = document.getElementById('transactionFeed');
+  if (feedDiv) {
+    console.log('📍 Transaction feed container detected, rendering...');
+    renderTransactionFeed();
+    setupDragAndDrop();
     observer.disconnect();
   }
 });
 
-// Start observing
 if (document.body) {
   observer.observe(document.body, { childList: true, subtree: true });
 }
@@ -282,215 +279,94 @@ function parseCSV(csv) {
         accountDescription: values[6] || ''
       };
 
-      // Auto-match vendor and populate account if not provided
-      if (!transaction.accountNumber) {
-        matchVendor(transaction);
-      }
-
       newTransactions.push(transaction);
     }
   }
 
-  // Add to existing data
   transactionData = [...transactionData, ...newTransactions];
-
-  if (transactionsGridApi) {
-    transactionsGridApi.setGridOption('rowData', transactionData);
-  }
-
+  renderTransactionFeed();
   saveTransactions();
 
   console.log(`✅ Imported ${newTransactions.length} transactions`);
   alert(`Successfully imported ${newTransactions.length} transactions`);
 }
 
-// Vendor Dictionary (from vendors.js)
-const VENDOR_DICTIONARY = [
-  { accountNumber: '5140', description: 'Office Depot' },
-  { accountNumber: '5140', description: 'Staples' },
-  { accountNumber: '5140', description: 'Amazon Business' },
-  { accountNumber: '5130', description: 'Verizon' },
-  { accountNumber: '5120', description: 'Pacific Gas & Electric' },
-  { accountNumber: '5120', description: 'City Water Department' },
-  { accountNumber: '5110', description: 'ABC Property Management' },
-  { accountNumber: '5400', description: 'Smith & Associates CPA' },
-  { accountNumber: '5400', description: 'Johnson Legal Group' },
-  { accountNumber: '5140', description: 'Microsoft' },
-  { accountNumber: '5140', description: 'Adobe' },
-  { accountNumber: '5140', description: 'Salesforce' },
-  { accountNumber: '5300', description: 'Google Ads' },
-  { accountNumber: '5300', description: 'Facebook Ads' },
-  { accountNumber: '5150', description: 'State Farm Insurance' },
-  { accountNumber: '5600', description: 'Wells Fargo' },
-  { accountNumber: '5700', description: 'Starbucks' },
-  { accountNumber: '5700', description: 'The Capital Grille' },
-  { accountNumber: '5140', description: 'FedEx' },
-  { accountNumber: '5140', description: 'UPS' },
-  { accountNumber: '5800', description: 'United Airlines' },
-  { accountNumber: '5800', description: 'Marriott Hotels' },
-  { accountNumber: '5800', description: 'Hertz Rent-A-Car' },
-  { accountNumber: '1510', description: 'Dell' },
-  { accountNumber: '1510', description: 'HP' }
-];
-
-// Chart of Accounts (from accounts.js)
-const CHART_OF_ACCOUNTS = [
-  { accountNumber: '1000', description: 'ASSETS' },
-  { accountNumber: '1100', description: 'Current Assets' },
-  { accountNumber: '1110', description: 'Cash - Checking' },
-  { accountNumber: '1120', description: 'Cash - Savings' },
-  { accountNumber: '1130', description: 'Petty Cash' },
-  { accountNumber: '1200', description: 'Accounts Receivable' },
-  { accountNumber: '1300', description: 'Inventory' },
-  { accountNumber: '1400', description: 'Prepaid Expenses' },
-  { accountNumber: '1500', description: 'Fixed Assets' },
-  { accountNumber: '1510', description: 'Equipment' },
-  { accountNumber: '1520', description: 'Accumulated Depreciation - Equipment' },
-  { accountNumber: '1530', description: 'Furniture & Fixtures' },
-  { accountNumber: '1540', description: 'Vehicles' },
-  { accountNumber: '2000', description: 'LIABILITIES' },
-  { accountNumber: '2100', description: 'Current Liabilities' },
-  { accountNumber: '2110', description: 'Accounts Payable' },
-  { accountNumber: '2120', description: 'Credit Card - Business' },
-  { accountNumber: '2130', description: 'Sales Tax Payable' },
-  { accountNumber: '2140', description: 'Payroll Liabilities' },
-  { accountNumber: '2200', description: 'Long-term Liabilities' },
-  { accountNumber: '2210', description: 'Bank Loan' },
-  { accountNumber: '2220', description: 'Equipment Loan' },
-  { accountNumber: '3000', description: 'EQUITY' },
-  { accountNumber: '3100', description: 'Owner Capital' },
-  { accountNumber: '3200', description: 'Retained Earnings' },
-  { accountNumber: '3300', description: 'Owner Draws' },
-  { accountNumber: '4000', description: 'REVENUE' },
-  { accountNumber: '4100', description: 'Sales Revenue' },
-  { accountNumber: '4200', description: 'Service Revenue' },
-  { accountNumber: '4300', description: 'Interest Income' },
-  { accountNumber: '4400', description: 'Other Income' },
-  { accountNumber: '5000', description: 'EXPENSES' },
-  { accountNumber: '5100', description: 'Operating Expenses' },
-  { accountNumber: '5110', description: 'Rent Expense' },
-  { accountNumber: '5120', description: 'Utilities' },
-  { accountNumber: '5130', description: 'Telephone & Internet' },
-  { accountNumber: '5140', description: 'Office Supplies' },
-  { accountNumber: '5150', description: 'Insurance' },
-  { accountNumber: '5200', description: 'Payroll Expenses' },
-  { accountNumber: '5210', description: 'Salaries & Wages' },
-  { accountNumber: '5220', description: 'Payroll Taxes' },
-  { accountNumber: '5230', description: 'Employee Benefits' },
-  { accountNumber: '5300', description: 'Marketing & Advertising' },
-  { accountNumber: '5400', description: 'Professional Fees' },
-  { accountNumber: '5500', description: 'Depreciation Expense' },
-  { accountNumber: '5600', description: 'Bank Fees & Charges' },
-  { accountNumber: '5700', description: 'Meals & Entertainment' },
-  { accountNumber: '5800', description: 'Travel Expenses' },
-  { accountNumber: '5900', description: 'Miscellaneous Expenses' }
-];
-
-/**
- * Match transaction description against Vendor Dictionary
- * Auto-populate Account# and Account Description
- */
-function matchVendor(transaction) {
-  if (!transaction.description) return;
-
-  const desc = transaction.description.toLowerCase();
-
-  // Try to find exact or partial match
-  for (const vendor of VENDOR_DICTIONARY) {
-    const vendorName = vendor.description.toLowerCase();
-
-    // Check if vendor name appears in transaction description
-    if (desc.includes(vendorName) || vendorName.includes(desc)) {
-      const account = CHART_OF_ACCOUNTS.find(a => a.accountNumber === vendor.accountNumber);
-
-      if (account) {
-        transaction.accountNumber = account.accountNumber;
-        transaction.accountDescription = account.description;
-        console.log(`✅ Matched "${transaction.description}" → ${vendor.description} → ${account.accountNumber} ${account.description}`);
-        return;
-      }
-    }
-  }
-
-  // Also try fuzzy matching by checking if any word matches
-  const descWords = desc.split(/\s+/);
-  for (const vendor of VENDOR_DICTIONARY) {
-    const vendorWords = vendor.description.toLowerCase().split(/\s+/);
-
-    for (const word of descWords) {
-      if (word.length > 3 && vendorWords.some(vw => vw.includes(word) || word.includes(vw))) {
-        const account = CHART_OF_ACCOUNTS.find(a => a.accountNumber === vendor.accountNumber);
-
-        if (account) {
-          transaction.accountNumber = account.accountNumber;
-          transaction.accountDescription = account.description;
-          console.log(`✅ Fuzzy matched "${transaction.description}" → ${vendor.description} → ${account.accountNumber} ${account.description}`);
-          return;
-        }
-      }
-    }
-  }
-
-  console.log(`⚠️ No vendor match found for: "${transaction.description}"`);
-}
-
 function addNewTransaction() {
   const newTxn = {
     refNumber: `REF${Date.now()}`,
     date: new Date().toISOString().split('T')[0],
-    description: '',
-    debit: 0,
-    credit: 0,
+    description: prompt('Enter description:') || 'New Transaction',
+    debit: parseFloat(prompt('Enter debit amount (0 for credit):') || 0),
+    credit: parseFloat(prompt('Enter credit amount (0 for debit):') || 0),
     accountNumber: '',
     accountDescription: ''
   };
 
   transactionData.unshift(newTxn);
+  renderTransactionFeed();
+  saveTransactions();
+}
 
-  if (transactionsGridApi) {
-    transactionsGridApi.setGridOption('rowData', transactionData);
-    transactionsGridApi.startEditingCell({
-      rowIndex: 0,
-      colKey: 'description'
-    });
+function editTransaction(index) {
+  const txn = transactionData[index];
+  if (!txn) return;
+
+  const newDesc = prompt('Edit description:', txn.description);
+  if (newDesc !== null) {
+    txn.description = newDesc;
+    renderTransactionFeed();
+    saveTransactions();
   }
 }
 
-function editTransaction(rowIndex) {
-  if (transactionsGridApi) {
-    transactionsGridApi.startEditingCell({
-      rowIndex: rowIndex,
-      colKey: 'description'
-    });
-  }
-}
-
-function deleteTransaction(rowIndex) {
+function deleteTransaction(index) {
   if (!confirm('Delete this transaction?')) return;
 
-  transactionData.splice(rowIndex, 1);
-
-  if (transactionsGridApi) {
-    transactionsGridApi.setGridOption('rowData', transactionData);
-  }
-
+  transactionData.splice(index, 1);
+  renderTransactionFeed();
   saveTransactions();
-  console.log('✅ Deleted transaction at index', rowIndex);
 }
 
-function onQuickFilterChange(searchText) {
-  if (transactionsGridApi) {
-    transactionsGridApi.setGridOption('quickFilterText', searchText);
-  }
+function filterTransactionFeed(searchText) {
+  const items = document.querySelectorAll('.transaction-item');
+  const search = searchText.toLowerCase();
+
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    if (text.includes(search)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
 }
 
 function exportToCSV() {
-  if (transactionsGridApi) {
-    transactionsGridApi.exportDataAsCsv({
-      fileName: 'transactions.csv',
-      columnKeys: ['refNumber', 'date', 'description', 'debit', 'credit', 'accountNumber', 'accountDescription']
-    });
+  if (transactionData.length === 0) {
+    alert('No transactions to export');
+    return;
   }
+
+  const headers = ['Ref#', 'Date', 'Description', 'Debit', 'Credit', 'Account#', 'Account Description'];
+  const rows = transactionData.map(txn => [
+    txn.refNumber,
+    txn.date,
+    txn.description,
+    txn.debit,
+    txn.credit,
+    txn.accountNumber,
+    txn.accountDescription
+  ]);
+
+  const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transactions.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function saveTransactions() {
@@ -501,9 +377,10 @@ function loadSavedTransactions() {
   const saved = localStorage.getItem('transactions');
   if (saved) {
     transactionData = JSON.parse(saved);
-    if (transactionsGridApi) {
-      transactionsGridApi.setGridOption('rowData', transactionData);
-    }
-    console.log(`📂 Loaded ${transactionData.length} saved transactions`);
+    renderTransactionFeed();
+    console.log(`📂 Loaded ${transactionData.length} transactions from localStorage`);
   }
 }
+
+// Load on startup
+loadSavedTransactions();
