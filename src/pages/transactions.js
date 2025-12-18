@@ -361,14 +361,14 @@ function parseCSV(csv) {
 
       transaction = {
         refNumber: `REF${Date.now()}-${i}`,
-        date: parseTransactionDate(date),
+        date: parseTransactionDate(dateStr),  // FIXED: was 'date' (undefined)
         description: payee,
         debit: debit,
         credit: credit,
-        balance: 0,  // Will calculate running balance later
+        balance: 0,
         accountNumber: '',
         accountDescription: memo ? memo.substring(0, 80) : '',
-        status: 'unmatched'  // Will be set by vendor matching
+        status: 'unmatched'
       };
     } else {
       // Standard format
