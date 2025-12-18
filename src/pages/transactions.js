@@ -243,21 +243,26 @@ function hideCSVImport() {
 }
 
 function handleFileSelect(event) {
+  console.log('🔍 handleFileSelect called, event:', event);
   const file = event.target.files[0];
+  console.log('📄 Selected file:', file);
   if (file) {
     handleFile(file);
   }
 }
 
 function handleFile(file) {
+  console.log('🔍 handleFile called with:', file.name, file.size, 'bytes');
   const reader = new FileReader();
 
   reader.onload = (e) => {
+    console.log('📖 FileReader onload triggered, data length:', e.target.result.length);
     const csv = e.target.result;
     parseCSV(csv);
     hideCSVImport();
   };
 
+  console.log('📖 Starting FileReader.readAsText...');
   reader.readAsText(file);
 }
 
