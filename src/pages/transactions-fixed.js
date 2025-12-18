@@ -147,8 +147,72 @@
   }
 
   function renderTransactionFeed() {
+    // Inject Styles for Full Width, Sticky Header, and Inputs
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .transactions-page { width: 100% !important; max-width: none !important; padding: 20px; }
+      .transactions-page .toolbar { width: 100% !important; max-width: none !important; }
+      .content-area { width: 100% !important; max-width: none !important; overflow: hidden; height: calc(100vh - 180px); display: flex; flex-direction: column; }
+      .transaction-feed { flex: 1; overflow-y: auto; padding-bottom: 50px; }
+      
+      .transaction-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+      .transaction-table th { 
+        position: sticky; 
+        top: 0; 
+        z-index: 10; 
+        background-color: #f8fafc; 
+        border-bottom: 2px solid #e2e8f0; 
+        padding: 12px 8px; 
+        text-align: left; 
+        font-weight: 600; 
+        color: #475569; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      }
+      .transaction-table td { border-bottom: 1px solid #f1f5f9; padding: 4px; vertical-align: middle; }
+      .transaction-table tr:hover td { background-color: #f8fafc; }
+      
+      /* Input Styles */
+      .txn-input { 
+        width: 100%; 
+        padding: 6px 8px; 
+        border: 1px solid transparent; 
+        border-radius: 4px; 
+        font-size: 14px; 
+        background: transparent; 
+        transition: all 0.2s;
+      }
+      .txn-input:hover { border-color: #e2e8f0; background: #fff; }
+      .txn-input:focus { border-color: #2563eb; background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+      
+      .txn-date { width: 110px; }
+      .txn-desc { width: 100%; min-width: 200px; }
+      .txn-account { width: 100%; min-width: 150px; }
+      .txn-amount { width: 100px; text-align: right; }
+      .txn-balance { width: 100px; text-align: right; color: #64748b; font-weight: 500; padding-right: 8px; }
+      
+      .balance-summary { margin-bottom: 15px; display: flex; gap: 20px; align-items: center; background: #fff; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+      .balance-input { border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; width: 120px; text-align: right; }
+    `;
+    document.head.appendChild(style);
+
     const feedContainer = document.getElementById('transactionFeed');
     if (!feedContainer) return;
+
+    // Accounts Dropdown Options
+    let accountOptions = '<option value="" style="color: #94a3b8;">Uncategorized</option>';
+    // Try to get accounts from window.storage or fallback
+    const accounts = (window.storage && typeof window.storage.getAccounts === 'function')
+      ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') // Direct read for synchronous render 
+      : [];
+
+    // If empty, use defaults from accounts.js if accessible, or just manual list
+    if (accounts.length === 0) {
+      // Fallback or empty
+    } else {
+      accounts.forEach(acc => {
+        accountOptions += `<option value="${acc.accountNumber}">${acc.accountNumber} - ${acc.description}</option>`;
+      });
+    }
 
     // Update count display
     const countDisplay = document.getElementById('transaction-count-display');
@@ -167,56 +231,118 @@
       return;
     }
 
-    // Sort transactions by date descending
-    const sortedTransactions = [...transactionData].sort((a, b) => new Date(b.date) - new Date(a.date));
-    console.log(`🎨 Rendering ${sortedTransactions.length} transactions as table`);
+    // Sort Descending for View but Calculate OLD -> NEW
+    const sortedTxns = [...transactionData].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate Running Balance
+    let runningBalance = parseFloat(localStorage.getItem('openingBalance') || 0);
+    let totalDebits = 0;
+    let totalCredits = 0;
+
+    // Calculate balances on the sorted (Oldest First) array
+    const txnsWithBalance = sortedTxns.map(txn => {
+      const debit = parseFloat(txn.debit || 0);
+      const credit = parseFloat(txn.credit || 0);
+      totalDebits += debit;
+      totalCredits += credit;
+      runningBalance = runningBalance - debit + credit;
+      return { ...txn, runningBalance: runningBalance };
+    });
+
+    // Reverse for Display (Newest First)
+    const displayTxns = txnsWithBalance.reverse();
+
+    // Opening Balance Input
+    const openingBal = localStorage.getItem('openingBalance') || '0';
 
     let html = `
-      <table class="transaction-table" style="width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden;">
-        <thead style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+      <div class="balance-summary">
+        <label>Opening Balance: <input type="number" class="balance-input" value="${openingBal}" onchange="updateOpeningBalance(this.value)" step="0.01"></label>
+        <div style="flex:1"></div>
+        <div>Total Debits: <span style="color: #dc2626;">-$${totalDebits.toFixed(2)}</span></div>
+        <div>Total Credits: <span style="color: #16a34a;">+$${totalCredits.toFixed(2)}</span></div>
+        <div>Ending Balance: <strong>$${runningBalance.toFixed(2)}</strong></div>
+      </div>
+
+      <table class="transaction-table">
+        <thead>
           <tr>
-            <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569;">Date</th>
-            <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569;">Payee / Description</th>
-            <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569;">Account / Memo</th>
-            <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #475569;">Amount</th>
-            <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: #475569;">Actions</th>
+            <th style="width: 120px;">Date</th>
+            <th>Payee / Description</th>
+            <th style="width: 250px;">Account</th>
+            <th style="width: 120px; text-align: right;">Debit</th>
+            <th style="width: 120px; text-align: right;">Credit</th>
+            <th style="width: 120px; text-align: right;">Balance</th>
+            <th style="width: 60px; text-align: center;"></th>
           </tr>
         </thead>
         <tbody>
     `;
 
-    sortedTransactions.forEach((txn, index) => {
-      const amount = parseFloat(txn.debit || 0) || parseFloat(txn.credit || 0) || 0;
-      const isExpense = parseFloat(txn.debit || 0) > 0;
-      const amountClass = isExpense ? 'text-red-600' : 'text-green-600';
-      const amountStyle = isExpense ? 'color: #dc2626;' : 'color: #16a34a;';
-      const dateStr = formatDateHeader(new Date(txn.date || Date.now()));
+    displayTxns.forEach((txn, index) => {
+      // Find original index for editing
+      const originalIndex = transactionData.findIndex(t => t.refNumber === txn.refNumber);
+      // Fallback for index if refNumber match fails (legacy data)
+      const dataIndex = originalIndex >= 0 ? originalIndex : index;
 
       html += `
-        <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.1s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
-          <td style="padding: 12px 16px; white-space: nowrap; color: #64748b;">${dateStr}</td>
-          <td style="padding: 12px 16px; font-weight: 500; color: #1e293b;">${txn.description || 'No description'}</td>
-          <td style="padding: 12px 16px; color: #64748b; font-size: 0.9em;">
-            ${txn.accountDescription || txn.accountNumber || '<span style="color: #94a3b8; font-style: italic;">Uncategorized</span>'}
+        <tr>
+          <td>
+            <input type="date" class="txn-input txn-date" value="${txn.date ? txn.date.split('T')[0] : ''}" onchange="updateTransactionField(${dataIndex}, 'date', this.value)">
           </td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 600; ${amountStyle}">
-            ${isExpense ? '-' : '+'}$${amount.toFixed(2)}
+          <td>
+            <input type="text" class="txn-input txn-desc" value="${(txn.description || '').replace(/"/g, '&quot;')}" onchange="updateTransactionField(${dataIndex}, 'description', this.value)">
           </td>
-          <td style="padding: 12px 16px; text-align: center;">
-            <button class="btn-icon-tiny" onclick="editTransaction(${transactionData.indexOf(txn)})" title="Edit" style="background:none; border:none; cursor:pointer; font-size: 1.1em;">✏️</button>
-            <button class="btn-icon-tiny" onclick="deleteTransaction(${transactionData.indexOf(txn)})" title="Delete" style="background:none; border:none; cursor:pointer; font-size: 1.1em; color: #ef4444;">🗑️</button>
+          <td>
+            <select class="txn-input txn-account" onchange="updateTransactionField(${dataIndex}, 'accountNumber', this.value)">
+                ${accountOptions.replace(`value="${txn.accountNumber}"`, `value="${txn.accountNumber}" selected`)}
+            </select>
+          </td>
+          <td>
+             <input type="number" step="0.01" class="txn-input txn-amount" style="color: #dc2626;" value="${(txn.debit || 0).toFixed(2)}" onchange="updateTransactionField(${dataIndex}, 'debit', this.value)">
+          </td>
+          <td>
+             <input type="number" step="0.01" class="txn-input txn-amount" style="color: #16a34a;" value="${(txn.credit || 0).toFixed(2)}" onchange="updateTransactionField(${dataIndex}, 'credit', this.value)">
+          </td>
+          <td class="txn-balance">
+            $${txn.runningBalance.toFixed(2)}
+          </td>
+          <td style="text-align: center;">
+            <button class="btn-icon-tiny" onclick="deleteTransaction(${dataIndex})" title="Delete" style="color: #ef4444; opacity: 0.5;">✕</button>
           </td>
         </tr>
       `;
     });
 
-    html += `
-        </tbody>
-      </table>
-    `;
-
+    html += `</tbody></table>`;
     feedContainer.innerHTML = html;
   }
+
+  // --- Helper Functions for Inline Editing ---
+
+  window.updateOpeningBalance = function (val) {
+    localStorage.setItem('openingBalance', val);
+    renderTransactionFeed(); // Re-render to update running balances
+  };
+
+  window.updateTransactionField = function (index, field, value) {
+    if (!transactionData[index]) return;
+
+    let val = value;
+    if (field === 'debit' || field === 'credit') {
+      val = parseFloat(value) || 0;
+    }
+
+    transactionData[index][field] = val;
+
+    // Auto-save logic
+    saveTransactions();
+
+    // If updating date or amount, we must re-render to fixing sorting/balances
+    if (['date', 'debit', 'credit'].includes(field)) {
+      renderTransactionFeed();
+    }
+  };
 
   // Watch for feed container
   const observer = new MutationObserver(() => {
@@ -339,22 +465,14 @@
   }
 
   function parseCSV(csv) {
-    console.log('🚀🚀🚀 parseCSV CALLED! CSV length:', csv?.length);
-    console.log('🚀🚀🚀 First 100 chars:', csv?.substring(0, 100));
-
     const lines = csv.split('\n').filter(line => line.trim());
-    console.log('📊 Total lines after split:', lines.length);
 
     if (lines.length === 0) {
-      console.error('❌ CSV is empty after filtering');
       alert('CSV file is empty');
       return;
     }
 
     const headers = parseCSVLine(lines[0]);
-    console.log('📋 Headers:', headers);
-    console.log('CSV Headers:', headers);
-    console.log('First data line:', lines[1]);
 
     const newTransactions = [];
 
