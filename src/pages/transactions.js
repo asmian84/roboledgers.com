@@ -257,9 +257,17 @@ function handleFile(file) {
 
   reader.onload = (e) => {
     console.log('📖 FileReader onload triggered, data length:', e.target.result.length);
-    const csv = e.target.result;
-    parseCSV(csv);
-    hideCSVImport();
+    try {
+      const csv = e.target.result;
+      console.log('🔍 About to call parseCSV...');
+      parseCSV(csv);
+      console.log('✅ parseCSV completed');
+      hideCSVImport();
+    } catch (error) {
+      console.error('❌❌❌ ERROR in onload:', error);
+      console.error('Error stack:', error.stack);
+      alert('Error parsing CSV: ' + error.message);
+    }
   };
 
   console.log('📖 Starting FileReader.readAsText...');
