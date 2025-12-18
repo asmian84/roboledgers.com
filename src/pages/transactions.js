@@ -266,7 +266,7 @@ function parseCSV(csv) {
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim());
 
-    if (values.length >= 5) {
+    if (values.length >= 3) {
       const transaction = {
         refNumber: values[0] || `REF${Date.now()}-${i}`,
         date: values[1] || new Date().toISOString().split('T')[0],
@@ -276,6 +276,11 @@ function parseCSV(csv) {
         accountNumber: values[5] || '',
         accountDescription: values[6] || ''
       };
+
+      // Auto-match vendor and populate account if not provided
+      if (!transaction.accountNumber) {
+        matchVendor(transaction);
+      }
 
       newTransactions.push(transaction);
     }
@@ -292,6 +297,136 @@ function parseCSV(csv) {
 
   console.log(`✅ Imported ${newTransactions.length} transactions`);
   alert(`Successfully imported ${newTransactions.length} transactions`);
+}
+
+// Vendor Dictionary (from vendors.js)
+const VENDOR_DICTIONARY = [
+  { accountNumber: '5140', description: 'Office Depot' },
+  { accountNumber: '5140', description: 'Staples' },
+  { accountNumber: '5140', description: 'Amazon Business' },
+  { accountNumber: '5130', description: 'Verizon' },
+  { accountNumber: '5120', description: 'Pacific Gas & Electric' },
+  { accountNumber: '5120', description: 'City Water Department' },
+  { accountNumber: '5110', description: 'ABC Property Management' },
+  { accountNumber: '5400', description: 'Smith & Associates CPA' },
+  { accountNumber: '5400', description: 'Johnson Legal Group' },
+  { accountNumber: '5140', description: 'Microsoft' },
+  { accountNumber: '5140', description: 'Adobe' },
+  { accountNumber: '5140', description: 'Salesforce' },
+  { accountNumber: '5300', description: 'Google Ads' },
+  { accountNumber: '5300', description: 'Facebook Ads' },
+  { accountNumber: '5150', description: 'State Farm Insurance' },
+  { accountNumber: '5600', description: 'Wells Fargo' },
+  { accountNumber: '5700', description: 'Starbucks' },
+  { accountNumber: '5700', description: 'The Capital Grille' },
+  { accountNumber: '5140', description: 'FedEx' },
+  { accountNumber: '5140', description: 'UPS' },
+  { accountNumber: '5800', description: 'United Airlines' },
+  { accountNumber: '5800', description: 'Marriott Hotels' },
+  { accountNumber: '5800', description: 'Hertz Rent-A-Car' },
+  { accountNumber: '1510', description: 'Dell' },
+  { accountNumber: '1510', description: 'HP' }
+];
+
+// Chart of Accounts (from accounts.js)
+const CHART_OF_ACCOUNTS = [
+  { accountNumber: '1000', description: 'ASSETS' },
+  { accountNumber: '1100', description: 'Current Assets' },
+  { accountNumber: '1110', description: 'Cash - Checking' },
+  { accountNumber: '1120', description: 'Cash - Savings' },
+  { accountNumber: '1130', description: 'Petty Cash' },
+  { accountNumber: '1200', description: 'Accounts Receivable' },
+  { accountNumber: '1300', description: 'Inventory' },
+  { accountNumber: '1400', description: 'Prepaid Expenses' },
+  { accountNumber: '1500', description: 'Fixed Assets' },
+  { accountNumber: '1510', description: 'Equipment' },
+  { accountNumber: '1520', description: 'Accumulated Depreciation - Equipment' },
+  { accountNumber: '1530', description: 'Furniture & Fixtures' },
+  { accountNumber: '1540', description: 'Vehicles' },
+  { accountNumber: '2000', description: 'LIABILITIES' },
+  { accountNumber: '2100', description: 'Current Liabilities' },
+  { accountNumber: '2110', description: 'Accounts Payable' },
+  { accountNumber: '2120', description: 'Credit Card - Business' },
+  { accountNumber: '2130', description: 'Sales Tax Payable' },
+  { accountNumber: '2140', description: 'Payroll Liabilities' },
+  { accountNumber: '2200', description: 'Long-term Liabilities' },
+  { accountNumber: '2210', description: 'Bank Loan' },
+  { accountNumber: '2220', description: 'Equipment Loan' },
+  { accountNumber: '3000', description: 'EQUITY' },
+  { accountNumber: '3100', description: 'Owner Capital' },
+  { accountNumber: '3200', description: 'Retained Earnings' },
+  { accountNumber: '3300', description: 'Owner Draws' },
+  { accountNumber: '4000', description: 'REVENUE' },
+  { accountNumber: '4100', description: 'Sales Revenue' },
+  { accountNumber: '4200', description: 'Service Revenue' },
+  { accountNumber: '4300', description: 'Interest Income' },
+  { accountNumber: '4400', description: 'Other Income' },
+  { accountNumber: '5000', description: 'EXPENSES' },
+  { accountNumber: '5100', description: 'Operating Expenses' },
+  { accountNumber: '5110', description: 'Rent Expense' },
+  { accountNumber: '5120', description: 'Utilities' },
+  { accountNumber: '5130', description: 'Telephone & Internet' },
+  { accountNumber: '5140', description: 'Office Supplies' },
+  { accountNumber: '5150', description: 'Insurance' },
+  { accountNumber: '5200', description: 'Payroll Expenses' },
+  { accountNumber: '5210', description: 'Salaries & Wages' },
+  { accountNumber: '5220', description: 'Payroll Taxes' },
+  { accountNumber: '5230', description: 'Employee Benefits' },
+  { accountNumber: '5300', description: 'Marketing & Advertising' },
+  { accountNumber: '5400', description: 'Professional Fees' },
+  { accountNumber: '5500', description: 'Depreciation Expense' },
+  { accountNumber: '5600', description: 'Bank Fees & Charges' },
+  { accountNumber: '5700', description: 'Meals & Entertainment' },
+  { accountNumber: '5800', description: 'Travel Expenses' },
+  { accountNumber: '5900', description: 'Miscellaneous Expenses' }
+];
+
+/**
+ * Match transaction description against Vendor Dictionary
+ * Auto-populate Account# and Account Description
+ */
+function matchVendor(transaction) {
+  if (!transaction.description) return;
+
+  const desc = transaction.description.toLowerCase();
+
+  // Try to find exact or partial match
+  for (const vendor of VENDOR_DICTIONARY) {
+    const vendorName = vendor.description.toLowerCase();
+
+    // Check if vendor name appears in transaction description
+    if (desc.includes(vendorName) || vendorName.includes(desc)) {
+      const account = CHART_OF_ACCOUNTS.find(a => a.accountNumber === vendor.accountNumber);
+
+      if (account) {
+        transaction.accountNumber = account.accountNumber;
+        transaction.accountDescription = account.description;
+        console.log(`✅ Matched "${transaction.description}" → ${vendor.description} → ${account.accountNumber} ${account.description}`);
+        return;
+      }
+    }
+  }
+
+  // Also try fuzzy matching by checking if any word matches
+  const descWords = desc.split(/\s+/);
+  for (const vendor of VENDOR_DICTIONARY) {
+    const vendorWords = vendor.description.toLowerCase().split(/\s+/);
+
+    for (const word of descWords) {
+      if (word.length > 3 && vendorWords.some(vw => vw.includes(word) || word.includes(vw))) {
+        const account = CHART_OF_ACCOUNTS.find(a => a.accountNumber === vendor.accountNumber);
+
+        if (account) {
+          transaction.accountNumber = account.accountNumber;
+          transaction.accountDescription = account.description;
+          console.log(`✅ Fuzzy matched "${transaction.description}" → ${vendor.description} → ${account.accountNumber} ${account.description}`);
+          return;
+        }
+      }
+    }
+  }
+
+  console.log(`⚠️ No vendor match found for: "${transaction.description}"`);
 }
 
 function addNewTransaction() {
