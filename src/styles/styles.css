@@ -2389,17 +2389,20 @@ button {
 }
 
 .theme-card {
-  background: var(--bg-secondary);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 2px solid transparent;
+  background: var(--bg-primary);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .theme-card:hover {
   border-color: var(--primary-color);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .theme-preview {
