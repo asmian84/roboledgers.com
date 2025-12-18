@@ -202,35 +202,8 @@
       </table>
     `;
 
-    group.transactions.forEach((txn, index) => {
-      const amount = parseFloat(txn.debit || 0) || parseFloat(txn.credit || 0) || 0;
-      const isExpense = parseFloat(txn.debit || 0) > 0;
-      const amountClass = isExpense ? 'amount-expense' : 'amount-income';
-      const icon = getCategoryIcon(txn.description, txn.accountDescription);
-
-      html += `
-        <div class="transaction-item" data-index="${transactionData.indexOf(txn)}">
-          <div class="transaction-icon">${icon}</div>
-          <div class="transaction-details">
-            <div class="transaction-description">${txn.description || 'No description'}</div>
-            <div class="transaction-meta">${txn.accountDescription || txn.accountNumber || 'Uncategorized'}</div>
-          </div>
-          <div class="transaction-amount ${amountClass}">
-            ${isExpense ? '-' : '+'}$${amount.toFixed(2)}
-          </div>
-          <div class="transaction-actions">
-            <button class="btn-icon-tiny" onclick="editTransaction(${transactionData.indexOf(txn)})" title="Edit">✏️</button>
-            <button class="btn-icon-tiny" onclick="deleteTransaction(${transactionData.indexOf(txn)})" title="Delete">🗑️</button>
-          </div>
-        </div>
-      `;
-    });
-
-    html += `
-        </div>
-      </div>
-    `;
-  });
+    feedContainer.innerHTML = html;
+  }
 
   feedContainer.innerHTML = html;
 }
