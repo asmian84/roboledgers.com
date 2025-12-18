@@ -131,6 +131,20 @@ async function initAccountsGrid() {
   }
 }
 
+// Watch for grid container
+const accountObserver = new MutationObserver(() => {
+  const gridDiv = document.getElementById('accountsGrid');
+  if (gridDiv && !accountsGridApi) {
+    console.log('📍 Accounts grid container detected, initializing...');
+    initAccountsGrid();
+    accountObserver.disconnect();
+  }
+});
+
+if (document.body) {
+  accountObserver.observe(document.body, { childList: true, subtree: true });
+}
+
 function addNewAccount() {
   const accountNumber = prompt('Enter Account Number:');
   if (!accountNumber) return;

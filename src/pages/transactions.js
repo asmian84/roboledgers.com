@@ -47,14 +47,17 @@ window.renderTransactions = function () {
         <div id="transactionsGrid" class="ag-theme-alpine grid-container"></div>
       </div>
     </div>
-    
-    <script>
-      if (typeof initTransactionsGrid === 'function') {
-        setTimeout(initTransactionsGrid, 100);
-      }
-    </script>
   `;
 };
+
+// Auto-initialize when page loads
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('transactionsGrid')) {
+      initTransactionsGrid();
+    }
+  });
+}
 
 let transactionsGridApi;
 let transactionData = [];
@@ -194,6 +197,21 @@ async function initTransactionsGrid() {
     // Setup drag and drop
     setupDragAndDrop();
   }
+}
+
+// Watch for grid container to appear in DOM
+const observer = new MutationObserver(() => {
+  const gridDiv = document.getElementById('transactionsGrid');
+  if (gridDiv && !transactionsGridApi) {
+    console.log('📍 Transactions grid container detected, initializing...');
+    initTransactionsGrid();
+    observer.disconnect();
+  }
+});
+
+// Start observing
+if (document.body) {
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function setupDragAndDrop() {

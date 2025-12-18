@@ -108,6 +108,20 @@ async function initVendorsGrid() {
   }
 }
 
+// Watch for grid container
+const vendorObserver = new MutationObserver(() => {
+  const gridDiv = document.getElementById('vendorsGrid');
+  if (gridDiv && !vendorsGridApi) {
+    console.log('📍 Vendors grid container detected, initializing...');
+    initVendorsGrid();
+    vendorObserver.disconnect();
+  }
+});
+
+if (document.body) {
+  vendorObserver.observe(document.body, { childList: true, subtree: true });
+}
+
 function addNewVendor() {
   const accountNumber = prompt('Enter Default Account Number:');
   if (!accountNumber) return;
