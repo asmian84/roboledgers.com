@@ -1292,6 +1292,8 @@ button {
 .grid-container {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  /* CRITICAL: Allows flex child to shrink */
   padding: 1.5rem;
   background: var(--bg-secondary);
 }
