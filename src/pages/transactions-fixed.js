@@ -16,6 +16,10 @@
   let undoStack = null; // { type: 'bulk'|'single', data: [...] }
   let viewMode = 'grid'; // 'grid' | 'vendor'
   let isEditingOpening = false;
+  let editingImportId = null;
+  let restoringImportId = null;
+  let importPendingData = null; // Holds parsed CSV data before account choice
+  let importPendingFilename = '';
 
   // --- SHEETJS LOADER ---
   if (!window.XLSX) {
@@ -232,6 +236,7 @@
 
              // Mock Account Manager for consistency if it's currently "Loading..."
              if (!window.accountManager || !window.accountManager.getAllAccounts().length) {
+                console.log('AB3: Mocking accountManager for professional UI support.');
                 window.accountManager = {
                    id: 'pro-manager',
                    getAllAccounts: () => professionalAccounts,
@@ -254,10 +259,17 @@
              const currentId = window.accountManager.getCurrentAccountId();
              select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (currentId === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
           }
-         
+          window.initAccountSelector = initAccountSelector;
+          
           setTimeout(() => {
+             console.log('AB3: Running initialization sequence...');
              initAccountSelector();
-             window.loadTransactionData();
+             if (window.loadTransactionData) {
+               console.log('AB3: Triggering loadTransactionData...');
+               window.loadTransactionData();
+             } else {
+               console.error('AB3: window.loadTransactionData not found!');
+             }
           }, 100);
       })();
     </script>
@@ -298,7 +310,9 @@
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
       if (acc) {
-        accType = acc.type || 'asset';
+        const type = (acc.type || 'asset').toLowerCase();
+        // Asset if type is asset, bank, checking, or savings
+        accType = (['asset', 'bank', 'checking', 'savings'].includes(type)) ? 'asset' : 'liability';
         currentOpeningBalance = parseFloat(localStorage.getItem(`ab3_opening_${acc.id}`) || acc.openingBalance || 0);
       }
     } else {
@@ -340,10 +354,6 @@
       if (!searchFilter) return true;
       const s = searchFilter.toLowerCase();
       return (txn.description || '').toLowerCase().includes(s);
-    }).filter(txn => { // Filter out transactions with $0 in both debit and credit
-      const debit = parseFloat(txn.debit || 0);
-      const credit = parseFloat(txn.credit || 0);
-      return debit !== 0 || credit !== 0;
     });
 
     // Default: Sort by date newest first if no specific sort set
@@ -485,23 +495,23 @@
     feedContainer.innerHTML = `
       <table class="txn-table">
         <colgroup>
-           <col style="width:40%"><col style="width:15%"><col style="width:20%"><col style="width:25%">
+           <col style="width:44.2%"><col style="width:15%"><col style="width:20%"><col style="width:20.8%">
         </colgroup>
         <thead>
            <tr>
-              <th>Vendor Name</th>
-              <th class="text-right">Occurrences</th>
-              <th class="text-right">Latest Date</th>
-              <th class="text-right">Total Net</th>
+              <th style="padding-left:24px;">VENDOR NAME</th>
+              <th class="text-right">OCCURRENCES</th>
+              <th class="text-right">LATEST DATE</th>
+              <th class="text-right" style="padding-right:24px;">TOTAL NET</th>
            </tr>
         </thead>
         <tbody>
            ${rows.map(v => `
               <tr style="cursor:pointer" onclick="drillDownVendor('${v.name.replace(/'/g, "\\'")}')">
-                 <td style="font-weight:600; color:var(--accent)">${v.name}</td>
-                 <td class="text-right font-mono">${v.count}</td>
-                 <td class="text-right font-mono">${v.latest}</td>
-                 <td class="text-right font-mono" style="font-weight:700; color:${v.total >= 0 ? 'var(--green)' : 'var(--red)'}">${formatCurrency(v.total)}</td>
+                 <td style="font-weight:600; color:var(--primary); padding-left:24px;">${v.name}</td>
+                 <td class="text-right font-mono" style="color:#64748b;">${v.count}</td>
+                 <td class="text-right font-mono" style="color:#64748b;">${(v.latest || '').slice(0, 10)}</td>
+                 <td class="text-right font-mono" style="font-weight:700; color:${v.total >= 0 ? 'var(--green)' : 'var(--red)'}; padding-right:24px;">${formatCurrency(v.total)}</td>
               </tr>
            `).join('')}
         </tbody>
@@ -571,45 +581,52 @@
     } else {
       panelHeader.classList.remove('bulk-mode');
       headerRow1.innerHTML = `
-           <div style="display:flex; flex-direction:column; gap:4px;">
-              <div class="tier-breadcrumb">Home &nbsp;›&nbsp; Transactions ${viewMode === 'vendor' ? '&nbsp;›&nbsp; Vendor Analysis' : ''}</div>
-              <div class="tier-title">${viewMode === 'vendor' ? 'Vendor Analysis' : 'Transactions'}</div>
+           <div style="display:flex; flex-direction:column; gap:2px;">
+              <div class="tier-title" id="page-title">${viewMode === 'vendor' ? 'Vendor Analysis' : 'Transactions'}</div>
            </div>
-           <div style="display:flex; gap:12px; align-items:center;">
+           <div style="display:flex; gap:16px; align-items:center;">
               <div class="stat-box">
-                 <span class="stat-label">OPENING:</span>
+                 <span class="stat-label">OPENING</span>
                  ${isEditingOpening ?
           `<input type="number" step="0.01" class="opening-input" value="${data.rawOpening}" onblur="saveOpeningBalance(this.value)" onkeydown="if(event.key==='Enter') saveOpeningBalance(this.value); if(event.key==='Escape') cancelEditOpening()">` :
           `<span class="stat-val editable-hint" onclick="startEditOpening()">${data.opening}</span>`
         }
               </div>
-              <div class="stat-box"><span class="stat-label">IN:</span> <span class="stat-val" style="color:var(--green)">${data.income}</span></div>
-              <div class="stat-box"><span class="stat-label">OUT:</span> <span class="stat-val" style="color:var(--red)">${data.expense}</span></div>
-              <div class="stat-box"><span class="stat-label">END:</span> <span class="stat-val">${data.end}</span></div>
+              <div class="stat-box"><span class="stat-label">IN</span> <span class="stat-val" style="color:var(--green)">${data.income}</span></div>
+              <div class="stat-box"><span class="stat-label">OUT</span> <span class="stat-val" style="color:var(--red)">${data.expense}</span></div>
+              <div class="stat-box"><span class="stat-label">END</span> <span class="stat-val">${data.end}</span></div>
            </div>
         `;
 
-      // Row 2: Toolbar
+      // Row 2: Two-Tier Toolbar
+      toolbarRow.style.flexDirection = 'column';
+      toolbarRow.style.gap = '12px';
+      toolbarRow.style.alignItems = 'stretch';
       toolbarRow.innerHTML = `
-           <div style="display:flex; align-items:center; gap:12px;">
-              <select class="account-select" id="account-select" onchange="switchAccount(this.value)" style="width:180px;"></select>
-              <div class="control-box">
-                 <span class="control-label">Ref Prefix:</span>
-                 <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
+           <!-- Tier 1: Controls -->
+           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                 <select class="account-select" id="account-select" onchange="switchAccount(this.value)" style="width:200px;"></select>
+                 <div class="control-box">
+                    <span class="control-label">REF PREFIX</span>
+                    <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
+                 </div>
+              </div>
+              <div class="search-container" style="flex:1; max-width:600px;">
+                 <span class="search-icon">🔍</span>
+                 <input type="search" id="search-input" class="search-box" placeholder="Search transactions..." value="${searchFilter}" oninput="filterTransactionFeed(this.value)">
               </div>
            </div>
            
-           <div class="search-container">
-              <span class="search-icon">🔍</span>
-              <input type="search" id="search-input" class="search-box" placeholder="Search..." value="${searchFilter}" oninput="filterTransactionFeed(this.value)">
-           </div>
-
-           <div class="toolbar-group">
+           <!-- Tier 2: Actions -->
+           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
               <button class="btn btn-secondary" onclick="toggleGlance()">${viewMode === 'grid' ? '📊 Vendors' : '📝 Transactions'}</button>
+              <div style="width:1px; height:20px; background:var(--border); margin:0 4px;"></div>
               <button class="btn btn-secondary" onclick="openImportManager()">📥 Import</button>
-              <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New</button>
+              <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New Entry</button>
               <button class="btn btn-secondary" onclick="exportToXLS()">📊 Export XLS</button>
-              <button class="btn btn-secondary" onclick="window.router.navigate('/settings')">⚙️</button>
+              <button class="btn btn-danger" style="background:#fff" onclick="confirmClearData()">🗑️ Clear Data</button>
+              <button class="btn btn-secondary" onclick="window.router ? window.router.navigate('/settings') : console.log('Settings clicked')">⚙️</button>
            </div>
         `;
 
@@ -622,11 +639,6 @@
     }
   }
 
-  window.toggleOpeningEdit = function (val) {
-    isEditingOpeningBalance = val;
-    renderTransactionFeed();
-  };
-
   window.startEditOpening = function () {
     isEditingOpening = true;
     renderTransactionFeed();
@@ -635,6 +647,14 @@
   window.cancelEditOpening = function () {
     isEditingOpening = false;
     renderTransactionFeed();
+  };
+
+  window.confirmClearData = function () {
+    if (confirm('Are you sure you want to clear ALL transactions for the current account? This cannot be undone.')) {
+      transactionData = [];
+      saveTransactions();
+      renderTransactionFeed();
+    }
   };
 
   window.saveOpeningBalance = function (val) {
@@ -652,49 +672,33 @@
     viewMode = viewMode === 'grid' ? 'vendor' : 'grid';
     renderTransactionFeed();
   };
-  // The original saveOpeningBalanceValue function is now replaced by saveOpeningBalance
-  // and toggleOpeningEdit is replaced by startEditOpening/cancelEditOpening.
-  // The following block is effectively removed by the new implementation.
-  /*
-  window.saveOpeningBalanceValue = function () {
-    const input = document.getElementById('opening-edit-input');
-    if (input) {
-      const val = parseFloat(input.value) || 0;
-      localStorage.setItem('openingBalance', val);
-      if (window.accountManager) {
-        const acc = window.accountManager.getCurrentAccount();
-        if (acc) window.accountManager.updateAccount(acc.id, { openingBalance: val });
-      }
-      isEditingOpeningBalance = false;
-      renderTransactionFeed();
-    }
-  };
-  
+  // Functional Functions
+
   window.toggleTxn = (id) => {
     const stringId = id.toString();
     selectedTxnIds.has(stringId) ? selectedTxnIds.delete(stringId) : selectedTxnIds.add(stringId);
     renderTransactionFeed();
   };
-  
+
   window.toggleAllTxns = (checked) => {
     selectedTxnIds.clear();
     if (checked) transactionData.forEach(t => selectedTxnIds.add(t.id.toString()));
     renderTransactionFeed();
   };
-  
+
   window.clearSelection = () => { selectedTxnIds.clear(); renderTransactionFeed(); };
-  
+
   window.bulkReclassify = (type) => {
     bulkEditingType = type;
     renderTransactionFeed();
   };
-  
+
   window.saveBulkReclassify = () => {
     const input = document.getElementById('bulk-edit-input');
     if (input && input.value) {
       const val = input.value;
       const snapshot = [];
-  
+
       transactionData.forEach(t => {
         if (selectedTxnIds.has(t.id.toString())) {
           const field = bulkEditingType === 'vendor' ? 'description' : 'accountNumber';
@@ -702,17 +706,17 @@
           t[field] = val;
         }
       });
-  
+
       undoStack = { type: 'bulk', data: snapshot };
       saveTransactions();
       bulkEditingType = null;
       renderTransactionFeed();
-  
+
       // Auto-clear undo after 15 seconds
       setTimeout(() => { if (undoStack && undoStack.type === 'bulk') { undoStack = null; renderTransactionFeed(); } }, 15000);
     }
   };
-  
+
   window.triggerUndo = () => {
     if (!undoStack) return;
     undoStack.data.forEach(item => {
@@ -723,37 +727,37 @@
     saveTransactions();
     renderTransactionFeed();
   };
-  
+
   window.cancelBulkReclassify = () => {
     bulkEditingType = null;
     renderTransactionFeed();
   };
-  
+
   window.updateField = (id, field, value) => {
     const txn = transactionData.find(t => t.id.toString() === id.toString());
     if (txn) {
       const oldVal = txn[field];
       const newVal = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
-  
+
       if (oldVal !== newVal) {
         if (field === 'description' || field === 'accountNumber') {
           undoStack = { type: 'edit', data: [{ id, field, oldVal }] };
           setTimeout(() => { if (undoStack && undoStack.type === 'edit') { undoStack = null; renderTransactionFeed(); } }, 10000);
         }
-  
+
         txn[field] = newVal;
         if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
         if (['date', 'debit', 'credit', 'description', 'accountNumber'].includes(field)) renderTransactionFeed();
       }
     }
   };
-  
+
   window.setSort = (col) => {
     if (sortState.col === col) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
     else { sortState.col = col; sortState.dir = 'asc'; }
     renderTransactionFeed();
   };
-  
+
   window.startDeleteRow = (id) => { deletingRowId = id.toString(); renderTransactionFeed(); };
   window.confirmDeleteRow = (id) => {
     const idx = transactionData.findIndex(t => t.id.toString() === id.toString());
@@ -765,7 +769,7 @@
     }
   };
   window.cancelDeleteRow = () => { deletingRowId = null; renderTransactionFeed(); };
-  
+
   window.exportToXLS = function () {
     if (!window.XLSX) return alert('Loading exporter...');
     const dataRows = transactionData.map((txn, idx) => ({
@@ -783,29 +787,43 @@
     XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
     XLSX.writeFile(workbook, "Transactions_Export.xlsx");
   };
-  
+
   // --- MODAL ---
-  
+
   window.openImportManager = () => {
     document.getElementById('import-modal').style.display = 'flex';
     renderImportHistory();
   };
   window.closeImportManager = () => document.getElementById('import-modal').style.display = 'none';
-  
+
   function renderImportHistory() {
     const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
     const list = document.getElementById('history-list');
     if (!list) return;
-  
+
+    if (importPendingData) {
+      list.innerHTML = `
+        <div style="background:#f8fafc; border:1px solid var(--primary); border-radius:8px; padding:20px; text-align:center;">
+          <div style="font-weight:700; color:var(--text-main); margin-bottom:12px;">Where should these ${importPendingData.length} transactions go?</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn btn-primary" style="justify-content:center;" onclick="finalizeImport('chq1')">TD Chequing (Asset)</button>
+            <button class="btn btn-primary" style="justify-content:center; background:#475569;" onclick="finalizeImport('mc1')">RBC Avion Visa (Liability)</button>
+            <button class="btn btn-secondary" style="justify-content:center;" onclick="cancelImport()">Cancel</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     if (!history.length) {
       list.innerHTML = '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
       return;
     }
-  
+
     list.innerHTML = history.map(h => {
       const isEditing = editingImportId === h.id;
       const isRestoring = restoringImportId === h.id;
-  
+
       if (isEditing) {
         return `
           <div class="history-item">
@@ -816,7 +834,7 @@
             </div>
           </div>`;
       }
-  
+
       if (isRestoring) {
         return `
           <div class="history-item" style="background:#eff6ff; border-left:4px solid var(--primary);">
@@ -828,7 +846,7 @@
             </div>
           </div>`;
       }
-  
+
       return `
         <div class="history-item">
            <div style="flex:1;">
@@ -844,7 +862,7 @@
       `;
     }).join('');
   }
-  
+
   window.renameImport = (id) => {
     editingImportId = id;
     renderImportHistory();
@@ -853,7 +871,7 @@
       if (input) { input.focus(); input.select(); }
     }, 10);
   };
-  
+
   window.saveImportRename = (id) => {
     const input = document.getElementById('rename-import-input');
     if (input) {
@@ -867,52 +885,124 @@
     editingImportId = null;
     renderImportHistory();
   };
-  
+
   window.cancelImportRename = () => {
     editingImportId = null;
     renderImportHistory();
   };
-  
+
   window.restoreImport = (id) => {
     restoringImportId = id;
     renderImportHistory();
   };
-  
+
   window.cancelRestore = () => {
     restoringImportId = null;
     renderImportHistory();
   };
-  
+
   window.confirmRestore = (id, mode) => {
-    showModalStatus(`Restoring Data (${mode})...`, 'green');
-    // Actual restoration logic would go here if we persist the raw data.
-    showModalStatus(`Data Restored (${mode})`, 'green');
+    const raw = localStorage.getItem(`ab3_raw_data_${id}`);
+    if (!raw) return showModalStatus('Original data not found.', 'red');
+
+    const txns = JSON.parse(raw);
+    if (mode === 'replace') {
+      transactionData = txns;
+    } else {
+      transactionData = [...txns, ...transactionData];
+    }
+
+    saveTransactions();
+    renderTransactionFeed();
+    showModalStatus(`Restored ${txns.length} transactions (${mode})`, 'green');
     restoringImportId = null;
     renderImportHistory();
   };
-  
+
   window.handleFileDrop = (files) => {
     if (!files.length) return;
     const file = files[0];
     const reader = new FileReader();
     reader.onload = (e) => {
-      const csv = e.target.result;
-      const lines = csv.split('\n');
-      const count = lines.length - 1;
-      const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-      if (history.some(h => h.filename === file.name)) {
-        showModalStatus('File already exists.', 'red');
-        return;
+      try {
+        const csv = e.target.result;
+        const lines = csv.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length < 2) return showModalStatus('CSV file is empty or invalid.', 'red');
+
+        const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
+        const dataRows = lines.slice(1);
+
+        const newTxns = dataRows.map((line, idx) => {
+          const cells = line.split(',').map(c => c.trim().replace(/"/g, ''));
+          const row = {};
+          headers.forEach((h, i) => { row[h] = cells[i]; });
+
+          return {
+            id: Date.now() + idx,
+            date: row.date || row.timestamp || new Date().toISOString().split('T')[0],
+            description: row.description || row.payee || row.memo || 'Imported Transaction',
+            debit: parseFloat(row.debit || row.out || row.withdrawal || 0),
+            credit: parseFloat(row.credit || row.in || row.deposit || 0),
+            accountNumber: row.account || row.category || ''
+          };
+        });
+
+        importPendingData = newTxns;
+        importPendingFilename = file.name;
+        renderImportHistory();
+        showModalStatus(`Parsed ${newTxns.length} transactions. Select account.`, 'green');
+      } catch (err) {
+        console.error('Import failed:', err);
+        showModalStatus('Failed to parse CSV.', 'red');
       }
-  
-      history.unshift({ id: Date.now().toString(), filename: file.name, date: new Date().toLocaleDateString(), count });
-      localStorage.setItem('ab3_upload_history', JSON.stringify(history));
-      renderImportHistory();
-      showModalStatus(`Successfully uploaded ${file.name}`, 'green');
     };
     reader.readAsText(file);
   };
-  
+
+  window.cancelImport = () => {
+    importPendingData = null;
+    importPendingFilename = '';
+    renderImportHistory();
+  };
+
+  window.finalizeImport = (accountId) => {
+    if (!importPendingData) return;
+
+    // Switch account first
+    if (window.accountManager) window.accountManager.setCurrentAccount(accountId);
+
+    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+    const existing = history.find(h => h.filename === importPendingFilename);
+    const uploadId = Date.now().toString();
+
+    // Store raw data for RESTORE functionality
+    localStorage.setItem(`ab3_raw_data_${uploadId}`, JSON.stringify(importPendingData));
+
+    if (existing) {
+      existing.count = importPendingData.length;
+      existing.date = new Date().toLocaleDateString();
+      existing.id = uploadId;
+    } else {
+      history.unshift({ id: uploadId, filename: importPendingFilename, date: new Date().toLocaleDateString(), count: importPendingData.length });
+    }
+
+    localStorage.setItem('ab3_upload_history', JSON.stringify(history));
+
+    // Persist to the correct account storage (REPLACE MODE per user request)
+    transactionData = importPendingData;
+    saveTransactions(); // Handles accountManager or storage correctly
+
+    importPendingData = null;
+    importPendingFilename = '';
+    viewMode = 'grid'; // Auto-switch to grid to show new data
+
+    renderTransactionFeed();
+    renderImportHistory();
+    initAccountSelector(); // Refresh dropdown
+    if (window.closeImportManager) window.closeImportManager(); // Auto-close modal
+    showModalStatus('Import Finalized!', 'green');
+  };
+
   function showModalStatus(msg, color) {
     const el = document.getElementById('modal-status');
     if (el) {
@@ -921,9 +1011,9 @@
       setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
     }
   }
-  
+
   // --- IO ---
-  
+
   function saveTransactions() {
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
@@ -931,7 +1021,7 @@
     }
     if (window.storage) window.storage._set('transactions', transactionData);
   }
-  
+
   async function loadSavedTransactions() {
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
@@ -956,11 +1046,11 @@
       renderTransactionFeed();
     }
   }
-  
+
   function formatCurrency(n) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
   }
-  
+
   let isInitializing = false;
   const lo = new MutationObserver(() => {
     if (document.getElementById('transactionFeed') && !isInitializing) {
@@ -970,13 +1060,14 @@
     }
   });
   if (document.body) lo.observe(document.body, { childList: true, subtree: true });
-  
+
   window.loadTransactionData = loadSavedTransactions;
   window.updateRefPrefix = updateRefPrefix;
   window.deleteImport = (id) => {
     const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
     const filtered = history.filter(h => h.id !== id);
     localStorage.setItem('ab3_upload_history', JSON.stringify(filtered));
+    localStorage.removeItem(`ab3_raw_data_${id}`);
     renderImportHistory();
   };
   window.filterTransactionFeed = (v) => { searchFilter = v; renderTransactionFeed(); };
@@ -984,5 +1075,4 @@
     transactionData.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], description: 'New Entry', debit: 0, credit: 0, accountNumber: '' });
     renderTransactionFeed(); saveTransactions();
   };
-  */
 })();
