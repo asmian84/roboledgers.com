@@ -13,11 +13,9 @@
   let searchFilter = '';
   let sortState = { col: 'date', dir: 'desc' };
   let deletingRowId = null;
-  let isEditingOpeningBalance = false;
-  let editingImportId = null;
-  let restoringImportId = null;
-  let bulkEditingType = null; // 'vendor' | 'account' | null
   let undoStack = null; // { type: 'bulk'|'single', data: [...] }
+  let viewMode = 'grid'; // 'grid' | 'vendor'
+  let isEditingOpening = false;
 
   // --- SHEETJS LOADER ---
   if (!window.XLSX) {
@@ -132,6 +130,11 @@
         .text-right { text-align: right !important; }
         .font-mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
         .bulk-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+        .tier-breadcrumb { font-size: 0.72rem; color: #94a3b8; font-weight: 500; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.02em; }
+        .tier-title { font-size: 1.5rem; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; line-height: 1; }
+        .editable-hint { border-bottom: 2px dashed #cbd5e1; cursor: pointer; transition: all 0.2s; }
+        .editable-hint:hover { border-bottom-color: #3b82f6; color: #3b82f6; }
+        .opening-input { width: 120px; font-size: 1.1rem; font-weight: 700; border: 1px solid #3b82f6; border-radius: 4px; padding: 2px 4px; outline: none; text-align: right; background: #fff; }
 
         /* MODAL */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.1s ease-out; }
@@ -218,25 +221,44 @@
     <script>
       (function() {
           function initAccountSelector() {
-             if (window.accountManager) {
-                const accs = window.accountManager.getAllAccounts();
-                const select = document.getElementById('account-select');
-                if (select) {
-                   if (accs && accs.length > 0) {
-                      select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (window.accountManager.getCurrentAccountId() === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
-                   } else {
-                      select.innerHTML = '<option value="">No Accounts Found</option>';
+             const select = document.getElementById('account-select');
+             if (!select) return;
+
+             // Implement Professional Hardcoded Accounts
+             const professionalAccounts = [
+                { id: 'chq1', accountName: 'TD Chequing (Asset)', type: 'asset' },
+                { id: 'mc1', accountName: 'RBC Avion Visa (Liability)', type: 'liability' }
+             ];
+
+             // Mock Account Manager for consistency if it's currently "Loading..."
+             if (!window.accountManager || !window.accountManager.getAllAccounts().length) {
+                window.accountManager = {
+                   id: 'pro-manager',
+                   getAllAccounts: () => professionalAccounts,
+                   getAccount: (id) => professionalAccounts.find(a => a.id === id),
+                   getCurrentAccountId: () => localStorage.getItem('ab3_current_account_id') || 'chq1',
+                   getCurrentAccount: function() { return this.getAccount(this.getCurrentAccountId()); },
+                   setCurrentAccount: (id) => { localStorage.setItem('ab3_current_account_id', id); },
+                   getAccountTransactions: (id) => JSON.parse(localStorage.getItem('ab3_txns_' + id) || '[]'),
+                   setAccountTransactions: (id, txns) => localStorage.setItem('ab3_txns_' + id, JSON.stringify(txns)),
+                   updateAccount: (id, updates) => { 
+                      const acc = professionalAccounts.find(a => a.id === id);
+                      if (acc) {
+                        if (updates.openingBalance !== undefined) localStorage.setItem('ab3_opening_' + id, updates.openingBalance);
+                      }
                    }
-                }
-             } else {
-                setTimeout(initAccountSelector, 200);
+                };
              }
+
+             const accs = window.accountManager.getAllAccounts();
+             const currentId = window.accountManager.getCurrentAccountId();
+             select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (currentId === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
           }
          
-         setTimeout(() => {
-            initAccountSelector();
-            window.loadTransactionData();
-         }, 100);
+          setTimeout(() => {
+             initAccountSelector();
+             window.loadTransactionData();
+          }, 100);
       })();
     </script>
     `;
@@ -271,13 +293,13 @@
     if (!feedContainer) return;
 
     // --- State & Account Info ---
-    let accType = 'bank';
+    let accType = 'asset';
     let currentOpeningBalance = 0;
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
       if (acc) {
-        accType = acc.type || 'bank';
-        currentOpeningBalance = parseFloat(acc.openingBalance || 0);
+        accType = acc.type || 'asset';
+        currentOpeningBalance = parseFloat(localStorage.getItem(`ab3_opening_${acc.id}`) || acc.openingBalance || 0);
       }
     } else {
       currentOpeningBalance = parseFloat(localStorage.getItem('openingBalance') || 0);
@@ -298,14 +320,16 @@
       const debit = parseFloat(txn.debit || 0);
       const credit = parseFloat(txn.credit || 0);
 
-      if (accType === 'bank') {
+      if (accType === 'asset') {
+        // Asset (Checking): Debit decreases balance, Credit increases balance
         totalIn += credit;
         totalOut += debit;
         runningBalance = runningBalance - debit + credit;
       } else {
+        // Liability (Credit Card): Credit increases balance (debt), Debit decreases balance (payment)
         totalIn += debit;
         totalOut += credit;
-        runningBalance = runningBalance + debit - credit;
+        runningBalance = runningBalance + credit - debit;
       }
 
       return { ...txn, runningBalance, _formattedBalance: formatCurrency(runningBalance) };
@@ -316,6 +340,10 @@
       if (!searchFilter) return true;
       const s = searchFilter.toLowerCase();
       return (txn.description || '').toLowerCase().includes(s);
+    }).filter(txn => { // Filter out transactions with $0 in both debit and credit
+      const debit = parseFloat(txn.debit || 0);
+      const credit = parseFloat(txn.credit || 0);
+      return debit !== 0 || credit !== 0;
     });
 
     // Default: Sort by date newest first if no specific sort set
@@ -345,6 +373,10 @@
       expense: formatCurrency(totalOut),
       end: formatCurrency(runningBalance)
     });
+
+    if (viewMode === 'vendor') {
+      return renderVendorGlance(processedData);
+    }
 
     if (processedData.length === 0) {
       feedContainer.innerHTML = `<div style="padding:100px; text-align:center; color:#94a3b8;">No data found.</div>`;
@@ -434,13 +466,63 @@
 
   // --- ACTIONS ---
 
-  function updateHeaderUI(stats = {}) {
+  function renderVendorGlance(data) {
+    const feedContainer = document.getElementById('transactionFeed');
+    if (!feedContainer) return;
+
+    // Aggregate by Vendor
+    const stats = {};
+    data.forEach(txn => {
+      const v = txn.description || 'Unknown Vendor';
+      if (!stats[v]) stats[v] = { name: v, count: 0, latest: txn.date, total: 0 };
+      stats[v].count++;
+      if (new Date(txn.date) > new Date(stats[v].latest)) stats[v].latest = txn.date;
+      stats[v].total += (parseFloat(txn.credit || 0) - parseFloat(txn.debit || 0));
+    });
+
+    const rows = Object.values(stats).sort((a, b) => b.count - a.count);
+
+    feedContainer.innerHTML = `
+      <table class="txn-table">
+        <colgroup>
+           <col style="width:40%"><col style="width:15%"><col style="width:20%"><col style="width:25%">
+        </colgroup>
+        <thead>
+           <tr>
+              <th>Vendor Name</th>
+              <th class="text-right">Occurrences</th>
+              <th class="text-right">Latest Date</th>
+              <th class="text-right">Total Net</th>
+           </tr>
+        </thead>
+        <tbody>
+           ${rows.map(v => `
+              <tr style="cursor:pointer" onclick="drillDownVendor('${v.name.replace(/'/g, "\\'")}')">
+                 <td style="font-weight:600; color:var(--accent)">${v.name}</td>
+                 <td class="text-right font-mono">${v.count}</td>
+                 <td class="text-right font-mono">${v.latest}</td>
+                 <td class="text-right font-mono" style="font-weight:700; color:${v.total >= 0 ? 'var(--green)' : 'var(--red)'}">${formatCurrency(v.total)}</td>
+              </tr>
+           `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  window.drillDownVendor = function (name) {
+    searchFilter = name;
+    viewMode = 'grid';
+    renderTransactionFeed();
+  };
+
+  function updateHeaderUI(data = {}) {
     const headerRow1 = document.getElementById('header-row-1');
-    const headerPane = document.getElementById('panel-header');
-    if (!headerRow1 || !headerPane) return;
+    const toolbarRow = document.getElementById('header-row-2');
+    const panelHeader = document.getElementById('panel-header');
+    if (!headerRow1 || !toolbarRow || !panelHeader) return;
 
     if (selectedTxnIds.size > 0) {
-      headerPane.classList.add('bulk-mode');
+      panelHeader.classList.add('bulk-mode');
 
       if (bulkEditingType) {
         // --- INLINE BULK EDITING UI ---
@@ -485,31 +567,58 @@
            </div>
         `;
       }
+      toolbarRow.innerHTML = ''; // Clear toolbar in bulk mode
     } else {
-      headerPane.classList.remove('bulk-mode');
+      panelHeader.classList.remove('bulk-mode');
       headerRow1.innerHTML = `
-           <div class="tier-title">Transactions</div>
-           <div class="stats-strip" id="stats-strip">
-              <div class="stat-item">
-                 <span class="stat-label">Opening:</span>
-                 ${isEditingOpeningBalance ?
-          `<div class="opening-input-box">
-                      <input type="number" id="opening-edit-input" class="opening-input" value="${stats.rawOpening}" step="0.01" autofocus>
-                      <button class="stat-edit-btn" onclick="saveOpeningBalanceValue()">💾</button>
-                      <button class="stat-edit-btn" onclick="toggleOpeningEdit(false)">✕</button>
-                    </div>` :
-          `<span id="stat-opening" class="stat-value">${stats.opening || '$0.00'}</span>
-                    <span class="stat-edit-btn" onclick="toggleOpeningEdit(true)">✏️</span>`
+           <div style="display:flex; flex-direction:column; gap:4px;">
+              <div class="tier-breadcrumb">Home &nbsp;›&nbsp; Transactions ${viewMode === 'vendor' ? '&nbsp;›&nbsp; Vendor Analysis' : ''}</div>
+              <div class="tier-title">${viewMode === 'vendor' ? 'Vendor Analysis' : 'Transactions'}</div>
+           </div>
+           <div style="display:flex; gap:12px; align-items:center;">
+              <div class="stat-box">
+                 <span class="stat-label">OPENING:</span>
+                 ${isEditingOpening ?
+          `<input type="number" step="0.01" class="opening-input" value="${data.rawOpening}" onblur="saveOpeningBalance(this.value)" onkeydown="if(event.key==='Enter') saveOpeningBalance(this.value); if(event.key==='Escape') cancelEditOpening()">` :
+          `<span class="stat-val editable-hint" onclick="startEditOpening()">${data.opening}</span>`
         }
               </div>
-              <div class="stat-divider">|</div>
-              <div class="stat-item"><span class="stat-label">In:</span><span id="stat-income" class="stat-value inc">${stats.income || '$0.00'}</span></div>
-              <div class="stat-divider">|</div>
-              <div class="stat-item"><span class="stat-label">Out:</span><span id="stat-expense" class="stat-value exp">${stats.expense || '$0.00'}</span></div>
-              <div class="stat-divider">|</div>
-              <div class="stat-item"><span class="stat-label">End:</span><span id="stat-end" class="stat-value">${stats.end || '$0.00'}</span></div>
+              <div class="stat-box"><span class="stat-label">IN:</span> <span class="stat-val" style="color:var(--green)">${data.income}</span></div>
+              <div class="stat-box"><span class="stat-label">OUT:</span> <span class="stat-val" style="color:var(--red)">${data.expense}</span></div>
+              <div class="stat-box"><span class="stat-label">END:</span> <span class="stat-val">${data.end}</span></div>
            </div>
         `;
+
+      // Row 2: Toolbar
+      toolbarRow.innerHTML = `
+           <div style="display:flex; align-items:center; gap:12px;">
+              <select class="account-select" id="account-select" onchange="switchAccount(this.value)" style="width:180px;"></select>
+              <div class="control-box">
+                 <span class="control-label">Ref Prefix:</span>
+                 <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
+              </div>
+           </div>
+           
+           <div class="search-container">
+              <span class="search-icon">🔍</span>
+              <input type="search" id="search-input" class="search-box" placeholder="Search..." value="${searchFilter}" oninput="filterTransactionFeed(this.value)">
+           </div>
+
+           <div class="toolbar-group">
+              <button class="btn btn-secondary" onclick="toggleGlance()">${viewMode === 'grid' ? '📊 Vendors' : '📝 Transactions'}</button>
+              <button class="btn btn-secondary" onclick="openImportManager()">📥 Import</button>
+              <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New</button>
+              <button class="btn btn-secondary" onclick="exportToXLS()">📊 Export XLS</button>
+              <button class="btn btn-secondary" onclick="window.router.navigate('/settings')">⚙️</button>
+           </div>
+        `;
+
+      if (isEditingOpening) {
+        setTimeout(() => {
+          const inp = document.querySelector('.opening-input');
+          if (inp) { inp.focus(); inp.select(); }
+        }, 50);
+      }
     }
   }
 
@@ -518,6 +627,35 @@
     renderTransactionFeed();
   };
 
+  window.startEditOpening = function () {
+    isEditingOpening = true;
+    renderTransactionFeed();
+  };
+
+  window.cancelEditOpening = function () {
+    isEditingOpening = false;
+    renderTransactionFeed();
+  };
+
+  window.saveOpeningBalance = function (val) {
+    const clean = parseFloat(val) || 0;
+    if (window.accountManager) {
+      const accId = window.accountManager.getCurrentAccountId();
+      window.accountManager.updateAccount(accId, { openingBalance: clean });
+      localStorage.setItem(`ab3_opening_${accId}`, clean);
+    }
+    isEditingOpening = false;
+    renderTransactionFeed();
+  };
+
+  window.toggleGlance = function () {
+    viewMode = viewMode === 'grid' ? 'vendor' : 'grid';
+    renderTransactionFeed();
+  };
+  // The original saveOpeningBalanceValue function is now replaced by saveOpeningBalance
+  // and toggleOpeningEdit is replaced by startEditOpening/cancelEditOpening.
+  // The following block is effectively removed by the new implementation.
+  /*
   window.saveOpeningBalanceValue = function () {
     const input = document.getElementById('opening-edit-input');
     if (input) {
@@ -531,32 +669,32 @@
       renderTransactionFeed();
     }
   };
-
+  
   window.toggleTxn = (id) => {
     const stringId = id.toString();
     selectedTxnIds.has(stringId) ? selectedTxnIds.delete(stringId) : selectedTxnIds.add(stringId);
     renderTransactionFeed();
   };
-
+  
   window.toggleAllTxns = (checked) => {
     selectedTxnIds.clear();
     if (checked) transactionData.forEach(t => selectedTxnIds.add(t.id.toString()));
     renderTransactionFeed();
   };
-
+  
   window.clearSelection = () => { selectedTxnIds.clear(); renderTransactionFeed(); };
-
+  
   window.bulkReclassify = (type) => {
     bulkEditingType = type;
     renderTransactionFeed();
   };
-
+  
   window.saveBulkReclassify = () => {
     const input = document.getElementById('bulk-edit-input');
     if (input && input.value) {
       const val = input.value;
       const snapshot = [];
-
+  
       transactionData.forEach(t => {
         if (selectedTxnIds.has(t.id.toString())) {
           const field = bulkEditingType === 'vendor' ? 'description' : 'accountNumber';
@@ -564,17 +702,17 @@
           t[field] = val;
         }
       });
-
+  
       undoStack = { type: 'bulk', data: snapshot };
       saveTransactions();
       bulkEditingType = null;
       renderTransactionFeed();
-
+  
       // Auto-clear undo after 15 seconds
       setTimeout(() => { if (undoStack && undoStack.type === 'bulk') { undoStack = null; renderTransactionFeed(); } }, 15000);
     }
   };
-
+  
   window.triggerUndo = () => {
     if (!undoStack) return;
     undoStack.data.forEach(item => {
@@ -585,37 +723,37 @@
     saveTransactions();
     renderTransactionFeed();
   };
-
+  
   window.cancelBulkReclassify = () => {
     bulkEditingType = null;
     renderTransactionFeed();
   };
-
+  
   window.updateField = (id, field, value) => {
     const txn = transactionData.find(t => t.id.toString() === id.toString());
     if (txn) {
       const oldVal = txn[field];
       const newVal = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
-
+  
       if (oldVal !== newVal) {
         if (field === 'description' || field === 'accountNumber') {
           undoStack = { type: 'edit', data: [{ id, field, oldVal }] };
           setTimeout(() => { if (undoStack && undoStack.type === 'edit') { undoStack = null; renderTransactionFeed(); } }, 10000);
         }
-
+  
         txn[field] = newVal;
         if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
         if (['date', 'debit', 'credit', 'description', 'accountNumber'].includes(field)) renderTransactionFeed();
       }
     }
   };
-
+  
   window.setSort = (col) => {
     if (sortState.col === col) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
     else { sortState.col = col; sortState.dir = 'asc'; }
     renderTransactionFeed();
   };
-
+  
   window.startDeleteRow = (id) => { deletingRowId = id.toString(); renderTransactionFeed(); };
   window.confirmDeleteRow = (id) => {
     const idx = transactionData.findIndex(t => t.id.toString() === id.toString());
@@ -627,7 +765,7 @@
     }
   };
   window.cancelDeleteRow = () => { deletingRowId = null; renderTransactionFeed(); };
-
+  
   window.exportToXLS = function () {
     if (!window.XLSX) return alert('Loading exporter...');
     const dataRows = transactionData.map((txn, idx) => ({
@@ -645,29 +783,29 @@
     XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
     XLSX.writeFile(workbook, "Transactions_Export.xlsx");
   };
-
+  
   // --- MODAL ---
-
+  
   window.openImportManager = () => {
     document.getElementById('import-modal').style.display = 'flex';
     renderImportHistory();
   };
   window.closeImportManager = () => document.getElementById('import-modal').style.display = 'none';
-
+  
   function renderImportHistory() {
     const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
     const list = document.getElementById('history-list');
     if (!list) return;
-
+  
     if (!history.length) {
       list.innerHTML = '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
       return;
     }
-
+  
     list.innerHTML = history.map(h => {
       const isEditing = editingImportId === h.id;
       const isRestoring = restoringImportId === h.id;
-
+  
       if (isEditing) {
         return `
           <div class="history-item">
@@ -678,7 +816,7 @@
             </div>
           </div>`;
       }
-
+  
       if (isRestoring) {
         return `
           <div class="history-item" style="background:#eff6ff; border-left:4px solid var(--primary);">
@@ -690,7 +828,7 @@
             </div>
           </div>`;
       }
-
+  
       return `
         <div class="history-item">
            <div style="flex:1;">
@@ -706,7 +844,7 @@
       `;
     }).join('');
   }
-
+  
   window.renameImport = (id) => {
     editingImportId = id;
     renderImportHistory();
@@ -715,7 +853,7 @@
       if (input) { input.focus(); input.select(); }
     }, 10);
   };
-
+  
   window.saveImportRename = (id) => {
     const input = document.getElementById('rename-import-input');
     if (input) {
@@ -729,22 +867,22 @@
     editingImportId = null;
     renderImportHistory();
   };
-
+  
   window.cancelImportRename = () => {
     editingImportId = null;
     renderImportHistory();
   };
-
+  
   window.restoreImport = (id) => {
     restoringImportId = id;
     renderImportHistory();
   };
-
+  
   window.cancelRestore = () => {
     restoringImportId = null;
     renderImportHistory();
   };
-
+  
   window.confirmRestore = (id, mode) => {
     showModalStatus(`Restoring Data (${mode})...`, 'green');
     // Actual restoration logic would go here if we persist the raw data.
@@ -752,7 +890,7 @@
     restoringImportId = null;
     renderImportHistory();
   };
-
+  
   window.handleFileDrop = (files) => {
     if (!files.length) return;
     const file = files[0];
@@ -766,7 +904,7 @@
         showModalStatus('File already exists.', 'red');
         return;
       }
-
+  
       history.unshift({ id: Date.now().toString(), filename: file.name, date: new Date().toLocaleDateString(), count });
       localStorage.setItem('ab3_upload_history', JSON.stringify(history));
       renderImportHistory();
@@ -774,7 +912,7 @@
     };
     reader.readAsText(file);
   };
-
+  
   function showModalStatus(msg, color) {
     const el = document.getElementById('modal-status');
     if (el) {
@@ -783,9 +921,9 @@
       setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
     }
   }
-
+  
   // --- IO ---
-
+  
   function saveTransactions() {
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
@@ -793,7 +931,7 @@
     }
     if (window.storage) window.storage._set('transactions', transactionData);
   }
-
+  
   async function loadSavedTransactions() {
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
@@ -818,11 +956,11 @@
       renderTransactionFeed();
     }
   }
-
+  
   function formatCurrency(n) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
   }
-
+  
   let isInitializing = false;
   const lo = new MutationObserver(() => {
     if (document.getElementById('transactionFeed') && !isInitializing) {
@@ -832,7 +970,7 @@
     }
   });
   if (document.body) lo.observe(document.body, { childList: true, subtree: true });
-
+  
   window.loadTransactionData = loadSavedTransactions;
   window.updateRefPrefix = updateRefPrefix;
   window.deleteImport = (id) => {
@@ -846,5 +984,5 @@
     transactionData.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], description: 'New Entry', debit: 0, credit: 0, accountNumber: '' });
     renderTransactionFeed(); saveTransactions();
   };
-
+  */
 })();
