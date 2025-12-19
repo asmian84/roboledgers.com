@@ -31,10 +31,12 @@ class StorageService {
 
     _set(key, data) {
         try {
-            localStorage.setItem(key, JSON.stringify(data));
+            // Look up the actual storage key (e.g., 'transactions' -> 'ab3_transactions')
+            const storageKey = this.keys[key] || key;
+            localStorage.setItem(storageKey, JSON.stringify(data));
             return true;
         } catch (error) {
-            console.error(`Failed to set ${key}:`, error);
+            console.error(`Failed to set ${storageKey}:`, error);
             return false;
         }
     }

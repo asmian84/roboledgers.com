@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Rebirth Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .preview-container {
+            width: 100%;
+            max-width: 1100px;
+            background: #f1f5f9;
+            /* Outer bg */
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        /* THE PROPOSAL HEADER */
+        .dashboard-header {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* TOP ROW: Context & Actions */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Account Switcher Redesigned */
+        .account-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 12px;
+            margin-left: -12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .account-selector:hover {
+            background: #f1f5f9;
+        }
+
+        .account-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .account-details h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .account-details p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Actions Group */
+        .actions-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Search Bar - Sleek */
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-input {
+            padding: 10px 16px 10px 36px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            width: 280px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            width: 320px;
+            /* Expand on focus */
+        }
+
+        /* Buttons */
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            /* Dark theme button */
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: #1e293b;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            border-color: var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .btn-icon-only {
+            padding: 10px;
+            color: var(--text-muted);
+        }
+
+        .btn-icon-only:hover {
+            color: var(--text-main);
+            background: #f1f5f9;
+        }
+
+        /* STATS ROW */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding-top: 24px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .stat-card {
+            /* No background, just clean text to reduce visual noise */
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value.inc {
+            color: #10b981;
+        }
+
+        .stat-value.exp {
+            color: #ef4444;
+        }
+
+        .stat-trend {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up {
+            color: #10b981;
+        }
+
+        /* MOCK GRID HEADER */
+        .grid-mock {
+            margin-top: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: white;
+            overflow: hidden;
+        }
+
+        .grid-header {
+            background: #f8fafc;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 100px 1fr 150px 120px 120px 120px;
+            gap: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="preview-container">
+
+        <!-- HEADER COMPONENT -->
+        <div class="dashboard-header">
+
+            <!-- Top Row: Selector & Actions -->
+            <div class="header-top">
+
+                <!-- Account Context -->
+                <div class="account-selector">
+                    <div class="account-icon">🏦</div>
+                    <div class="account-details">
+                        <h2>Chase Checking</h2>
+                        <p>....4421 • Bank Account</p>
+                    </div>
+                    <div style="color: #94a3b8; margin-left:8px;">▼</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions-group">
+
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search transactions...">
+                    </div>
+
+                    <button class="btn btn-secondary">
+                        📥 Import
+                    </button>
+
+                    <button class="btn btn-primary">
+                        ➕ Add New
+                    </button>
+
+                    <button class="btn btn-secondary btn-icon-only" title="Export">
+                        📤
+                    </button>
+
+                    <button class="btn btn-secondary btn-icon-only" title="Filter">
+                        ⚡
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Starting Balance</span>
+                    <span class="stat-value">$5,000.00</span>
+                    <div class="stat-trend">Previous month carryover</div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-label">Total Deposits</span>
+                    <span class="stat-value inc">+$12,450.00</span>
+                    <div class="stat-trend"><span class="trend-up">↗ 12%</span> vs last month</div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-label">Total Spending</span>
+                    <span class="stat-value exp">-$8,230.50</span>
+                    <div class="stat-trend">High activity</div>
+                </div>
+
+                <div class="stat-card">
+                    <span class="stat-label">Current Balance</span>
+                    <div style="display:flex; align-items:baseline; gap:8px;">
+                        <span class="stat-value">$9,219.50</span>
+                    </div>
+                    <div class="stat-trend">Available now</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Grid Header Preview -->
+        <div class="grid-mock">
+            <div class="grid-header">
+                <div>Date</div>
+                <div>Description</div>
+                <div>Category</div>
+                <div style="text-align:right">Spent</div>
+                <div style="text-align:right">Received</div>
+                <div style="text-align:right">Balance</div>
+            </div>
+            <div style="padding: 24px; text-align: center; color: #94a3b8; font-size:0.9rem;">
+                (Transaction Grid Below)
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

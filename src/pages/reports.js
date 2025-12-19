@@ -457,7 +457,14 @@ async function initReportsDashboard() {
   console.log('🚀 Initializing Reports Dashboard...');
 
   try {
-    const transactions = await window.storage.getTransactions();
+    // Use aggregated data for reports
+    let transactions = [];
+    if (window.reportDataManager) {
+      transactions = await window.reportDataManager.getAllTransactions();
+    } else {
+      transactions = await window.storage.getTransactions();
+    }
+
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -486,7 +493,13 @@ async function initProfitLoss() {
   console.log('🚀 Initializing Profit & Loss Report...');
 
   try {
-    const transactions = await window.storage.getTransactions();
+    // Use aggregated data
+    let transactions = [];
+    if (window.reportDataManager) {
+      transactions = await window.reportDataManager.getAllTransactions();
+    } else {
+      transactions = await window.storage.getTransactions();
+    }
     const accounts = await window.storage.getAccounts();
 
     // Filter by date range

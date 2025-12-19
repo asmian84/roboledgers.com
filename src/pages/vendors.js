@@ -26,36 +26,22 @@ window.renderVendors = function () {
 let vendorsGridApi;
 
 // Local vendor data
-let vendorData = [
-  { accountNumber: '5140', description: 'Office Depot' },
-  { accountNumber: '5140', description: 'Staples' },
-  { accountNumber: '5140', description: 'Amazon Business' },
-  { accountNumber: '5130', description: 'Verizon' },
-  { accountNumber: '5120', description: 'Pacific Gas & Electric' },
-  { accountNumber: '5120', description: 'City Water Department' },
-  { accountNumber: '5110', description: 'ABC Property Management' },
-  { accountNumber: '5400', description: 'Smith & Associates CPA' },
-  { accountNumber: '5400', description: 'Johnson Legal Group' },
-  { accountNumber: '5140', description: 'Microsoft' },
-  { accountNumber: '5140', description: 'Adobe' },
-  { accountNumber: '5140', description: 'Salesforce' },
-  { accountNumber: '5300', description: 'Google Ads' },
-  { accountNumber: '5300', description: 'Facebook Ads' },
-  { accountNumber: '5150', description: 'State Farm Insurance' },
-  { accountNumber: '5600', description: 'Wells Fargo' },
-  { accountNumber: '5700', description: 'Starbucks' },
-  { accountNumber: '5700', description: 'The Capital Grille' },
-  { accountNumber: '5140', description: 'FedEx' },
-  { accountNumber: '5140', description: 'UPS' },
-  { accountNumber: '5800', description: 'United Airlines' },
-  { accountNumber: '5800', description: 'Marriott Hotels' },
-  { accountNumber: '5800', description: 'Hertz Rent-A-Car' },
-  { accountNumber: '1510', description: 'Dell' },
-  { accountNumber: '1510', description: 'HP' }
-];
+let vendorData = []; // Initialize as empty, will be loaded from storage
 
 async function initVendorsGrid() {
   console.log('🔷 Initializing Vendor Dictionary Grid...');
+
+  // LOAD FROM STORAGE instead of hardcoded data!
+  if (window.storage) {
+    const vendors = await window.storage.getVendors();
+    // Map storage format to grid format
+    vendorData = vendors.map(v => ({
+      id: v.id,
+      accountNumber: v.accountNumber || '',
+      description: v.description || v.name
+    }));
+    console.log(`📊 Loaded ${vendorData.length} vendors from storage`);
+  }
 
   // Inject CSS manually to ensure height is correct in SPA
   const style = document.createElement('style');
@@ -87,6 +73,16 @@ async function initVendorsGrid() {
       .page-header h1 {
           margin: 0;
           color: #1e293b;
+      }
+      /* Ensure AG Grid headers stay fixed */
+      #vendorsGrid .ag-header {
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 10 !important;
+          background: white !important;
+      }
+      #vendorsGrid .ag-header-viewport {
+          background: #f8fafc !important;
       }
   `;
   document.head.appendChild(style);
@@ -124,9 +120,14 @@ async function initVendorsGrid() {
     defaultColDef: {
       sortable: true,
       filter: true,
-      resizable: true
+      resizable: true,
+      editable: true  // Make cells editable
     },
     animateRows: true,
+    suppressHorizontalScroll: false,
+    // Header will float above content when scrolling
+    headerHeight: 48,
+    floatingFiltersHeight: 0,
     onGridReady: (event) => {
       console.log('✅ Vendor Dictionary grid ready');
       vendorsGridApi = event.api;
@@ -134,31 +135,43 @@ async function initVendorsGrid() {
     },
     onFirstDataRendered: (event) => {
       event.api.sizeColumnsToFit();
+    },
+    onCellValueChanged: async (event) => {
+      // Save to storage when cell is edited
+      const updatedVendor = event.data;
+      if (window.storage && updatedVendor.id) {
+        await window.storage.updateVendor(updatedVendor.id, updatedVendor);
+        console.log('💾 Vendor updated:', updatedVendor.description);
+      }
     }
   };
 
   const gridDiv = document.querySelector('#vendorsGrid');
   if (gridDiv) {
+    // Destroy previous grid instance if it exists
+    if (vendorsGridApi) {
+      console.log('♻️ Destroying previous grid instance...');
+      vendorsGridApi.destroy();
+      vendorsGridApi = null;
+    }
     gridDiv.innerHTML = ''; // Clear previous if any
     vendorsGridApi = agGrid.createGrid(gridDiv, gridOptions);
   }
 }
 
-// Watch for grid container
+// Watch for grid container - with flag to prevent infinite loop
+let isInitializingVendors = false;
 const vendorObserver = new MutationObserver(() => {
   const gridDiv = document.getElementById('vendorsGrid');
 
-  // Check if present AND not already initialized this session
-  if (gridDiv && !gridDiv.classList.contains('js-initialized')) {
+  // Check if div exists, not initializing, AND no grid rendered inside
+  const hasGrid = gridDiv?.querySelector('.ag-root-wrapper');
+  if (gridDiv && !isInitializingVendors && !hasGrid) {
     console.log('📍 Vendors grid container detected, initializing...');
-
-    // Mark as initialized
-    gridDiv.classList.add('js-initialized');
-
+    isInitializingVendors = true;
     initVendorsGrid();
-
-    // DO NOT disconnect! Keep watching for navigation events.
-    // vendorObserver.disconnect();
+    // Reset flag after delay to allow next navigation
+    setTimeout(() => { isInitializingVendors = false; }, 500);
   }
 });
 

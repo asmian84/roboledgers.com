@@ -14,6 +14,9 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Toast Notifications CSS -->
+  <link rel="stylesheet" href="src/features/notifications/toast.css">
 </head>
 
 <body>
@@ -121,6 +124,26 @@
   <script src="src/components/auth-modal.js"></script>
   <script src="src/components/csv-import-modal.js"></script>
   <script src="src/components/add-transaction-modal.js"></script>
+
+  <!-- Search Feature -->
+  <script src="src/features/search/search-engine.js"></script>
+  <script src="src/features/search/search-modal.js"></script>
+  <script src="src/features/search/search-bar.js"></script>
+
+  <!-- Keyboard Shortcuts -->
+  <script src="src/features/shortcuts/keyboard-manager.js"></script>
+  <script src="src/features/shortcuts/shortcuts-modal.js"></script>
+
+  <!-- Notifications -->
+  <script src="src/features/notifications/toast-manager.js"></script>
+
+  <!-- Upload History -->
+  <script src="src/features/uploads/upload-history.js"></script>
+
+  <!-- Account Manager (Multi-Account Support) -->
+  <script src="src/features/accounts/account-manager.js"></script>
+  <script src="src/features/accounts/account-switcher.js"></script>
+  <script src="src/features/accounts/report-data-manager.js"></script>
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
@@ -431,6 +454,11 @@
     // Bank Reconciliation
     router.register('/reconciliation', () => {
       document.getElementById('app').innerHTML = renderReconciliation();
+    });
+
+    // Upload History
+    router.register('/uploads', () => {
+      document.getElementById('app').innerHTML = renderUploads();
     });
 
     // Settings routes

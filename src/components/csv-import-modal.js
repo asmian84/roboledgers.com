@@ -169,11 +169,150 @@ async function handleFileUpload(file) {
             await parseExcel(file);
         }
 
-        showPreview();
+        // Auto-detect account type and show selection
+        await showAccountSelection();
     } catch (error) {
         console.error('File parse error:', error);
         alert('Failed to parse file: ' + error.message);
     }
+}
+
+// Auto-detect account type from CSV data
+function detectAccountType() {
+    if (csvData.length === 0) return 'unknown';
+
+    let positiveCount = 0;
+    let negativeCount = 0;
+
+    // Analyze transaction amounts
+    csvData.forEach(row => {
+        // Try to find amount column
+        let amount = null;
+        for (const key of Object.keys(row)) {
+            const keyLower = key.toLowerCase();
+            if (keyLower.includes('amount') || keyLower.includes('debit') || keyLower.includes('credit')) {
+                const value = parseFloat(row[key].toString().replace(/[^0-9.-]/g, ''));
+                if (!isNaN(value)) {
+                    amount = value;
+                    break;
+                }
+            }
+        }
+
+        if (amount !== null) {
+            if (amount > 0) positiveCount++;
+            else if (amount < 0) negativeCount++;
+        }
+    });
+
+    // If mostly positive (debits), it's likely a bank account
+    // If mostly negative (credits/charges), it's likely a credit card
+    const total = positiveCount + negativeCount;
+    if (total === 0) return 'unknown';
+
+    const positiveRatio = positiveCount / total;
+
+    if (positiveRatio > 0.6) {
+        return 'bank'; // Mostly debits = bank account
+    } else if (positiveRatio < 0.4) {
+        return 'credit'; // Mostly credits = credit card
+    } else {
+        return 'unknown'; // Mixed
+    }
+}
+
+// Show Account Selection Modal
+async function showAccountSelection() {
+    const detectedType = detectAccountType();
+    let accounts = [];
+
+    // Use AccountManager if valid
+    if (window.accountManager) {
+        accounts = window.accountManager.getAllAccounts();
+
+        // If no accounts, prompt to create
+        if (accounts.length === 0) {
+            alert('No accounts found. Please create an account first.');
+            return;
+        }
+    } else {
+        return;
+    }
+
+    let detectionMessage = '';
+    if (detectedType === 'bank') {
+        detectionMessage = '🏦 Detected: <strong>Bank Account</strong> (mostly positive amounts)';
+        accounts.sort((a, b) => (a.type === 'bank' ? -1 : 1));
+    } else if (detectedType === 'credit') {
+        detectionMessage = '💳 Detected: <strong>Credit Card</strong> (mostly negative amounts)';
+        accounts.sort((a, b) => (a.type === 'credit' ? -1 : 1));
+    } else {
+        detectionMessage = '📊 Could not determine account type automatically.';
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '2000';
+    modal.innerHTML = `
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Select Account for Import</h3>
+        <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detection-alert" style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-bottom: 20px; color: #475569;">
+            ${detectionMessage}
+        </div>
+        
+        <div class="form-group">
+            <label>Select Account:</label>
+            <select id="import-account-select" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                ${accounts.map(acc => `
+                    <option value="${acc.id}">
+                        ${acc.type === 'bank' ? '🏦' : '💳'} ${acc.accountName} (${acc.accountNumber})
+                    </option>
+                `).join('')}
+            </select>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; font-size: 0.9em; color: #64748b;">
+           <a href="#" onclick="window.accountSwitcher.showAddAccountModal(); this.closest('.modal-overlay').remove(); return false;">+ Create new account</a>
+           <a href="#/uploads" onclick="this.closest('.modal-overlay').remove();">View Import Bucket 📁</a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn-primary" id="confirm-account-btn">Continue</button>
+      </div>
+    </div>
+  `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('confirm-account-btn').onclick = async () => {
+        const select = document.getElementById('import-account-select');
+        const accountId = select.value;
+        const account = window.accountManager.getAccount(accountId);
+
+        if (account) {
+            // Set for uploading reference
+            window.currentImportAccount = account;
+
+            // OPTIONAL: Switch to this account now so user sees data immediately after
+            window.accountManager.setCurrentAccount(accountId);
+
+            // Notify layout to update header
+            window.dispatchEvent(new Event('accountChanged'));
+
+            modal.remove();
+
+            // Show mapping UI
+            initColumnMapping();
+
+            // Force redraw of header
+            if (window.accountSwitcher) window.accountSwitcher.render();
+        }
+    };
 }
 
 // Parse CSV File
@@ -346,7 +485,7 @@ function renderColumnMapping() {
 
     allFields.forEach(field => {
         html += `
-      <div class="mapping-row">
+        < div class="mapping-row" >
         <label class="mapping-label">
           ${field.label}
           <span class="mapping-hint">${field.hint}</span>
@@ -355,8 +494,8 @@ function renderColumnMapping() {
           <option value="">-- Not Mapped --</option>
           ${csvHeaders.map(h => `<option value="${h}">${h}</option>`).join('')}
         </select>
-      </div>
-    `;
+      </div >
+        `;
     });
 
     html += '</div>';
@@ -380,7 +519,7 @@ function autoDetectMappings() {
     };
 
     Object.entries(mappings).forEach(([field, keywords]) => {
-        const select = document.querySelector(`select[data-field="${field}"]`);
+        const select = document.querySelector(`select[data - field= "${field}"]`);
         if (!select) return;
 
         const match = csvHeaders.find(header =>
@@ -459,6 +598,31 @@ async function importTransactions() {
 
     // Show complete
     showImportComplete(imported, failed);
+
+    // Track upload in history
+    if (window.uploadHistory && window.currentImportAccount) {
+        const accountInfo = getAccountInfo(window.currentImportAccount);
+        window.uploadHistory.addUpload({
+            filename: document.getElementById('csv-file-input').files[0]?.name || 'Unknown',
+            accountCode: window.currentImportAccount,
+            accountName: accountInfo.name,
+            transactionCount: imported,
+            uploadDate: new Date().toISOString()
+        });
+    }
+}
+
+// Get account info from code
+function getAccountInfo(code) {
+    const accounts = {
+        '1000': { name: 'Bank - chequing' },
+        '1030': { name: 'Bank - US account' },
+        '1035': { name: 'Savings account' },
+        '1040': { name: 'Savings account #2' },
+        '2101': { name: 'RBC MC (Mastercard)' },
+        '2102': { name: 'RBC Visa' }
+    };
+    return accounts[code] || { name: 'Unknown Account' };
 }
 
 // Show Import Complete
@@ -467,10 +631,10 @@ function showImportComplete(imported, failed) {
     document.getElementById('complete-section').style.display = 'block';
 
     document.getElementById('import-summary').innerHTML = `
-    <p>✅ Successfully imported: <strong>${imported}</strong> transactions</p>
-    ${failed > 0 ? `<p>⚠️ Failed: <strong>${failed}</strong> transactions</p>` : ''}
+        < p >✅ Successfully imported: <strong>${imported}</strong> transactions</p >
+            ${failed > 0 ? `<p>⚠️ Failed: <strong>${failed}</strong> transactions</p>` : ''}
     <p>Total processed: <strong>${imported + failed}</strong></p>
-  `;
+    `;
 }
 
 // Reset CSV Import

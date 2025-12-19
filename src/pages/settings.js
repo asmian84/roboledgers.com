@@ -17,6 +17,14 @@ window.renderSettings = function (params) {
           </div>
         </a>
         
+        <a href="#/settings/accounts" class="settings-nav-item ${panel === 'accounts' ? 'active' : ''}">
+          <i class="icon">🏦</i>
+          <div>
+            <div class="nav-title">Accounts</div>
+            <div class="nav-desc">Manage bank accounts</div>
+          </div>
+        </a>
+        
         <a href="#/settings/appearance" class="settings-nav-item ${panel === 'appearance' ? 'active' : ''}">
           <i class="icon">🎨</i>
           <div>
@@ -76,6 +84,8 @@ function renderSettingsPanel(panel) {
   switch (panel) {
     case 'general':
       return renderGeneralPanel();
+    case 'accounts':
+      return renderAccountsPanel();
     case 'appearance':
       return renderAppearancePanel();
     case 'data':
@@ -156,6 +166,104 @@ function renderGeneralPanel() {
         </div>
       </form>
     </div>
+  `;
+}
+
+// ==================================================
+// ACCOUNTS PANEL
+// ==================================================
+
+function renderAccountsPanel() {
+  return `
+    <div class="settings-panel">
+      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2>Accounts</h2>
+          <p class="panel-description">Manage your bank accounts and credit cards</p>
+        </div>
+        <button class="btn-primary" onclick="window.accountSwitcher.showAddAccountModal()">
+          + Add Account
+        </button>
+      </div>
+
+      <div class="form-section">
+        <h3>Active Accounts</h3>
+        <div id="accounts-list" class="accounts-grid">
+          <!-- Populated via JS -->
+          <div class="loading-state">Loading accounts...</div>
+        </div>
+      </div>
+    </div>
+    
+    <style>
+      .accounts-grid {
+        display: grid;
+        gap: 16px;
+      }
+      
+      .account-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .account-card-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .account-card-icon {
+        font-size: 1.5rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border-radius: 50%;
+      }
+      
+      .account-card-details h4 {
+        margin: 0;
+        color: #1e293b;
+      }
+      
+      .account-card-details p {
+        margin: 2px 0 0;
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+      
+      .account-card-actions {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .btn-icon {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        color: #94a3b8;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      
+      .btn-icon:hover {
+        background: #f1f5f9;
+        color: #475569;
+      }
+      
+      .btn-icon.delete:hover {
+        background: #fef2f2;
+        color: #ef4444;
+      }
+    </style>
   `;
 }
 
@@ -532,6 +640,8 @@ async function initSettingsPage(panel) {
       document.getElementById('company-name').value = settings.companyName || '';
       document.getElementById('fiscal-year-end').value = settings.fiscalYearEnd || '12-31';
       document.getElementById('currency').value = settings.currency || 'USD';
+    } else if (panel === 'accounts') {
+      renderAccountsList();
     } else if (panel === 'about') {
       // Populate system info
       document.getElementById('browser-info').textContent = navigator.userAgent.split(' ').pop();
@@ -677,8 +787,68 @@ function connectSupabase() {
         button.textContent = originalText;
       }, 2000);
     } else {
-      button.textContent = originalText;
-      alert('❌ ' + result.message);
     }
   });
 }
+
+function renderAccountsList() {
+  const container = document.getElementById('accounts-list');
+  if (!container || !window.accountManager) return;
+
+  const accounts = window.accountManager.getAllAccounts();
+
+  if (accounts.length === 0) {
+    container.innerHTML = '<div class="empty-state">No accounts found. Create one to get started.</div>';
+    return;
+  }
+
+  container.innerHTML = accounts.map(acc => {
+    const balance = window.accountManager.getAccountBalance(acc.id);
+    const balanceFormatted = Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Bank: Positive = Green (Asset), Credit: Positive = Red (Liability) usually
+    // But for simple visualization:
+    // Bank: >0 Green, <0 Red
+    // Credit: >0 Red (Owe money), <0 Green (Overpaid) - Assuming credit balance is stored as positive if owed
+    // Let's stick to simple logic: 
+    const balanceColor = '#1e293b'; // Neutral color for now to avoid confusion
+
+    return `
+      <div class="account-card">
+        <div class="account-card-info">
+          <div class="account-card-icon">
+            ${acc.type === 'bank' ? '🏦' : '💳'}
+          </div>
+          <div class="account-card-details">
+            <h4>${acc.accountName}</h4>
+            <p>
+              ${acc.type === 'bank' ? 'Bank Account' : 'Credit Card'} • ${acc.accountNumber} <br>
+              Balance: <span style="font-weight: 600;">$${balanceFormatted}</span>
+            </p>
+          </div>
+        </div>
+        <div class="account-card-actions">
+           ${accounts.length > 1 ? `
+            <button class="btn-icon delete" title="Delete Account" onclick="window.deleteAccountSettings('${acc.id}')">
+              🗑️
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.deleteAccountSettings = function (accountId) {
+  if (confirm('Are you sure you want to delete this account? ALL transactions will be lost forever!')) {
+    try {
+      window.accountManager.deleteAccount(accountId);
+
+      // If deleted account was current, reload page to refresh state
+      location.reload();
+
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+};
