@@ -1,0 +1,5 @@
+Due to token limits and file complexity, I need to make targeted fixes instead. Let me update the critical parts:
+
+1. Fix debit/credit logic (lines 297-298)
+2. Add proper CSV parser for quoted fields
+3. Add balance and status tracking
