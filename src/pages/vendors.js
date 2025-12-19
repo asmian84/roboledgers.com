@@ -57,6 +57,40 @@ let vendorData = [
 async function initVendorsGrid() {
   console.log('🔷 Initializing Vendor Dictionary Grid...');
 
+  // Inject CSS manually to ensure height is correct in SPA
+  const style = document.createElement('style');
+  style.innerHTML = `
+      #vendorsGrid {
+          width: 100%;
+          height: calc(100vh - 200px); /* Adjusted for extra header spacing */
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border: 1px solid #e2e8f0;
+          overflow: hidden; /* Ensure rounded corners clip content */
+      }
+      .vendors-page {
+          width: 100%;
+          height: 100%;
+          padding: 30px; /* Increased padding */
+          box-sizing: border-box;
+          background-color: #f8fafc; /* Subtle background for contrast */
+      }
+      .page-header {
+          margin-bottom: 25px;
+          padding-bottom: 15px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #cbd5e1; /* Visual separator line */
+      }
+      .page-header h1 {
+          margin: 0;
+          color: #1e293b;
+      }
+  `;
+  document.head.appendChild(style);
+
   const columnDefs = [
     {
       headerName: 'Account #',
@@ -95,6 +129,7 @@ async function initVendorsGrid() {
     animateRows: true,
     onGridReady: (event) => {
       console.log('✅ Vendor Dictionary grid ready');
+      vendorsGridApi = event.api;
       event.api.sizeColumnsToFit();
     },
     onFirstDataRendered: (event) => {
@@ -104,6 +139,7 @@ async function initVendorsGrid() {
 
   const gridDiv = document.querySelector('#vendorsGrid');
   if (gridDiv) {
+    gridDiv.innerHTML = ''; // Clear previous if any
     vendorsGridApi = agGrid.createGrid(gridDiv, gridOptions);
   }
 }
@@ -111,10 +147,18 @@ async function initVendorsGrid() {
 // Watch for grid container
 const vendorObserver = new MutationObserver(() => {
   const gridDiv = document.getElementById('vendorsGrid');
-  if (gridDiv && !vendorsGridApi) {
+
+  // Check if present AND not already initialized this session
+  if (gridDiv && !gridDiv.classList.contains('js-initialized')) {
     console.log('📍 Vendors grid container detected, initializing...');
+
+    // Mark as initialized
+    gridDiv.classList.add('js-initialized');
+
     initVendorsGrid();
-    vendorObserver.disconnect();
+
+    // DO NOT disconnect! Keep watching for navigation events.
+    // vendorObserver.disconnect();
   }
 });
 

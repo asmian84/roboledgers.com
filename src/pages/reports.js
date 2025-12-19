@@ -50,34 +50,7 @@ function renderReportsDashboard() {
       </div>
 
 
-      <!-- Sleek Stats Bar -->
-      <div class="stats-bar">
-        <div class="stat-item">
-          <div class="stat-label">Total Revenue</div>
-          <div class="stat-value" id="total-revenue">$0.00</div>
-        </div>
-        
-        <div class="stat-divider"></div>
-        
-        <div class="stat-item">
-          <div class="stat-label">Total Expenses</div>
-          <div class="stat-value" id="total-expenses">$0.00</div>
-        </div>
-        
-        <div class="stat-divider"></div>
-        
-        <div class="stat-item">
-          <div class="stat-label">Net Profit</div>
-          <div class="stat-value" id="net-profit">$0.00</div>
-        </div>
-        
-        <div class="stat-divider"></div>
-        
-        <div class="stat-item">
-          <div class="stat-label">Active Vendors</div>
-          <div class="stat-value" id="active-vendors">0</div>
-        </div>
-      </div>
+
 
       <!-- Report Cards Grid -->
       <div class="report-cards-grid">
@@ -494,14 +467,15 @@ async function initReportsDashboard() {
     const expenses = thisMonth.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
     const profit = revenue - expenses;
 
-    document.getElementById('total-revenue').textContent = window.DataUtils.formatCurrency(revenue);
-    document.getElementById('total-expenses').textContent = window.DataUtils.formatCurrency(expenses);
-    document.getElementById('net-profit').textContent = window.DataUtils.formatCurrency(profit);
-    document.getElementById('net-profit').style.color = profit >= 0 ? '#10b981' : '#ef4444';
+    // Stats Removed per user request
+    // document.getElementById('total-revenue').textContent = window.DataUtils.formatCurrency(revenue);
+    // document.getElementById('total-expenses').textContent = window.DataUtils.formatCurrency(expenses);
+    // document.getElementById('net-profit').textContent = window.DataUtils.formatCurrency(profit);
+    // document.getElementById('net-profit').style.color = profit >= 0 ? '#10b981' : '#ef4444';
 
     const vendors = await window.storage.getVendors();
     const activeVendors = vendors.filter(v => v.lastTransaction && new Date(v.lastTransaction) >= firstOfMonth);
-    document.getElementById('active-vendors').textContent = activeVendors.length;
+    // document.getElementById('active-vendors').textContent = activeVendors.length;
 
   } catch (error) {
     console.error('Failed to initialize reports dashboard:', error);

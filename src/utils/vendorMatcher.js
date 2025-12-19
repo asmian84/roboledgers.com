@@ -136,8 +136,77 @@ function checkForDuplicates(name, vendors) {
     return { isDuplicate: false, suggestions: [] };
 }
 
+// 5-Step Smart Categorization Logic
+function smartCategorize(description, vendors) {
+    if (!description) return { vendorId: null, accountId: null, vendorName: null, isNew: false, confidence: 0 };
+
+    const cleanDesc = normalizeVendorName(description);
+
+    // 1. Check Vendor Dictionary (Exact & Fuzzy)
+    // Try exact match first for speed
+    let match = vendors.find(v => normalizeVendorName(v.name).toLowerCase() === cleanDesc.toLowerCase());
+
+    // If no exact match, try fuzzy
+    if (!match) {
+        const similar = findSimilarVendors(cleanDesc, vendors, 0.85); // High threshold for auto-match
+        if (similar.length > 0) {
+            match = similar[0].vendor;
+        }
+    }
+
+    // 2. If Found -> Use Vendor's Default Account
+    if (match) {
+        return {
+            vendorId: match.id,
+            vendorName: match.name,
+            accountId: match.defaultAccountId || '', // Step 2
+            isNew: false,
+            confidence: 1.0
+        };
+    }
+
+    // 3. Run Methodologies (Heuristic Rules)
+    const suggestedCategory = suggestCategory(cleanDesc); // Returns 'Utilities', 'Vehicle', etc.
+
+    // Map Categories to Likely Default Accounts (This would ideally be a proper map in settings)
+    const categoryAccountMap = {
+        'Utilities': '6340', // Utilities Expense
+        'Office Supplies': '6110', // Office Supplies
+        'Meals & Entertainment': '6250', // Meals
+        'Travel': '6330', // Travel
+        'Vehicle': '6050', // Auto Expense
+        'Insurance': '6160', // Insurance
+        'Professional Services': '6210', // Legal & Prof
+        'Software': '6140', // Dues & Subs
+    };
+
+    let suggestedAccountId = '';
+    if (suggestedCategory && categoryAccountMap[suggestedCategory]) {
+        suggestedAccountId = categoryAccountMap[suggestedCategory];
+    }
+
+    // 4. Auto-Create Vendor Proposal
+    // If we have a category, we have enough confidence to propose a new vendor
+    if (suggestedCategory) {
+        // Humanize the name (Title Case)
+        const proposedName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+        return {
+            vendorId: null, // To be created
+            vendorName: proposedName,
+            accountId: suggestedAccountId, // Step 5: Assign Suggested Account
+            isNew: true,
+            confidence: 0.8
+        };
+    }
+
+    // Fallback: No clue
+    return { vendorId: null, accountId: null, vendorName: null, isNew: false, confidence: 0 };
+}
+
 // Normalize vendor name (clean up common variations)
 function normalizeVendorName(name) {
+    if (!name) return '';
     return name
         .trim()
         .replace(/\s+/g, ' ') // Normalize whitespace
@@ -152,7 +221,8 @@ if (typeof window !== 'undefined') {
         findSimilarVendors,
         suggestCategory,
         checkForDuplicates,
-        normalizeVendorName
+        normalizeVendorName,
+        smartCategorize
     };
 }
 

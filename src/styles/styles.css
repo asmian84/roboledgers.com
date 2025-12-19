@@ -150,7 +150,9 @@
 
 html,
 body {
-  /* UNLOCKED: Removed height: 100% to enable window-level scrolling */
+  /* LOCKED: Fixed viewport - no outer scrolling */
+  height: 100vh;
+  overflow: hidden;
   font-family: var(--font-family);
   font-size: 16px;
   line-height: 1.5;
@@ -286,10 +288,10 @@ body {
    Main Content Area
    ============================================ */
 .main-content {
-  /* RELEASED: Content expands naturally, browser handles scrolling */
+  /* LOCKED: Fixed viewport layout - no outer scrolling */
   margin-left: var(--sidebar-width);
-  min-height: 100vh;
-  height: auto;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: margin-left var(--transition-normal);
@@ -2797,8 +2799,38 @@ button {
 
 .integration-status.disconnected {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
 }
+
+/* Smart Grid Sync - Ticker Flash Effect */
+@keyframes ticker-flash-green {
+  0% {
+    background-color: rgba(16, 185, 129, 0.4);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes ticker-flash-yellow {
+  0% {
+    background-color: rgba(234, 179, 8, 0.4);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+.cell-flash-green {
+  animation: ticker-flash-green 1s ease-out;
+}
+
+.cell-flash-yellow {
+  animation: ticker-flash-yellow 1s ease-out;
+}
+
+
 
 .integration-status.connected {
   background: rgba(16, 185, 129, 0.2);

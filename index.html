@@ -198,6 +198,25 @@
       }
     }
 
+    // CLEANUP: Remove old localStorage keys from previous versions
+    function cleanupOldStorage() {
+      // Remove old 'transactions' key (we now use 'ab3_transactions')
+      if (localStorage.getItem('transactions')) {
+        console.log('🧹 Cleaning up old localStorage key: transactions');
+        localStorage.removeItem('transactions');
+      }
+      // Remove any other legacy keys if needed
+      if (localStorage.getItem('openingBalance')) {
+        console.log('🧹 Migrating openingBalance to ab3_settings');
+        const balance = localStorage.getItem('openingBalance');
+        localStorage.removeItem('openingBalance');
+        // Note: Opening balance will be managed through settings now
+      }
+    }
+
+    // Run cleanup immediately
+    cleanupOldStorage();
+
     // Initialize data when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initializeDataLayer);

@@ -4,6 +4,32 @@
 
 window.renderAccounts = function () {
   return `
+    <style>
+      #accountsGrid {
+          width: 100%;
+          height: calc(100vh - 220px);
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+      }
+      .accounts-page {
+          width: 100%;
+          height: 100%;
+          padding: 30px;
+          box-sizing: border-box;
+          background-color: #f8fafc;
+      }
+      .page-header {
+          margin-bottom: 25px;
+          padding-bottom: 15px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #cbd5e1;
+      }
+    </style>
     <div class="accounts-page">
       <div class="page-header">
         <h1>💰 Chart of Accounts</h1>
@@ -11,7 +37,8 @@ window.renderAccounts = function () {
       </div>
       
       <div class="content-area">
-        <div id="accountsGrid" class="ag-theme-alpine grid-container"></div>
+        <!-- Explicit Inline Height as Failsafe -->
+        <div id="accountsGrid" class="ag-theme-alpine grid-container" style="height: calc(100vh - 220px); width: 100%;"></div>
       </div>
     </div>
     
@@ -25,61 +52,50 @@ window.renderAccounts = function () {
 
 let accountsGridApi;
 
-// Local account data
-let accountData = [
-  { accountNumber: '1000', description: 'ASSETS' },
-  { accountNumber: '1100', description: 'Current Assets' },
-  { accountNumber: '1110', description: 'Cash - Checking' },
-  { accountNumber: '1120', description: 'Cash - Savings' },
-  { accountNumber: '1130', description: 'Petty Cash' },
-  { accountNumber: '1200', description: 'Accounts Receivable' },
-  { accountNumber: '1300', description: 'Inventory' },
-  { accountNumber: '1400', description: 'Prepaid Expenses' },
-  { accountNumber: '1500', description: 'Fixed Assets' },
-  { accountNumber: '1510', description: 'Equipment' },
-  { accountNumber: '1520', description: 'Accumulated Depreciation - Equipment' },
-  { accountNumber: '1530', description: 'Furniture & Fixtures' },
-  { accountNumber: '1540', description: 'Vehicles' },
-  { accountNumber: '2000', description: 'LIABILITIES' },
-  { accountNumber: '2100', description: 'Current Liabilities' },
-  { accountNumber: '2110', description: 'Accounts Payable' },
-  { accountNumber: '2120', description: 'Credit Card - Business' },
-  { accountNumber: '2130', description: 'Sales Tax Payable' },
-  { accountNumber: '2140', description: 'Payroll Liabilities' },
-  { accountNumber: '2200', description: 'Long-term Liabilities' },
-  { accountNumber: '2210', description: 'Bank Loan' },
-  { accountNumber: '2220', description: 'Equipment Loan' },
-  { accountNumber: '3000', description: 'EQUITY' },
-  { accountNumber: '3100', description: 'Owner Capital' },
-  { accountNumber: '3200', description: 'Retained Earnings' },
-  { accountNumber: '3300', description: 'Owner Draws' },
-  { accountNumber: '4000', description: 'REVENUE' },
-  { accountNumber: '4100', description: 'Sales Revenue' },
-  { accountNumber: '4200', description: 'Service Revenue' },
-  { accountNumber: '4300', description: 'Interest Income' },
-  { accountNumber: '4400', description: 'Other Income' },
-  { accountNumber: '5000', description: 'EXPENSES' },
-  { accountNumber: '5100', description: 'Operating Expenses' },
-  { accountNumber: '5110', description: 'Rent Expense' },
-  { accountNumber: '5120', description: 'Utilities' },
-  { accountNumber: '5130', description: 'Telephone & Internet' },
-  { accountNumber: '5140', description: 'Office Supplies' },
-  { accountNumber: '5150', description: 'Insurance' },
-  { accountNumber: '5200', description: 'Payroll Expenses' },
-  { accountNumber: '5210', description: 'Salaries & Wages' },
-  { accountNumber: '5220', description: 'Payroll Taxes' },
-  { accountNumber: '5230', description: 'Employee Benefits' },
-  { accountNumber: '5300', description: 'Marketing & Advertising' },
-  { accountNumber: '5400', description: 'Professional Fees' },
-  { accountNumber: '5500', description: 'Depreciation Expense' },
-  { accountNumber: '5600', description: 'Bank Fees & Charges' },
-  { accountNumber: '5700', description: 'Meals & Entertainment' },
-  { accountNumber: '5800', description: 'Travel Expenses' },
-  { accountNumber: '5900', description: 'Miscellaneous Expenses' }
-];
+// Local account data - Initialize from Global Default if available
+let accountData = [];
+
+function loadAccountData() {
+  if (typeof window.DEFAULT_CHART_OF_ACCOUNTS !== 'undefined') {
+    // Map global format (code, name) to grid format (accountNumber, description)
+    accountData = window.DEFAULT_CHART_OF_ACCOUNTS.map(acc => ({
+      accountNumber: acc.code || acc.accountNumber,
+      description: acc.name || acc.description
+    }));
+  } else {
+    // Fallback if needed
+    accountData = [];
+  }
+}
 
 async function initAccountsGrid() {
   console.log('🔷 Initializing Chart of Accounts Grid...');
+
+  const gridDiv = document.querySelector('#accountsGrid');
+  if (!gridDiv) {
+    console.warn('⚠️ Accounts grid container not found during init');
+    return;
+  }
+
+  // 1. CLEANUP existing instance if present
+  if (accountsGridApi) {
+    console.log('♻️ Destroying previous grid instance...');
+    try {
+      // If API exists, try to destroy. 
+      // Note: AG Grid API doesn't always have a clean destroy, usually clearing innerHTML or calling gridOptions.api.destroy() if available.
+      if (typeof accountsGridApi.destroy === 'function') {
+        accountsGridApi.destroy();
+      }
+    } catch (e) { console.warn('Hazardous destroy:', e); }
+    accountsGridApi = null;
+  }
+
+  // 2. Clear Container Forcefully
+  gridDiv.innerHTML = '';
+
+  loadAccountData(); // Load latest data
+
+  // (CSS Injection is now handled by renderAccounts template)
 
   const columnDefs = [
     {
@@ -87,7 +103,8 @@ async function initAccountsGrid() {
       field: 'accountNumber',
       width: 130,
       filter: 'agTextColumnFilter',
-      sort: 'asc'
+      sort: 'asc',
+      pinned: 'left' // Optional: Pin account number
     },
     {
       headerName: 'Account Description',
@@ -115,29 +132,36 @@ async function initAccountsGrid() {
       filter: true,
       resizable: true
     },
+    headerHeight: 48, // Taller header
     animateRows: true,
     onGridReady: (event) => {
       console.log('✅ Chart of Accounts grid ready');
-      event.api.sizeColumnsToFit();
-    },
-    onFirstDataRendered: (event) => {
+      accountsGridApi = event.api;
       event.api.sizeColumnsToFit();
     }
   };
 
-  const gridDiv = document.querySelector('#accountsGrid');
-  if (gridDiv) {
+  // 3. CREATE Grid
+  try {
     accountsGridApi = agGrid.createGrid(gridDiv, gridOptions);
+  } catch (err) {
+    console.error('❌ Failed to create accounts grid:', err);
   }
 }
 
 // Watch for grid container
 const accountObserver = new MutationObserver(() => {
   const gridDiv = document.getElementById('accountsGrid');
-  if (gridDiv && !accountsGridApi) {
+
+  // Check if gridDiv exists AND not initialized
+  if (gridDiv && !gridDiv.classList.contains('js-initialized')) {
     console.log('📍 Accounts grid container detected, initializing...');
+
+    // Mark as initialized
+    gridDiv.classList.add('js-initialized');
+
     initAccountsGrid();
-    accountObserver.disconnect();
+    // Do NOT disconnect!
   }
 });
 
