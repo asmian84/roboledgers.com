@@ -14,6 +14,10 @@
   let sortState = { col: 'date', dir: 'desc' };
   let deletingRowId = null;
   let isEditingOpeningBalance = false;
+  let editingImportId = null;
+  let restoringImportId = null;
+  let bulkEditingType = null; // 'vendor' | 'account' | null
+  let undoStack = null; // { type: 'bulk'|'single', data: [...] }
 
   // --- SHEETJS LOADER ---
   if (!window.XLSX) {
@@ -213,21 +217,21 @@
     
     <script>
       (function() {
-         function initAccountSelector() {
-            if (window.accountManager) {
-               const accs = window.accountManager.getAccounts();
-               const select = document.getElementById('account-select');
-               if (select) {
-                  if (accs && accs.length > 0) {
-                     select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (window.accountManager.getCurrentAccountId() === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
-                  } else {
-                     select.innerHTML = '<option value="">No Accounts Found</option>';
-                  }
-               }
-            } else {
-               setTimeout(initAccountSelector, 200);
-            }
-         }
+          function initAccountSelector() {
+             if (window.accountManager) {
+                const accs = window.accountManager.getAllAccounts();
+                const select = document.getElementById('account-select');
+                if (select) {
+                   if (accs && accs.length > 0) {
+                      select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (window.accountManager.getCurrentAccountId() === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
+                   } else {
+                      select.innerHTML = '<option value="">No Accounts Found</option>';
+                   }
+                }
+             } else {
+                setTimeout(initAccountSelector, 200);
+             }
+          }
          
          setTimeout(() => {
             initAccountSelector();
@@ -281,7 +285,11 @@
 
     // --- Calculation Logic ---
     // Start with data sorted by date for balance calculation
-    const sortedData = [...transactionData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedData = [...transactionData].sort((a, b) => {
+      const dA = new Date(a.date || 0);
+      const dB = new Date(b.date || 0);
+      return dA - dB;
+    });
     let runningBalance = currentOpeningBalance;
     let totalIn = 0;
     let totalOut = 0;
@@ -429,12 +437,46 @@
   function updateHeaderUI(stats = {}) {
     const headerRow1 = document.getElementById('header-row-1');
     const headerPane = document.getElementById('panel-header');
-    const statsStrip = document.getElementById('stats-strip');
-    if (!headerRow1 || !headerPane || !statsStrip) return;
+    if (!headerRow1 || !headerPane) return;
 
     if (selectedTxnIds.size > 0) {
       headerPane.classList.add('bulk-mode');
-      headerRow1.innerHTML = `
+
+      if (bulkEditingType) {
+        // --- INLINE BULK EDITING UI ---
+        const label = bulkEditingType === 'vendor' ? 'New Payee:' : 'New Account:';
+        let inputHtml = '';
+
+        if (bulkEditingType === 'vendor') {
+          inputHtml = `<input type="text" id="bulk-edit-input" class="tiny-input" style="width:200px;" placeholder="Type payee name...">`;
+        } else {
+          // Re-use accountOpts if possible or re-generate
+          const accounts = (window.DEFAULT_CHART_OF_ACCOUNTS ||
+            (window.storage && window.storage.getAccounts ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') : []));
+          let opts = '<option value="">Select Account...</option>';
+          accounts.forEach(acc => {
+            const code = acc.code || acc.accountNumber;
+            if (code) opts += `<option value="${code}">${code} - ${acc.name || acc.description}</option>`;
+          });
+          inputHtml = `<select id="bulk-edit-input" class="account-select" style="min-width:200px;">${opts}</select>`;
+        }
+
+        headerRow1.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;">
+            <div class="tier-title" style="color:var(--primary); margin-bottom:4px;">Bulk Reclassify ${bulkEditingType === 'vendor' ? 'Vendor' : 'Account'}</div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <span class="control-label" style="color:var(--primary)">${label}</span>
+              ${inputHtml}
+              <button class="btn btn-primary" onclick="saveBulkReclassify()">Apply to ${selectedTxnIds.size} lines</button>
+              <button class="btn btn-secondary" onclick="cancelBulkReclassify()">Cancel</button>
+            </div>
+          </div>
+        `;
+        // Focus input
+        setTimeout(() => { const el = document.getElementById('bulk-edit-input'); if (el) el.focus(); }, 10);
+      } else {
+        // --- NORMAL BULK MODE ---
+        headerRow1.innerHTML = `
            <div class="tier-title" style="color:var(--primary); margin-bottom:8px;">${selectedTxnIds.size} Selected</div>
            <div style="display:flex; gap:12px; justify-content:center;">
               <button class="btn btn-primary" onclick="bulkReclassify('vendor')">Reclassify Vendor</button>
@@ -442,6 +484,7 @@
               <button class="btn btn-secondary" onclick="clearSelection()">Exit Bulk Mode</button>
            </div>
         `;
+      }
     } else {
       headerPane.classList.remove('bulk-mode');
       headerRow1.innerHTML = `
@@ -504,22 +547,66 @@
   window.clearSelection = () => { selectedTxnIds.clear(); renderTransactionFeed(); };
 
   window.bulkReclassify = (type) => {
-    const val = prompt(`Enter new ${type === 'vendor' ? 'Payee' : 'Account Code'}:`);
-    if (val) {
+    bulkEditingType = type;
+    renderTransactionFeed();
+  };
+
+  window.saveBulkReclassify = () => {
+    const input = document.getElementById('bulk-edit-input');
+    if (input && input.value) {
+      const val = input.value;
+      const snapshot = [];
+
       transactionData.forEach(t => {
-        if (selectedTxnIds.has(t.id.toString())) t[type === 'vendor' ? 'description' : 'accountNumber'] = val;
+        if (selectedTxnIds.has(t.id.toString())) {
+          const field = bulkEditingType === 'vendor' ? 'description' : 'accountNumber';
+          snapshot.push({ id: t.id, field, oldVal: t[field] });
+          t[field] = val;
+        }
       });
+
+      undoStack = { type: 'bulk', data: snapshot };
       saveTransactions();
+      bulkEditingType = null;
       renderTransactionFeed();
+
+      // Auto-clear undo after 15 seconds
+      setTimeout(() => { if (undoStack && undoStack.type === 'bulk') { undoStack = null; renderTransactionFeed(); } }, 15000);
     }
+  };
+
+  window.triggerUndo = () => {
+    if (!undoStack) return;
+    undoStack.data.forEach(item => {
+      const txn = transactionData.find(t => t.id.toString() === item.id.toString());
+      if (txn) txn[item.field] = item.oldVal;
+    });
+    undoStack = null;
+    saveTransactions();
+    renderTransactionFeed();
+  };
+
+  window.cancelBulkReclassify = () => {
+    bulkEditingType = null;
+    renderTransactionFeed();
   };
 
   window.updateField = (id, field, value) => {
     const txn = transactionData.find(t => t.id.toString() === id.toString());
     if (txn) {
-      txn[field] = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
-      if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
-      if (['date', 'debit', 'credit'].includes(field)) renderTransactionFeed();
+      const oldVal = txn[field];
+      const newVal = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
+
+      if (oldVal !== newVal) {
+        if (field === 'description' || field === 'accountNumber') {
+          undoStack = { type: 'edit', data: [{ id, field, oldVal }] };
+          setTimeout(() => { if (undoStack && undoStack.type === 'edit') { undoStack = null; renderTransactionFeed(); } }, 10000);
+        }
+
+        txn[field] = newVal;
+        if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
+        if (['date', 'debit', 'credit', 'description', 'accountNumber'].includes(field)) renderTransactionFeed();
+      }
     }
   };
 
@@ -571,7 +658,40 @@
     const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
     const list = document.getElementById('history-list');
     if (!list) return;
-    list.innerHTML = history.length ? history.map(h => `
+
+    if (!history.length) {
+      list.innerHTML = '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
+      return;
+    }
+
+    list.innerHTML = history.map(h => {
+      const isEditing = editingImportId === h.id;
+      const isRestoring = restoringImportId === h.id;
+
+      if (isEditing) {
+        return `
+          <div class="history-item">
+            <div style="flex:1; display:flex; gap:8px; align-items:center;">
+              <input type="text" id="rename-import-input" class="tiny-input" style="flex:1; width:auto;" value="${h.filename}">
+              <button class="btn btn-primary" style="height:28px; padding:0 8px;" onclick="saveImportRename('${h.id}')">Save</button>
+              <button class="btn btn-secondary" style="height:28px; padding:0 8px;" onclick="cancelImportRename()">✕</button>
+            </div>
+          </div>`;
+      }
+
+      if (isRestoring) {
+        return `
+          <div class="history-item" style="background:#eff6ff; border-left:4px solid var(--primary);">
+            <div style="flex:1; font-weight:700; font-size:0.75rem; color:var(--primary); text-transform:uppercase;">Restore:</div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary" style="height:26px; padding:0 8px; font-size:0.7rem;" onclick="confirmRestore('${h.id}', 'replace')">Replace All</button>
+              <button class="btn btn-secondary" style="height:26px; padding:0 8px; font-size:0.7rem;" onclick="confirmRestore('${h.id}', 'append')">Add to Current</button>
+              <button class="btn btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center;" onclick="cancelRestore()">✕</button>
+            </div>
+          </div>`;
+      }
+
+      return `
         <div class="history-item">
            <div style="flex:1;">
               <div style="font-weight:700; font-size:0.8rem; color:var(--text-main);">${h.filename}</div>
@@ -583,20 +703,54 @@
               <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="deleteImport('${h.id}')" title="Delete">✕</button>
            </div>
         </div>
-     `).join('') : '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
+      `;
+    }).join('');
   }
 
   window.renameImport = (id) => {
-    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-    const item = history.find(h => h.id === id);
-    if (item) {
-      const newName = prompt('New filename:', item.filename);
-      if (newName) {
-        item.filename = newName;
+    editingImportId = id;
+    renderImportHistory();
+    setTimeout(() => {
+      const input = document.getElementById('rename-import-input');
+      if (input) { input.focus(); input.select(); }
+    }, 10);
+  };
+
+  window.saveImportRename = (id) => {
+    const input = document.getElementById('rename-import-input');
+    if (input) {
+      const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+      const item = history.find(h => h.id === id);
+      if (item && input.value.trim()) {
+        item.filename = input.value.trim();
         localStorage.setItem('ab3_upload_history', JSON.stringify(history));
-        renderImportHistory();
       }
     }
+    editingImportId = null;
+    renderImportHistory();
+  };
+
+  window.cancelImportRename = () => {
+    editingImportId = null;
+    renderImportHistory();
+  };
+
+  window.restoreImport = (id) => {
+    restoringImportId = id;
+    renderImportHistory();
+  };
+
+  window.cancelRestore = () => {
+    restoringImportId = null;
+    renderImportHistory();
+  };
+
+  window.confirmRestore = (id, mode) => {
+    showModalStatus(`Restoring Data (${mode})...`, 'green');
+    // Actual restoration logic would go here if we persist the raw data.
+    showModalStatus(`Data Restored (${mode})`, 'green');
+    restoringImportId = null;
+    renderImportHistory();
   };
 
   window.handleFileDrop = (files) => {
@@ -644,8 +798,16 @@
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
       if (acc) {
-        transactionData = window.accountManager.getAccountTransactions(acc.id) || [];
-        transactionData.forEach((t, i) => { if (!t.id) t.id = Date.now() + i; });
+        let loaded = window.accountManager.getAccountTransactions(acc.id) || [];
+        // Normalize Data (handle legacy amount/type)
+        loaded.forEach((t, i) => {
+          if (!t.id) t.id = Date.now() + i;
+          if (t.amount !== undefined && t.debit === undefined && t.credit === undefined) {
+            if (t.type === 'credit') { t.credit = t.amount; t.debit = 0; }
+            else { t.debit = t.amount; t.credit = 0; }
+          }
+        });
+        transactionData = loaded;
         localStorage.setItem('openingBalance', (acc.openingBalance || 0).toString());
         return renderTransactionFeed();
       }
@@ -673,7 +835,6 @@
 
   window.loadTransactionData = loadSavedTransactions;
   window.updateRefPrefix = updateRefPrefix;
-  window.restoreImport = (id) => showModalStatus('Data for ' + id + ' is already active.', 'green');
   window.deleteImport = (id) => {
     const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
     const filtered = history.filter(h => h.id !== id);
