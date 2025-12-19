@@ -1,6 +1,6 @@
 /**
  * Transactions Page - Modern High-Density Financial UI
- * "Two-Tier Pro" Architecture - Integrated Dashboard
+ * "Two-Tier Pro" Architecture - Final Refined Edition
  */
 
 (function () {
@@ -12,9 +12,17 @@
   let selectedTxnIds = new Set();
   let searchFilter = '';
   let sortState = { col: 'date', dir: 'desc' };
+  let deletingRowId = null;
+  let isEditingOpeningBalance = false;
+
+  // --- SHEETJS LOADER ---
+  if (!window.XLSX) {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+    document.head.appendChild(script);
+  }
 
   window.renderTransactions = function () {
-    console.log('🎨 renderTransactions() called - returning Two-Tier Pro template');
     return `
       <div class="transactions-page">
       <style>
@@ -26,301 +34,283 @@
           --text-muted: #64748b;
           --border: #e2e8f0;
           --accent: #f1f5f9;
+          --red: #ef4444;
+          --green: #22c55e;
         }
 
-        /* 1. MAIN STAGE (VIRTUAL FRAME) */
         .transactions-page {
-          width: 100% !important;
-          max-width: none !important;
-          height: 100vh;
-          padding: 8px; 
-          background: var(--bg);
-          box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
+          width: 100% !important; height: 100vh; padding: 12px;
+          background: var(--bg); box-sizing: border-box;
+          display: flex; flex-direction: column; overflow: hidden;
           font-family: 'Inter', system-ui, sans-serif;
         }
 
-        /* 2. THE SEAMLESS CARD WRAPPER */
         .app-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background: var(--surface);
-          border-radius: 12px; 
-          border: 1px solid var(--border);
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-          overflow: hidden;
-          min-height: 0;
+          flex: 1; display: flex; flex-direction: column; background: var(--surface);
+          border-radius: 12px; border: 1px solid var(--border);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; min-height: 0;
         }
 
-        /* 3. THE FROZEN TWO-TIER HEADER PANE */
-        .panel-header {
-          flex: none;
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          display: flex;
-          flex-direction: column;
+        /* CENTERED TWO-TIER HEADER */
+        .panel-header { flex: none; background: #fff; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; }
+        .header-tier { padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; min-height: 48px; position: relative; }
+        
+        /* Title centered above Toolbar */
+        .header-tier.status-row { 
+            border-bottom: 1px solid #f8fafc; 
+            flex-direction: column; 
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
         }
-
-        /* TIERS */
-        .header-tier {
-           padding: 8px 16px;
-           display: flex;
-           align-items: center;
-           justify-content: space-between;
-           min-height: 44px;
-        }
-        .header-tier.status-row { border-bottom: 1px solid #f1f5f9; background: #fff; }
+        .tier-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); text-align: center; width: 100%; letter-spacing: -0.02em; }
+        
         .header-tier.toolbar-row { background: #fafafa; }
+        .bulk-mode { background: #eff6ff !important; border-bottom: 2px solid #3b82f6 !important; }
 
-        /* Titles & Status */
-        .tier-title { font-size: 1rem; font-weight: 700; color: var(--text-main); }
-        
-        .stats-strip {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: var(--accent);
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          border: 1px solid #e2e8f0;
-        }
-        .stat-item { display: flex; align-items: center; gap: 4px; }
-        .stat-label { font-weight: 600; font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; }
+        .stats-strip { display: flex; align-items: center; gap: 12px; background: var(--accent); padding: 6px 16px; border-radius: 24px; font-size: 0.8rem; color: var(--text-muted); border: 1px solid #e2e8f0; }
+        .stat-item { display: flex; align-items: center; gap: 6px; }
+        .stat-label { font-weight: 700; font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
         .stat-value { font-weight: 700; color: var(--text-main); }
-        .stat-value.inc { color: #059669; }
-        .stat-value.exp { color: #dc2626; }
-        .stat-divider { color: #cbd5e1; }
-
-        /* Toolbar Controls */
-        .toolbar-group { display: flex; align-items: center; gap: 8px; }
+        .stat-value.inc { color: var(--green); }
+        .stat-value.exp { color: var(--red); }
+        .stat-edit-btn { cursor: pointer; color: #94a3b8; font-size: 0.75rem; transition: color 0.1s; }
+        .stat-edit-btn:hover { color: var(--primary); }
         
+        /* Inline Opening Balance Input */
+        .opening-input-box { display: flex; align-items: center; gap: 8px; }
+        .opening-input { width: 100px; height: 24px; padding: 2px 8px; border: 1px solid var(--primary); border-radius: 4px; font-size: 0.8rem; font-weight: 700; }
+
+        /* TOOLBAR */
+        .toolbar-group { display: flex; align-items: center; gap: 12px; }
         .control-box { display: flex; align-items: center; gap: 6px; }
-        .control-label { font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; white-space: nowrap; }
-        .tiny-input { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; width: 60px; height: 28px; }
+        .control-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+        .tiny-input { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; width: 70px; height: 28px; }
+        .account-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; height: 28px; min-width: 160px; font-weight: 600; color: var(--text-main); }
 
-        .search-container { flex: 1; max-width: 500px; position: relative; margin: 0 20px; }
+        .search-container { flex: 1; max-width: 600px; position: relative; margin: 0 16px; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; }
-        .search-box {
-          width: 100%;
-          padding: 6px 12px 6px 30px;
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          font-size: 0.85rem;
-          height: 32px;
-          background: #fff;
-        }
-        .search-box:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(59, 130, 246, 0.1); }
+        .search-box { width: 100%; padding: 6px 12px 6px 30px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; height: 32px; }
 
-        .btn {
-          height: 32px;
-          padding: 0 12px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          border: 1px solid transparent;
-        }
+        .btn { height: 32px; padding: 0 12px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; display: flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid transparent; transition: all 0.1s; user-select: none; }
         .btn-primary { background: #0f172a; color: white; }
         .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-danger { background: #fef2f2; border-color: #fee2e2; color: var(--red); }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
 
-        /* 4. THE DATA PANE */
-        .panel-body {
-          flex: 1;
-          overflow-y: auto;
-          background: #fff;
-        }
-        
-        /* THE PRO TABLE */
+        /* DATA GRID */
+        .panel-body { flex: 1; overflow-y: auto; background: #fff; position: relative; }
         .txn-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-        .txn-table thead th {
-           position: sticky; top: 0; z-index: 10;
-           background: #f8fafc;
-           padding: 10px 12px;
-           text-align: left;
-           font-size: 0.65rem;
-           font-weight: 700;
-           color: #64748b;
-           text-transform: uppercase;
-           letter-spacing: 0.05em;
-           border-bottom: 1px solid #e2e8f0;
-           cursor: pointer;
-           user-select: none;
-        }
-        .txn-table thead th:hover { background: #f1f5f9; }
-        .header-icon { font-size: 0.6rem; margin-left: 4px; color: #94a3b8; }
-
-        .txn-table td {
-           border-bottom: 1px solid #f1f5f9;
-           padding: 0;
-           vertical-align: middle;
-        }
+        .txn-table thead th { position: sticky; top: 0; z-index: 10; background: #f8fafc; padding: 12px; text-align: left; font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; cursor: pointer; }
+        .header-icon { font-size: 0.6rem; color: #94a3b8; margin-left: 2px; }
+        
+        .txn-table td { border-bottom: 1px solid #f1f5f9; padding: 0; vertical-align: middle; }
         .txn-table tr:hover td { background-color: #f0f7ff !important; }
+        
+        .cell-input { width: 100%; padding: 8px 12px; border: 1px solid transparent; font-size: 0.8rem; background: transparent; box-sizing: border-box; color: #1e293b; height: 38px; }
+        .cell-input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
 
-        .cell-input {
-           width: 100%;
-           padding: 8px 12px;
-           border: 1px solid transparent;
-           font-size: 0.8rem;
-           background: transparent;
-           box-sizing: border-box;
-           color: #1e293b;
-           height: 36px;
+        /* HIDE CALENDAR ICON */
+        .cell-input[type="date"]::-webkit-calendar-picker-indicator {
+            display: none;
+            -webkit-appearance: none;
         }
-        .cell-input:focus { outline: none; background: #fff; border-color: #3b82f6; box-shadow: inset 0 0 0 1px #3b82f6; }
 
-        /* COLUMN WIDTHS */
-        .col-cb { width: 40px; text-align: center; }
+        .col-cb { width: 44px; text-align: center; }
         .col-ref { width: 100px; }
         .col-date { width: 110px; }
         .col-payee { width: auto; }
-        .col-acct { width: 200px; }
+        .col-acct { width: 180px; }
         .col-amount { width: 110px; }
         .col-bal { width: 120px; }
         .col-act { width: 44px; }
-
         .text-right { text-align: right !important; }
         .font-mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
-
-        /* CHECKBOXES */
         .bulk-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
 
-        /* SCROLLBAR */
-        .panel-body::-webkit-scrollbar { width: 8px; }
-        .panel-body::-webkit-scrollbar-track { background: transparent; }
-        .panel-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #fff; }
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.1s ease-out; }
+        .modal-content { background: #fff; width: 620px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; flex: 1; overflow-y: auto; }
+        
+        .dropzone { border: 2px dashed #e2e8f0; border-radius: 8px; padding: 40px; text-align: center; color: #94a3b8; transition: all 0.2s; cursor: pointer; }
+        .dropzone:hover { border-color: var(--primary); background: #f0f7ff; color: var(--primary); }
+        .history-list { margin-top: 24px; border: 1px solid #f1f5f9; border-radius: 8px; overflow: hidden; }
+        .history-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item:hover { background: #f8fafc; }
+
+        #modal-status { margin-top: 12px; color: var(--green); font-size: 0.8rem; text-align: center; height: 20px; font-weight: 600; pointer-events: none; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       </style>
 
       <div class="app-panel">
-         <!-- TWO-TIER HEADER -->
-         <div class="panel-header">
-            <!-- Tier 1: Title & Status -->
-            <div class="header-tier status-row">
+         <!-- PANEL HEADER -->
+         <div class="panel-header" id="panel-header">
+            <!-- Row 1: Centered Title & Status Strip -->
+            <div class="header-tier status-row" id="header-row-1">
                <div class="tier-title">Transactions</div>
-               <div class="stats-strip">
-                  <div class="stat-item"><span class="stat-label">Opening:</span><span id="stat-opening" class="stat-value" onclick="promptOpeningBalance()" style="cursor:pointer;text-decoration:underline dotted;">$0.00</span></div>
-                  <div class="stat-divider">|</div>
-                  <div class="stat-item"><span class="stat-label">In:</span><span id="stat-income" class="stat-value inc">$0.00</span></div>
-                  <div class="stat-divider">|</div>
-                  <div class="stat-item"><span class="stat-label">Out:</span><span id="stat-expense" class="stat-value exp">$0.00</span></div>
-                  <div class="stat-divider">|</div>
-                  <div class="stat-item"><span class="stat-label">End:</span><span id="stat-end" class="stat-value">$0.00</span></div>
+               <div class="stats-strip" id="stats-strip">
+                   <!-- Populated by updateHeaderUI -->
                </div>
             </div>
 
-            <!-- Tier 2: Toolbar -->
-            <div class="header-tier toolbar-row">
+            <!-- Row 2: Toolbar -->
+            <div class="header-tier toolbar-row" id="header-row-2">
                <div class="toolbar-group">
+                  <select id="account-select" class="account-select" onchange="switchAccount(this.value)">
+                      <option value="">Loading accounts...</option>
+                  </select>
                   <div class="control-box">
                      <span class="control-label">Ref Prefix:</span>
                      <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
                   </div>
                </div>
-
                <div class="search-container">
                   <span class="search-icon">🔍</span>
-                  <input type="search" id="search-input" class="search-box" placeholder="Search Payee, Reference, or Amount..." oninput="filterTransactionFeed(this.value)">
+                  <input type="search" id="search-input" class="search-box" placeholder="Search..." oninput="filterTransactionFeed(this.value)">
                </div>
-
                <div class="toolbar-group">
-                  <button class="btn btn-secondary" onclick="showCSVImport()">📥 Import</button>
+                  <button class="btn btn-secondary" onclick="openImportManager()">📥 Import</button>
                   <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New</button>
+                  <button class="btn btn-secondary" onclick="exportToXLS()">📊 Export XLS</button>
+                  <button class="btn btn-secondary" onclick="window.router.navigate('/settings')">⚙️</button>
                </div>
             </div>
          </div>
 
-         <!-- DATA PANE -->
-         <div class="panel-body" id="panel-body">
+         <!-- GRID BODY -->
+         <div class="panel-body">
             <div id="transactionFeed"></div>
+         </div>
+      </div>
+
+      <!-- IMPORT MANAGER MODAL -->
+      <div id="import-modal" class="modal-overlay" onclick="if(event.target===this) closeImportManager()">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h3 style="margin:0; font-size:1.1rem; font-weight:700;">Import Manager</h3>
+               <button class="btn btn-secondary" style="border:none; width:30px; padding:0; justify-content:center;" onclick="closeImportManager()">✕</button>
+            </div>
+            <div class="modal-body">
+               <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+                  <div style="font-size:2rem; margin-bottom:10px;">☁️</div>
+                  <div>Drag & Drop CSV files here or <b>browse</b></div>
+                  <input type="file" id="file-input" hidden accept=".csv" onchange="handleFileDrop(this.files)">
+               </div>
+               <div id="modal-status"></div>
+               <div style="margin-top:24px;">
+                  <h4 style="font-size:0.75rem; text-transform:uppercase; color:#94a3b8; margin-bottom:12px; letter-spacing:0.05em; font-weight:700;">Upload History</h4>
+                  <div class="history-list" id="history-list"></div>
+               </div>
+            </div>
          </div>
       </div>
     </div>
     
     <script>
-      if (typeof window.loadTransactionData === 'function') {
-        setTimeout(window.loadTransactionData, 100);
-      }
+      (function() {
+         function initAccountSelector() {
+            if (window.accountManager) {
+               const accs = window.accountManager.getAccounts();
+               const select = document.getElementById('account-select');
+               if (select) {
+                  if (accs && accs.length > 0) {
+                     select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (window.accountManager.getCurrentAccountId() === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
+                  } else {
+                     select.innerHTML = '<option value="">No Accounts Found</option>';
+                  }
+               }
+            } else {
+               setTimeout(initAccountSelector, 200);
+            }
+         }
+         
+         setTimeout(() => {
+            initAccountSelector();
+            window.loadTransactionData();
+         }, 100);
+      })();
     </script>
     `;
   };
 
+  // --- BUSINESS LOGIC ---
+
   function updateRefPrefix(val) {
-    refPrefix = val || 'REF';
+    refPrefix = val;
     localStorage.setItem('ab3_ref_prefix', refPrefix);
     renderTransactionFeed();
   }
 
-  function formatCurrency(n) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  window.switchAccount = function (id) {
+    if (window.accountManager) {
+      window.accountManager.setCurrentAccount(id);
+      window.loadTransactionData();
+    }
+  };
+
+  function sanitizeDate(dateStr) {
+    if (!dateStr) return '';
+    const clean = dateStr.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return '';
   }
 
   function renderTransactionFeed() {
     const feedContainer = document.getElementById('transactionFeed');
     if (!feedContainer) return;
 
-    // --- 1. State Logic ---
+    // --- State & Account Info ---
+    let accType = 'bank';
     let currentOpeningBalance = 0;
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
-      if (acc) currentOpeningBalance = parseFloat(acc.openingBalance || 0);
+      if (acc) {
+        accType = acc.type || 'bank';
+        currentOpeningBalance = parseFloat(acc.openingBalance || 0);
+      }
     } else {
       currentOpeningBalance = parseFloat(localStorage.getItem('openingBalance') || 0);
     }
 
+    // --- Calculation Logic ---
+    // Start with data sorted by date for balance calculation
     const sortedData = [...transactionData].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Apply Filters
-    let displayData = sortedData.filter(txn => {
-      if (!searchFilter) return true;
-      const s = searchFilter.toLowerCase();
-      return (txn.description || '').toLowerCase().includes(s) ||
-        (txn.refNumber || '').toLowerCase().includes(s) ||
-        (txn.debit || '').toString().includes(s) ||
-        (txn.credit || '').toString().includes(s);
-    });
-
-    // Handle Balance Calculation Flow (needs to be done on sorted data)
     let runningBalance = currentOpeningBalance;
     let totalIn = 0;
     let totalOut = 0;
 
-    const processedData = sortedData.map((txn, idx) => {
+    const dataWithBalance = sortedData.map((txn, idx) => {
       const debit = parseFloat(txn.debit || 0);
       const credit = parseFloat(txn.credit || 0);
-      totalIn += credit;
-      totalOut += debit;
-      runningBalance = runningBalance - debit + credit;
 
-      // Calculate Ref Number based on ORIGINAL SORT position (stable index)
-      const paddedIdx = (idx + 1).toString().padStart(3, '0');
-      const computedRef = `${refPrefix}-${paddedIdx}`;
+      if (accType === 'bank') {
+        totalIn += credit;
+        totalOut += debit;
+        runningBalance = runningBalance - debit + credit;
+      } else {
+        totalIn += debit;
+        totalOut += credit;
+        runningBalance = runningBalance + debit - credit;
+      }
 
-      return { ...txn, computedRef, runningBalance, _formattedBalance: formatCurrency(runningBalance) };
+      return { ...txn, runningBalance, _formattedBalance: formatCurrency(runningBalance) };
     });
 
-    // Update Header Stats
-    const setStat = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setStat('stat-opening', formatCurrency(currentOpeningBalance));
-    setStat('stat-income', formatCurrency(totalIn));
-    setStat('stat-expense', formatCurrency(totalOut));
-    setStat('stat-end', formatCurrency(runningBalance));
-
-    // Sort the display data based on UI sort state
-    displayData = processedData.filter(txn => {
+    // --- Filter & Final Display Sort ---
+    let displayData = dataWithBalance.filter(txn => {
       if (!searchFilter) return true;
       const s = searchFilter.toLowerCase();
-      return (txn.description || '').toLowerCase().includes(s) ||
-        (txn.computedRef || '').toLowerCase().includes(s);
+      return (txn.description || '').toLowerCase().includes(s);
     });
 
+    // Default: Sort by date newest first if no specific sort set
     if (sortState.col) {
       displayData.sort((a, b) => {
         let aV = a[sortState.col], bV = b[sortState.col];
@@ -329,12 +319,27 @@
         return (aV < bV ? -1 : 1) * (sortState.dir === 'asc' ? 1 : -1);
       });
     } else {
-      displayData.reverse(); // Default newest first
+      displayData.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
-    // --- 2. Build Grid ---
-    if (displayData.length === 0) {
-      feedContainer.innerHTML = `<div style="padding: 80px; text-align: center; color: #94a3b8;">No results.</div>`;
+    // --- RE-CALCULATE REF BASED ON CURRENT DISPLAY ORDER ---
+    const processedData = displayData.map((txn, idx) => {
+      const paddedIdx = (idx + 1).toString().padStart(3, '0');
+      const computedRef = refPrefix ? `${refPrefix}-${paddedIdx}` : paddedIdx;
+      return { ...txn, computedRef };
+    });
+
+    // --- RENDERING ---
+    updateHeaderUI({
+      opening: formatCurrency(currentOpeningBalance),
+      rawOpening: currentOpeningBalance,
+      income: formatCurrency(totalIn),
+      expense: formatCurrency(totalOut),
+      end: formatCurrency(runningBalance)
+    });
+
+    if (processedData.length === 0) {
+      feedContainer.innerHTML = `<div style="padding:100px; text-align:center; color:#94a3b8;">No data found.</div>`;
       return;
     }
 
@@ -343,53 +348,42 @@
     let accountOpts = '<option value="">Uncategorized</option>';
     accounts.forEach(acc => {
       const code = acc.code || acc.accountNumber;
-      const name = acc.name || acc.description;
-      if (code) accountOpts += `<option value="${code}">${code} - ${name}</option>`;
+      if (code) accountOpts += `<option value="${code}">${code} - ${acc.name || acc.description}</option>`;
     });
 
     const renderRow = (txn) => {
-      const index = transactionData.indexOf(txn);
-      const selected = selectedTxnIds.has(txn.id || index);
-      const selOpts = accountOpts.replace(`value="${txn.accountNumber}"`, `value="${txn.accountNumber}" selected`);
+      const rowId = txn.id;
+      const sel = selectedTxnIds.has(rowId.toString());
+      const accSel = accountOpts.replace(`value="${txn.accountNumber}"`, `value="${txn.accountNumber}" selected`);
+
+      if (deletingRowId === rowId.toString()) {
+        return `<tr><td colspan="9" style="padding:12px 16px; background:#fef2f2;"><div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--red); font-weight:600; font-size:0.85rem;">Delete this line?</span>
+              <div style="display:flex; gap:8px;">
+                 <button class="btn btn-danger" style="height:28px;" onclick="confirmDeleteRow('${rowId}')">Yes, Delete</button>
+                 <button class="btn btn-secondary" style="height:28px;" onclick="cancelDeleteRow()">Cancel</button>
+              </div>
+           </div></td></tr>`;
+      }
+
+      const debitDisplay = parseFloat(txn.debit) ? parseFloat(txn.debit).toFixed(2) : '';
+      const creditDisplay = parseFloat(txn.credit) ? parseFloat(txn.credit).toFixed(2) : '';
 
       return `
-        <tr data-id="${txn.id || index}">
-          <td class="col-cb">
-             <input type="checkbox" class="bulk-cb" ${selected ? 'checked' : ''} onchange="toggleTxnSelection('${txn.id || index}')">
-          </td>
-          <td class="col-ref">
-             <div class="cell-input font-mono" style="color: #64748b; font-weight:600; padding-top:10px;">${txn.computedRef}</div>
-          </td>
-          <td class="col-date">
-             <input class="cell-input" type="date" value="${txn.date ? txn.date.split('T')[0] : ''}" onchange="updateTransactionField(${index}, 'date', this.value)">
-          </td>
-          <td class="col-payee">
-             <input class="cell-input" type="text" value="${(txn.description || '').replace(/"/g, '&quot;')}" onchange="updateTransactionField(${index}, 'description', this.value)">
-          </td>
-          <td class="col-acct">
-            <select class="cell-input" onchange="updateTransactionField(${index}, 'accountNumber', this.value)">
-                ${selOpts}
-            </select>
-          </td>
-          <td class="col-amount">
-             <input class="cell-input text-right font-mono" type="number" step="0.01" style="color: #dc2626" value="${parseFloat(txn.debit || 0).toFixed(2)}" onchange="updateTransactionField(${index}, 'debit', this.value)">
-          </td>
-          <td class="col-amount">
-             <input class="cell-input text-right font-mono" type="number" step="0.01" style="color: #059669" value="${parseFloat(txn.credit || 0).toFixed(2)}" onchange="updateTransactionField(${index}, 'credit', this.value)">
-          </td>
-          <td class="col-bal">
-             <div class="cell-input text-right font-mono" style="color: #1e293b; font-weight: 700; padding-top:10px;">${txn._formattedBalance}</div>
-          </td>
-          <td class="col-act">
-             <button class="btn" style="border:none; background:transparent; color:#cbd5e1;" onclick="if(confirm('Delete?')) { transactionData.splice(${index}, 1); saveTransactions(); renderTransactionFeed(); }">✕</button>
-          </td>
+        <tr data-id="${rowId}">
+           <td class="col-cb"><input type="checkbox" class="bulk-cb" ${sel ? 'checked' : ''} onchange="toggleTxn('${rowId}')"></td>
+           <td class="col-ref"><div class="cell-input font-mono" style="color:#64748b; padding-top:10px; font-size:0.75rem;">${txn.computedRef}</div></td>
+           <td class="col-date"><input class="cell-input" type="date" value="${sanitizeDate(txn.date)}" onchange="updateField('${rowId}', 'date', this.value)"></td>
+           <td class="col-payee"><input class="cell-input" type="text" value="${(txn.description || '').replace(/"/g, '&quot;')}" onchange="updateField('${rowId}', 'description', this.value)"></td>
+           <td class="col-acct"><select class="cell-input" onchange="updateField('${rowId}', 'accountNumber', this.value)">${accSel}</select></td>
+           <td class="col-amount"><input class="cell-input text-right font-mono" style="color:var(--red)" type="text" value="${debitDisplay}" placeholder="" onblur="updateField('${rowId}', 'debit', this.value)"></td>
+           <td class="col-amount"><input class="cell-input text-right font-mono" style="color:var(--green)" type="text" value="${creditDisplay}" placeholder="" onblur="updateField('${rowId}', 'credit', this.value)"></td>
+           <td class="col-bal"><div class="cell-input text-right font-mono" style="font-weight:700; padding-top:10px;">${txn._formattedBalance}</div></td>
+           <td class="col-act"><button class="btn" style="border:none;background:transparent;color:#cbd5e1;" onclick="startDeleteRow('${rowId}')">✕</button></td>
         </tr>`;
     };
 
-    const getSortIcon = (col) => {
-      if (sortState.col !== col) return '↕';
-      return sortState.dir === 'asc' ? '↑' : '↓';
-    };
+    const sI = (col) => sortState.col === col ? (sortState.dir === 'asc' ? '↑' : '↓') : '↕';
 
     feedContainer.innerHTML = `
       <table class="txn-table">
@@ -397,81 +391,246 @@
            <col class="col-cb"><col class="col-ref"><col class="col-date"><col class="col-payee"><col class="col-acct"><col class="col-amount"><col class="col-amount"><col class="col-bal"><col class="col-act">
         </colgroup>
         <thead>
-          <tr>
-            <th class="col-cb"><input type="checkbox" class="bulk-cb" id="master-cb" onclick="toggleSelectAll(this.checked)"></th>
-            <th onclick="sortTransactions('computedRef')">REF # <span class="header-icon">${getSortIcon('computedRef')}</span></th>
-            <th onclick="sortTransactions('date')">DATE <span class="header-icon">${getSortIcon('date')}</span></th>
-            <th onclick="sortTransactions('description')">PAYEE / DESCRIPTION <span class="header-icon">▼</span></th>
-            <th onclick="sortTransactions('accountNumber')">ACCOUNT <span class="header-icon">▼</span></th>
-            <th class="text-right" onclick="sortTransactions('debit')">DEBIT <span class="header-icon">${getSortIcon('debit')}</span></th>
-            <th class="text-right" onclick="sortTransactions('credit')">CREDIT <span class="header-icon">${getSortIcon('credit')}</span></th>
-            <th class="text-right">BALANCE</th>
-            <th></th>
-          </tr>
+           <tr>
+              <th class="col-cb"><input type="checkbox" class="bulk-cb" onchange="toggleAllTxns(this.checked)"></th>
+              <th onclick="setSort('computedRef')">Ref # <span class="header-icon">${sI('computedRef')}</span></th>
+              <th onclick="setSort('date')">Date <span class="header-icon">${sI('date')}</span></th>
+              <th onclick="setSort('description')">Payee <span class="header-icon">▼</span></th>
+              <th>Account <span class="header-icon">▼</span></th>
+              <th class="text-right" onclick="setSort('debit')">Debit <span class="header-icon">${sI('debit')}</span></th>
+              <th class="text-right" onclick="setSort('credit')">Credit <span class="header-icon">${sI('credit')}</span></th>
+              <th class="text-right">Balance</th>
+              <th></th>
+           </tr>
         </thead>
         <tbody id="txn-tbody"></tbody>
       </table>
-      <div id="sentinel" style="height: 20px;"></div>
+      <div id="sentinel" style="height:40px;"></div>
     `;
 
-    // Infinite Scroll
     const tbody = document.getElementById('txn-tbody');
     const sentinel = document.getElementById('sentinel');
-    const batchSize = 60;
-    let renderedRows = 0;
-
-    const loadMore = () => {
-      const batch = displayData.slice(renderedRows, renderedRows + batchSize);
+    let rendered = 0;
+    const loadBatch = () => {
+      const batch = processedData.slice(rendered, rendered + 60);
       if (batch.length > 0) {
         tbody.insertAdjacentHTML('beforeend', batch.map(renderRow).join(''));
-        renderedRows += batch.length;
+        rendered += batch.length;
       }
-      if (renderedRows >= displayData.length) {
-        if (obs) obs.disconnect();
-        sentinel.style.display = 'none';
-      }
+      if (rendered >= processedData.length) { if (ob) ob.disconnect(); sentinel.style.display = 'none'; }
     };
-
-    const obs = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore(); }, { rootMargin: '400px' });
-    obs.observe(sentinel);
-    loadMore();
+    const ob = new IntersectionObserver(e => { if (e[0].isIntersecting) loadBatch(); }, { rootMargin: '400px' });
+    ob.observe(sentinel);
+    loadBatch();
   }
 
-  // --- Helpers ---
-  window.updateRefPrefix = updateRefPrefix;
+  // --- ACTIONS ---
 
-  window.toggleTxnSelection = function (id) {
-    if (selectedTxnIds.has(id)) selectedTxnIds.delete(id);
-    else selectedTxnIds.add(id);
-    renderTransactionFeed();
-  };
+  function updateHeaderUI(stats = {}) {
+    const headerRow1 = document.getElementById('header-row-1');
+    const headerPane = document.getElementById('panel-header');
+    const statsStrip = document.getElementById('stats-strip');
+    if (!headerRow1 || !headerPane || !statsStrip) return;
 
-  window.toggleSelectAll = function (checked) {
-    selectedTxnIds.clear();
-    if (checked) {
-      transactionData.forEach((t, i) => selectedTxnIds.add(t.id || i));
+    if (selectedTxnIds.size > 0) {
+      headerPane.classList.add('bulk-mode');
+      headerRow1.innerHTML = `
+           <div class="tier-title" style="color:var(--primary); margin-bottom:8px;">${selectedTxnIds.size} Selected</div>
+           <div style="display:flex; gap:12px; justify-content:center;">
+              <button class="btn btn-primary" onclick="bulkReclassify('vendor')">Reclassify Vendor</button>
+              <button class="btn btn-primary" onclick="bulkReclassify('account')">Reclassify Account</button>
+              <button class="btn btn-secondary" onclick="clearSelection()">Exit Bulk Mode</button>
+           </div>
+        `;
+    } else {
+      headerPane.classList.remove('bulk-mode');
+      headerRow1.innerHTML = `
+           <div class="tier-title">Transactions</div>
+           <div class="stats-strip" id="stats-strip">
+              <div class="stat-item">
+                 <span class="stat-label">Opening:</span>
+                 ${isEditingOpeningBalance ?
+          `<div class="opening-input-box">
+                      <input type="number" id="opening-edit-input" class="opening-input" value="${stats.rawOpening}" step="0.01" autofocus>
+                      <button class="stat-edit-btn" onclick="saveOpeningBalanceValue()">💾</button>
+                      <button class="stat-edit-btn" onclick="toggleOpeningEdit(false)">✕</button>
+                    </div>` :
+          `<span id="stat-opening" class="stat-value">${stats.opening || '$0.00'}</span>
+                    <span class="stat-edit-btn" onclick="toggleOpeningEdit(true)">✏️</span>`
+        }
+              </div>
+              <div class="stat-divider">|</div>
+              <div class="stat-item"><span class="stat-label">In:</span><span id="stat-income" class="stat-value inc">${stats.income || '$0.00'}</span></div>
+              <div class="stat-divider">|</div>
+              <div class="stat-item"><span class="stat-label">Out:</span><span id="stat-expense" class="stat-value exp">${stats.expense || '$0.00'}</span></div>
+              <div class="stat-divider">|</div>
+              <div class="stat-item"><span class="stat-label">End:</span><span id="stat-end" class="stat-value">${stats.end || '$0.00'}</span></div>
+           </div>
+        `;
     }
+  }
+
+  window.toggleOpeningEdit = function (val) {
+    isEditingOpeningBalance = val;
     renderTransactionFeed();
   };
 
-  window.sortTransactions = function (col) {
+  window.saveOpeningBalanceValue = function () {
+    const input = document.getElementById('opening-edit-input');
+    if (input) {
+      const val = parseFloat(input.value) || 0;
+      localStorage.setItem('openingBalance', val);
+      if (window.accountManager) {
+        const acc = window.accountManager.getCurrentAccount();
+        if (acc) window.accountManager.updateAccount(acc.id, { openingBalance: val });
+      }
+      isEditingOpeningBalance = false;
+      renderTransactionFeed();
+    }
+  };
+
+  window.toggleTxn = (id) => {
+    const stringId = id.toString();
+    selectedTxnIds.has(stringId) ? selectedTxnIds.delete(stringId) : selectedTxnIds.add(stringId);
+    renderTransactionFeed();
+  };
+
+  window.toggleAllTxns = (checked) => {
+    selectedTxnIds.clear();
+    if (checked) transactionData.forEach(t => selectedTxnIds.add(t.id.toString()));
+    renderTransactionFeed();
+  };
+
+  window.clearSelection = () => { selectedTxnIds.clear(); renderTransactionFeed(); };
+
+  window.bulkReclassify = (type) => {
+    const val = prompt(`Enter new ${type === 'vendor' ? 'Payee' : 'Account Code'}:`);
+    if (val) {
+      transactionData.forEach(t => {
+        if (selectedTxnIds.has(t.id.toString())) t[type === 'vendor' ? 'description' : 'accountNumber'] = val;
+      });
+      saveTransactions();
+      renderTransactionFeed();
+    }
+  };
+
+  window.updateField = (id, field, value) => {
+    const txn = transactionData.find(t => t.id.toString() === id.toString());
+    if (txn) {
+      txn[field] = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
+      if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
+      if (['date', 'debit', 'credit'].includes(field)) renderTransactionFeed();
+    }
+  };
+
+  window.setSort = (col) => {
     if (sortState.col === col) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
     else { sortState.col = col; sortState.dir = 'asc'; }
     renderTransactionFeed();
   };
 
-  window.filterTransactionFeed = function (val) {
-    searchFilter = val;
-    renderTransactionFeed();
+  window.startDeleteRow = (id) => { deletingRowId = id.toString(); renderTransactionFeed(); };
+  window.confirmDeleteRow = (id) => {
+    const idx = transactionData.findIndex(t => t.id.toString() === id.toString());
+    if (idx !== -1) {
+      transactionData.splice(idx, 1);
+      deletingRowId = null;
+      saveTransactions();
+      renderTransactionFeed();
+    }
+  };
+  window.cancelDeleteRow = () => { deletingRowId = null; renderTransactionFeed(); };
+
+  window.exportToXLS = function () {
+    if (!window.XLSX) return alert('Loading exporter...');
+    const dataRows = transactionData.map((txn, idx) => ({
+      "Ref #": txn.computedRef || (idx + 1).toString().padStart(3, '0'),
+      "Date": txn.date ? txn.date.split('T')[0] : '',
+      "Description": txn.description || '',
+      "Debit": parseFloat(txn.debit || 0),
+      "Credit": parseFloat(txn.credit || 0),
+      "Balance": txn.runningBalance || 0,
+      "Account #": txn.accountNumber || '',
+      "Category": ''
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+    XLSX.writeFile(workbook, "Transactions_Export.xlsx");
   };
 
-  window.updateTransactionField = function (index, field, value) {
-    if (!transactionData[index]) return;
-    transactionData[index][field] = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
-    if (window.debouncedSave) window.debouncedSave();
-    else saveTransactions();
-    if (['date', 'debit', 'credit'].includes(field)) renderTransactionFeed();
+  // --- MODAL ---
+
+  window.openImportManager = () => {
+    document.getElementById('import-modal').style.display = 'flex';
+    renderImportHistory();
   };
+  window.closeImportManager = () => document.getElementById('import-modal').style.display = 'none';
+
+  function renderImportHistory() {
+    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+    const list = document.getElementById('history-list');
+    if (!list) return;
+    list.innerHTML = history.length ? history.map(h => `
+        <div class="history-item">
+           <div style="flex:1;">
+              <div style="font-weight:700; font-size:0.8rem; color:var(--text-main);">${h.filename}</div>
+              <div style="font-size:0.65rem; color:#94a3b8; font-weight:600;">${h.date} • ${h.count} txns</div>
+           </div>
+           <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="renameImport('${h.id}')" title="Rename">✏️</button>
+              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="restoreImport('${h.id}')" title="Restore">🔄</button>
+              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="deleteImport('${h.id}')" title="Delete">✕</button>
+           </div>
+        </div>
+     `).join('') : '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
+  }
+
+  window.renameImport = (id) => {
+    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+    const item = history.find(h => h.id === id);
+    if (item) {
+      const newName = prompt('New filename:', item.filename);
+      if (newName) {
+        item.filename = newName;
+        localStorage.setItem('ab3_upload_history', JSON.stringify(history));
+        renderImportHistory();
+      }
+    }
+  };
+
+  window.handleFileDrop = (files) => {
+    if (!files.length) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csv = e.target.result;
+      const lines = csv.split('\n');
+      const count = lines.length - 1;
+      const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+      if (history.some(h => h.filename === file.name)) {
+        showModalStatus('File already exists.', 'red');
+        return;
+      }
+
+      history.unshift({ id: Date.now().toString(), filename: file.name, date: new Date().toLocaleDateString(), count });
+      localStorage.setItem('ab3_upload_history', JSON.stringify(history));
+      renderImportHistory();
+      showModalStatus(`Successfully uploaded ${file.name}`, 'green');
+    };
+    reader.readAsText(file);
+  };
+
+  function showModalStatus(msg, color) {
+    const el = document.getElementById('modal-status');
+    if (el) {
+      el.textContent = msg;
+      el.style.color = color === 'red' ? 'var(--red)' : 'var(--green)';
+      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
+    }
+  }
+
+  // --- IO ---
 
   function saveTransactions() {
     if (window.accountManager) {
@@ -481,46 +640,50 @@
     if (window.storage) window.storage._set('transactions', transactionData);
   }
 
-  window.addNewTransaction = function () {
-    transactionData.unshift({
-      id: Date.now(),
-      refNumber: '',
-      date: new Date().toISOString().split('T')[0],
-      description: 'New Transaction',
-      debit: 0, credit: 0, accountNumber: ''
-    });
-    renderTransactionFeed();
-    saveTransactions();
-  };
-
   async function loadSavedTransactions() {
     if (window.accountManager) {
       const acc = window.accountManager.getCurrentAccount();
       if (acc) {
         transactionData = window.accountManager.getAccountTransactions(acc.id) || [];
-        localStorage.setItem('openingBalance', acc.openingBalance.toString());
+        transactionData.forEach((t, i) => { if (!t.id) t.id = Date.now() + i; });
+        localStorage.setItem('openingBalance', (acc.openingBalance || 0).toString());
         return renderTransactionFeed();
       }
     }
     if (window.storage) {
       transactionData = await window.storage.getTransactions() || [];
+      transactionData.forEach((t, i) => { if (!t.id) t.id = Date.now() + i; });
       renderTransactionFeed();
     }
   }
 
-  // Lifecycle
-  let isInit = false;
-  const obs = new MutationObserver(() => {
-    if (document.getElementById('transactionFeed') && !isInit) {
-      isInit = true;
+  function formatCurrency(n) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  }
+
+  let isInitializing = false;
+  const lo = new MutationObserver(() => {
+    if (document.getElementById('transactionFeed') && !isInitializing) {
+      isInitializing = true;
       loadSavedTransactions();
-      setTimeout(() => { isInit = false; }, 300);
+      setTimeout(() => isInitializing = false, 300);
     }
   });
-  if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+  if (document.body) lo.observe(document.body, { childList: true, subtree: true });
 
-  // Exports
-  window.showCSVImport = () => { if (window.showAccountSelection) window.showAccountSelection(); };
   window.loadTransactionData = loadSavedTransactions;
+  window.updateRefPrefix = updateRefPrefix;
+  window.restoreImport = (id) => showModalStatus('Data for ' + id + ' is already active.', 'green');
+  window.deleteImport = (id) => {
+    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
+    const filtered = history.filter(h => h.id !== id);
+    localStorage.setItem('ab3_upload_history', JSON.stringify(filtered));
+    renderImportHistory();
+  };
+  window.filterTransactionFeed = (v) => { searchFilter = v; renderTransactionFeed(); };
+  window.addNewTransaction = () => {
+    transactionData.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], description: 'New Entry', debit: 0, credit: 0, accountNumber: '' });
+    renderTransactionFeed(); saveTransactions();
+  };
 
 })();
