@@ -164,6 +164,11 @@ class StorageService {
         return true;
     }
 
+    // BULK SAVE (Compatibility with transactions-fixed.js)
+    saveTransactions(data) {
+        return this._set(this.keys.transactions, data);
+    }
+
     // ====================================
     // VENDORS
     // ====================================

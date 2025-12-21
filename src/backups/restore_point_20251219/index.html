@@ -12,16 +12,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
 
-  <!-- SheetJS for Excel Import -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
-  <!-- PDF.js for PDF Import -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    // Initialize PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
-
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -47,10 +37,6 @@
           <a href="#/" class="nav-item" data-route="/">
             <span class="nav-icon">🏠</span>
             <span class="nav-label">Home</span>
-          </a>
-          <a href="#/data-import" class="nav-item" data-route="/data-import">
-            <span class="nav-icon">📥</span>
-            <span class="nav-label">Data Import</span>
           </a>
           <a href="#/transactions" class="nav-item" data-route="/transactions">
             <span class="nav-icon">💳</span>
@@ -122,9 +108,13 @@
   </main>
 
   <!-- Auth Modal (only modal allowed) -->
-  <!-- Content rendered by auth-modal.js -->
-  <div id="auth-modal" class="auth-modal" style="display: none;"></div>
-
+  <div id="auth-modal" class="auth-modal" style="display: none;">
+    <div class="auth-modal-content">
+      <h2>Authentication Required</h2>
+      <p>Please log in to continue.</p>
+      <button class="btn-primary">Log In</button>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="src/core/state.js"></script>
@@ -147,27 +137,8 @@
   <!-- Notifications -->
   <script src="src/features/notifications/toast-manager.js"></script>
 
-  <!-- Data Layer (MUST LOAD FIRST) -->
-  <script src="src/core/system-log.js"></script> <!-- Load early for logging support -->
-  <script src="src/data/utils.js"></script>
-  <script src="src/data/models.js"></script>
-  <script src="src/data/storage.js"></script>
-  <script src="src/data/default-coa.js"></script>
-  <script src="src/data/account-chart.js"></script>
-  <script src="src/data/supabase.js"></script>
-
   <!-- Upload History -->
   <script src="src/features/uploads/upload-history.js"></script>
-
-  <!-- Global Modal Service -->
-  <script src="src/components/ui/modal-service.js"></script>
-
-  <!-- Utils -->
-  <script src="src/utils/smart-csv-parser.js"></script>
-  <script src="src/utils/smart-matcher.js"></script>
-  <script src="src/utils/vendor-engine.js"></script>
-  <script src="src/utils/ai-test-suite.js"></script>
-  <script src="src/utils/legacy-importer.js"></script>
 
   <!-- Account Manager (Multi-Account Support) -->
   <script src="src/features/accounts/account-manager.js"></script>
@@ -176,7 +147,6 @@
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
-  <script src="src/pages/data-import.js"></script>
   <script src="src/pages/profile.js"></script>
   <script src="src/pages/transactions-fixed.js"></script>
   <script src="src/pages/vendors.js"></script>
@@ -191,14 +161,14 @@
   <!-- Vendor Pages -->
   <script src="src/utils/vendorMatcher.js"></script>
   <script src="src/pages/vendorNew.js"></script>
-  <!-- Features -->
-  <script src="src/features/uploads/pdf-import-service.js"></script>
-  <script src="src/components/parser-settings-modal.js"></script>
-  <script src="src/features/vendors/vendor-analysis.js"></script>
-  <script src="src/components/vendor-analysis-modal.js"></script>
-  <script src="src/pages/vendor-analysis-page.js"></script>
 
-
+  <!-- Data Layer -->
+  <script src="src/data/utils.js"></script>
+  <script src="src/data/models.js"></script>
+  <script src="src/data/storage.js"></script>
+  <script src="src/data/seed.js"></script>
+  <script src="src/data/account-chart.js"></script>
+  <script src="src/data/supabase.js"></script>
 
   <script>
     // Initialize application state
@@ -393,15 +363,7 @@
     });
 
     router.register('/home', () => {
-      window.breadcrumb.update([
-        { label: 'Home', path: '/' }
-      ]);
-      window.renderHomePage();
-    });
-
-    router.register('/data-import', () => {
-      window.breadcrumbManager.update('/data-import');
-      window.renderDataImportPage();
+      document.getElementById('app').innerHTML = renderHome();
     });
 
     // User Profile
@@ -416,17 +378,7 @@
 
     // Vendors List
     router.register('/vendors', () => {
-      const phtml = renderVendors();
-      console.log('🧭 Router: Received HTML for vendors. Length:', phtml ? phtml.length : 'NULL');
-      document.getElementById('app').innerHTML = phtml;
-
-      // Force init explicitly after DOM insertion
-      setTimeout(() => {
-        if (typeof initVendorsGrid === 'function') {
-          console.log('🧭 Router: Triggering Grid Init...');
-          initVendorsGrid();
-        }
-      }, 50);
+      document.getElementById('app').innerHTML = renderVendors();
     });
 
     // New Vendor
@@ -463,29 +415,6 @@
     router.register('/accounts/:accountId', (route) => {
       document.getElementById('app').innerHTML = renderAccountDetail(route.params);
     });
-
-    // Audit Log
-    router.register('/audit', () => {
-      if (window.AuditLogPage) {
-        document.getElementById('app').innerHTML = window.AuditLogPage.render();
-      }
-    });
-
-    // --- NEW: Vendor Analysis Module (RoboLedger Style) ---
-    router.register('/vendor-analysis', () => {
-      if (window.VendorAnalysisPage) {
-        document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
-      }
-    });
-
-    // Handle sub-route for drill down (though simpler hash logic in component handles it too)
-    // We register it to ensure the router doesn't 404
-    router.register('/vendor-analysis/:vendorName', () => {
-      if (window.VendorAnalysisPage) {
-        document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
-      }
-    });
-    // -----------------------------------------------------
 
     // Reports - Dashboard
     router.register('/reports', () => {

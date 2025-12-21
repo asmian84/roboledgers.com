@@ -219,7 +219,7 @@ async function initVendorDetailPage(vendorId, tab) {
     currentVendor = await window.storage.getVendor(vendorId);
 
     if (!currentVendor) {
-      alert('Vendor not found');
+      if (window.showToast) showToast('Vendor not found', 'error');
       router.navigate('/vendors');
       return;
     }
@@ -473,12 +473,12 @@ async function saveVendorSettings(event) {
 
     await window.storage.updateVendor(currentVendor.id, updates);
 
-    alert('Vendor updated successfully!');
+    if (window.showToast) showToast('Vendor updated successfully!', 'success');
     router.navigate(`/vendors/${currentVendor.id}`);
 
   } catch (error) {
     console.error('Failed to update vendor:', error);
-    alert('Failed to save changes');
+    if (window.showToast) showToast('Failed to save changes', 'error');
   }
 }
 
@@ -491,19 +491,20 @@ function editVendorDetails() {
 }
 
 function mergeVendor() {
-  alert('Merge vendor feature coming soon!');
+  if (window.showToast) showToast('Merge vendor feature coming soon!', 'info');
 }
 
 async function deleteVendorFromDetail() {
-  if (!confirm(`Delete vendor "${currentVendor.name}"?`)) return;
-
-  try {
-    await window.storage.deleteVendor(currentVendor.id);
-    router.navigate('/vendors');
-  } catch (error) {
-    console.error('Failed to delete vendor:', error);
-    alert('Failed to delete vendor');
-  }
+  ModalService.confirm('Delete Vendor', `Delete vendor "${currentVendor.name}"?`, async () => {
+    try {
+      await window.storage.deleteVendor(currentVendor.id);
+      if (window.showToast) showToast(`Vendor deleted.`, 'success');
+      router.navigate('/vendors');
+    } catch (error) {
+      console.error('Failed to delete vendor:', error);
+      if (window.showToast) showToast('Failed to delete vendor', 'error');
+    }
+  }, 'danger');
 }
 
 function addVendorTransaction() {

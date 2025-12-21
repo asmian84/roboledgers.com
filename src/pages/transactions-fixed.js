@@ -1,1078 +1,1542 @@
 /**
- * Transactions Page - Modern High-Density Financial UI
- * "Two-Tier Pro" Architecture - Final Refined Edition
+ * Transactions Page - Unified Command Center
+ * Strict Layout Compliance Version - REFACTORED V2
+ * Decluttered & Spacious
  */
 
-(function () {
-  'use strict';
+// EMERGENCY FIX: Sanitize corrupted huge numbers (Robust Version)
+// EMERGENCY FIX: Sanitize corrupted huge numbers (Nuclear Option)
+// EMERGENCY FIX: Sanitize corrupted huge numbers and bad mappings
+window.sanitizeData = function () {
+  // REMOVED: 500ms artificial delay for instant performance ⚡
+  let fixed = false;
+  if (!window.transactionData) return;
 
-  // --- PERSISTENT STATE ---
-  let transactionData = [];
-  let refPrefix = localStorage.getItem('ab3_ref_prefix') || 'CHQ';
-  let selectedTxnIds = new Set();
-  let searchFilter = '';
-  let sortState = { col: 'date', dir: 'desc' };
-  let deletingRowId = null;
-  let undoStack = null; // { type: 'bulk'|'single', data: [...] }
-  let viewMode = 'grid'; // 'grid' | 'vendor'
-  let isEditingOpening = false;
-  let editingImportId = null;
-  let restoringImportId = null;
-  let importPendingData = null; // Holds parsed CSV data before account choice
-  let importPendingFilename = '';
+  // console.log('🧹 Running Deep Clean...'); 
+  // Commented out log to reduce console noise
 
-  // --- SHEETJS LOADER ---
-  if (!window.XLSX) {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
-    document.head.appendChild(script);
+  // Filter out rows that are clearly garbage (e.g. numeric descriptions, invalid dates)
+  const initialCount = window.transactionData.length;
+  window.transactionData = window.transactionData.filter(t => {
+    // Rule 1: Date must be valid
+    if (!t.date || t.date === 'Invalid Date' || isNaN(new Date(t.date).getTime())) return false;
+
+    // Rule 2: Description cannot be a number (e.g. "-20.36")
+    // Check if description matches money regex
+    const descClean = String(t.description).replace(/[$,\s\-]/g, '');
+    if (descClean.length > 0 && !isNaN(parseFloat(descClean)) && isFinite(descClean)) {
+      return false;
+    }
+
+    // Rule 3: Description cannot be "Inv" or empty
+    if (!t.description || t.description === 'Inv' || t.description.length < 2) return false;
+
+    return true;
+  });
+
+  if (window.transactionData.length !== initialCount) {
+    console.warn(`🗑️ Removed ${initialCount - window.transactionData.length} garbage rows.`);
+    fixed = true;
   }
 
-  window.renderTransactions = function () {
-    return `
-      <div class="transactions-page">
-      <style>
-        :root {
-          --primary: #3b82f6;
-          --bg: #f8fafc;
-          --surface: #ffffff;
-          --text-main: #0f172a;
-          --text-muted: #64748b;
-          --border: #e2e8f0;
-          --accent: #f1f5f9;
-          --red: #ef4444;
-          --green: #22c55e;
-        }
+  // Now clean values of remaining
+  window.transactionData.forEach(t => {
+    // Check for scientific notation strings explicitly or massive numbers
+    const dStr = String(t.debit);
+    const cStr = String(t.credit);
 
-        .transactions-page {
-          width: 100% !important; height: 100vh; padding: 12px;
-          background: var(--bg); box-sizing: border-box;
-          display: flex; flex-direction: column; overflow: hidden;
-          font-family: 'Inter', system-ui, sans-serif;
-        }
-
-        .app-panel {
-          flex: 1; display: flex; flex-direction: column; background: var(--surface);
-          border-radius: 12px; border: 1px solid var(--border);
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; min-height: 0;
-        }
-
-        /* CENTERED TWO-TIER HEADER */
-        .panel-header { flex: none; background: #fff; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; }
-        .header-tier { padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; min-height: 48px; position: relative; }
-        
-        /* Title centered above Toolbar */
-        .header-tier.status-row { 
-            border-bottom: 1px solid #f8fafc; 
-            flex-direction: column; 
-            justify-content: center;
-            gap: 8px;
-            padding: 16px;
-        }
-        .tier-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); text-align: center; width: 100%; letter-spacing: -0.02em; }
-        
-        .header-tier.toolbar-row { background: #fafafa; }
-        .bulk-mode { background: #eff6ff !important; border-bottom: 2px solid #3b82f6 !important; }
-
-        .stats-strip { display: flex; align-items: center; gap: 12px; background: var(--accent); padding: 6px 16px; border-radius: 24px; font-size: 0.8rem; color: var(--text-muted); border: 1px solid #e2e8f0; }
-        .stat-item { display: flex; align-items: center; gap: 6px; }
-        .stat-label { font-weight: 700; font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat-value { font-weight: 700; color: var(--text-main); }
-        .stat-value.inc { color: var(--green); }
-        .stat-value.exp { color: var(--red); }
-        .stat-edit-btn { cursor: pointer; color: #94a3b8; font-size: 0.75rem; transition: color 0.1s; }
-        .stat-edit-btn:hover { color: var(--primary); }
-        
-        /* Inline Opening Balance Input */
-        .opening-input-box { display: flex; align-items: center; gap: 8px; }
-        .opening-input { width: 100px; height: 24px; padding: 2px 8px; border: 1px solid var(--primary); border-radius: 4px; font-size: 0.8rem; font-weight: 700; }
-
-        /* TOOLBAR */
-        .toolbar-group { display: flex; align-items: center; gap: 12px; }
-        .control-box { display: flex; align-items: center; gap: 6px; }
-        .control-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-        .tiny-input { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; width: 70px; height: 28px; }
-        .account-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; height: 28px; min-width: 160px; font-weight: 600; color: var(--text-main); }
-
-        .search-container { flex: 1; max-width: 600px; position: relative; margin: 0 16px; }
-        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; }
-        .search-box { width: 100%; padding: 6px 12px 6px 30px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; height: 32px; }
-
-        .btn { height: 32px; padding: 0 12px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; display: flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid transparent; transition: all 0.1s; user-select: none; }
-        .btn-primary { background: #0f172a; color: white; }
-        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
-        .btn-danger { background: #fef2f2; border-color: #fee2e2; color: var(--red); }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn:active { transform: translateY(0); }
-
-        /* DATA GRID */
-        .panel-body { flex: 1; overflow-y: auto; background: #fff; position: relative; }
-        .txn-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-        .txn-table thead th { position: sticky; top: 0; z-index: 10; background: #f8fafc; padding: 12px; text-align: left; font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; cursor: pointer; }
-        .header-icon { font-size: 0.6rem; color: #94a3b8; margin-left: 2px; }
-        
-        .txn-table td { border-bottom: 1px solid #f1f5f9; padding: 0; vertical-align: middle; }
-        .txn-table tr:hover td { background-color: #f0f7ff !important; }
-        
-        .cell-input { width: 100%; padding: 8px 12px; border: 1px solid transparent; font-size: 0.8rem; background: transparent; box-sizing: border-box; color: #1e293b; height: 38px; }
-        .cell-input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
-
-        /* HIDE CALENDAR ICON */
-        .cell-input[type="date"]::-webkit-calendar-picker-indicator {
-            display: none;
-            -webkit-appearance: none;
-        }
-
-        .col-cb { width: 44px; text-align: center; }
-        .col-ref { width: 100px; }
-        .col-date { width: 110px; }
-        .col-payee { width: auto; }
-        .col-acct { width: 180px; }
-        .col-amount { width: 110px; }
-        .col-bal { width: 120px; }
-        .col-act { width: 44px; }
-        .text-right { text-align: right !important; }
-        .font-mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums; }
-        .bulk-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
-        .tier-breadcrumb { font-size: 0.72rem; color: #94a3b8; font-weight: 500; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.02em; }
-        .tier-title { font-size: 1.5rem; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; line-height: 1; }
-        .editable-hint { border-bottom: 2px dashed #cbd5e1; cursor: pointer; transition: all 0.2s; }
-        .editable-hint:hover { border-bottom-color: #3b82f6; color: #3b82f6; }
-        .opening-input { width: 120px; font-size: 1.1rem; font-weight: 700; border: 1px solid #3b82f6; border-radius: 4px; padding: 2px 4px; outline: none; text-align: right; background: #fff; }
-
-        /* MODAL */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.1s ease-out; }
-        .modal-content { background: #fff; width: 620px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
-        .modal-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 24px; flex: 1; overflow-y: auto; }
-        
-        .dropzone { border: 2px dashed #e2e8f0; border-radius: 8px; padding: 40px; text-align: center; color: #94a3b8; transition: all 0.2s; cursor: pointer; }
-        .dropzone:hover { border-color: var(--primary); background: #f0f7ff; color: var(--primary); }
-        .history-list { margin-top: 24px; border: 1px solid #f1f5f9; border-radius: 8px; overflow: hidden; }
-        .history-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; }
-        .history-item:last-child { border-bottom: none; }
-        .history-item:hover { background: #f8fafc; }
-
-        #modal-status { margin-top: 12px; color: var(--green); font-size: 0.8rem; text-align: center; height: 20px; font-weight: 600; pointer-events: none; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      </style>
-
-      <div class="app-panel">
-         <!-- PANEL HEADER -->
-         <div class="panel-header" id="panel-header">
-            <!-- Row 1: Centered Title & Status Strip -->
-            <div class="header-tier status-row" id="header-row-1">
-               <div class="tier-title">Transactions</div>
-               <div class="stats-strip" id="stats-strip">
-                   <!-- Populated by updateHeaderUI -->
-               </div>
-            </div>
-
-            <!-- Row 2: Toolbar -->
-            <div class="header-tier toolbar-row" id="header-row-2">
-               <div class="toolbar-group">
-                  <select id="account-select" class="account-select" onchange="switchAccount(this.value)">
-                      <option value="">Loading accounts...</option>
-                  </select>
-                  <div class="control-box">
-                     <span class="control-label">Ref Prefix:</span>
-                     <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
-                  </div>
-               </div>
-               <div class="search-container">
-                  <span class="search-icon">🔍</span>
-                  <input type="search" id="search-input" class="search-box" placeholder="Search..." oninput="filterTransactionFeed(this.value)">
-               </div>
-               <div class="toolbar-group">
-                  <button class="btn btn-secondary" onclick="openImportManager()">📥 Import</button>
-                  <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New</button>
-                  <button class="btn btn-secondary" onclick="exportToXLS()">📊 Export XLS</button>
-                  <button class="btn btn-secondary" onclick="window.router.navigate('/settings')">⚙️</button>
-               </div>
-            </div>
-         </div>
-
-         <!-- GRID BODY -->
-         <div class="panel-body">
-            <div id="transactionFeed"></div>
-         </div>
-      </div>
-
-      <!-- IMPORT MANAGER MODAL -->
-      <div id="import-modal" class="modal-overlay" onclick="if(event.target===this) closeImportManager()">
-         <div class="modal-content">
-            <div class="modal-header">
-               <h3 style="margin:0; font-size:1.1rem; font-weight:700;">Import Manager</h3>
-               <button class="btn btn-secondary" style="border:none; width:30px; padding:0; justify-content:center;" onclick="closeImportManager()">✕</button>
-            </div>
-            <div class="modal-body">
-               <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
-                  <div style="font-size:2rem; margin-bottom:10px;">☁️</div>
-                  <div>Drag & Drop CSV files here or <b>browse</b></div>
-                  <input type="file" id="file-input" hidden accept=".csv" onchange="handleFileDrop(this.files)">
-               </div>
-               <div id="modal-status"></div>
-               <div style="margin-top:24px;">
-                  <h4 style="font-size:0.75rem; text-transform:uppercase; color:#94a3b8; margin-bottom:12px; letter-spacing:0.05em; font-weight:700;">Upload History</h4>
-                  <div class="history-list" id="history-list"></div>
-               </div>
-            </div>
-         </div>
-      </div>
-    </div>
-    
-    <script>
-      (function() {
-          function initAccountSelector() {
-             const select = document.getElementById('account-select');
-             if (!select) return;
-
-             // Implement Professional Hardcoded Accounts
-             const professionalAccounts = [
-                { id: 'chq1', accountName: 'TD Chequing (Asset)', type: 'asset' },
-                { id: 'mc1', accountName: 'RBC Avion Visa (Liability)', type: 'liability' }
-             ];
-
-             // Mock Account Manager for consistency if it's currently "Loading..."
-             if (!window.accountManager || !window.accountManager.getAllAccounts().length) {
-                console.log('AB3: Mocking accountManager for professional UI support.');
-                window.accountManager = {
-                   id: 'pro-manager',
-                   getAllAccounts: () => professionalAccounts,
-                   getAccount: (id) => professionalAccounts.find(a => a.id === id),
-                   getCurrentAccountId: () => localStorage.getItem('ab3_current_account_id') || 'chq1',
-                   getCurrentAccount: function() { return this.getAccount(this.getCurrentAccountId()); },
-                   setCurrentAccount: (id) => { localStorage.setItem('ab3_current_account_id', id); },
-                   getAccountTransactions: (id) => JSON.parse(localStorage.getItem('ab3_txns_' + id) || '[]'),
-                   setAccountTransactions: (id, txns) => localStorage.setItem('ab3_txns_' + id, JSON.stringify(txns)),
-                   updateAccount: (id, updates) => { 
-                      const acc = professionalAccounts.find(a => a.id === id);
-                      if (acc) {
-                        if (updates.openingBalance !== undefined) localStorage.setItem('ab3_opening_' + id, updates.openingBalance);
-                      }
-                   }
-                };
-             }
-
-             const accs = window.accountManager.getAllAccounts();
-             const currentId = window.accountManager.getCurrentAccountId();
-             select.innerHTML = accs.map(a => '<option value="' + a.id + '" ' + (currentId === a.id ? 'selected' : '') + '>' + a.accountName + '</option>').join('');
-          }
-          window.initAccountSelector = initAccountSelector;
-          
-          setTimeout(() => {
-             console.log('AB3: Running initialization sequence...');
-             initAccountSelector();
-             if (window.loadTransactionData) {
-               console.log('AB3: Triggering loadTransactionData...');
-               window.loadTransactionData();
-             } else {
-               console.error('AB3: window.loadTransactionData not found!');
-             }
-          }, 100);
-      })();
-    </script>
-    `;
-  };
-
-  // --- BUSINESS LOGIC ---
-
-  function updateRefPrefix(val) {
-    refPrefix = val;
-    localStorage.setItem('ab3_ref_prefix', refPrefix);
-    renderTransactionFeed();
-  }
-
-  window.switchAccount = function (id) {
-    if (window.accountManager) {
-      window.accountManager.setCurrentAccount(id);
-      window.loadTransactionData();
-    }
-  };
-
-  function sanitizeDate(dateStr) {
-    if (!dateStr) return '';
-    const clean = dateStr.split('T')[0];
-    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    return '';
-  }
-
-  function renderTransactionFeed() {
-    const feedContainer = document.getElementById('transactionFeed');
-    if (!feedContainer) return;
-
-    // --- State & Account Info ---
-    let accType = 'asset';
-    let currentOpeningBalance = 0;
-    if (window.accountManager) {
-      const acc = window.accountManager.getCurrentAccount();
-      if (acc) {
-        const type = (acc.type || 'asset').toLowerCase();
-        // Asset if type is asset, bank, checking, or savings
-        accType = (['asset', 'bank', 'checking', 'savings'].includes(type)) ? 'asset' : 'liability';
-        currentOpeningBalance = parseFloat(localStorage.getItem(`ab3_opening_${acc.id}`) || acc.openingBalance || 0);
-      }
-    } else {
-      currentOpeningBalance = parseFloat(localStorage.getItem('openingBalance') || 0);
-    }
-
-    // --- Calculation Logic ---
-    // Start with data sorted by date for balance calculation
-    const sortedData = [...transactionData].sort((a, b) => {
-      const dA = new Date(a.date || 0);
-      const dB = new Date(b.date || 0);
-      return dA - dB;
-    });
-    let runningBalance = currentOpeningBalance;
-    let totalIn = 0;
-    let totalOut = 0;
-
-    const dataWithBalance = sortedData.map((txn, idx) => {
-      const debit = parseFloat(txn.debit || 0);
-      const credit = parseFloat(txn.credit || 0);
-
-      if (accType === 'asset') {
-        // Asset (Checking): Debit decreases balance, Credit increases balance
-        totalIn += credit;
-        totalOut += debit;
-        runningBalance = runningBalance - debit + credit;
-      } else {
-        // Liability (Credit Card): Credit increases balance (debt), Debit decreases balance (payment)
-        totalIn += debit;
-        totalOut += credit;
-        runningBalance = runningBalance + credit - debit;
-      }
-
-      return { ...txn, runningBalance, _formattedBalance: formatCurrency(runningBalance) };
-    });
-
-    // --- Filter & Final Display Sort ---
-    let displayData = dataWithBalance.filter(txn => {
-      if (!searchFilter) return true;
-      const s = searchFilter.toLowerCase();
-      return (txn.description || '').toLowerCase().includes(s);
-    });
-
-    // Default: Sort by date newest first if no specific sort set
-    if (sortState.col) {
-      displayData.sort((a, b) => {
-        let aV = a[sortState.col], bV = b[sortState.col];
-        if (sortState.col === 'date') { aV = new Date(a.date); bV = new Date(b.date); }
-        if (sortState.col === 'debit' || sortState.col === 'credit') { aV = parseFloat(a[sortState.col]); bV = parseFloat(b[sortState.col]); }
-        return (aV < bV ? -1 : 1) * (sortState.dir === 'asc' ? 1 : -1);
-      });
-    } else {
-      displayData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-
-    // --- RE-CALCULATE REF BASED ON CURRENT DISPLAY ORDER ---
-    const processedData = displayData.map((txn, idx) => {
-      const paddedIdx = (idx + 1).toString().padStart(3, '0');
-      const computedRef = refPrefix ? `${refPrefix}-${paddedIdx}` : paddedIdx;
-      return { ...txn, computedRef };
-    });
-
-    // --- RENDERING ---
-    updateHeaderUI({
-      opening: formatCurrency(currentOpeningBalance),
-      rawOpening: currentOpeningBalance,
-      income: formatCurrency(totalIn),
-      expense: formatCurrency(totalOut),
-      end: formatCurrency(runningBalance)
-    });
-
-    if (viewMode === 'vendor') {
-      return renderVendorGlance(processedData);
-    }
-
-    if (processedData.length === 0) {
-      feedContainer.innerHTML = `<div style="padding:100px; text-align:center; color:#94a3b8;">No data found.</div>`;
-      return;
-    }
-
-    const accounts = (window.DEFAULT_CHART_OF_ACCOUNTS ||
-      (window.storage && window.storage.getAccounts ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') : []));
-    let accountOpts = '<option value="">Uncategorized</option>';
-    accounts.forEach(acc => {
-      const code = acc.code || acc.accountNumber;
-      if (code) accountOpts += `<option value="${code}">${code} - ${acc.name || acc.description}</option>`;
-    });
-
-    const renderRow = (txn) => {
-      const rowId = txn.id;
-      const sel = selectedTxnIds.has(rowId.toString());
-      const accSel = accountOpts.replace(`value="${txn.accountNumber}"`, `value="${txn.accountNumber}" selected`);
-
-      if (deletingRowId === rowId.toString()) {
-        return `<tr><td colspan="9" style="padding:12px 16px; background:#fef2f2;"><div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:var(--red); font-weight:600; font-size:0.85rem;">Delete this line?</span>
-              <div style="display:flex; gap:8px;">
-                 <button class="btn btn-danger" style="height:28px;" onclick="confirmDeleteRow('${rowId}')">Yes, Delete</button>
-                 <button class="btn btn-secondary" style="height:28px;" onclick="cancelDeleteRow()">Cancel</button>
-              </div>
-           </div></td></tr>`;
-      }
-
-      const debitDisplay = parseFloat(txn.debit) ? parseFloat(txn.debit).toFixed(2) : '';
-      const creditDisplay = parseFloat(txn.credit) ? parseFloat(txn.credit).toFixed(2) : '';
-
-      return `
-        <tr data-id="${rowId}">
-           <td class="col-cb"><input type="checkbox" class="bulk-cb" ${sel ? 'checked' : ''} onchange="toggleTxn('${rowId}')"></td>
-           <td class="col-ref"><div class="cell-input font-mono" style="color:#64748b; padding-top:10px; font-size:0.75rem;">${txn.computedRef}</div></td>
-           <td class="col-date"><input class="cell-input" type="date" value="${sanitizeDate(txn.date)}" onchange="updateField('${rowId}', 'date', this.value)"></td>
-           <td class="col-payee"><input class="cell-input" type="text" value="${(txn.description || '').replace(/"/g, '&quot;')}" onchange="updateField('${rowId}', 'description', this.value)"></td>
-           <td class="col-acct"><select class="cell-input" onchange="updateField('${rowId}', 'accountNumber', this.value)">${accSel}</select></td>
-           <td class="col-amount"><input class="cell-input text-right font-mono" style="color:var(--red)" type="text" value="${debitDisplay}" placeholder="" onblur="updateField('${rowId}', 'debit', this.value)"></td>
-           <td class="col-amount"><input class="cell-input text-right font-mono" style="color:var(--green)" type="text" value="${creditDisplay}" placeholder="" onblur="updateField('${rowId}', 'credit', this.value)"></td>
-           <td class="col-bal"><div class="cell-input text-right font-mono" style="font-weight:700; padding-top:10px;">${txn._formattedBalance}</div></td>
-           <td class="col-act"><button class="btn" style="border:none;background:transparent;color:#cbd5e1;" onclick="startDeleteRow('${rowId}')">✕</button></td>
-        </tr>`;
+    const isBad = (val) => {
+      if (!val) return false;
+      if (String(val).toLowerCase().includes('e+')) return true; // Scientific notation
+      const n = parseFloat(val);
+      return !isNaN(n) && Math.abs(n) > 1000000000; // > 1 Billion
     };
 
-    const sI = (col) => sortState.col === col ? (sortState.dir === 'asc' ? '↑' : '↓') : '↕';
+    if (isBad(t.debit)) { t.debit = 0; fixed = true; }
+    if (isBad(t.credit)) { t.credit = 0; fixed = true; }
+    if (isNaN(parseFloat(t.debit))) t.debit = 0;
+    if (isNaN(parseFloat(t.debit))) t.debit = 0;
+    if (isNaN(parseFloat(t.credit))) t.credit = 0;
+  });
 
-    feedContainer.innerHTML = `
-      <table class="txn-table">
-        <colgroup>
-           <col class="col-cb"><col class="col-ref"><col class="col-date"><col class="col-payee"><col class="col-acct"><col class="col-amount"><col class="col-amount"><col class="col-bal"><col class="col-act">
-        </colgroup>
-        <thead>
-           <tr>
-              <th class="col-cb"><input type="checkbox" class="bulk-cb" onchange="toggleAllTxns(this.checked)"></th>
-              <th onclick="setSort('computedRef')">Ref # <span class="header-icon">${sI('computedRef')}</span></th>
-              <th onclick="setSort('date')">Date <span class="header-icon">${sI('date')}</span></th>
-              <th onclick="setSort('description')">Payee <span class="header-icon">▼</span></th>
-              <th>Account <span class="header-icon">▼</span></th>
-              <th class="text-right" onclick="setSort('debit')">Debit <span class="header-icon">${sI('debit')}</span></th>
-              <th class="text-right" onclick="setSort('credit')">Credit <span class="header-icon">${sI('credit')}</span></th>
-              <th class="text-right">Balance</th>
-              <th></th>
-           </tr>
-        </thead>
-        <tbody id="txn-tbody"></tbody>
-      </table>
-      <div id="sentinel" style="height:40px;"></div>
-    `;
-
-    const tbody = document.getElementById('txn-tbody');
-    const sentinel = document.getElementById('sentinel');
-    let rendered = 0;
-    const loadBatch = () => {
-      const batch = processedData.slice(rendered, rendered + 60);
-      if (batch.length > 0) {
-        tbody.insertAdjacentHTML('beforeend', batch.map(renderRow).join(''));
-        rendered += batch.length;
-      }
-      if (rendered >= processedData.length) { if (ob) ob.disconnect(); sentinel.style.display = 'none'; }
-    };
-    const ob = new IntersectionObserver(e => { if (e[0].isIntersecting) loadBatch(); }, { rootMargin: '400px' });
-    ob.observe(sentinel);
-    loadBatch();
-  }
-
-  // --- ACTIONS ---
-
-  function renderVendorGlance(data) {
-    const feedContainer = document.getElementById('transactionFeed');
-    if (!feedContainer) return;
-
-    // Aggregate by Vendor
-    const stats = {};
-    data.forEach(txn => {
-      const v = txn.description || 'Unknown Vendor';
-      if (!stats[v]) stats[v] = { name: v, count: 0, latest: txn.date, total: 0 };
-      stats[v].count++;
-      if (new Date(txn.date) > new Date(stats[v].latest)) stats[v].latest = txn.date;
-      stats[v].total += (parseFloat(txn.credit || 0) - parseFloat(txn.debit || 0));
-    });
-
-    const rows = Object.values(stats).sort((a, b) => b.count - a.count);
-
-    feedContainer.innerHTML = `
-      <table class="txn-table">
-        <colgroup>
-           <col style="width:44.2%"><col style="width:15%"><col style="width:20%"><col style="width:20.8%">
-        </colgroup>
-        <thead>
-           <tr>
-              <th style="padding-left:24px;">VENDOR NAME</th>
-              <th class="text-right">OCCURRENCES</th>
-              <th class="text-right">LATEST DATE</th>
-              <th class="text-right" style="padding-right:24px;">TOTAL NET</th>
-           </tr>
-        </thead>
-        <tbody>
-           ${rows.map(v => `
-              <tr style="cursor:pointer" onclick="drillDownVendor('${v.name.replace(/'/g, "\\'")}')">
-                 <td style="font-weight:600; color:var(--primary); padding-left:24px;">${v.name}</td>
-                 <td class="text-right font-mono" style="color:#64748b;">${v.count}</td>
-                 <td class="text-right font-mono" style="color:#64748b;">${(v.latest || '').slice(0, 10)}</td>
-                 <td class="text-right font-mono" style="font-weight:700; color:${v.total >= 0 ? 'var(--green)' : 'var(--red)'}; padding-right:24px;">${formatCurrency(v.total)}</td>
-              </tr>
-           `).join('')}
-        </tbody>
-      </table>
-    `;
-  }
-
-  window.drillDownVendor = function (name) {
-    searchFilter = name;
-    viewMode = 'grid';
-    renderTransactionFeed();
-  };
-
-  function updateHeaderUI(data = {}) {
-    const headerRow1 = document.getElementById('header-row-1');
-    const toolbarRow = document.getElementById('header-row-2');
-    const panelHeader = document.getElementById('panel-header');
-    if (!headerRow1 || !toolbarRow || !panelHeader) return;
-
-    if (selectedTxnIds.size > 0) {
-      panelHeader.classList.add('bulk-mode');
-
-      if (bulkEditingType) {
-        // --- INLINE BULK EDITING UI ---
-        const label = bulkEditingType === 'vendor' ? 'New Payee:' : 'New Account:';
-        let inputHtml = '';
-
-        if (bulkEditingType === 'vendor') {
-          inputHtml = `<input type="text" id="bulk-edit-input" class="tiny-input" style="width:200px;" placeholder="Type payee name...">`;
-        } else {
-          // Re-use accountOpts if possible or re-generate
-          const accounts = (window.DEFAULT_CHART_OF_ACCOUNTS ||
-            (window.storage && window.storage.getAccounts ? JSON.parse(localStorage.getItem('ab3_accounts') || '[]') : []));
-          let opts = '<option value="">Select Account...</option>';
-          accounts.forEach(acc => {
-            const code = acc.code || acc.accountNumber;
-            if (code) opts += `<option value="${code}">${code} - ${acc.name || acc.description}</option>`;
-          });
-          inputHtml = `<select id="bulk-edit-input" class="account-select" style="min-width:200px;">${opts}</select>`;
-        }
-
-        headerRow1.innerHTML = `
-          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;">
-            <div class="tier-title" style="color:var(--primary); margin-bottom:4px;">Bulk Reclassify ${bulkEditingType === 'vendor' ? 'Vendor' : 'Account'}</div>
-            <div style="display:flex; gap:12px; align-items:center;">
-              <span class="control-label" style="color:var(--primary)">${label}</span>
-              ${inputHtml}
-              <button class="btn btn-primary" onclick="saveBulkReclassify()">Apply to ${selectedTxnIds.size} lines</button>
-              <button class="btn btn-secondary" onclick="cancelBulkReclassify()">Cancel</button>
-            </div>
-          </div>
-        `;
-        // Focus input
-        setTimeout(() => { const el = document.getElementById('bulk-edit-input'); if (el) el.focus(); }, 10);
-      } else {
-        // --- NORMAL BULK MODE ---
-        headerRow1.innerHTML = `
-           <div class="tier-title" style="color:var(--primary); margin-bottom:8px;">${selectedTxnIds.size} Selected</div>
-           <div style="display:flex; gap:12px; justify-content:center;">
-              <button class="btn btn-primary" onclick="bulkReclassify('vendor')">Reclassify Vendor</button>
-              <button class="btn btn-primary" onclick="bulkReclassify('account')">Reclassify Account</button>
-              <button class="btn btn-secondary" onclick="clearSelection()">Exit Bulk Mode</button>
-           </div>
-        `;
-      }
-      toolbarRow.innerHTML = ''; // Clear toolbar in bulk mode
-    } else {
-      panelHeader.classList.remove('bulk-mode');
-      headerRow1.innerHTML = `
-           <div style="display:flex; flex-direction:column; gap:2px;">
-              <div class="tier-title" id="page-title">${viewMode === 'vendor' ? 'Vendor Analysis' : 'Transactions'}</div>
-           </div>
-           <div style="display:flex; gap:16px; align-items:center;">
-              <div class="stat-box">
-                 <span class="stat-label">OPENING</span>
-                 ${isEditingOpening ?
-          `<input type="number" step="0.01" class="opening-input" value="${data.rawOpening}" onblur="saveOpeningBalance(this.value)" onkeydown="if(event.key==='Enter') saveOpeningBalance(this.value); if(event.key==='Escape') cancelEditOpening()">` :
-          `<span class="stat-val editable-hint" onclick="startEditOpening()">${data.opening}</span>`
-        }
-              </div>
-              <div class="stat-box"><span class="stat-label">IN</span> <span class="stat-val" style="color:var(--green)">${data.income}</span></div>
-              <div class="stat-box"><span class="stat-label">OUT</span> <span class="stat-val" style="color:var(--red)">${data.expense}</span></div>
-              <div class="stat-box"><span class="stat-label">END</span> <span class="stat-val">${data.end}</span></div>
-           </div>
-        `;
-
-      // Row 2: Two-Tier Toolbar
-      toolbarRow.style.flexDirection = 'column';
-      toolbarRow.style.gap = '12px';
-      toolbarRow.style.alignItems = 'stretch';
-      toolbarRow.innerHTML = `
-           <!-- Tier 1: Controls -->
-           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-              <div style="display:flex; align-items:center; gap:12px;">
-                 <select class="account-select" id="account-select" onchange="switchAccount(this.value)" style="width:200px;"></select>
-                 <div class="control-box">
-                    <span class="control-label">REF PREFIX</span>
-                    <input type="text" id="ref-prefix-input" class="tiny-input" value="${refPrefix}" oninput="updateRefPrefix(this.value)">
-                 </div>
-              </div>
-              <div class="search-container" style="flex:1; max-width:600px;">
-                 <span class="search-icon">🔍</span>
-                 <input type="search" id="search-input" class="search-box" placeholder="Search transactions..." value="${searchFilter}" oninput="filterTransactionFeed(this.value)">
-              </div>
-           </div>
-           
-           <!-- Tier 2: Actions -->
-           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
-              <button class="btn btn-secondary" onclick="toggleGlance()">${viewMode === 'grid' ? '📊 Vendors' : '📝 Transactions'}</button>
-              <div style="width:1px; height:20px; background:var(--border); margin:0 4px;"></div>
-              <button class="btn btn-secondary" onclick="openImportManager()">📥 Import</button>
-              <button class="btn btn-primary" onclick="addNewTransaction()">➕ Add New Entry</button>
-              <button class="btn btn-secondary" onclick="exportToXLS()">📊 Export XLS</button>
-              <button class="btn btn-danger" style="background:#fff" onclick="confirmClearData()">🗑️ Clear Data</button>
-              <button class="btn btn-secondary" onclick="window.router ? window.router.navigate('/settings') : console.log('Settings clicked')">⚙️</button>
-           </div>
-        `;
-
-      if (isEditingOpening) {
-        setTimeout(() => {
-          const inp = document.querySelector('.opening-input');
-          if (inp) { inp.focus(); inp.select(); }
-        }, 50);
-      }
-    }
-  }
-
-  window.startEditOpening = function () {
-    isEditingOpening = true;
-    renderTransactionFeed();
-  };
-
-  window.cancelEditOpening = function () {
-    isEditingOpening = false;
-    renderTransactionFeed();
-  };
-
-  window.confirmClearData = function () {
-    if (confirm('Are you sure you want to clear ALL transactions for the current account? This cannot be undone.')) {
-      transactionData = [];
-      saveTransactions();
-      renderTransactionFeed();
-    }
-  };
-
-  window.saveOpeningBalance = function (val) {
-    const clean = parseFloat(val) || 0;
-    if (window.accountManager) {
-      const accId = window.accountManager.getCurrentAccountId();
-      window.accountManager.updateAccount(accId, { openingBalance: clean });
-      localStorage.setItem(`ab3_opening_${accId}`, clean);
-    }
-    isEditingOpening = false;
-    renderTransactionFeed();
-  };
-
-  window.toggleGlance = function () {
-    viewMode = viewMode === 'grid' ? 'vendor' : 'grid';
-    renderTransactionFeed();
-  };
-  // Functional Functions
-
-  window.toggleTxn = (id) => {
-    const stringId = id.toString();
-    selectedTxnIds.has(stringId) ? selectedTxnIds.delete(stringId) : selectedTxnIds.add(stringId);
-    renderTransactionFeed();
-  };
-
-  window.toggleAllTxns = (checked) => {
-    selectedTxnIds.clear();
-    if (checked) transactionData.forEach(t => selectedTxnIds.add(t.id.toString()));
-    renderTransactionFeed();
-  };
-
-  window.clearSelection = () => { selectedTxnIds.clear(); renderTransactionFeed(); };
-
-  window.bulkReclassify = (type) => {
-    bulkEditingType = type;
-    renderTransactionFeed();
-  };
-
-  window.saveBulkReclassify = () => {
-    const input = document.getElementById('bulk-edit-input');
-    if (input && input.value) {
-      const val = input.value;
-      const snapshot = [];
-
-      transactionData.forEach(t => {
-        if (selectedTxnIds.has(t.id.toString())) {
-          const field = bulkEditingType === 'vendor' ? 'description' : 'accountNumber';
-          snapshot.push({ id: t.id, field, oldVal: t[field] });
-          t[field] = val;
-        }
-      });
-
-      undoStack = { type: 'bulk', data: snapshot };
-      saveTransactions();
-      bulkEditingType = null;
-      renderTransactionFeed();
-
-      // Auto-clear undo after 15 seconds
-      setTimeout(() => { if (undoStack && undoStack.type === 'bulk') { undoStack = null; renderTransactionFeed(); } }, 15000);
-    }
-  };
-
-  window.triggerUndo = () => {
-    if (!undoStack) return;
-    undoStack.data.forEach(item => {
-      const txn = transactionData.find(t => t.id.toString() === item.id.toString());
-      if (txn) txn[item.field] = item.oldVal;
-    });
-    undoStack = null;
+  if (fixed) {
+    console.warn('⚠️ Auto-sanitized corrupted transaction data.');
     saveTransactions();
-    renderTransactionFeed();
-  };
-
-  window.cancelBulkReclassify = () => {
-    bulkEditingType = null;
-    renderTransactionFeed();
-  };
-
-  window.updateField = (id, field, value) => {
-    const txn = transactionData.find(t => t.id.toString() === id.toString());
-    if (txn) {
-      const oldVal = txn[field];
-      const newVal = (field === 'debit' || field === 'credit') ? (parseFloat(value) || 0) : value;
-
-      if (oldVal !== newVal) {
-        if (field === 'description' || field === 'accountNumber') {
-          undoStack = { type: 'edit', data: [{ id, field, oldVal }] };
-          setTimeout(() => { if (undoStack && undoStack.type === 'edit') { undoStack = null; renderTransactionFeed(); } }, 10000);
-        }
-
-        txn[field] = newVal;
-        if (window.debouncedSave) window.debouncedSave(); else saveTransactions();
-        if (['date', 'debit', 'credit', 'description', 'accountNumber'].includes(field)) renderTransactionFeed();
-      }
-    }
-  };
-
-  window.setSort = (col) => {
-    if (sortState.col === col) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
-    else { sortState.col = col; sortState.dir = 'asc'; }
-    renderTransactionFeed();
-  };
-
-  window.startDeleteRow = (id) => { deletingRowId = id.toString(); renderTransactionFeed(); };
-  window.confirmDeleteRow = (id) => {
-    const idx = transactionData.findIndex(t => t.id.toString() === id.toString());
-    if (idx !== -1) {
-      transactionData.splice(idx, 1);
-      deletingRowId = null;
-      saveTransactions();
-      renderTransactionFeed();
-    }
-  };
-  window.cancelDeleteRow = () => { deletingRowId = null; renderTransactionFeed(); };
-
-  window.exportToXLS = function () {
-    if (!window.XLSX) return alert('Loading exporter...');
-    const dataRows = transactionData.map((txn, idx) => ({
-      "Ref #": txn.computedRef || (idx + 1).toString().padStart(3, '0'),
-      "Date": txn.date ? txn.date.split('T')[0] : '',
-      "Description": txn.description || '',
-      "Debit": parseFloat(txn.debit || 0),
-      "Credit": parseFloat(txn.credit || 0),
-      "Balance": txn.runningBalance || 0,
-      "Account #": txn.accountNumber || '',
-      "Category": ''
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(dataRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-    XLSX.writeFile(workbook, "Transactions_Export.xlsx");
-  };
-
-  // --- MODAL ---
-
-  window.openImportManager = () => {
-    document.getElementById('import-modal').style.display = 'flex';
-    renderImportHistory();
-  };
-  window.closeImportManager = () => document.getElementById('import-modal').style.display = 'none';
-
-  function renderImportHistory() {
-    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-    const list = document.getElementById('history-list');
-    if (!list) return;
-
-    if (importPendingData) {
-      list.innerHTML = `
-        <div style="background:#f8fafc; border:1px solid var(--primary); border-radius:8px; padding:20px; text-align:center;">
-          <div style="font-weight:700; color:var(--text-main); margin-bottom:12px;">Where should these ${importPendingData.length} transactions go?</div>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <button class="btn btn-primary" style="justify-content:center;" onclick="finalizeImport('chq1')">TD Chequing (Asset)</button>
-            <button class="btn btn-primary" style="justify-content:center; background:#475569;" onclick="finalizeImport('mc1')">RBC Avion Visa (Liability)</button>
-            <button class="btn btn-secondary" style="justify-content:center;" onclick="cancelImport()">Cancel</button>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (!history.length) {
-      list.innerHTML = '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:0.85rem; font-weight:500;">No history found.</div>';
-      return;
-    }
-
-    list.innerHTML = history.map(h => {
-      const isEditing = editingImportId === h.id;
-      const isRestoring = restoringImportId === h.id;
-
-      if (isEditing) {
-        return `
-          <div class="history-item">
-            <div style="flex:1; display:flex; gap:8px; align-items:center;">
-              <input type="text" id="rename-import-input" class="tiny-input" style="flex:1; width:auto;" value="${h.filename}">
-              <button class="btn btn-primary" style="height:28px; padding:0 8px;" onclick="saveImportRename('${h.id}')">Save</button>
-              <button class="btn btn-secondary" style="height:28px; padding:0 8px;" onclick="cancelImportRename()">✕</button>
-            </div>
-          </div>`;
-      }
-
-      if (isRestoring) {
-        return `
-          <div class="history-item" style="background:#eff6ff; border-left:4px solid var(--primary);">
-            <div style="flex:1; font-weight:700; font-size:0.75rem; color:var(--primary); text-transform:uppercase;">Restore:</div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-primary" style="height:26px; padding:0 8px; font-size:0.7rem;" onclick="confirmRestore('${h.id}', 'replace')">Replace All</button>
-              <button class="btn btn-secondary" style="height:26px; padding:0 8px; font-size:0.7rem;" onclick="confirmRestore('${h.id}', 'append')">Add to Current</button>
-              <button class="btn btn-secondary" style="height:26px; width:26px; padding:0; justify-content:center;" onclick="cancelRestore()">✕</button>
-            </div>
-          </div>`;
-      }
-
-      return `
-        <div class="history-item">
-           <div style="flex:1;">
-              <div style="font-weight:700; font-size:0.8rem; color:var(--text-main);">${h.filename}</div>
-              <div style="font-size:0.65rem; color:#94a3b8; font-weight:600;">${h.date} • ${h.count} txns</div>
-           </div>
-           <div style="display:flex; gap:6px;">
-              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="renameImport('${h.id}')" title="Rename">✏️</button>
-              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="restoreImport('${h.id}')" title="Restore">🔄</button>
-              <button class="btn btn-secondary" style="width:28px; padding:0; justify-content:center; border:none;" onclick="deleteImport('${h.id}')" title="Delete">✕</button>
-           </div>
-        </div>
-      `;
-    }).join('');
+    // Force full page reload to clear any caching ghosts
+    window.location.reload();
+  } else {
+    // if (window.showToast) window.showToast('Data scan complete. Grid is clean.', 'success');
+    // console.log('✅ Data appears clean.');
   }
 
-  window.renameImport = (id) => {
-    editingImportId = id;
-    renderImportHistory();
-    setTimeout(() => {
-      const input = document.getElementById('rename-import-input');
-      if (input) { input.focus(); input.select(); }
-    }, 10);
-  };
+  // AUTO-RUN: Trigger smart categorization silently on load
+  // This ensures the "Unallocated" count is accurate and rules are applied immediately.
+  setTimeout(() => {
+    if (window.runAutoCategorize) window.runAutoCategorize(true);
+  }, 500); // Short delay to ensure VendorEngine is loaded
+};
 
-  window.saveImportRename = (id) => {
-    const input = document.getElementById('rename-import-input');
-    if (input) {
-      const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-      const item = history.find(h => h.id === id);
-      if (item && input.value.trim()) {
-        item.filename = input.value.trim();
-        localStorage.setItem('ab3_upload_history', JSON.stringify(history));
-      }
-    }
-    editingImportId = null;
-    renderImportHistory();
-  };
+if (typeof window.transactionData === 'undefined') {
+  window.transactionData = [];
+}
 
-  window.cancelImportRename = () => {
-    editingImportId = null;
-    renderImportHistory();
-  };
-
-  window.restoreImport = (id) => {
-    restoringImportId = id;
-    renderImportHistory();
-  };
-
-  window.cancelRestore = () => {
-    restoringImportId = null;
-    renderImportHistory();
-  };
-
-  window.confirmRestore = (id, mode) => {
-    const raw = localStorage.getItem(`ab3_raw_data_${id}`);
-    if (!raw) return showModalStatus('Original data not found.', 'red');
-
-    const txns = JSON.parse(raw);
-    if (mode === 'replace') {
-      transactionData = txns;
-    } else {
-      transactionData = [...txns, ...transactionData];
-    }
-
-    saveTransactions();
-    renderTransactionFeed();
-    showModalStatus(`Restored ${txns.length} transactions (${mode})`, 'green');
-    restoringImportId = null;
-    renderImportHistory();
-  };
-
-  window.handleFileDrop = (files) => {
-    if (!files.length) return;
-    const file = files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csv = e.target.result;
-        const lines = csv.split('\n').map(l => l.trim()).filter(l => l);
-        if (lines.length < 2) return showModalStatus('CSV file is empty or invalid.', 'red');
-
-        const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
-        const dataRows = lines.slice(1);
-
-        const newTxns = dataRows.map((line, idx) => {
-          const cells = line.split(',').map(c => c.trim().replace(/"/g, ''));
-          const row = {};
-          headers.forEach((h, i) => { row[h] = cells[i]; });
-
-          return {
-            id: Date.now() + idx,
-            date: row.date || row.timestamp || new Date().toISOString().split('T')[0],
-            description: row.description || row.payee || row.memo || 'Imported Transaction',
-            debit: parseFloat(row.debit || row.out || row.withdrawal || 0),
-            credit: parseFloat(row.credit || row.in || row.deposit || 0),
-            accountNumber: row.account || row.category || ''
-          };
-        });
-
-        importPendingData = newTxns;
-        importPendingFilename = file.name;
-        renderImportHistory();
-        showModalStatus(`Parsed ${newTxns.length} transactions. Select account.`, 'green');
-      } catch (err) {
-        console.error('Import failed:', err);
-        showModalStatus('Failed to parse CSV.', 'red');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  window.cancelImport = () => {
-    importPendingData = null;
-    importPendingFilename = '';
-    renderImportHistory();
-  };
-
-  window.finalizeImport = (accountId) => {
-    if (!importPendingData) return;
-
-    // Switch account first
-    if (window.accountManager) window.accountManager.setCurrentAccount(accountId);
-
-    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-    const existing = history.find(h => h.filename === importPendingFilename);
-    const uploadId = Date.now().toString();
-
-    // Store raw data for RESTORE functionality
-    localStorage.setItem(`ab3_raw_data_${uploadId}`, JSON.stringify(importPendingData));
-
-    if (existing) {
-      existing.count = importPendingData.length;
-      existing.date = new Date().toLocaleDateString();
-      existing.id = uploadId;
-    } else {
-      history.unshift({ id: uploadId, filename: importPendingFilename, date: new Date().toLocaleDateString(), count: importPendingData.length });
-    }
-
-    localStorage.setItem('ab3_upload_history', JSON.stringify(history));
-
-    // Persist to the correct account storage (REPLACE MODE per user request)
-    transactionData = importPendingData;
-    saveTransactions(); // Handles accountManager or storage correctly
-
-    importPendingData = null;
-    importPendingFilename = '';
-    viewMode = 'grid'; // Auto-switch to grid to show new data
-
-    renderTransactionFeed();
-    renderImportHistory();
-    initAccountSelector(); // Refresh dropdown
-    if (window.closeImportManager) window.closeImportManager(); // Auto-close modal
-    showModalStatus('Import Finalized!', 'green');
-  };
-
-  function showModalStatus(msg, color) {
-    const el = document.getElementById('modal-status');
-    if (el) {
-      el.textContent = msg;
-      el.style.color = color === 'red' ? 'var(--red)' : 'var(--green)';
-      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000);
-    }
+// Ensure at least one dummy data for visualization if empty
+if (window.transactionData.length === 0) {
+  // FIXED: Consistent storage key with storage.js
+  const saved = localStorage.getItem('ab3_transactions');
+  if (saved) {
+    try {
+      window.transactionData = JSON.parse(saved);
+      sanitizeData(); // Auto-heal corrupted data
+    } catch (e) { console.error('Error loading local transactions', e); }
   }
+} else {
+  // Also sanitize if data was pre-loaded
+  sanitizeData();
+}
 
-  // --- IO ---
+// State for filters and UI
+// State for filters and UI
+window.transactionState = {
+  search: '',
+  refPrefix: localStorage.getItem('txn_refPrefix') || '',
+  openingBalance: parseFloat(localStorage.getItem('txn_openingBalance')) || 0.00,
+  confirmingDelete: new Set(),
+  menuOpen: false,
+  csvHistory: JSON.parse(localStorage.getItem('csv_history') || '[]'),
+  sortConfig: { key: 'date', direction: 'desc' } // Default Sort
+};
 
-  function saveTransactions() {
-    if (window.accountManager) {
-      const acc = window.accountManager.getCurrentAccount();
-      if (acc) { window.accountManager.setAccountTransactions(acc.id, transactionData); return; }
-    }
-    if (window.storage) window.storage._set('transactions', transactionData);
-  }
+// Full Chart of Accounts
+// Full Chart of Accounts (Dynamic)
+function getChartOfAccounts() {
+  const raw = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+  const grouped = {
+    'Assets': [],
+    'Liabilities': [],
+    'Equity': [],
+    'Revenue': [],
+    'Expenses': [] //, 'Other': [] implicit
+  };
 
-  async function loadSavedTransactions() {
-    if (window.accountManager) {
-      const acc = window.accountManager.getCurrentAccount();
-      if (acc) {
-        let loaded = window.accountManager.getAccountTransactions(acc.id) || [];
-        // Normalize Data (handle legacy amount/type)
-        loaded.forEach((t, i) => {
-          if (!t.id) t.id = Date.now() + i;
-          if (t.amount !== undefined && t.debit === undefined && t.credit === undefined) {
-            if (t.type === 'credit') { t.credit = t.amount; t.debit = 0; }
-            else { t.debit = t.amount; t.credit = 0; }
-          }
-        });
-        transactionData = loaded;
-        localStorage.setItem('openingBalance', (acc.openingBalance || 0).toString());
-        return renderTransactionFeed();
-      }
-    }
-    if (window.storage) {
-      transactionData = await window.storage.getTransactions() || [];
-      transactionData.forEach((t, i) => { if (!t.id) t.id = Date.now() + i; });
-      renderTransactionFeed();
-    }
-  }
+  raw.forEach(acc => {
+    // USER REQUEST: Show only name, no code.
+    const label = acc.name;
+    const type = (acc.type || '').toLowerCase().trim();
 
-  function formatCurrency(n) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-  }
-
-  let isInitializing = false;
-  const lo = new MutationObserver(() => {
-    if (document.getElementById('transactionFeed') && !isInitializing) {
-      isInitializing = true;
-      loadSavedTransactions();
-      setTimeout(() => isInitializing = false, 300);
+    // Fuzzy Matching
+    if (type.includes('asset')) grouped['Assets'].push(label);
+    else if (type.includes('liab')) grouped['Liabilities'].push(label); // catches Liability, Liabilities
+    else if (type.includes('equity')) grouped['Equity'].push(label);
+    else if (type.includes('rev') || type.includes('income')) grouped['Revenue'].push(label);
+    else if (type.includes('exp')) grouped['Expenses'].push(label);
+    else {
+      if (!grouped['Other']) grouped['Other'] = [];
+      grouped['Other'].push(label);
     }
   });
-  if (document.body) lo.observe(document.body, { childList: true, subtree: true });
 
-  window.loadTransactionData = loadSavedTransactions;
-  window.updateRefPrefix = updateRefPrefix;
-  window.deleteImport = (id) => {
-    const history = JSON.parse(localStorage.getItem('ab3_upload_history') || '[]');
-    const filtered = history.filter(h => h.id !== id);
-    localStorage.setItem('ab3_upload_history', JSON.stringify(filtered));
-    localStorage.removeItem(`ab3_raw_data_${id}`);
-    renderImportHistory();
+  // Clean up empty groups BUT keep major ones if needed? 
+  // No, we only want tabs for what we have.
+  Object.keys(grouped).forEach(k => {
+    if (grouped[k].length === 0) delete grouped[k];
+  });
+
+  return grouped;
+}
+
+window.renderTransactions = function () {
+  const filteredData = getFilteredTransactions();
+  // Unallocated Count for Badge
+  const unallocatedCount = (window.transactionData || []).filter(t => !t.accountDescription || t.accountDescription === 'Uncategorized').length;
+
+  // Totals
+  const totalIn = filteredData.reduce((acc, t) => acc + (parseFloat(t.credit) || 0), 0);
+  const totalOut = filteredData.reduce((acc, t) => acc + (parseFloat(t.debit) || 0), 0);
+  const ending = parseFloat(window.transactionState.openingBalance) + totalIn - totalOut;
+
+  const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  return `
+    <div class="transaction-page">
+      
+      <!-- FIXED SECTION: Header & Controls -->
+      <!-- FIXED SECTION: Header & Controls -->
+      <div class="fixed-top-section">
+      
+          <style>
+              /* Embedded Header Styles for High-Level UX */
+              .dashboard-header-modern {
+                  background: #ffffff;
+                  padding: 16px 24px;
+                  border-bottom: 1px solid #e2e8f0;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+              }
+              .header-brand {
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+              }
+              .header-brand .icon-box {
+                  width: 40px; 
+                  height: 40px; 
+                  background: linear-gradient(135deg, #3b82f6, #2563eb); 
+                  color: white; 
+                  border-radius: 10px; 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center;
+                  font-size: 1.25rem;
+                  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+              }
+              .header-info h2 {
+                  margin: 0;
+                  font-size: 1.1rem;
+                  font-weight: 700;
+                  color: #0f172a;
+                  letter-spacing: -0.01em;
+              }
+              .header-info .meta {
+                  font-size: 0.8rem;
+                  color: #64748b;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+              }
+              .badge-account {
+                  background: #eff6ff; 
+                  color: #3b82f6; 
+                  padding: 2px 8px; 
+                  border-radius: 12px; 
+                  font-weight: 600; 
+                  font-size: 0.7rem;
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+              }
+
+              .header-stats {
+                  display: flex;
+                  gap: 24px;
+                  background: #f8fafc;
+                  padding: 8px 16px;
+                  border-radius: 12px;
+                  border: 1px solid #f1f5f9;
+              }
+              .stat-unit {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 2px;
+              }
+              .stat-unit label {
+                  font-size: 0.65rem;
+                  text-transform: uppercase;
+                  color: #94a3b8;
+                  font-weight: 700;
+                  letter-spacing: 0.05em;
+              }
+              .stat-unit .val {
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  color: #334155;
+                  font-family: 'Inter', system-ui, sans-serif;
+                  font-variant-numeric: tabular-nums;
+              }
+              .val.green { color: #10b981; }
+              .val.red { color: #ef4444; }
+              .val.blue { color: #2563eb; font-weight: 700; }
+              
+              .editable-balance {
+                  background: transparent;
+                  border: none;
+                  border-bottom: 1px dashed #cbd5e1;
+                  width: 80px;
+                  font-family: inherit;
+                  font-size: inherit;
+                  font-weight: inherit;
+                  color: inherit;
+                  padding: 0;
+                  text-align: left;
+                  cursor: text;
+              }
+              .editable-balance:focus {
+                  outline: none;
+                  border-bottom: 1px solid #3b82f6;
+                  color: #3b82f6;
+              }
+          </style>
+
+          <header class="dashboard-header-modern">
+            <div class="header-brand">
+                <div class="icon-box">🏦</div>
+                <div class="header-info">
+                   <h2>Imported Transactions</h2>
+                   <div class="meta">
+                      <span class="badge-account">Checking</span>
+                      <span>•</span>
+                      <span>Ready for Review</span>
+                   </div>
+                </div>
+            </div>
+            
+            <!-- NEW: Header Actions -->
+            <div class="header-actions">
+                <button class="btn-primary" onclick="showCSVImportModal()" style="display:flex; align-items:center; gap:8px; padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                    <span style="font-size: 1.1em;">📥</span> Import Data (PDF/CSV)
+                </button>
+            </div>
+            <div class="header-stats">
+              <div class="stat-unit">
+                 <label>Opening Bal</label>
+                 <div class="val">
+                    $<input type="number" step="0.01" class="editable-balance" value="${window.transactionState.openingBalance}" onchange="updateOpeningBalance(this.value)">
+                 </div>
+              </div>
+              
+              <!-- Separator -->
+              <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+
+              <div class="stat-unit">
+                <label>Total In</label>
+                <div class="val green">
+                    +${fmt(totalIn).replace('$', '')}
+                </div>
+              </div>
+
+               <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+
+              <div class="stat-unit">
+                <label>Total Out</label>
+                <div class="val red">
+                    -${fmt(totalOut).replace('$', '')}
+                </div>
+              </div>
+
+               <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+
+              <div class="stat-unit">
+                <label>Ending Bal</label>
+                <div class="val blue">
+                    ${fmt(ending)}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <!-- Row 2: Toolbar -->
+          <div class="control-bar">
+            <div class="control-left" style="display: flex; gap: 12px; align-items: center;">
+              <input type="text" class="input-box input-ref" 
+                     placeholder="[CHQ]" 
+                     value="${window.transactionState.refPrefix}"
+                     oninput="updateRefPrefix(this.value)">
+              <input type="text" class="input-box input-search" 
+                     placeholder="Search transactions..." 
+                     value="${window.transactionState.search}"
+                     oninput="handleSearch(this.value)"
+                     style="width: 320px;">
+                    
+                </div>
+            
+            <div class="control-right btn-group">
+               <!-- Global Status Badge (Moved Here) -->
+               <div class="status-badge" onclick="window.location.hash='#/vendor-analysis'" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: ${unallocatedCount > 0 ? '#fff7ed' : '#ecfdf5'}; color: ${unallocatedCount > 0 ? '#c2410c' : '#047857'}; border: 1px solid ${unallocatedCount > 0 ? '#ffedd5' : '#d1fae5'}; margin-right: 12px; cursor: pointer; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                  <span>${unallocatedCount > 0 ? '⚠️' : '✅'}</span>
+                  <span>${unallocatedCount} Unallocated Items</span>
+               </div>
+               
+               <!-- Analysis Message PlaceHolder -->
+               <div id="vendor-analysis-message" style="display: none;"></div>
+
+               <!-- Repositioned/Reduced Actions -->
+            <div class="action-menu">
+               <button class="action-menu-btn" onclick="toggleTransactionMenu(this)">...</button>
+               <div id="main-menu" class="action-menu-content">
+                    <button class="action-menu-item" onclick="showCSVImport()">📥 Import CSV</button>
+                    <button class="action-menu-item" onclick="addNewTransaction()">➕ Add Entry</button>
+                    <button class="action-menu-item" onclick="analyzeVendors()">🔍 Analyze Vendors</button>
+                    <button class="action-menu-item" onclick="runAutoCategorize()">🤖 Auto-Catch</button>
+                    <hr style="margin: 4px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                    <button class="action-menu-item" onclick="sanitizeData()">🚑 Fix Data</button>
+                    <button class="action-menu-item" onclick="exportXLS()">📥 Export XLS</button>
+                    <button class="action-menu-item" onclick="window.print()">🖨️ Print View</button>
+                    <hr style="margin: 4px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                    <button class="action-menu-item danger" onclick="clearGrid()">🗑️ Clear All Data</button>
+               </div>
+            </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- SCROLLABLE SECTION: Data Grid -->
+      <div class="grid-container">
+        <table class="uc-table">
+          <thead>
+            <tr>
+              <th class="w-check"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+              <th class="w-ref">REF #</th>
+              <th class="w-date" onclick="handleSort('date')" style="cursor: pointer;">DATE ${getSortIndicator('date')}</th>
+              <th class="w-payee" onclick="handleSort('description')" style="cursor: pointer;">PAYEE ${getSortIndicator('description')}</th>
+              <th class="w-account" onclick="handleSort('accountDescription')" style="cursor: pointer;">ACCOUNT ${getSortIndicator('accountDescription')}</th>
+              <th class="w-amount" onclick="handleSort('debit')" style="cursor: pointer;">DEBIT ${getSortIndicator('debit')}</th>
+              <th class="w-amount" onclick="handleSort('credit')" style="cursor: pointer;">CREDIT ${getSortIndicator('credit')}</th>
+              <th class="w-amount">BALANCE</th>
+              <th class="w-actions">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="txn-tbody">
+            ${renderTableRows(filteredData)}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CSV Modal (Hidden) -->
+      <!-- CSV Modal (Hidden) -->
+      <div id="csv-dropzone" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+         <div style="background: white; padding: 0; border-radius: 12px; width: 550px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+            
+            <!-- Header -->
+            <div style="padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">Import Transactions</h3>
+                <button class="uc-btn-icon" onclick="hideCSVImport()" style="font-size: 1.25rem;">&times;</button>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 1.5rem; overflow-y: auto;">
+                
+                ${window.transactionState.pendingFile
+      ? `
+                    <!-- INLINE DUPLICATE WARNING -->
+                    <div style="background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 8px; padding: 1.5rem; text-align: center; animation: fadeIn 0.2s;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #9a3412;">Duplicate File Detected</h4>
+                        <p style="margin: 0 0 1.5rem 0; color: #c2410c; font-size: 0.9rem;">
+                            "<b>${window.transactionState.pendingFile.name}</b>" has been imported before.
+                        </p>
+                        
+                        <div style="display: flex; gap: 12px; justify-content: center;">
+                            <button onclick="cancelPendingFile()" 
+                                    style="padding: 8px 16px; border-radius: 6px; border: 1px solid #fed7aa; background: white; color: #9a3412; cursor: pointer; font-weight: 500;">
+                                Cancel
+                            </button>
+                            <button onclick="confirmPendingFile()" 
+                                    style="padding: 8px 16px; border-radius: 6px; border: none; background: #ea580c; color: white; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                <span>Import Anyway</span>
+                            </button>
+                        </div>
+                    </div>
+                    `
+      : `
+                    <!-- DEFAULT UPLOAD BOX -->
+                    <div style="border: 2px dashed #cbd5e1; padding: 2.5rem; margin-bottom: 2rem; border-radius: 12px; cursor: pointer; text-align: center; background-color: #f8fafc; transition: all 0.2s;" 
+                         onclick="document.getElementById('csv-file-input').click()"
+                         ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.backgroundColor='#eff6ff';"
+                         ondragleave="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='#f8fafc';"
+                         ondrop="handleFileDrop(event)"
+                         onmouseover="this.style.borderColor='#94a3b8'; this.style.backgroundColor='#f1f5f9'"
+                         onmouseout="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='#f8fafc'">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.7;">📂</div>
+                        <p style="color: #64748b; font-weight: 500; margin: 0;">Click to upload CSV or drag file here</p>
+                        <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem;">Supports standard bank exports</p>
+                        <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                    </div>
+                    `
+    }
+
+                <!-- History Explorer -->
+                <div id="csv-history-section">
+                    <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 1rem; letter-spacing: 0.05em; font-weight: 600;">Recent Imports</h4>
+                    
+                    ${window.transactionState.csvHistory.length === 0
+      ? `<div style="text-align: center; padding: 2rem; color: #cbd5e1; border: 1px dashed #e2e8f0; border-radius: 8px;">No upload history</div>`
+      : `<div style="display: flex; flex-direction: column; gap: 8px;">
+                            ${window.transactionState.csvHistory.map(item => `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border: 1px solid #f1f5f9; border-radius: 8px; transition: all 0.1s;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 36px; height: 36px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 1.1rem;">
+                                            📄
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-weight: 500; font-size: 0.9rem; color: #334155;" title="${item.fileName}">
+                                                ${item.fileName}
+                                            </span>
+                                            <span style="font-size: 0.75rem; color: #94a3b8;">
+                                                ${item.date} • ${item.count} items
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 4px;">
+                                        <button class="icon-btn-modern" onclick="renameCSVItem('${item.id}')" title="Rename" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px; opacity:0.6; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">
+                                            ✏️
+                                        </button>
+                                        <button class="icon-btn-modern text-blue" onclick="loadCSVItem('${item.id}')" title="Load to Grid" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px; opacity:0.6; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">
+                                            📥
+                                        </button>
+                                        <button class="icon-btn-modern text-red" onclick="deleteCSVItem('${item.id}')" title="Delete" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px; opacity:0.6; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                           </div>`
+    }
+                </div>
+            </div>
+         </div>
+      </div>
+
+    </div>
+  `;
+};
+
+function renderMainMenu() {
+  return `
+        <div class="smart-menu" style="display: block; right: 0; left: auto; top: 100%; width: 180px;">
+            <div class="smart-menu-item" onclick="sanitizeData()">🚑 Fix Corrupted Data</div>
+            <div class="smart-menu-item" onclick="showToast('Export feature coming soon.', 'info')">📥 Export XLS</div>
+            <div class="smart-menu-item" onclick="clearGrid()">🗑️ Clear Grid</div>
+            <div class="smart-menu-item" onclick="showToast('Settings moved to sidebar.', 'info')">⚙️ Settings</div>
+        </div>
+    `;
+}
+
+// --- DATA LOGIC ---
+
+function getFilteredTransactions() {
+  if (!window.transactionState.search) return window.transactionData;
+  const term = window.transactionState.search.toLowerCase();
+
+  const prefix = window.transactionState.refPrefix.replace(/[\[\]]/g, '');
+
+  return window.transactionData.map((t, i) => {
+    const calculatedRef = prefix ? `${prefix}-${String(i + 1).padEnd(3, '0')}` : String(i + 1).padStart(3, '0');
+    return { ...t, _tempRef: calculatedRef };
+  }).filter(t =>
+    (t.description && t.description.toLowerCase().includes(term)) ||
+    (t._tempRef && t._tempRef.toLowerCase().includes(term)) ||
+    (t.accountDescription && t.accountDescription.toLowerCase().includes(term))
+  ).sort((a, b) => {
+    // Sorting Logic
+    const { key, direction } = window.transactionState.sortConfig;
+    if (!key) return 0;
+
+    let valA = a[key];
+    let valB = b[key];
+
+    if (key === 'debit' || key === 'credit') {
+      valA = parseFloat(valA) || 0;
+      valB = parseFloat(valB) || 0;
+    }
+    if (key === 'date') {
+      valA = new Date(valA || 0).getTime();
+      valB = new Date(valB || 0).getTime();
+    }
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+    if (valA < valB) return direction === 'asc' ? -1 : 1;
+    if (valA > valB) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+window.updateRefPrefix = function (val) {
+  window.transactionState.refPrefix = val;
+  localStorage.setItem('txn_refPrefix', val);
+  reRenderTable();
+}
+
+window.updateOpeningBalance = function (val) {
+  window.transactionState.openingBalance = parseFloat(val) || 0;
+  localStorage.setItem('txn_openingBalance', window.transactionState.openingBalance);
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = window.renderTransactions();
+}
+
+window.handleSearch = function (val) {
+  window.transactionState.search = val;
+  reRenderTable();
+}
+
+window.toggleMainMenu = function () {
+  window.transactionState.menuOpen = !window.transactionState.menuOpen;
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = window.renderTransactions();
+}
+
+window.clearGrid = function () {
+  ModalService.confirm('Clear Grid', 'Are you sure you want to clear all transactions? This cannot be undone.', () => {
+    window.transactionData = [];
+    saveTransactions();
+    const app = document.getElementById('app');
+    if (app) app.innerHTML = window.renderTransactions();
+    showToast('Grid cleared successfully.', 'success');
+  }, 'danger');
+}
+
+function reRenderTable() {
+  const tbody = document.getElementById('txn-tbody');
+  if (tbody) {
+    tbody.innerHTML = renderTableRows(getFilteredTransactions());
+  }
+  // ⚡ TRIGGER ANALYSIS UPDATE ON PARTIAL RENDER
+  if (window.updateAnalysisStatus) window.updateAnalysisStatus();
+}
+
+// --- RENDER ROWS ---
+
+function renderTableRows(data) {
+  if (data.length === 0) {
+    return `
+      <tr>
+        <td colspan="9" style="padding: 4rem 2rem; text-align: center;">
+            <div style="max-width: 450px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+                <!-- Icon -->
+                <div style="width: 80px; height: 80px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 2.5rem; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1);">
+                    📂
+                </div>
+                
+                <!-- Text -->
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #1e293b; font-weight: 700;">No transactions yet.</h3>
+                    <p style="margin: 0; color: #64748b; line-height: 1.5;">
+                        Import your bank statement to get started.
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="showCSVImport()" class="btn-primary" style="padding: 0.75rem 1.5rem; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                        📥 Import CSV
+                    </button>
+                    <!-- "Add Entry" hidden as per user request (crossed out) -->
+                </div>
+            </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  const rawPrefix = window.transactionState.refPrefix;
+  const prefix = rawPrefix ? rawPrefix.replace(/[\[\]]/g, '') : '';
+
+  let runningBalance = window.transactionState.openingBalance;
+
+  // --- OPTIMIZATION: Calculate Frequently Used Accounts ONCE ---
+  // --- OPTIMIZATION: Calculate Frequently Used Accounts ONCE (Top 10 Expenses) ---
+  const accountCounts = {};
+  const coa = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+  const chartMap = new Map(coa.map(a => [a.code, a.name]));
+  const nameToType = new Map(coa.map(a => [a.name, (a.type || '').toLowerCase()]));
+
+  (window.transactionData || []).forEach(t => {
+    let desc = t.accountDescription;
+    if (desc && desc !== 'Uncategorized') {
+      let cleanName = desc;
+
+      // 1. Resolve pure number "6415" -> "Meals"
+      if (/^\d{3,4}$/.test(desc) && chartMap.has(desc)) {
+        cleanName = chartMap.get(desc);
+      }
+      // 2. Resolve "6415 - Meals" -> "Meals"
+      const codeMatch = desc.match(/^(\d{3,4})\s?-\s?(.*)/);
+      if (codeMatch) {
+        cleanName = codeMatch[2];
+      }
+
+      // 3. Filter for EXPENSES only (User Request)
+      const type = nameToType.get(cleanName) || '';
+      if (type.includes('exp')) {
+        accountCounts[cleanName] = (accountCounts[cleanName] || 0) + 1;
+      }
+    }
+  });
+  // Top 10 Expenses
+  const topAccounts = Object.entries(accountCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(e => e[0]);
+  // -----------------------------------------------------------
+  // -----------------------------------------------------------
+
+  return data.map((txn, index) => {
+    // 1. Ref # Calculation
+    const paddedIndex = String(index + 1).padStart(3, '0');
+    const refDisplay = prefix ? `${prefix}-${paddedIndex}` : paddedIndex;
+
+    // 2. Math & Normalization Logic
+    // We treat existing debit/credit fields as robust inputs, but normalize for display
+    // to ensure what affects the balance is ALWAYS visible.
+    const rawDebit = parseFloat(txn.debit || 0);
+    const rawCredit = parseFloat(txn.credit || 0);
+    const netChange = rawCredit - rawDebit;
+
+    runningBalance += netChange;
+
+    // Determine Display Values from Net Change
+    // If Net is negative, the money left the account -> Show as Debit (positive value)
+    // If Net is positive, money entered -> Show as Credit
+    const displayDebit = netChange < 0 ? Math.abs(netChange) : 0;
+    const displayCredit = netChange > 0 ? netChange : 0;
+
+    const isUncategorized = !txn.accountDescription;
+    let accountLabel = txn.accountDescription || 'Uncategorized';
+
+    // --- ACCOUNT DISPLAY NORMALIZATION ---
+    // If the label is purely numeric (e.g. "6415"), find its real name (e.g. "Office Supplies")
+    // This fixes the "Meals & Ent" inconsistency.
+    // We check if it looks like a code (3-4 digits).
+    if (/^\d{3,4}$/.test(accountLabel)) {
+      const found = (window.DEFAULT_CHART_OF_ACCOUNTS || []).find(a => a.code === accountLabel);
+      if (found) {
+        // User requested: "make all like mels & ent" (which is text name)
+        accountLabel = found.name;
+      }
+    }
+    // -------------------------------------
+
+    // Magic Wand for Auto-Categorized
+    const autoIcon = txn._isAutoCategorized
+      ? '<span title="Auto-Categorized via Vendor Rule" style="margin-left:4px; filter: grayscale(100%); opacity: 0.6;">🪄</span>'
+      : '';
+
+    const realIndex = window.transactionData.indexOf(txn);
+    const isConfirmingDelete = window.transactionState.confirmingDelete.has(realIndex);
+
+    // 3. Structured Account Dropdown
+    let dropdownHtml = `<div class="smart-menu" id="dropdown-${realIndex}" style="display: none;">`;
+
+    // A. Frequently Used
+
+    // A. Frequently Used
+    const counts = {};
+    (window.transactionData || []).forEach(t => {
+      if (t.accountDescription && t.accountDescription !== 'Uncategorized') {
+        counts[t.accountDescription] = (counts[t.accountDescription] || 0) + 1;
+      }
+    }); // optimization: calculate this once per render, not per row? (Doing per row effectively for simplicity, but perf hit is minimal for <500 items)
+
+    // Actually, calculate ONCE at top of function would be better. But inline here is safer for edit context.
+    const topAccounts = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+
+    if (topAccounts.length > 0) {
+      dropdownHtml += `<div class="smart-menu-header" style="background: #f0fdfa; color: #0f766e; border-bottom: 1px solid #ccfbf1;">Frequently Used</div>`;
+      topAccounts.forEach(acc => {
+        const safeAcc = acc.replace(/'/g, "\\'");
+        dropdownHtml += `
+            <div class="smart-menu-item" onclick="selectAccount(${realIndex}, '${safeAcc}')">
+                <span style="color: #14b8a6; margin-right: 6px;">★</span> ${acc}
+            </div>`;
+      });
+      dropdownHtml += `<div style="height: 1px; background: #e2e8f0; margin: 4px 0;"></div>`;
+    }
+
+    // Grouped Options
+    const coa = getChartOfAccounts();
+
+    // TABS GENERATION
+    const tabOrder = ['Expenses', 'Liabilities', 'Assets', 'Revenue', 'Equity', 'Other'];
+    let activeTab = 'Expenses';
+    if (!coa['Expenses'] || coa['Expenses'].length === 0) {
+      activeTab = Object.keys(coa).find(k => coa[k].length > 0) || 'Other';
+    }
+
+    dropdownHtml += `<div class="smart-tabs">`;
+    tabOrder.forEach(tab => {
+      if (coa[tab] && coa[tab].length > 0) {
+        const isActive = tab === activeTab ? 'active' : '';
+        // Use window.toggleAccountTab(index, 'TabName')
+        dropdownHtml += `<div class="smart-tab-item ${isActive}" onclick="event.stopPropagation(); window.toggleAccountTab(${realIndex}, '${tab}')">${tab}</div>`;
+      }
+    });
+    dropdownHtml += `</div>`;
+
+    dropdownHtml += `<div class="smart-tab-body">`;
+
+    for (const [group, options] of Object.entries(coa)) {
+      const isActive = group === activeTab ? 'active' : '';
+      dropdownHtml += `<div id="tab-content-${realIndex}-${group}" class="smart-tab-content ${isActive}">`;
+
+      options.forEach(acc => {
+        // Escape quotes to prevent HTML breaking
+        const safeAcc = acc.replace(/'/g, "\\'");
+        dropdownHtml += `
+                <div class="smart-menu-item" onclick="selectAccount(${realIndex}, '${safeAcc}')">
+                    <span style="font-size: 0.75rem; color: #cbd5e1;">●</span> ${acc}
+                </div>`;
+      });
+      dropdownHtml += `</div>`;
+    }
+    dropdownHtml += `</div></div>`;
+
+    // 4. Strict Date Validation
+    let dateDisplay = txn.date;
+    const d = new Date(txn.date);
+    if (isNaN(d.getTime())) {
+      if (txn.date && txn.date.length > 0) {
+        // It's garbage text "PAYMENT", hide it
+        dateDisplay = '<span style="color:red; font-size:0.7rem;">Inv</span>';
+      } else {
+        dateDisplay = '';
+      }
+    } else {
+      // Enforce standardized format YYYY-MM-DD for display consistency
+      dateDisplay = d.toISOString().split('T')[0];
+    }
+
+    return `
+      <tr>
+        <td class="w-check"><input type="checkbox"></td>
+        
+        <td class="w-ref">${refDisplay}</td>
+        
+        <td class="w-date" title="${txn.date || ''}">${dateDisplay}</td>
+        <td class="w-payee" contenteditable="true" onblur="updatePayee(${realIndex}, this.innerText)">${txn.description}</td>
+        
+        <!-- REMOVED: Reconcile Column -->
+        
+         <td class="w-account">
+            <div class="smart-dropdown-wrapper">
+                <div class="smart-pill ${isUncategorized ? 'uncategorized' : ''}" 
+                     style="padding: 4px 12px; cursor: text; border: 1px solid ${isUncategorized ? '#fca5a5' : '#cbd5e1'}; background: ${isUncategorized ? '#fef2f2' : 'white'};"
+                     onclick="window.openDropdown(${realIndex})">
+                     
+                     <input type="text" class="smart-pill-input" 
+                            id="input-${realIndex}"
+                            value="${accountLabel}" 
+                            onfocus="window.openDropdown(${realIndex})"
+                            onkeyup="window.handleDropdownInput(event, ${realIndex}, this.value)"
+                            placeholder="Categorize..."
+                            autocomplete="off">
+                     <span style="font-size: 0.7rem; opacity: 0.5; pointer-events: none;">▼</span>
+                </div>
+                ${dropdownHtml}
+            </div>
+        </td>
+        
+        <td class="w-amount">${displayDebit > 0 ? '$' + displayDebit.toFixed(2) : ''}</td>
+        <td class="w-amount text-green">${displayCredit > 0 ? '$' + displayCredit.toFixed(2) : ''}</td>
+        
+        <td class="w-amount" style="font-weight: 600;">$${runningBalance.toFixed(2)}</td>
+
+        <td class="w-actions">
+           <span class="action-icon" onclick="swapDebitCredit(${realIndex})" title="Swap Debit/Credit" style="margin-right: 8px; font-size: 1.1rem; cursor: pointer;">⇄</span>
+            ${isConfirmingDelete
+        ? `<span class="delete-confirm" onclick="confirmDelete(${realIndex})">Confirm? <b>Yes</b> / <b onclick="cancelDelete(${realIndex}, event)">No</b></span>`
+        : `<span class="action-icon delete-icon" onclick="requestDelete(${realIndex})">✕</span>`
+      }
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// --- INTERACTIVITY ---
+
+// --- INTERACTIVITY ---
+
+window.handleSort = function (key) {
+  const cfg = window.transactionState.sortConfig;
+  if (cfg.key === key) {
+    cfg.direction = cfg.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    cfg.key = key;
+    cfg.direction = 'asc';
+  }
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = window.renderTransactions();
+}
+
+window.getSortIndicator = function (key) {
+  const cfg = window.transactionState.sortConfig;
+  if (cfg.key !== key) return '<span style="opacity:0.2; font-weight:normal;">⇅</span>';
+  return cfg.direction === 'asc' ? '↑' : '↓';
+}
+
+window.toggleDropdown = function (event, index) {
+  event.stopPropagation(); // Prevent immediate close
+
+  // Close all other open menus first
+  // Close all other open menus first
+  document.querySelectorAll('.smart-menu').forEach(el => {
+    // Check if we are opening THIS one
+    const wrapper = event.currentTarget.closest('.smart-dropdown-wrapper');
+    const myMenu = wrapper ? wrapper.querySelector('.smart-menu') : null;
+    if (el !== myMenu) el.style.display = 'none';
+  });
+
+  // Find the menu relative to the clicked element
+  // The clicked element is the .smart-pill
+  // The menu is a sibling in .smart-dropdown-wrapper
+  const wrapper = event.currentTarget.closest('.smart-dropdown-wrapper');
+  const menu = wrapper.querySelector('.smart-menu');
+
+  if (menu) {
+    const isVisible = menu.style.display === 'block';
+    menu.style.display = isVisible ? 'none' : 'block';
+
+    if (!isVisible) {
+      // Focus Search
+      const searchInput = menu.querySelector('.smart-search-input');
+      if (searchInput) setTimeout(() => searchInput.focus(), 50);
+
+      // Add click listener to close when clicking outside
+      document.addEventListener('click', function close(e) {
+        if (!wrapper.contains(e.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', close);
+        }
+      });
+    }
+  }
+};
+
+// --- DROPDOWN SEARCH & TABS ---
+
+window.toggleAccountTab = function (index, tabName) {
+  const menu = document.getElementById(`dropdown-${index}`);
+  if (!menu) return;
+
+  // update tabs
+  menu.querySelectorAll('.smart-tab-item').forEach(t => {
+    if (t.innerText === tabName) t.classList.add('active');
+    else t.classList.remove('active');
+  });
+
+  // update content
+  menu.querySelectorAll('.smart-tab-content').forEach(c => {
+    // We use a specific ID format for content: tab-content-{index}-{Group}
+    if (c.id === `tab-content-${index}-${tabName}`) c.classList.add('active');
+    else c.classList.remove('active');
+  });
+};
+
+window.handleAccountSearch = function (index, term) {
+  const menu = document.getElementById(`dropdown-${index}`);
+  if (!menu) return;
+
+  term = term.toLowerCase();
+  const items = menu.querySelectorAll('.smart-menu-item');
+  const tabs = menu.querySelector('.smart-tabs');
+  const contents = menu.querySelectorAll('.smart-tab-content');
+  const freqHeader = menu.querySelector('.smart-menu-header');
+
+  if (!term) {
+    // Reset Logic
+    if (tabs) tabs.style.display = 'flex';
+    if (freqHeader) freqHeader.style.display = 'block';
+
+    const activeTabBtn = menu.querySelector('.smart-tab-item.active');
+    const activeTabName = activeTabBtn ? activeTabBtn.innerText : 'Expenses';
+    window.toggleAccountTab(index, activeTabName); // restore tab view
+
+    items.forEach(i => i.style.display = 'block');
+    // Reset styles for contents
+    contents.forEach(c => {
+      c.style.display = ''; // Clear inline block override from search
+    });
+    return;
+  }
+
+  // SEARCH MODE
+  if (tabs) tabs.style.display = 'none';
+  if (freqHeader) freqHeader.style.display = 'none';
+
+  // Unhide ALL content blocks so we can search globally
+  contents.forEach(c => {
+    c.classList.add('active');
+    c.style.display = 'block'; // force visible
+  });
+
+  // Filter Items
+  items.forEach(item => {
+    const text = item.innerText.toLowerCase();
+    item.style.display = text.includes(term) ? 'block' : 'none';
+  });
+};
+
+// --- DROPDOWN SEARCH & TABS ---
+
+window.toggleAccountTab = function (index, tabName) {
+  const menu = document.getElementById(`dropdown-${index}`);
+  if (!menu) return;
+
+  // update tabs
+  menu.querySelectorAll('.smart-tab-item').forEach(t => {
+    if (t.innerText === tabName) t.classList.add('active');
+    else t.classList.remove('active');
+  });
+
+  // update content
+  menu.querySelectorAll('.smart-tab-content').forEach(c => {
+    // We use a specific ID format for content: tab-content-{index}-{Group}
+    if (c.id === `tab-content-${index}-${tabName}`) c.classList.add('active');
+    else c.classList.remove('active');
+  });
+};
+
+window.handleAccountSearch = function (index, term) {
+  const menu = document.getElementById(`dropdown-${index}`);
+  if (!menu) return;
+
+  term = term.toLowerCase();
+  const items = menu.querySelectorAll('.smart-menu-item');
+  const tabs = menu.querySelector('.smart-tabs');
+  const contents = menu.querySelectorAll('.smart-tab-content');
+  const freqHeader = menu.querySelector('.smart-menu-header');
+
+  if (!term) {
+    // Reset Logic
+    if (tabs) tabs.style.display = 'flex';
+    if (freqHeader) freqHeader.style.display = 'block';
+
+    const activeTabBtn = menu.querySelector('.smart-tab-item.active');
+    const activeTabName = activeTabBtn ? activeTabBtn.innerText : 'Expenses';
+    window.toggleAccountTab(index, activeTabName); // restore tab view
+
+    items.forEach(i => i.style.display = 'block');
+    // Reset styles for contents
+    contents.forEach(c => {
+      c.style.display = ''; // Clear inline block override from search
+    });
+    return;
+  }
+
+  // SEARCH MODE
+  if (tabs) tabs.style.display = 'none';
+  if (freqHeader) freqHeader.style.display = 'none';
+
+  // Unhide ALL content blocks so we can search globally
+  contents.forEach(c => {
+    c.classList.add('active');
+    c.style.display = 'block'; // force visible
+  });
+
+  // Filter Items
+  items.forEach(item => {
+    const text = item.innerText.toLowerCase();
+    item.style.display = text.includes(term) ? 'block' : 'none';
+  });
+};
+
+window.selectAccount = async function (index, accountName) {
+  if (window.transactionData[index]) {
+    const txn = window.transactionData[index];
+    const oldAccount = txn.accountDescription; // Unused for now but good for context
+
+    // Update State
+    txn.accountDescription = accountName;
+    // Remove auto-flag if manual override happens (optional, but good for UI clarity)
+    // txn._isAutoCategorized = false; 
+
+    reRenderTable();
+    saveTransactions();
+
+    // --- BI-DIRECTIONAL LEARNING ---
+    await checkAndLearnRule(txn, accountName);
+  }
+};
+
+/**
+ * Prompt user to save this categorization as a permanent rule
+ */
+async function checkAndLearnRule(txn, accountName) {
+  if (!window.VendorEngine || !window.ModalService) return;
+
+  // 1. Normalize
+  const cleanName = window.VendorEngine.normalize(txn.description);
+  if (!cleanName) return;
+
+  // 2. Check if we already know this rule
+  // We only prompt if it's NEW or DIFFERENT
+  await window.VendorEngine.init(); // Refresh cache
+  const existing = window.VendorEngine.match(txn.description);
+
+  if (existing && existing.defaultAccountId === accountName) {
+    // Already learned, nothing to do.
+    return;
+  }
+
+  // 3. User Prompt
+  const action = existing ? 'Updat' : 'Creat';
+  const msg = `
+        <div style="text-align: left;">
+            <strong>${action}e Vendor Rule?</strong><br><br>
+            Always categorize <b>${cleanName}</b> as <br>
+            <span class="smart-pill" style="display:inline-block; margin-top:4px;">${accountName}</span> ?
+        </div>
+    `;
+
+  const confirmed = await window.ModalService.confirm(msg);
+  if (confirmed) {
+    await window.VendorEngine.learn(txn.description, accountName);
+    if (window.showToast) showToast(`Rule saved for ${cleanName}`, 'success');
+  }
+}
+
+window.swapDebitCredit = function (index) {
+  if (window.transactionData[index]) {
+    const txn = window.transactionData[index];
+    // Swap values
+    const temp = txn.debit || 0;
+    txn.debit = txn.credit || 0;
+    txn.credit = temp;
+
+    saveTransactions();
+    reRenderTable();
+  }
+}
+
+window.updatePayee = function (index, newVal) {
+  if (window.transactionData[index]) {
+    window.transactionData[index].description = newVal;
+    saveTransactions();
+  }
+}
+
+// --- DELETE LOGIC ---
+
+window.requestDelete = function (index) {
+  window.transactionState.confirmingDelete.add(index);
+  reRenderTable();
+}
+
+window.cancelDelete = function (index, event) {
+  event.stopPropagation();
+  window.transactionState.confirmingDelete.delete(index);
+  reRenderTable();
+}
+
+window.confirmDelete = function (index) {
+  window.transactionData.splice(index, 1);
+  window.transactionState.confirmingDelete.delete(index);
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = window.renderTransactions();
+  saveTransactions();
+}
+
+
+window.addNewTransaction = function () {
+  window.transactionData.unshift({
+    date: new Date().toISOString().split('T')[0],
+    description: 'New Transaction',
+    debit: 0,
+    credit: 0,
+    accountDescription: ''
+  });
+
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = window.renderTransactions();
+  saveTransactions();
+};
+
+window.analyzeVendors = function () {
+  window.location.hash = '#/reports/vendor-analysis';
+};
+
+// --- CSV LOGIC & HISTORY ---
+
+window.showCSVImport = () => {
+  // Re-render to ensure history is up to date if modified elsewhere
+  const app = document.getElementById('app');
+  // Simple re-render of modal content if needed, but for now full render works 
+  // or we assume renderTransactions() is called on state change.
+  // Trigger render to be safe:
+  if (app) app.innerHTML = window.renderTransactions();
+
+  // Find modal and show
+  const modal = document.getElementById('csv-dropzone');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.hideCSVImport = () => {
+  const modal = document.getElementById('csv-dropzone');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleFileSelect = function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // 1. Check Duplicates in History
+  const existing = window.transactionState.csvHistory.find(h => h.fileName === file.name);
+  if (existing) {
+    // Set pending state and re-render modal to show warning
+    window.transactionState.pendingFile = file;
+    window.showCSVImport();
+    // Reset input so change event can fire again if needed
+    e.target.value = '';
+    return;
+  }
+  readFile(file);
+};
+
+window.handleFileDrop = function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Reset styles
+  const zone = e.currentTarget;
+  if (zone) {
+    zone.style.borderColor = '#cbd5e1';
+    zone.style.backgroundColor = '#f8fafc';
+  }
+
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+
+  // 1. Check Duplicates in History
+  const existing = window.transactionState.csvHistory.find(h => h.fileName === file.name);
+  if (existing) {
+    window.transactionState.pendingFile = file;
+    window.showCSVImport();
+    return;
+  }
+
+  readFile(file);
+};
+
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    const csv = event.target.result;
+    parseAndImportCSV(csv, file.name);
+    window.hideCSVImport();
+    window.transactionState.pendingFile = null;
   };
-  window.filterTransactionFeed = (v) => { searchFilter = v; renderTransactionFeed(); };
-  window.addNewTransaction = () => {
-    transactionData.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], description: 'New Entry', debit: 0, credit: 0, accountNumber: '' });
-    renderTransactionFeed(); saveTransactions();
-  };
-})();
+  reader.readAsText(file);
+}
+
+window.cancelPendingFile = function () {
+  window.transactionState.pendingFile = null;
+  window.showCSVImport(); // Re-render to show upload box
+}
+
+window.confirmPendingFile = function () {
+  const file = window.transactionState.pendingFile;
+  if (file) {
+    readFile(file);
+  }
+}
+
+async function parseAndImportCSV(csvText, fileName) {
+  try {
+    // Delegate to SmartCSV
+    if (!window.SmartCSV) throw new Error("SmartCSV utility not loaded");
+
+    let newTxns = window.SmartCSV.parse(csvText);
+
+    if (newTxns.length === 0) {
+      if (window.showToast) showToast('No valid transactions found in file.', 'warning');
+      return;
+    }
+
+    // --- VENDOR ENGINE HOOK ---
+    if (window.VendorEngine) {
+      await window.VendorEngine.init();
+      newTxns = window.VendorEngine.processTransactions(newTxns);
+    }
+    // --------------------------
+
+    // 2. Add to Grid
+    window.transactionData = [...newTxns, ...window.transactionData];
+
+    // 3. Add to History
+    const historyItem = {
+      id: Date.now().toString(),
+      fileName: fileName || 'Unknown.csv',
+      date: new Date().toISOString().split('T')[0],
+      count: newTxns.length,
+      data: newTxns // Storing data to allow "Load into Grid" later
+    };
+
+    window.transactionState.csvHistory.unshift(historyItem);
+    // Limit history to 20 items to save space
+    if (window.transactionState.csvHistory.length > 20) {
+      window.transactionState.csvHistory.pop();
+    }
+
+    saveCSVHistory();
+    saveTransactions(); // Persist grid
+
+    // 4. Update UI & Toast
+    const app = document.getElementById('app');
+    if (app) app.innerHTML = window.renderTransactions();
+
+    if (window.showToast) showToast(`Successfully imported ${newTxns.length} transactions from ${fileName}`, 'success');
+  } catch (error) {
+    console.error(error);
+    if (window.showToast) showToast(error.message, 'error');
+  }
+}
+
+
+
+// History Actions
+
+/**
+ * REAL-TIME ANALYSIS DASHBOARD
+ * Called on every grid render to update the header status.
+ */
+window.updateAnalysisStatus = function () {
+  const txns = window.transactionData || [];
+  if (txns.length === 0) return;
+
+  let uncategorized = 0;
+  txns.forEach(t => {
+    // Robust Check:
+    // 1. Missing account description
+    // 2. Account description is literally "Uncategorized"
+    // 3. (Optional) Missing ID, though description is the visual truth
+    const desc = (t.accountDescription || '').trim();
+    const isUnallocated = !desc || desc === '' || desc.toLowerCase() === 'uncategorized';
+
+    if (isUnallocated) {
+      uncategorized++;
+    }
+  });
+
+  const msgBox = document.getElementById('vendor-analysis-message');
+  if (!msgBox) return;
+
+  if (uncategorized > 0) {
+    // 🔴 RED STATE: Action Needed
+    msgBox.innerHTML = `
+        <span style="color: #ea580c; cursor: pointer;" onclick="window.location.hash='#/vendor-analysis'">
+            ⚠️ <b>${uncategorized}</b> Unallocated Items
+        </span> 
+      `;
+  } else {
+    // 🟢 GREEN STATE: All Good
+    msgBox.innerHTML = `
+        <span style="color: #16a34a; font-weight: 700;">✅ All Allocated</span>
+      `;
+  }
+};
+
+/**
+ * Manual Trigger for Analysis Modal (User Requested Button)
+ */
+window.analyzeVendors = function () {
+  // 1. Force update the dashboard status first (just in case)
+  if (window.updateAnalysisStatus) window.updateAnalysisStatus();
+
+  // 2. Route to Dedicated Analysis Page (RoboLedger Style)
+  window.location.hash = '#/vendor-analysis';
+};
+
+
+window.exportXLS = function () {
+  const txns = window.transactionData || [];
+  if (txns.length === 0) {
+    showToast('No data to export', 'warning');
+    return;
+  }
+
+  if (typeof XLSX === 'undefined') {
+    showToast('Excel engine (SheetJS) not loaded.', 'error');
+    return;
+  }
+
+  // 1. Format Data
+  const exportData = txns.map(t => ({
+    Date: t.date,
+    Ref: t.ref || '',
+    Payee: t.description,
+    Account: t.accountDescription || 'Uncategorized',
+    Debit: t.type === 'debit' ? parseFloat(t.amount) : 0,
+    Credit: t.type === 'credit' ? parseFloat(t.amount) : 0,
+    Balance: parseFloat(t.balance) || 0
+  }));
+
+  // 2. Create Sheet
+  const ws = XLSX.utils.json_to_sheet(exportData);
+
+  // 3. Create Workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+
+  // 4. Save
+  const filename = `AutoBook_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  showToast(`Exported ${filename}`, 'success');
+};
+
+window.menuTimer = null;
+window.toggleTransactionMenu = function (btn) {
+  const menu = btn.nextElementSibling;
+  menu.classList.toggle('show');
+
+  // Clear existing timer
+  if (window.menuTimer) clearTimeout(window.menuTimer);
+
+  // Auto-close after 4 seconds if open
+  if (menu.classList.contains('show')) {
+    window.menuTimer = setTimeout(() => {
+      menu.classList.remove('show');
+    }, 4000);
+  }
+}
+
+// History Actions
+window.loadCSVItem = function (id) {
+  const item = window.transactionState.csvHistory.find(h => h.id === id);
+  if (!item) return;
+
+  ModalService.confirm('Load CSV', `Load ${item.count} transactions from "${item.fileName}" into the grid?`, () => {
+    window.transactionData = [...item.data, ...window.transactionData];
+    saveTransactions();
+    const app = document.getElementById('app');
+    if (app) app.innerHTML = window.renderTransactions();
+    showToast(`Loaded ${item.count} transactions.`);
+    window.hideCSVImport();
+  });
+};
+
+window.deleteCSVItem = function (id) {
+  ModalService.confirm('Delete History', 'Remove this import from history?', () => {
+    window.transactionState.csvHistory = window.transactionState.csvHistory.filter(h => h.id !== id);
+    saveCSVHistory();
+    const app = document.getElementById('app');
+    if (app) app.innerHTML = window.renderTransactions();
+    window.showCSVImport();
+  }, 'danger');
+};
+
+window.renameCSVItem = function (id) {
+  const item = window.transactionState.csvHistory.find(h => h.id === id);
+  if (!item) return;
+
+  ModalService.prompt('Rename Import', 'New filename alias:', item.fileName, (newName) => {
+    if (newName && newName.trim()) {
+      item.fileName = newName.trim();
+      saveCSVHistory();
+      const app = document.getElementById('app');
+      if (app) app.innerHTML = window.renderTransactions();
+      window.showCSVImport();
+    }
+  });
+};
+
+function saveCSVHistory() {
+  localStorage.setItem('csv_history', JSON.stringify(window.transactionState.csvHistory));
+}
+
+// --- PERSISTENCE ---
+
+function saveTransactions() {
+  localStorage.setItem('transactions', JSON.stringify(window.transactionData));
+  if (window.storage && window.storage.saveTransactions) {
+    window.storage.saveTransactions(window.transactionData);
+  }
+}
+
+// --- NOTIFICATIONS ---
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.right = '20px';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+  toast.style.color = 'white';
+  toast.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+  toast.style.zIndex = '9999';
+  toast.style.fontSize = '0.9rem';
+  toast.style.fontWeight = '500';
+  toast.style.display = 'flex';
+  toast.style.alignItems = 'center';
+  toast.style.gap = '8px';
+  toast.style.animation = 'fadeIn 0.3s ease-out';
+
+  toast.innerText = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.5s ease';
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+
+// Add animation keyframes if not exists
+if (!document.getElementById('toast-style')) {
+  const style = document.createElement('style');
+  style.id = 'toast-style';
+  style.innerHTML = `
+        @keyframes fadeIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    `;
+  document.head.appendChild(style);
+}
+
+// --- AI AUTO-CATEGORIZE FEATURE ---
+
+window.runAutoCategorize = async function (silent = false) {
+  if (!window.VendorEngine) return;
+  if (!window.transactionData || window.transactionData.length === 0) {
+    if (!silent && window.showToast) showToast('No transactions to categorize', 'warning');
+    return;
+  }
+
+  if (!silent && window.showToast) showToast('🪄 Running 8-Layer Intelligence...', 'info');
+
+  // 1. Initialize Engine (Train Bayes, Load Rules)
+  await window.VendorEngine.init();
+
+  // 2. Run Batch Processing
+  // We pass the RAW reference so we can update in place or replace
+  const beforeCount = window.transactionData.filter(t => t.accountDescription !== 'Uncategorized').length;
+  const processed = window.VendorEngine.processTransactions(window.transactionData);
+  const afterCount = processed.filter(t => t.accountDescription !== 'Uncategorized').length;
+
+  const newlyCategorized = afterCount - beforeCount;
+
+  // 3. Update State
+  window.transactionData = processed;
+
+  // 4. Save & Render
+  if (window.storage) {
+    await window.storage.saveTransactions(window.transactionData);
+  }
+
+  // Refresh Grid
+  const tbody = document.getElementById('txn-tbody');
+  if (tbody) tbody.innerHTML = window.renderTableRows(window.transactionData);
+
+  // Update Status Box explicitly
+  if (window.updateAnalysisStatus) window.updateAnalysisStatus();
+
+  if (newlyCategorized > 0) {
+    if (window.showToast) showToast(`🪄 Magic! Auto-categorized ${newlyCategorized} items.`, 'success');
+  } else {
+    if (!silent && window.showToast) showToast('No new matches found. Teach me!', 'info');
+  }
+}
+
+
+// --- SELECT ALL FEATURE ---
+window.toggleSelectAll = function (source) {
+  const checkboxes = document.querySelectorAll('#txn-tbody input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    cb.checked = source.checked;
+    // Trigger change event if needed for state tracking
+    cb.dispatchEvent(new Event('change'));
+  });
+};
+
+window.saveTransactions = function () {
+  const data = window.transactionData;
+  localStorage.setItem('ab3_transactions', JSON.stringify(data));
+  localStorage.setItem('transactions', JSON.stringify(data)); // Legacy backup
+
+  // Sync with Storage Service if available
+  if (window.storage) {
+    window.storage.saveTransactions(data);
+  }
+};

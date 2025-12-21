@@ -1,0 +1,29 @@
+{
+    "name": "roboledger-v2",
+    "version": "2.0.0",
+    "description": "Revolutionary AI-Powered Accounting Platform",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "supabase:setup": "supabase init && supabase db reset",
+        "supabase:types": "supabase gen types typescript --local > src/types/supabase.ts"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.39.0",
+        "ag-grid-community": "^31.0.0",
+        "chart.js": "^4.4.0",
+        "fuse.js": "^7.0.0",
+        "tesseract.js": "^5.0.4",
+        "opencv.js": "^1.2.1",
+        "@tensorflow/tfjs": "^4.15.0"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0",
+        "supabase": "^1.142.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

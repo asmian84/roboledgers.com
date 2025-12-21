@@ -9,6 +9,7 @@ class BreadcrumbManager {
         this.routeLabels = {
             '': 'Home',
             'home': 'Home',
+            'data-import': 'Data Import',
             'transactions': 'Transactions',
             'vendors': 'Vendors',
             'accounts': 'Accounts',
@@ -25,6 +26,7 @@ class BreadcrumbManager {
         this.routeIcons = {
             '': '🏠',
             'home': '🏠',
+            'data-import': '📥',
             'transactions': '💰',
             'vendors': '🏢',
             'accounts': '📊',
@@ -34,6 +36,21 @@ class BreadcrumbManager {
             'subscription': '💳',
             'audit': '📋'
         };
+    }
+
+    /**
+     * Manually render custom breadcrumbs
+     * @param {Array} crumbs - Array of { label, path, icon? }
+     */
+    renderCustom(crumbs) {
+        if (!this.container) return;
+
+        // Add Home if not present
+        if (!crumbs.find(c => c.label === 'Home')) {
+            crumbs.unshift({ label: 'Home', icon: '🏠', path: '/', isActive: false });
+        }
+
+        this.container.innerHTML = this._renderBreadcrumbs(crumbs);
     }
 
     /**

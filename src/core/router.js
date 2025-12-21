@@ -147,9 +147,16 @@ class Router {
    * @private
    */
   _requiresAuth(path) {
+    // In development mode, bypass all auth checks
+    if (window.Session && window.Session.isDevelopment) {
+      return false;
+    }
+
     // Public routes that don't require auth
     const publicRoutes = [
       '/',
+      '/home',
+      '/data-import',  // Allow data import without auth in dev
       '/login',
       '/signup',
       '/forgot-password',

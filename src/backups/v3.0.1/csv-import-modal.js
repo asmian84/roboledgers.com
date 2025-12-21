@@ -18,112 +18,86 @@ window.showCSVImportModal = function () {
     resetCSVImport();
 };
 
-// Create Modal Structure (Modern Redesign)
+// Create Modal Structure
 function createCSVImportModal() {
     const modalHTML = `
-    <div id="csv-import-modal" class="modern-modal-overlay" style="display: none;">
-      <div class="modern-modal-card">
+    <div id="csv-import-modal" class="auth-modal" style="display: none;">
+      <div class="auth-modal-content" style="max-width: 1200px; width: 95%; max-height: 90vh;">
         <!-- Header -->
-        <div class="modern-modal-header">
-          <h2>
-             <span style="font-size: 1.5em;">📥</span> Import Transactions
-          </h2>
-          <button class="modern-modal-close" onclick="closeCSVImportModal()">×</button>
+        <div class="auth-header">
+          <h2>📁 Import Transactions</h2>
+          <p>Upload CSV or Excel file to preview and import transactions</p>
+          <button class="modal-close-btn" onclick="closeCSVImportModal()">×</button>
         </div>
 
-        <div class="modern-modal-body">
-            <!-- Step 1: File Upload -->
-            <div id="upload-section" class="csv-section" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-              <div class="modern-upload-zone" id="csv-upload-zone" onclick="document.getElementById('csv-file-input').click()">
-                <div class="upload-icon-wrapper">
-                    <!-- SVG Cloud Icon -->
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                </div>
-                <h3 class="upload-title">Drag & Drop Bank Statements</h3>
-                <p class="upload-sub">or click to browse from your computer</p>
-                
-                <div class="upload-badges">
-                    <span class="format-badge badge-pdf">PDF</span>
-                    <span class="format-badge badge-csv">CSV</span>
-                    <span class="format-badge badge-xls">Excel</span>
-                </div>
-                
-                <input type="file" id="modern-import-file-input" accept=".csv, .xls, .xlsx, .pdf, application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv" style="display: none;">
-              </div>
+        <!-- Step 1: File Upload -->
+        <div id="upload-section" class="csv-section">
+          <div class="upload-zone" id="csv-upload-zone">
+            <div class="upload-icon">📤</div>
+            <h3>Drag & Drop File Here</h3>
+            <p>or click to browse</p>
+            <p class="upload-hint">Supports: CSV, XLS, XLSX, PDF</p>
+            <input type="file" id="csv-file-input" accept=".csv,.xls,.xlsx,.pdf" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Step 2: Preview Grid -->
+        <div id="preview-section" class="csv-section" style="display: none;">
+          <div class="preview-header">
+            <h3>📊 Preview Data</h3>
+            <div class="preview-stats">
+              <span id="row-count">0 rows</span>
+              <span id="col-count">0 columns</span>
             </div>
+          </div>
+          
+          <div id="csv-preview-grid" class="ag-theme-alpine" style="height: 400px; width: 100%;"></div>
+          
+          <div class="preview-actions">
+            <button class="btn-secondary" onclick="resetCSVImport()">
+              ← Back to Upload
+            </button>
+            <button class="btn-primary" onclick="proceedToMapping()">
+              Continue to Column Mapping →
+            </button>
+          </div>
+        </div>
 
-            <!-- Step 2: Preview & Verify (MoneyThumb Style) -->
-            <div id="preview-section" class="csv-section" style="display: none; width: 100%;">
-              
-              <!-- Verification Header -->
-              <div class="mt-verification-header">
-                  <div class="mt-stats-row">
-                      <div class="mt-stat-group">
-                          <label>PDF Totals:</label>
-                          <span class="mt-stat credit">Credits: <strong id="mt-credits-count">0</strong> (<span id="mt-credits-sum">$0.00</span>)</span>
-                          <span class="mt-separator">|</span>
-                          <span class="mt-stat debit">Debits: <strong id="mt-debits-count">0</strong> (<span id="mt-debits-sum">$0.00</span>)</span>
-                      </div>
-                      <div class="mt-stat-group">
-                          <label>Net Balance:</label>
-                          <strong id="mt-net-balance" class="mt-net">$0.00</strong>
-                      </div>
-                  </div>
-                  
-                  <div class="mt-controls-row">
-                      <div class="mt-control">
-                          <label><input type="checkbox" id="mt-switch-signs" onchange="toggleSignLogic()"> Switch signs of amounts</label>
-                      </div>
-                       <div class="mt-control">
-                          <button class="btn-xs btn-secondary" onclick="openCleanupSettings()">Payee Cleanup Settings</button>
-                      </div>
-                  </div>
-              </div>
+        <!-- Step 3: Column Mapping -->
+        <div id="mapping-section" class="csv-section" style="display: none;">
+          <h3>🔗 Map Columns to Fields</h3>
+          <p>Match your CSV columns to transaction fields</p>
+          
+          <div id="column-mapping" class="mapping-grid"></div>
+          
+          <div class="mapping-actions">
+            <button class="btn-secondary" onclick="backToPreview()">
+              ← Back to Preview
+            </button>
+            <button class="btn-primary" onclick="importTransactions()">
+              ✅ Import Transactions
+            </button>
+          </div>
+        </div>
 
-              <div id="csv-preview-grid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
-              
-              <div class="preview-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="btn-secondary" onclick="resetCSVImport()">Discard & Clear</button>
-                <button class="btn-primary" onclick="proceedToMapping()">Next: Map Columns →</button>
-              </div>
+        <!-- Step 4: Import Progress -->
+        <div id="import-section" class="csv-section" style="display: none;">
+          <div class="import-progress">
+            <div class="progress-icon">⏳</div>
+            <h3>Importing Transactions...</h3>
+            <div class="progress-bar">
+              <div id="import-progress-fill" class="progress-fill"></div>
             </div>
+            <p id="import-status">Processing...</p>
+          </div>
+        </div>
 
-            <!-- Step 3: Column Mapping -->
-            <div id="mapping-section" class="csv-section" style="display: none; width: 100%;">
-              <h3>🔗 Map Columns</h3>
-              <p>Match your columns to the database fields.</p>
-              
-              <div id="column-mapping" class="mapping-grid"></div>
-              
-              <div class="mapping-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="btn-secondary" onclick="backToPreview()">← Back</button>
-                <button class="btn-primary" onclick="importTransactions()">✅ Import Now</button>
-              </div>
-            </div>
-
-            <!-- Step 4: Import Progress -->
-            <div id="import-section" class="csv-section" style="display: none; width: 100%; text-align: center;">
-              <div class="progress-card">
-                <div class="spinner-ring"></div>
-                <h3>Importing Transactions...</h3>
-                <p id="import-status" style="color: #64748b;">Processing data...</p>
-                <div class="progress-bar" style="max-width: 400px; margin: 20px auto;">
-                  <div id="import-progress-fill" class="progress-fill"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 5: Import Complete -->
-            <div id="complete-section" class="csv-section" style="display: none; width: 100%; text-align: center;">
-              <div class="import-complete">
-                <div class="complete-icon" style="font-size: 3rem; margin-bottom: 16px;">✅</div>
-                <h3>Import Complete!</h3>
-                <div class="import-summary" id="import-summary"></div>
-
+        <!-- Step 5: Import Complete -->
+        <div id="complete-section" class="csv-section" style="display: none;">
+          <div class="import-complete">
+            <div class="complete-icon">✅</div>
+            <h3>Import Complete!</h3>
+            <div class="import-summary" id="import-summary"></div>
             <button class="btn-primary" onclick="finalizeImport()">
               View Transactions
             </button>
@@ -160,85 +134,80 @@ function createCSVImportModal() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     csvImportModal = document.getElementById('csv-import-modal');
 
-    // Drag & Drop Handling
-    const uploadZone = document.getElementById('csv-upload-zone');
-    const fileInput = document.getElementById('modern-import-file-input');
+    setupFileUpload();
+}
 
-    // Click to browse - Bind to the NEW function to avoid triggering listeners on old ID
-    uploadZone.onclick = function () {
-        document.getElementById('modern-import-file-input').click();
-    };
+// Setup File Upload (Drag & Drop + Browse)
+function setupFileUpload() {
+    const uploadZone = document.getElementById('csv-upload-zone');
+    const fileInput = document.getElementById('csv-file-input');
+
+    // Click to browse
+    uploadZone.addEventListener('click', () => {
+        fileInput.click();
+    });
 
     // File selected
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            processImportModalFile(e.target.files[0]);
+            handleFileUpload(e.target.files[0]);
         }
     });
 
     // Drag & Drop
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        uploadZone.classList.add('dragover');
+        uploadZone.style.borderColor = '#6366f1';
+        uploadZone.style.background = 'rgba(99, 102, 241, 0.05)';
     });
 
     uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
+        uploadZone.style.borderColor = '';
+        uploadZone.style.background = '';
     });
 
     uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadZone.classList.remove('dragover');
+        uploadZone.style.borderColor = '';
+        uploadZone.style.background = '';
 
         if (e.dataTransfer.files.length > 0) {
-            processImportModalFile(e.dataTransfer.files[0]);
+            handleFileUpload(e.dataTransfer.files[0]);
         }
     });
 }
 
-// Handle File Upload (Renamed to avoid conflict with global handleFileUpload)
-async function processImportModalFile(file) {
-    currentUploadFile = file; // Capture for re-processing settings
+// Handle File Upload
+async function handleFileUpload(file) {
     const fileName = file.name.toLowerCase();
 
-    // STRICT Extension Check
-    const allowed = ['.csv', '.xls', '.xlsx', '.pdf'];
-    if (!allowed.some(ext => fileName.endsWith(ext))) {
-        alert('Supported formats: CSV, Excel (.xls, .xlsx), and PDF.');
+    if (!fileName.endsWith('.csv') && !fileName.endsWith('.xls') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.pdf')) {
+        alert('Please upload a CSV, Excel, or PDF file');
         return;
     }
 
     try {
         if (fileName.endsWith('.csv')) {
-            await parseCSV(file);
+            await parseCSV(file); // csvData populated
         } else if (fileName.endsWith('.pdf')) {
             if (!window.PdfImportService) throw new Error("PDF Service not loaded");
-
-            window.showToast('Scanning PDF Layout...', 'info');
             const transactions = await window.PdfImportService.parse(file);
-
             if (transactions.length === 0) {
-                throw new Error("No transactions found. Please ensure the PDF contains clear bank statement tables.");
+                throw new Error("No readable transactions found in PDF. Is it a scanned image?");
             }
-
-            // Normalize for Grid
-            csvData = transactions;
-            // Extract headers from first row
+            // Normalize to Expected Format
+            csvData = transactions; // Already array of objects
             csvHeaders = Object.keys(transactions[0] || {});
-
-            // If we have data, jump to preview
-            showPreview();
-            window.showToast('PDF Parsed Successfully!', 'success');
+            showPreview(); // Jump to preview
         } else {
             await parseExcel(file);
         }
 
-        // Auto-detect account type and show selection if needed
-        // (Functionality preserved)
-        // await showAccountSelection(); 
+        // Auto-detect account type and show selection
+        await showAccountSelection();
     } catch (error) {
         console.error('File parse error:', error);
-        window.showToast('Import Failed: ' + error.message, 'error');
+        alert('Failed to parse file: ' + error.message);
     }
 }
 
@@ -482,177 +451,40 @@ async function parseExcel(file) {
     });
 }
 
-// Show Preview Grid with Verification Stats
+// Show Preview Grid
 function showPreview() {
     document.getElementById('upload-section').style.display = 'none';
     document.getElementById('preview-section').style.display = 'block';
 
-    updateVerificationStats();
+    // Update stats
+    document.getElementById('row-count').textContent = `${csvData.length} rows`;
+    document.getElementById('col-count').textContent = `${csvHeaders.length} columns`;
 
-    if (csvPreviewGrid) {
-        csvPreviewGrid.destroy();
-    }
-
+    // Create AG Grid
     const gridDiv = document.getElementById('csv-preview-grid');
 
-    // MoneyThumb Column Defs
-    const columnDefs = [
-        {
-            headerName: "",
-            checkboxSelection: true,
-            headerCheckboxSelection: true,
-            width: 50,
-            pinned: 'left'
-        },
-        {
-            field: "Date",
-            width: 120,
-            editable: true
-        },
-        {
-            field: "Description",
-            headerName: "Payee / Description",
-            flex: 2,
-            editable: true
-        },
-        {
-            field: "Debit",
-            headerName: "Debits",
-            width: 110,
-            valueFormatter: params => params.value ? formatMoney(params.value) : '',
-            cellStyle: { color: '#dc2626', textAlign: 'right' }
-        },
-        {
-            field: "Credit",
-            headerName: "Credits",
-            width: 110,
-            valueFormatter: params => params.value ? formatMoney(params.value) : '',
-            cellStyle: { color: '#16a34a', textAlign: 'right' }
-        },
-        {
-            field: "Category",
-            width: 150,
-            editable: true
-        }
-    ];
-
-    // If "Debit/Credit" columns missing (e.g. CSV), fall back to Amount
-    const hasSplitCols = csvData.some(r => r.Debit !== undefined || r.Credit !== undefined);
-    if (!hasSplitCols) {
-        columnDefs.splice(3, 2, {
-            field: "Amount",
-            width: 120,
-            valueFormatter: params => formatMoney(params.value),
-            cellStyle: params => ({
-                color: params.value >= 0 ? '#16a34a' : '#dc2626',
-                textAlign: 'right'
-            })
-        });
-    }
+    const columnDefs = csvHeaders.map(header => ({
+        headerName: header,
+        field: header,
+        width: 150,
+        resizable: true,
+        sortable: true,
+        filter: true
+    }));
 
     const gridOptions = {
         columnDefs: columnDefs,
         rowData: csvData,
+        pagination: true,
+        paginationPageSize: 50,
         defaultColDef: {
             resizable: true,
             sortable: true,
             filter: true
-        },
-        rowSelection: 'multiple',
-        onGridReady: (params) => {
-            csvPreviewGrid = params.api; // Save for later access
-            params.api.selectAll(); // Default select all
         }
     };
 
-    new agGrid.Grid(gridDiv, gridOptions);
-}
-
-// Update Header Stats
-function updateVerificationStats() {
-    // Safety check for UI elements
-    const creditsCountEl = document.getElementById('mt-credits-count');
-    if (!creditsCountEl) return;
-
-    let creditCount = 0;
-    let creditSum = 0;
-    let debitCount = 0;
-    let debitSum = 0;
-
-    csvData.forEach(row => {
-        // Prefer Split columns if available
-        if (row.Credit) {
-            creditCount++;
-            creditSum += parseFloat(row.Credit) || 0;
-        }
-        if (row.Debit) {
-            debitCount++;
-            debitSum += parseFloat(row.Debit) || 0;
-        }
-
-        // Fallback to Amount
-        if (!row.Credit && !row.Debit && row.Amount !== undefined) {
-            const amt = parseFloat(row.Amount);
-            if (amt > 0) {
-                creditCount++;
-                creditSum += amt;
-            } else if (amt < 0) {
-                debitCount++;
-                debitSum += Math.abs(amt);
-            }
-        }
-    });
-
-    const net = creditSum - debitSum;
-
-    // Update DOM
-    document.getElementById('mt-credits-count').innerText = creditCount;
-    document.getElementById('mt-credits-sum').innerText = formatMoney(creditSum);
-
-    document.getElementById('mt-debits-count').innerText = debitCount;
-    document.getElementById('mt-debits-sum').innerText = formatMoney(debitSum);
-
-    const netEl = document.getElementById('mt-net-balance');
-    netEl.innerText = formatMoney(net);
-    netEl.style.color = net >= 0 ? '#16a34a' : '#dc2626';
-}
-
-// Store current file for re-processing
-let currentUploadFile = null;
-
-window.reprocessCurrentFile = function () {
-    if (currentUploadFile) {
-        processImportModalFile(currentUploadFile);
-    }
-};
-
-// Toggle Sign Logic (Updates config + UI)
-window.toggleSignLogic = function () {
-    const checkbox = document.getElementById('mt-switch-signs');
-    const isSwitched = checkbox.checked;
-
-    // Update Global Config
-    if (!window.parserConfig) window.parserConfig = window.PdfImportService.DEFAULT_CONFIG;
-    window.parserConfig.parsingStrategy.signLogic = isSwitched ? 'Switched' : 'Normal';
-
-    // Re-process to apply logic at parser level OR simple invert if cached?
-    // Determine best path. Parser level is safer for consistent "Credit" vs "Debit" column assignment.
-    if (currentUploadFile) {
-        processImportModalFile(currentUploadFile);
-    } else {
-        // Fallback for CSV or no file
-        csvData.forEach(row => {
-            if (row.Amount) row.Amount = -row.Amount;
-            const temp = row.Debit; row.Debit = row.Credit; row.Credit = temp;
-        });
-        showPreview();
-    }
-};
-
-// window.openCleanupSettings is now handled by parser-settings-modal.js
-
-function formatMoney(val) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    csvPreviewGrid = agGrid.createGrid(gridDiv, gridOptions);
 }
 
 // Proceed to Column Mapping
@@ -687,7 +519,7 @@ function renderColumnMapping() {
 
     allFields.forEach(field => {
         html += `
-        <div class="mapping-row">
+        < div class="mapping-row" >
         <label class="mapping-label">
           ${field.label}
           <span class="mapping-hint">${field.hint}</span>
@@ -696,7 +528,7 @@ function renderColumnMapping() {
           <option value="">-- Not Mapped --</option>
           ${csvHeaders.map(h => `<option value="${h}">${h}</option>`).join('')}
         </select>
-      </div>
+      </div >
         `;
     });
 
@@ -721,7 +553,7 @@ function autoDetectMappings() {
     };
 
     Object.entries(mappings).forEach(([field, keywords]) => {
-        const select = document.querySelector(`select[data-field="${field}"]`);
+        const select = document.querySelector(`select[data - field= "${field}"]`);
         if (!select) return;
 
         const match = csvHeaders.find(header =>
@@ -805,7 +637,7 @@ async function importTransactions() {
     if (window.uploadHistory && window.currentImportAccount) {
         const accountInfo = getAccountInfo(window.currentImportAccount);
         window.uploadHistory.addUpload({
-            filename: document.getElementById('modern-import-file-input').files[0]?.name || 'Unknown',
+            filename: document.getElementById('csv-file-input').files[0]?.name || 'Unknown',
             accountCode: window.currentImportAccount,
             accountName: accountInfo.name,
             transactionCount: imported,
@@ -833,9 +665,9 @@ function showImportComplete(imported, failed) {
     document.getElementById('complete-section').style.display = 'block';
 
     document.getElementById('import-summary').innerHTML = `
-        <p>✅ Successfully imported: <strong>${imported}</strong> transactions</p>
-        ${failed > 0 ? `<p>⚠️ Failed: <strong>${failed}</strong> transactions</p>` : ''}
-        <p>Total processed: <strong>${imported + failed}</strong></p>
+        < p >✅ Successfully imported: <strong>${imported}</strong> transactions</p >
+            ${failed > 0 ? `<p>⚠️ Failed: <strong>${failed}</strong> transactions</p>` : ''}
+    <p>Total processed: <strong>${imported + failed}</strong></p>
     `;
 }
 
@@ -855,7 +687,7 @@ function resetCSVImport() {
         csvPreviewGrid = null;
     }
 
-    document.getElementById('modern-import-file-input').value = '';
+    document.getElementById('csv-file-input').value = '';
 }
 
 // Close Modal

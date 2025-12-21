@@ -3,7 +3,7 @@
  * Based on user's comprehensive COA
  */
 
-export const DEFAULT_CHART_OF_ACCOUNTS = [
+window.DEFAULT_CHART_OF_ACCOUNTS = [
     // ASSETS (1000-1999)
     { code: "1000", name: "Bank - chequing", type: "Asset", category: "Cash" },
     { code: "1030", name: "Bank - US account", type: "Asset", category: "Cash" },
