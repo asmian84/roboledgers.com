@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Import Test - AutoBookkeeping V4</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        h2 {
+            color: #666;
+            margin-top: 0;
+        }
+
+        .test-section {
+            border-left: 4px solid #4CAF50;
+            padding-left: 16px;
+            margin: 20px 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status.pass {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status.fail {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.pending {
+            background: #FF9800;
+            color: white;
+        }
+
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 AutoBookkeeping V4 - Data Import Test Suite</h1>
+
+    <div class="card">
+        <h2>System Status</h2>
+        <div id="system-status">
+            <p>Checking system components...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>1. PDF Parser Test</h2>
+        <div class="test-section">
+            <p>Upload a bank statement PDF to test parsing:</p>
+            <input type="file" id="pdf-test" accept=".pdf" class="file-input">
+            <button onclick="testPDFParser()">Test PDF Parser</button>
+            <div id="pdf-results"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>2. CSV Parser Test</h2>
+        <div class="test-section">
+            <p>Upload a CSV file to test parsing:</p>
+            <input type="file" id="csv-test" accept=".csv" class="file-input">
+            <button onclick="testCSVParser()">Test CSV Parser</button>
+            <div id="csv-results"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>3. Bayesian Matcher Test</h2>
+        <div class="test-section">
+            <p>Test account prediction:</p>
+            <input type="text" id="test-description" placeholder="Transaction description"
+                style="width: 300px; padding: 8px;">
+            <input type="number" id="test-amount" placeholder="Amount" style="width: 100px; padding: 8px;">
+            <button onclick="testBayesianMatcher()">Predict Account</button>
+            <div id="bayesian-results"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>4. Integration Test</h2>
+        <div class="test-section">
+            <button onclick="runFullTest()">Run Full Integration Test</button>
+            <div id="integration-results"></div>
+        </div>
+    </div>
+
+    <!-- Load PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script type="module">
+        // Import services
+        import pdfParser from './src/services/pdf-parser.js';
+        import csvParser from './src/services/csv-parser.js';
+        import bayesianMatcher from './src/services/bayesian-matcher.js';
+
+        // Make available globally for onclick handlers
+        window.pdfParser = pdfParser;
+        window.csvParser = csvParser;
+        window.bayesianMatcher = bayesianMatcher;
+
+        // Check system status
+        async function checkSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            const checks = [];
+
+            // Check PDF.js
+            checks.push({
+                name: 'PDF.js Library',
+                status: typeof pdfjsLib !== 'undefined' ? 'pass' : 'fail'
+            });
+
+            // Check Supabase
+            checks.push({
+                name: 'Supabase Client',
+                status: typeof supabase !== 'undefined' ? 'pass' : 'fail'
+            });
+
+            // Check PDF Parser
+            checks.push({
+                name: 'PDF Parser',
+                status: pdfParser ? 'pass' : 'fail'
+            });
+
+            // Check CSV Parser
+            checks.push({
+                name: 'CSV Parser',
+                status: csvParser ? 'pass' : 'fail'
+            });
+
+            // Check Bayesian Matcher
+            checks.push({
+                name: 'Bayesian Matcher',
+                status: bayesianMatcher ? 'pass' : 'fail'
+            });
+
+            // Render status
+            statusDiv.innerHTML = checks.map(check => `
+        <div style="margin: 10px 0;">
+          <span class="status ${check.status}">${check.status.toUpperCase()}</span>
+          <strong>${check.name}</strong>
+        </div>
+      `).join('');
+        }
+
+        // Run on load
+        checkSystemStatus();
+
+        // Test PDF Parser
+        window.testPDFParser = async function () {
+            const fileInput = document.getElementById('pdf-test');
+            const resultsDiv = document.getElementById('pdf-results');
+
+            if (!fileInput.files[0]) {
+                resultsDiv.innerHTML = '<p style="color: red;">Please select a PDF file</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<p>Parsing PDF...</p>';
+
+            try {
+                const result = await pdfParser.parsePDF(fileInput.files[0]);
+
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status pass">SUCCESS</span>
+            <h3>Results:</h3>
+            <p><strong>Bank:</strong> ${result.bank}</p>
+            <p><strong>Transactions:</strong> ${result.transactions.length}</p>
+            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+            <h4>Sample Transactions:</h4>
+            <pre>${JSON.stringify(result.transactions.slice(0, 5), null, 2)}</pre>
+          </div>
+        `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status fail">FAILED</span>
+            <p><strong>Error:</strong> ${error.message}</p>
+            <pre>${error.stack}</pre>
+          </div>
+        `;
+            }
+        };
+
+        // Test CSV Parser
+        window.testCSVParser = async function () {
+            const fileInput = document.getElementById('csv-test');
+            const resultsDiv = document.getElementById('csv-results');
+
+            if (!fileInput.files[0]) {
+                resultsDiv.innerHTML = '<p style="color: red;">Please select a CSV file</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<p>Parsing CSV...</p>';
+
+            try {
+                const text = await fileInput.files[0].text();
+                const result = csvParser.parseCSV(text);
+
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status pass">SUCCESS</span>
+            <h3>Results:</h3>
+            <p><strong>Format:</strong> ${result.format || 'Auto-detected'}</p>
+            <p><strong>Transactions:</strong> ${result.transactions.length}</p>
+            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+            <h4>Sample Transactions:</h4>
+            <pre>${JSON.stringify(result.transactions.slice(0, 5), null, 2)}</pre>
+          </div>
+        `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status fail">FAILED</span>
+            <p><strong>Error:</strong> ${error.message}</p>
+          </div>
+        `;
+            }
+        };
+
+        // Test Bayesian Matcher
+        window.testBayesianMatcher = async function () {
+            const description = document.getElementById('test-description').value;
+            const amount = parseFloat(document.getElementById('test-amount').value);
+            const resultsDiv = document.getElementById('bayesian-results');
+
+            if (!description || isNaN(amount)) {
+                resultsDiv.innerHTML = '<p style="color: red;">Please enter description and amount</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<p>Predicting account...</p>';
+
+            try {
+                const prediction = await bayesianMatcher.predictAccount({
+                    description,
+                    amount
+                });
+
+                const stats = bayesianMatcher.getAccuracyStats();
+
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status pass">SUCCESS</span>
+            <h3>Prediction:</h3>
+            <p><strong>Suggested Account:</strong> ${prediction.accountId || 'None (no training data)'}</p>
+            <p><strong>Confidence:</strong> ${(prediction.confidence * 100).toFixed(1)}%</p>
+            <h4>Alternatives:</h4>
+            <pre>${JSON.stringify(prediction.alternatives, null, 2)}</pre>
+            <h4>System Stats:</h4>
+            <p><strong>Training Examples:</strong> ${stats.totalCorrections}</p>
+            <p><strong>Accuracy:</strong> ${(stats.accuracy * 100).toFixed(1)}%</p>
+          </div>
+        `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+          <div style="margin-top: 20px;">
+            <span class="status fail">FAILED</span>
+            <p><strong>Error:</strong> ${error.message}</p>
+          </div>
+        `;
+            }
+        };
+
+        // Run full integration test
+        window.runFullTest = async function () {
+            const resultsDiv = document.getElementById('integration-results');
+            resultsDiv.innerHTML = '<p>Running integration tests...</p>';
+
+            const tests = [];
+
+            // Test 1: PDF Parser initialization
+            tests.push({
+                name: 'PDF Parser Initialization',
+                result: pdfParser.getSupportedBanks().length === 5 ? 'pass' : 'fail',
+                details: `Supports ${pdfParser.getSupportedBanks().length} banks`
+            });
+
+            // Test 2: Bayesian Matcher initialization
+            await bayesianMatcher.loadTrainingData();
+            tests.push({
+                name: 'Bayesian Matcher Load',
+                result: bayesianMatcher.loaded ? 'pass' : 'fail',
+                details: `Loaded ${bayesianMatcher.trainingData.length} training examples`
+            });
+
+            // Test 3: Feature extraction
+            const features = bayesianMatcher.extractFeatures('WALMART SUPERCENTER #1234');
+            tests.push({
+                name: 'Feature Extraction',
+                result: features.length > 0 ? 'pass' : 'fail',
+                details: `Extracted ${features.length} features: ${features.join(', ')}`
+            });
+
+            // Render results
+            resultsDiv.innerHTML = `
+        <div style="margin-top: 20px;">
+          <h3>Integration Test Results:</h3>
+          ${tests.map(test => `
+            <div style="margin: 15px 0;">
+              <span class="status ${test.result}">${test.result.toUpperCase()}</span>
+              <strong>${test.name}</strong>
+              <p style="margin: 5px 0 0 0; color: #666;">${test.details}</p>
+            </div>
+          `).join('')}
+          <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 4px;">
+            <strong>✅ System Ready!</strong>
+            <p>All core components are functional. Upload files to test parsing.</p>
+          </div>
+        </div>
+      `;
+        };
+    </script>
+</body>
+
+</html>

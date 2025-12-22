@@ -4,35 +4,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoBookkeeping v3.2</title>
+  <title>AutoBookkeeping v3.0</title>
   <link rel="stylesheet" href="src/styles/styles.css">
-  <link rel="stylesheet" href="src/styles/import-summary.css">
 
   <!-- AG Grid Community -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
 
-  <!-- SheetJS for Excel Import -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
-  <!-- PDF.js for PDF Import -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    // Initialize PDF.js - disable worker for file:// protocol to avoid cross-origin issues
-    if (window.location.protocol === 'file:') {
-      // Disable worker for local file access
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-      console.log('📄 PDF.js: Worker disabled for file:// protocol');
-    } else {
-      // Use worker for http/https
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      console.log('📄 PDF.js: Worker enabled');
-    }
-  </script>
-
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -44,92 +23,63 @@
 
   <!-- Sidebar Navigation -->
   <aside id="sidebar" class="sidebar">
-
-    <!-- Branding / Logo -->
-    <div class="sidebar-brand">
-      <img src="src/assets/logo.png" alt="RoboLedgers" class="brand-logo">
+    <div class="sidebar-header">
+      <h1 class="logo">AutoBook<span>v3</span></h1>
+      <button id="sidebar-close" class="sidebar-close" aria-label="Close sidebar">
+        <span>✕</span>
+      </button>
     </div>
 
-    <nav class="sidebar-nav-content">
+    <nav class="sidebar-nav">
+      <nav class="sidebar-nav">
+        <!-- Main Section -->
+        <div class="nav-section">
+          <a href="#/" class="nav-item" data-route="/">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a href="#/transactions" class="nav-item" data-route="/transactions">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Transactions</span>
+          </a>
+          <a href="#/vendors" class="nav-item" data-route="/vendors">
+            <span class="nav-icon">🏢</span>
+            <span class="nav-label">Vendors</span>
+          </a>
+          <a href="#/accounts" class="nav-item" data-route="/accounts">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a href="#/reports" class="nav-item" data-route="/reports">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Reports</span>
+          </a>
+        </div>
 
-      <!-- GROUP: DAILY (Header Hidden) -->
-      <div class="nav-group">
-        <!-- DAILY Header Removed -->
+        <!-- Admin Section -->
+        <div class="nav-section">
+          <div class="nav-section-label">Admin</div>
+          <a href="#/team" class="nav-item" data-route="/team">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Team</span>
+          </a>
+        </div>
+      </nav>
 
-        <a href="#/" class="nav-item" data-route="/">
-          <i class="ph ph-house nav-icon"></i>
-          <span class="nav-label">Home</span>
-        </a>
-
-        <a href="#/transactions" class="nav-item" data-route="/transactions">
-          <i class="ph ph-wallet nav-icon"></i>
-          <span class="nav-label">Transactions</span>
-          <span class="nav-badge orange" id="sidebar-badge-txn" style="display:none;">0</span>
-        </a>
-
-        <a href="#/vendors" class="nav-item" data-route="/vendors">
-          <i class="ph ph-storefront nav-icon"></i>
-          <span class="nav-label">Vendors</span>
-        </a>
-
-        <a href="#/data-import" class="nav-item" data-route="/data-import">
-          <i class="ph ph-download-simple nav-icon"></i>
-          <span class="nav-label">Data Import</span>
-          <span class="nav-badge blue" id="sidebar-badge-import" style="display:none;">0</span>
-        </a>
-      </div>
-
-      <!-- GROUP: ANALYSIS -->
-      <div class="nav-group">
-        <div class="nav-group-header">ANALYSIS</div>
-
-        <a href="#/reports" class="nav-item" data-route="/reports">
-          <i class="ph ph-chart-line-up nav-icon"></i>
-          <span class="nav-label">Reports</span>
-        </a>
-
-        <a href="#/accounts" class="nav-item" data-route="/accounts">
-          <i class="ph ph-piggy-bank nav-icon"></i>
-          <span class="nav-label">Accounts</span>
-        </a>
-      </div>
-
-      <!-- GROUP: SYSTEM -->
-      <div class="nav-group">
-        <div class="nav-group-header">SYSTEM</div>
-
-        <a href="#/settings" class="nav-item" data-route="/settings">
-          <i class="ph ph-gear nav-icon"></i>
+      <div class="sidebar-footer">
+        <a href="#/settings" class="nav-item settings-item" data-route="/settings">
+          <span class="nav-icon">⚙️</span>
           <span class="nav-label">Settings</span>
         </a>
-
         <a href="#/audit" class="nav-item" data-route="/audit">
-          <i class="ph ph-clipboard-text nav-icon"></i>
+          <span class="nav-icon">📋</span>
           <span class="nav-label">Audit Log</span>
         </a>
-        <a href="#/team" class="nav-item" data-route="/team">
-          <i class="ph ph-users nav-icon"></i>
-          <span class="nav-label">Team</span>
-        </a>
-      </div>
-
-    </nav>
-
-    <!-- User Profile Footer -->
-    <div class="sidebar-footer">
-      <div class="user-profile-card">
-        <div class="user-avatar-premium">
-          <img src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff" alt="User">
+        <div class="user-info">
+          <span class="user-avatar">👤</span>
+          <span class="user-name">User</span>
         </div>
-        <div class="user-info-text">
-          <div class="user-name">Alex Johnson</div>
-          <div class="user-role">Premium Plan</div>
-        </div>
-        <button class="user-menu-btn">
-          <i class="ph-bold ph-dots-three"></i>
-        </button>
       </div>
-    </div>
   </aside>
 
   <!-- Mobile Hamburger -->
@@ -158,9 +108,13 @@
   </main>
 
   <!-- Auth Modal (only modal allowed) -->
-  <!-- Content rendered by auth-modal.js -->
-  <div id="auth-modal" class="auth-modal" style="display: none;"></div>
-
+  <div id="auth-modal" class="auth-modal" style="display: none;">
+    <div class="auth-modal-content">
+      <h2>Authentication Required</h2>
+      <p>Please log in to continue.</p>
+      <button class="btn-primary">Log In</button>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="src/core/state.js"></script>
@@ -183,29 +137,8 @@
   <!-- Notifications -->
   <script src="src/features/notifications/toast-manager.js"></script>
 
-  <!-- Data Layer (MUST LOAD FIRST) -->
-  <script src="src/core/system-log.js"></script> <!-- Load early for logging support -->
-  <script src="src/data/utils.js"></script>
-  <script src="src/data/models.js"></script>
-  <script src="src/data/storage.js"></script>
-  <script src="src/data/default-coa.js"></script>
-  <!-- REMOVED CONFLICTING account-chart.js -->
-  <script src="src/data/supabase.js"></script>
-
-  <!-- NEW: Enhanced Import Services -->
-  <script src="src/services/pdf-parser.js?v=20251221u"></script>
-  <script src="src/services/bayesian-matcher.js"></script>
-  <script src="src/services/upload-history.js"></script>
-
-  <!-- Global Modal Service -->
-  <script src="src/components/ui/modal-service.js"></script>
-
-  <!-- Utils -->
-  <script src="src/utils/smart-csv-parser.js"></script>
-  <script src="src/utils/smart-matcher.js"></script>
-  <script src="src/utils/vendor-engine.js"></script>
-  <script src="src/utils/ai-test-suite.js"></script>
-  <script src="src/utils/legacy-importer.js"></script>
+  <!-- Upload History -->
+  <script src="src/features/uploads/upload-history.js"></script>
 
   <!-- Account Manager (Multi-Account Support) -->
   <script src="src/features/accounts/account-manager.js"></script>
@@ -214,12 +147,11 @@
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
-  <script src="src/pages/data-import.js?v=20251221ak2"></script>
   <script src="src/pages/profile.js"></script>
-  <script src="src/pages/transactions-fixed.js?v=20251221av"></script>
+  <script src="src/pages/transactions-fixed.js"></script>
   <script src="src/pages/vendors.js"></script>
   <script src="src/pages/vendorDetail.js"></script>
-  <script src="src/pages/accounts.js?v=20251221ap"></script>
+  <script src="src/pages/accounts.js"></script>
   <script src="src/pages/accountDetail.js"></script>
   <script src="src/pages/reports.js"></script>
   <script src="src/pages/reconciliation.js"></script>
@@ -229,15 +161,14 @@
   <!-- Vendor Pages -->
   <script src="src/utils/vendorMatcher.js"></script>
   <script src="src/pages/vendorNew.js"></script>
-  <!-- Features -->
-  <script src="src/features/uploads/pdf-import-service.js"></script>
-  <script src="src/components/parser-settings-modal.js"></script>
-  <script src="src/features/vendors/vendor-analysis.js"></script>
-  <script src="src/components/vendor-analysis-modal.js"></script>
-  <script src="src/pages/vendor-analysis-page.js"></script>
-  <script src="src/data/seed-data.js"></script>
 
-
+  <!-- Data Layer -->
+  <script src="src/data/utils.js"></script>
+  <script src="src/data/models.js"></script>
+  <script src="src/data/storage.js"></script>
+  <script src="src/data/seed.js"></script>
+  <script src="src/data/account-chart.js"></script>
+  <script src="src/data/supabase.js"></script>
 
   <script>
     // Initialize application state
@@ -432,15 +363,7 @@
     });
 
     router.register('/home', () => {
-      window.breadcrumb.update([
-        { label: 'Home', path: '/' }
-      ]);
-      window.renderHomePage();
-    });
-
-    router.register('/data-import', () => {
-      window.breadcrumbManager.update('/data-import');
-      window.renderDataImportPage();
+      document.getElementById('app').innerHTML = renderHome();
     });
 
     // User Profile
@@ -455,17 +378,7 @@
 
     // Vendors List
     router.register('/vendors', () => {
-      const phtml = renderVendors();
-      console.log('🧭 Router: Received HTML for vendors. Length:', phtml ? phtml.length : 'NULL');
-      document.getElementById('app').innerHTML = phtml;
-
-      // Force init explicitly after DOM insertion
-      setTimeout(() => {
-        if (typeof initVendorsGrid === 'function') {
-          console.log('🧭 Router: Triggering Grid Init...');
-          initVendorsGrid();
-        }
-      }, 50);
+      document.getElementById('app').innerHTML = renderVendors();
     });
 
     // New Vendor
@@ -502,29 +415,6 @@
     router.register('/accounts/:accountId', (route) => {
       document.getElementById('app').innerHTML = renderAccountDetail(route.params);
     });
-
-    // Audit Log
-    router.register('/audit', () => {
-      if (window.AuditLogPage) {
-        document.getElementById('app').innerHTML = window.AuditLogPage.render();
-      }
-    });
-
-    // --- NEW: Vendor Analysis Module (RoboLedger Style) ---
-    router.register('/vendor-analysis', () => {
-      if (window.VendorAnalysisPage) {
-        document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
-      }
-    });
-
-    // Handle sub-route for drill down (though simpler hash logic in component handles it too)
-    // We register it to ensure the router doesn't 404
-    router.register('/vendor-analysis/:vendorName', () => {
-      if (window.VendorAnalysisPage) {
-        document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
-      }
-    });
-    // -----------------------------------------------------
 
     // Reports - Dashboard
     router.register('/reports', () => {

@@ -1,198 +1,147 @@
-# AutoBookkeeping v3.0
+# AutoBookkeeping V4 - Supabase Upgrade
 
-**Route-First Architecture** • **Zero Dependencies** • **File Protocol Compatible**
+## 🎯 What is V4?
 
-A modern, lightweight bookkeeping application built with vanilla JavaScript, featuring client-side routing and reactive state management.
+Clean copy of AutoBookkeeping v3 with Supabase integration ready to go.
 
-## 🚀 Quick Start
-
-Simply open `index.html` in any modern web browser. No build process required!
-
-```bash
-# Clone or navigate to project
-cd AutoBookkeeping-v3
-
-# Open in browser (file:// protocol works!)
-start index.html  # Windows
-open index.html   # macOS
-xdg-open index.html  # Linux
-```
-
-## 📁 Project Structure
-
-```
-AutoBookkeeping-v3/
-├── index.html              # Main entry point
-├── src/
-│   ├── core/
-│   │   ├── router.js       # Hash-based client-side router
-│   │   └── state.js        # Reactive state management
-│   ├── pages/              # Page components (future)
-│   ├── components/         # Reusable components (future)
-│   ├── styles/
-│   │   └── styles.css      # Global styles with CSS variables
-│   └── data/               # Data management (future)
-└── README.md
-```
-
-## ✨ Core Features
-
-### 🧭 Router (`router.js`)
-- **Hash-based routing** - Works on `file://` protocol
-- **Nested routes** - Support for `/vendors/:vendorId`
-- **Query parameters** - Parse URL query strings
-- **Browser history** - Back/forward button integration
-- **Route deduplication** - Prevents unnecessary reloads
-- **Event-driven** - Subscribe to route changes
-
-### 📦 State Management (`state.js`)
-- **Reactive state** - Subscribe to state changes
-- **localStorage sync** - Automatic persistence
-- **Deep merging** - Smart state updates
-- **Dot notation** - Easy nested value access
-
-### 🎨 Design System (`styles.css`)
-- **CSS custom properties** - Easy theming
-- **Dark mode ready** - `[data-theme="dark"]` support
-- **Mobile-first responsive** - Breakpoints at 768px, 1024px
-- **Fixed sidebar** - 260px width, collapsible on mobile
-- **Breadcrumb navigation** - Always visible, auto-updates
-
-## 🧪 Testing Checklist
-
-- [x] Router navigates on hash change
-- [x] Breadcrumbs update automatically
-- [x] Sidebar active state highlights current route
-- [x] Browser back/forward works
-- [x] Mobile: sidebar hidden by default
-- [x] Mobile: hamburger menu shows/hides sidebar
-- [ ] No console errors (test in browser)
-
-## 🎯 Usage Examples
-
-### Registering Routes
-
-```javascript
-// Simple route
-router.register('/', () => {
-  document.getElementById('app').innerHTML = '<h1>Home</h1>';
-});
-
-// Route with parameters
-router.register('/vendors/:vendorId', (route) => {
-  const { vendorId } = route.params;
-  console.log('Viewing vendor:', vendorId);
-});
-
-// Access query parameters
-router.onChange((route) => {
-  console.log('Query params:', route.query);
-  // URL: #/search?q=invoice&filter=pending
-  // route.query = { q: 'invoice', filter: 'pending' }
-});
-```
-
-### Managing State
-
-```javascript
-// Create store
-const store = createStore({
-  user: null,
-  theme: 'light'
-}, {
-  storageKey: 'my_app_state',
-  persist: true
-});
-
-// Update state
-store.setState({ user: { name: 'John' } });
-
-// Subscribe to changes
-store.subscribe((newState, oldState) => {
-  console.log('State changed!', newState);
-});
-
-// Get state
-const currentUser = store.getState('user');
-```
-
-### Navigation
-
-```javascript
-// Navigate programmatically
-router.navigate('/vendors');
-router.navigate('/vendors/123');
-router.navigate('/search?q=test');
-
-// Or use links in HTML
-<a href="#/vendors">View Vendors</a>
-```
-
-## 🎨 Theming
-
-Toggle dark mode by setting the `data-theme` attribute:
-
-```javascript
-document.documentElement.setAttribute('data-theme', 'dark');
-```
-
-Customize colors by overriding CSS variables:
-
-```css
-:root {
-  --primary-color: #10b981;  /* Custom green */
-  --sidebar-width: 300px;     /* Wider sidebar */
-}
-```
-
-## 📊 Size Target
-
-- **router.js**: ~5KB
-- **state.js**: ~4KB
-- **styles.css**: ~8KB
-- **index.html**: ~5KB
-- **Total Foundation**: ~22KB (well under 50KB target!)
-
-## 🔮 What's Next
-
-This is the foundation. Future additions:
-- AG Grid integration for transaction tables
-- Vendor management pages
-- CSV import/export
-- Rule automation
-- Financial reports
-
-## 📝 Developer Notes
-
-### Console Debugging
-
-The app logs helpful debug messages:
-- 🧭 Router events (route changes, registrations)
-- 📦 State updates (changes, subscribers)
-- ✅ Initialization confirmations
-
-Open browser DevTools to see these logs.
-
-### Mobile Development
-
-The sidebar collapses on screens < 768px:
-- Hidden by default
-- Hamburger menu in top-left
-- Overlay when open
-- Click outside to close
-
-### Route-First Philosophy
-
-Unlike modal-based UIs, every view is a route:
-- ✅ `/settings` renders settings page
-- ❌ No "open settings modal"
-- ✅ Shareable URLs, browser history
-- ✅ Better user experience
-
-## 📄 License
-
-MIT - Build something awesome!
+**v3 (Original)**: `G:\My Drive\AutoBookkeeping\AutoBookkeeping-v3`  
+**v4 (Upgrade)**: `G:\My Drive\AutoBookkeeping\AutoBookkeeping-V4` ← You are here
 
 ---
 
-**Made with ❤️ using Vanilla JavaScript**
+## ✅ What's Included
+
+### From v3 (All Features)
+- ✅ Smart CSV parser (paranoid mode)
+- ✅ Vendor matching engine
+- ✅ AG Grid integration
+- ✅ Multi-account support
+- ✅ PDF import service
+- ✅ Vendor analysis
+- ✅ Audit log
+- ✅ All UI components
+
+### New in v4
+- ✅ Supabase storage adapter (`src/data/supabase-storage.js`)
+- ✅ External repos cloned (`../external-repos/`)
+- ✅ `.env.example` for configuration
+- ✅ Feature flag for gradual migration
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Create Supabase Project
+1. Go to https://supabase.com
+2. Create new project: "autobookkeeping-v4"
+3. Copy URL and anon key
+
+### 3. Configure Environment
+```bash
+# Copy example
+cp .env.example .env
+
+# Edit .env and add your Supabase credentials
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+### 4. Run Database Schema
+```bash
+# In Supabase SQL Editor, run:
+# supabase/schema.sql
+```
+
+### 5. Start Development
+```bash
+# Start with localStorage (v3 mode)
+npm run dev
+
+# Or start with Supabase (v4 mode)
+# Set VITE_USE_SUPABASE=true in .env
+npm run dev
+```
+
+---
+
+## 🔄 Migration Strategy
+
+### Gradual Migration (Recommended)
+1. Start with `VITE_USE_SUPABASE=false` (localStorage)
+2. Test everything works
+3. Switch one page at a time to Supabase
+4. When all working, set `VITE_USE_SUPABASE=true`
+
+### Feature Flag
+```javascript
+// In any page
+const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
+
+const storage = USE_SUPABASE 
+  ? await import('./data/supabase-storage.js')
+  : await import('./data/storage.js');
+```
+
+---
+
+## 📁 Folder Structure
+
+```
+AutoBookkeeping-V4/
+├── src/
+│   ├── data/
+│   │   ├── storage.js              ← Original (localStorage)
+│   │   └── supabase-storage.js     ← NEW (Supabase)
+│   ├── services/
+│   │   └── supabase-client.js      ← Already exists!
+│   └── ... (all v3 files)
+├── supabase/
+│   └── schema.sql                  ← Database schema
+├── .env.example                    ← NEW
+└── package.json
+```
+
+---
+
+## 🎯 External Repos
+
+Located in: `G:\My Drive\AutoBookkeeping\external-repos\`
+
+- **ledger-tools**: Report generation (P&L, Balance Sheet, Cash Flow)
+- **SimpleAccounting**: Double-entry bookkeeping patterns
+- **cpedict**: Vendor name normalization
+
+---
+
+## 🔙 Rollback to v3
+
+If anything goes wrong:
+```bash
+cd "G:\My Drive\AutoBookkeeping\AutoBookkeeping-v3"
+npm run dev
+```
+
+v3 is completely untouched and still works!
+
+---
+
+## 📊 Next Steps
+
+1. ✅ V4 folder created
+2. ✅ Supabase adapter ready
+3. ✅ External repos cloned
+4. 🔜 Create Supabase project
+5. 🔜 Run schema
+6. 🔜 Test connection
+7. 🔜 Start migration
+
+---
+
+**Status**: V4 ready for Supabase upgrade!  
+**v3**: Safe and untouched  
+**v4**: Ready to upgrade
