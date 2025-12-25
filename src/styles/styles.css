@@ -150,9 +150,9 @@
 
 html,
 body {
-  /* LOCKED: Fixed viewport - no outer scrolling */
-  height: 100vh;
-  overflow: hidden;
+  /* UNLOCKED: Allow standard document scrolling */
+  min-height: 100vh;
+  overflow-y: auto;
   font-family: var(--font-family);
   font-size: 16px;
   line-height: 1.5;
@@ -387,10 +387,11 @@ body {
    Main Content Area
    ============================================ */
 .main-content {
-  /* LOCKED: Fixed viewport layout - no outer scrolling */
+  /* UNLOCKED: Allow scrolling within main content area */
   margin-left: var(--sidebar-width);
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   transition: margin-left var(--transition-normal);

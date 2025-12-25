@@ -1123,13 +1123,40 @@
             let currentYear = year;
 
             // Pattern: MMM DD   MMM DD   DESCRIPTION   REFERENCE_NO   AMOUNT (global for matchAll)
-            const bmoPattern = /([A-Z][a-z]{2})\s+(\d{1,2})\s+([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+(\d{10,})\s+([-]?[\d,]+\.?\d{2})/g;
+            // Updated to be optional on Reference Number (some statements don't have it)
+            // Regex: Date(MMM DD)  Space  Date(MMM DD)  Space  Desc(...)  Space  Ref(Optional)  Space  Amount
+
+            // Debug: Show a snippet of the text to understand the format (remove after fix)
+            console.log('📝 BMO Sample Text (First 200 chars):', text.substring(0, 200).replace(/\n/g, ' '));
+
+            // Try strict pattern first (with Ref Number)
+            let bmoPattern = /([A-Z][a-z]{2})\s+(\d{1,2})\s+([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+(\d{8,})\s+([-]?[\d,]+\.?\d{2})/g;
+
+            let matches = [...text.matchAll(bmoPattern)];
+
+            if (matches.length === 0) {
+                console.log('⚠️ Strict BMO pattern failed. Trying relaxed pattern (no ref number)...');
+                // Relaxed pattern: No 10-digit ref number requirement. 
+                // Assumes Amount is at the end of the line/block.
+                // ([A-Z][a-z]{2})\s+(\d{1,2}) ... (.+?) ... ([-]?[\d,]+\.?\d{2})
+                bmoPattern = /([A-Z][a-z]{2})\s+(\d{1,2})\s+([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([-]?[\d,]+\.?\d{2})/g;
+                matches = [...text.matchAll(bmoPattern)];
+            }
 
             // Use matchAll to find all transactions
-            const matches = text.matchAll(bmoPattern);
+            // const matches = text.matchAll(bmoPattern); // Already array-ified above
 
             for (const match of matches) {
-                const [, transMonth, transDay, postMonth, postDay, description, refNo, amountStr] = match;
+                let transMonth, transDay, postMonth, postDay, description, refNo, amountStr;
+
+                if (match.length === 8) {
+                    // Strict match result
+                    [, transMonth, transDay, postMonth, postDay, description, refNo, amountStr] = match;
+                } else {
+                    // Relaxed match result (no refNo)
+                    [, transMonth, transDay, postMonth, postDay, description, amountStr] = match;
+                    refNo = 'N/A';
+                }
 
                 const monthNum = months[transMonth];
 
