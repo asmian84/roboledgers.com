@@ -3,6 +3,25 @@
  * Uses File System Access API to recursively scan local drives
  */
 
+window.triggerFileDownload = (fileName) => {
+    console.log(`📥 Triggering download for: ${fileName}`);
+    if (window.currentScanFiles) {
+        const file = window.currentScanFiles.find(f => f.name === fileName);
+        if (file) {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return;
+        }
+    }
+    alert(`File "${fileName}" not found in memory (file handle lost or page reloaded).`);
+};
+
 window.indexerState = {
     totalFiles: 0,
     processedCount: 0,
@@ -189,6 +208,9 @@ window.popOutConsole = function () {
 window.renderIndexerPage = function () {
     return `
     <div class="indexer-container">
+        <!-- Hidden Input for Directory Selection (No Popups!) -->
+        <input type="file" id="dir-input" webkitdirectory directory multiple style="display:none" onchange="handleDirectorySelect(this)">
+
         <div class="indexer-header">
             <div class="header-left">
                 <h1>Data Junkie Console</h1>
@@ -503,20 +525,34 @@ window.initIndexerGrid = function () {
     }
 }
 
-window.selectAndScan = async function () {
+window.selectAndScan = function () {
+    // Trigger the HIDDEN file input instead of showing the API picker
+    // This avoids the "Allow this site to view..." popup every time.
+    const input = document.getElementById('dir-input');
+    if (input) {
+        input.value = ''; // Reset so onChange fires even if same directory selected
+        input.click();
+    } else {
+        alert('Input element missing. Please reload page.');
+    }
+};
+
+window.handleDirectorySelect = async function (input) {
+    if (!input.files || input.files.length === 0) return;
+
     try {
         if (window.indexerState.isScanning) {
             alert('Scan in progress');
             return;
         }
 
-        // 1. Request Folder
-        log('Requesting folder access...', 'system');
-        const dirHandle = await window.showDirectoryPicker();
-        window.indexerState.dirHandle = dirHandle;
+        const files = Array.from(input.files);
+        // Heuristic: Get Folder Name from the first file's webkitRelativePath
+        // e.g., "MyFolder/MyFile.txt" -> "MyFolder"
+        const folderName = files[0].webkitRelativePath.split('/')[0] || 'Selected Folder';
 
         // UI Reset
-        document.getElementById('path-display').textContent = dirHandle.name;
+        document.getElementById('path-display').textContent = folderName;
         document.getElementById('status-dot').classList.add('active');
         document.getElementById('status-text').textContent = 'INDEXING...';
 
@@ -531,59 +567,60 @@ window.selectAndScan = async function () {
         window.indexerState.startTime = Date.now();
         startTimer();
 
-        log(`Target acquired: ${dirHandle.name}`, 'success');
-        log('Starting deep crawl...', 'info');
+        log(`Target acquired: ${folderName}`, 'success');
+        log(`Found ${files.length} potential files. Starting crawl...`, 'info');
 
-        // 2. Start Recursion
-        await scanDirectory(dirHandle);
+        // New Scan Logic: Iterate flat file list
+        await scanFileList(files);
 
-        // 3. Complete
+        // Complete
         finishScan();
 
     } catch (err) {
-        if (err.name === 'AbortError') {
-            log('User cancelled selection.', 'warn');
-        } else {
-            log(`Error: ${err.message}`, 'error');
-            console.error(err);
-        }
+        log(`Error: ${err.message}`, 'error');
+        console.error(err);
         window.indexerState.isScanning = false;
         finishScanUI();
     }
 };
 
-async function scanDirectory(dirHandle) {
+async function scanFileList(files) {
     if (!window.indexerState.isScanning) return;
 
-    try {
-        for await (const entry of dirHandle.values()) {
+    for (const file of files) {
+        if (!window.indexerState.isScanning) break;
+
+        // PAUSE LOOP
+        while (window.indexerState.isPaused) {
             if (!window.indexerState.isScanning) break;
-
-            // PAUSE LOOP
-            while (window.indexerState.isPaused) {
-                if (!window.indexerState.isScanning) break;
-                await new Promise(r => setTimeout(r, 500)); // Check every 500ms
-            }
-
-            try {
-                if (entry.kind === 'file') {
-                    await processFile(entry);
-                } else if (entry.kind === 'directory') {
-                    // Recursively scan subdirectories (Skip junk)
-                    // Added 'CW' as per user restriction
-                    if (!['node_modules', '.git', 'dist', 'build', 'AppData', '$Recycle.Bin', 'System Volume Information', 'CW', 'cw'].includes(entry.name)) {
-                        await scanDirectory(entry);
-                    }
-                }
-            } catch (innerErr) {
-                // Ignore individual access errors
-                console.warn(`Skipping entry ${entry.name}:`, innerErr);
-            }
+            await new Promise(r => setTimeout(r, 500));
         }
-    } catch (dirErr) {
-        log(`Access error: ${dirHandle.name}`, 'warn');
+
+        try {
+            // Check junk folders via path
+            // file.webkitRelativePath contains the full relative path
+            const pathParts = file.webkitRelativePath.split('/');
+            if (pathParts.some(p => ['node_modules', '.git', 'dist', 'build', 'AppData', '$Recycle.Bin', 'System Volume Information', 'CW', 'cw'].includes(p))) {
+                continue;
+            }
+
+            // Mock a fileHandle API so we don't have to rewrite processFile logic entirely
+            // processFile expects { name, getFile() }
+            const mockHandle = {
+                name: file.name,
+                getFile: async () => file
+            };
+
+            await processFile(mockHandle);
+
+        } catch (innerErr) {
+            console.warn(`Skipping file ${file.name}:`, innerErr);
+        }
     }
 }
+
+// Replaces async function scanDirectory(dirHandle) { ... code removed ... }
+
 
 async function processFile(fileHandle) {
     const name = fileHandle.name.toLowerCase();
