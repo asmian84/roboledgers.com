@@ -1,0 +1,507 @@
+[
+    {
+        "pattern": "starbucks",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "mcdonalds",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "tim hortons",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "subway",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "uber eats",
+        "category": "Meals & Entertainment",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "doordash",
+        "category": "Meals & Entertainment",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "skip the dishes",
+        "category": "Meals & Entertainment",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "chipotle",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "burger king",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "kfc",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "wendys",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "taco bell",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "pizza hut",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "dominos",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "panera bread",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "dunkin",
+        "category": "Meals & Entertainment",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "starbucks coffee",
+        "category": "Meals & Entertainment",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "uber",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "lyft",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "airbnb",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "expedia",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "booking.com",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "hotels.com",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "marriott",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "hilton",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "hyatt",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "holiday inn",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "best western",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "delta air",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "united air",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "american air",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "southwest air",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "air canada",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "westjet",
+        "category": "Travel Expenses",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "hertz",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "avis",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "enterprise rent",
+        "category": "Travel Expenses",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "adobe",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "microsoft",
+        "category": "Software & Subscriptions",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "google cloud",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "aws",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "amazon web services",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "github",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "gitlab",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "atlassian",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "jira",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "notion",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "figma",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "canva",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "zoom.us",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "slack",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "dropbox",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "digitalocean",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "heroku",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "vercel",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "netlify",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "cursor",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "openai",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "anthropic",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "midjourney",
+        "category": "Software & Subscriptions",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "staples",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "office depot",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "best buy",
+        "category": "Office Supplies",
+        "confidence": 0.8
+    },
+    {
+        "pattern": "amazon",
+        "category": "Office Supplies",
+        "confidence": 0.7
+    },
+    {
+        "pattern": "amzn",
+        "category": "Office Supplies",
+        "confidence": 0.7
+    },
+    {
+        "pattern": "walmart",
+        "category": "Office Supplies",
+        "confidence": 0.6
+    },
+    {
+        "pattern": "target",
+        "category": "Office Supplies",
+        "confidence": 0.6
+    },
+    {
+        "pattern": "uline",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "ups store",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "fedex",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "usps",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "canada post",
+        "category": "Office Supplies",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "shell",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "esso",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "chevron",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "petro canada",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "bp",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "exxon",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "mobil",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "texaco",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "7-eleven gas",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "circle k",
+        "category": "Automobile Expense",
+        "confidence": 0.8
+    },
+    {
+        "pattern": "parking",
+        "category": "Automobile Expense",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "impark",
+        "category": "Automobile Expense",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "hydro",
+        "category": "Utilities",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "power",
+        "category": "Utilities",
+        "confidence": 0.8
+    },
+    {
+        "pattern": "water",
+        "category": "Utilities",
+        "confidence": 0.8
+    },
+    {
+        "pattern": "gas company",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "electric",
+        "category": "Utilities",
+        "confidence": 0.8
+    },
+    {
+        "pattern": "enbridge",
+        "category": "Utilities",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "fortis",
+        "category": "Utilities",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "bchydro",
+        "category": "Utilities",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "epcor",
+        "category": "Utilities",
+        "confidence": 0.95
+    },
+    {
+        "pattern": "telus",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "rogers",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "bell",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "att",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "verizon",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "t-mobile",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "comcast",
+        "category": "Utilities",
+        "confidence": 0.9
+    },
+    {
+        "pattern": "xfinity",
+        "category": "Utilities",
+        "confidence": 0.9
+    }
+]

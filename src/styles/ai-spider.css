@@ -1,0 +1,105 @@
+/* AI Spider - Hint System Styles */
+
+.ai-hints-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.ai-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.3s ease-out;
+    pointer-events: all;
+    border-left: 4px solid;
+}
+
+.ai-hint-high {
+    background: rgba(239, 68, 68, 0.95);
+    border-left-color: #dc2626;
+    color: white;
+}
+
+.ai-hint-medium {
+    background: rgba(59, 130, 246, 0.95);
+    border-left-color: #2563eb;
+    color: white;
+}
+
+.ai-hint-low {
+    background: rgba(156, 163, 175, 0.95);
+    border-left-color: #6b7280;
+    color: white;
+}
+
+.hint-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.hint-content {
+    flex: 1;
+}
+
+.hint-message {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.hint-suggestion {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.hint-dismiss {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.hint-dismiss:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ai-hints-container {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}

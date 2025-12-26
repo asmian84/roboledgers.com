@@ -1,0 +1,369 @@
+/* Merchant Dictionary Page Styles */
+
+.merchant-dictionary-page {
+    padding: 2rem;
+}
+
+/* Stats Cards */
+.merchant-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.merchant-stats .stat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.merchant-stats .stat-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+}
+
+.merchant-stats .stat-content {
+    flex: 1;
+}
+
+.merchant-stats .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.merchant-stats .stat-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* Filters */
+.merchant-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.merchant-filters input,
+.merchant-filters select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.merchant-filters input {
+    flex: 1;
+}
+
+/* Merchants Table */
+.merchants-container {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.merchants-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.merchants-table thead {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.merchants-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.merchants-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.merchants-table tr:hover {
+    background: #f8fafc;
+}
+
+.merchant-name strong {
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.merchant-name small {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-sm.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-sm.btn-secondary {
+    background: #64748b;
+    color: white;
+}
+
+/* Merchant Detail Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content.large {
+    max-width: 1000px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #64748b;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Merchant Detail Content */
+.merchant-detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.detail-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    color: #1e293b;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.detail-item span {
+    font-size: 0.875rem;
+    color: #1e293b;
+}
+
+/* Patterns List */
+.patterns-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pattern-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.pattern-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.pattern-header strong {
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.pattern-header .badge {
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pattern-details {
+    margin-bottom: 0.5rem;
+}
+
+.pattern-details small {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.pattern-examples details {
+    margin-top: 0.5rem;
+}
+
+.pattern-examples summary {
+    cursor: pointer;
+    color: #3b82f6;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.pattern-examples ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.5rem;
+}
+
+.pattern-examples li {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.pattern-examples code {
+    background: #1e293b;
+    color: #10b981;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.stat-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-box .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-box .stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* Detail Actions */
+.detail-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.detail-actions button {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+/* Loading/Empty States */
+.loading,
+.no-data,
+.error {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+.error {
+    color: #ef4444;
+}

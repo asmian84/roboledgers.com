@@ -1,0 +1,317 @@
+/* ===================================
+   ROADMAP PAGE STYLES
+   =================================== */
+
+.roadmap-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Timeline Navigation */
+.timeline-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.timeline-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.timeline-tab:hover {
+    color: var(--primary);
+    background: var(--bg-secondary);
+}
+
+.timeline-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.timeline-tab i {
+    font-size: 1.25rem;
+}
+
+/* Timeline Section */
+.timeline-section {
+    margin-bottom: 3rem;
+}
+
+.timeline-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.timeline-header h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.timeline-header p {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, 
+        var(--success) 0%, 
+        var(--success) 50%, 
+        var(--primary) 50%, 
+        var(--primary) 100%
+    );
+}
+
+/* Timeline Item */
+.timeline-item {
+    position: relative;
+    margin-bottom: 3rem;
+    padding-left: 2rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2.5rem;
+    top: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 3px solid var(--bg-primary);
+    background: var(--success);
+    z-index: 1;
+}
+
+.timeline-item.in-progress .timeline-marker {
+    background: var(--warning);
+    animation: pulse 2s infinite;
+}
+
+.timeline-item.planned .timeline-marker {
+    background: var(--info);
+}
+
+.timeline-item.future .timeline-marker {
+    background: var(--primary);
+}
+
+.timeline-item.vision .timeline-marker {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Timeline Content */
+.timeline-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.timeline-content:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateX(4px);
+}
+
+.timeline-date {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+}
+
+.timeline-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.timeline-details {
+    margin-top: 1rem;
+}
+
+.timeline-details h4 {
+    font-size: 1.125rem;
+    margin: 1.5rem 0 0.75rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-details h4:first-child {
+    margin-top: 0;
+}
+
+.timeline-details ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.5rem 0;
+}
+
+.timeline-details li {
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.timeline-details li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.timeline-details li strong {
+    color: var(--text-primary);
+}
+
+/* Vision Statement */
+.vision-statement {
+    background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    margin: 1rem 0;
+    font-size: 1.125rem;
+    line-height: 1.6;
+}
+
+.vision-statement strong {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+/* Roadmap Stats */
+.roadmap-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+}
+
+.roadmap-stats .stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.roadmap-stats .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.roadmap-stats .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .timeline-nav {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .timeline-tab {
+        border-bottom: 1px solid var(--border-color);
+        border-left: 3px solid transparent;
+    }
+
+    .timeline-tab.active {
+        border-bottom-color: var(--border-color);
+        border-left-color: var(--primary);
+    }
+
+    .timeline {
+        padding-left: 1rem;
+    }
+
+    .timeline-item {
+        padding-left: 1.5rem;
+    }
+
+    .timeline-marker {
+        left: -1.75rem;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .timeline-content h3 {
+        font-size: 1.25rem;
+    }
+
+    .roadmap-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .timeline::before {
+    background: linear-gradient(to bottom, 
+        #10b981 0%, 
+        #10b981 50%, 
+        #3b82f6 50%, 
+        #3b82f6 100%
+    );
+}
+
+[data-theme="dark"] .timeline-marker {
+    border-color: var(--bg-primary);
+}
+
+[data-theme="dark"] .vision-statement {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
+}

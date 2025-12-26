@@ -1,0 +1,92 @@
+/* Modern Inline Input */
+.modern-input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    /* Remove bottom border default, handle on input */
+}
+
+.modern-input-wrapper .currency-symbol {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 2px;
+}
+
+.modern-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    /* Hidden by default */
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    width: 140px;
+    padding: 0 4px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    /* Slight round */
+}
+
+/* Hover state: slight gray bg to indicate interactability */
+.modern-input:hover {
+    background-color: var(--bg-hover);
+    border-bottom: 2px solid var(--border-light);
+}
+
+/* Focus state: clear active border */
+.modern-input:focus {
+    outline: none;
+    background-color: var(--bg-card);
+    border-bottom: 2px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Force Left Alignment for Metrics */
+.metric-group-compact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start !important;
+    /* Force Left */
+    justify-content: center;
+    padding: 0 16px;
+}
+
+.metric-label-left {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: flex;
+    /* To align count */
+    gap: 4px;
+}
+
+.metric-count {
+    color: var(--text-tertiary);
+    /* Lighter gray for count */
+    font-weight: 500;
+}
+
+.left-align {
+    text-align: left !important;
+}
+
+/* Specific overrides for vals to ensure size matches opening balance visually or is distinct */
+.val-in,
+.val-out,
+.val-end {
+    font-size: 1.25rem;
+    /* Slightly smaller than opening potentially, or match? */
+    font-weight: 600;
+}
+
+.val-in {
+    color: var(--success-color);
+}
+
+.val-out {
+    color: var(--danger-color);
+}

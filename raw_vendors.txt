@@ -1,0 +1,242 @@
+Vendor Name	Account Number	Category
+#013 MARK'S CALGARY AB	9970	Unusual item
+#072 MARK'SBARRIEON	9970	Unusual item
+#248 SPOKTCHEKROCKYVIEW AB	2654	Shareholder loan #3 - CC payments
+#248 SPORTCHEKROCKYVIEW AB	9970	Unusual item
+#314 SPORTCHEKEDMONTON AB	2654	Shareholder loan #3 - CC payments
+#318 SPORT CHEK	9970	Unusual item
+#5148 SPORT CHEK 008899 BARRIE	9970	Unusual item
+#861 PARTYCWAIRDRIE AB	2654	Shareholder loan #3 - CC payments
+(NIP AUTOMOTIVE LTD CALGARY AB	9970	Unusual item
+-FEDEX-*81119254 T1800 4633339ON	9970	Unusual item
+00115 MACS CONY	9970	Unusual item
+001174 BUSMOBILE Transfer	9970	Unusual item
+00940 MACS CONV. STO BARRIE	9970	Unusual item
+01041 MACS CONV	9970	Unusual item
+01233 MACS CONV	9970	Unusual item
+01233 MACS CONV. STO INNISFIL	9970	Unusual item
+01233 MACS CONY	9970	Unusual item
+01382 MACS CONV	9970	Unusual item
+01420 MACS CONV	9970	Unusual item
+01420 MACS CONV. STOREBARRIEON	9970	Unusual item
+01420 MACS CONY	9970	Unusual item
+01771 MAC'S CON	9970	Unusual item
+05 TEA/THT 138054  RICHMOND  BC  A Restaurants	6415	Client meals and entertainment
+05 TEA/THT 138056  RICHMOND  BC  A Restaurants	6415	Client meals and entertainment
+050 Marks Calgary Ab	9970	Unusual item
+0733 HOLIDAY PH	9970	Unusual item
+0810 Napa Online Montreal Qc	8600	Office supplies and postage
+09129 Operations Support Ill	8600	Office supplies and postage
+0dine Bill Payment, INNPOWER CORP	9970	Unusual item
+0ebitcard f'urchase, PIZZA PIZZA # 6	9970	Unusual item
+0ebitCard Purchase,SH0PPERS DRUG M	9970	Unusual item
+0ebitCard Purchase,THE BEER STORE	9970	Unusual item
+0n!ine Bill Payment, BELL ONE BILL	9970	Unusual item
+0n!ine Bill Payment, INNPOWER CORP	9970	Unusual item
+0n!ine Bill Payment, WSIB SCHEDULE1	9970	Unusual item
+0nline Bill Payment, AMEX CREDIT CD	9970	Unusual item
+0nline Bill payment, BELL ONE BILL	9970	Unusual item
+0nline Bill Payment, BELL ONE BILL	9970	Unusual item
+0nline Bill Payment, CAPITAL ONE-MC	9970	Unusual item
+0nline Bill Payment, ENBRIDGE	9970	Unusual item
+0nline Bill Payment, INNPOWER CORP	9970	Unusual item
+0nline Bill Payment, TELUS MOB	9970	Unusual item
+0nline Bill Payment, WSIB SCHEDULE1	9970	Unusual item
+0ZZIE#S AMUSEMENT5\MNDERMERE BC	2650	Shareholder loan #1 -personal
+0ZZIE#S AMUSEMENTSWINDERMERE BC	2650	Shareholder loan #1 -personal
+1007 Saje Mount Royal Calgary Ab 45007282	8600	Office supplies and postage
+1010702 - ACE L	9970	Unusual item
+1010702 - ACE LIQUOR W	9970	Unusual item
+1060 Saje Mayfar Shopp VICTORIA	9970	Unusual item
+11559192 CANADA	9970	Unusual item
+1410PEPVEN8003876683 CALGARY AB	2654	Shareholder loan #3 - CC payments
+1410pepven8003876683 Calgary Ab 45006546	6415	Client meals and entertainment
+14TH STREET CAR WASH CALGARY	9970	Unusual item
+1600 WORLD BIER HAUS R CALGARY AB	9970	Unusual item
+1857-TOR TRIP ADVISOR	9970	Unusual item
+1857-TOR TRIP ADVISOR MISSISSAUGA	9970	Unusual item
+1886 Buffalo Cafe Calgary Ab 45006546	6415	Client meals and entertainment
+190219S2395200WIRE	9970	Unusual item
+190628S3026500WIRE	9970	Unusual item
+1NNISFIL KFFCO	9970	Unusual item
+1NTERAC c-Transfer Fee, 1NTERAC E-TRANSFER	9970	Unusual item
+1NTERAC c-Transfer Fee, INTERAC E-TRANSFER	9970	Unusual item
+1NTERAC c-Transfer Sent	9970	Unusual item
+2-4-1 PIZZA INNISFIL INNISFIL	9970	Unusual item
+2032256 Alberta Ltd Calgary Ab	6415	Client meals and entertainment
+22 JAKARTA	9970	Unusual item
+22 TANGERANG	9970	Unusual item
+22021 Macs Conv Stores Calgary Ab	9970	Unusual item
+22056 MACS COM. STORE CALGARY AB	9970	Unusual item
+22114 MACS COM. STORE CALGARY AB	9970	Unusual item
+22120 Macs Conv Store Calgary Ab	6415	Client meals and entertainment
+22171 MACS CONV. STORE	6415	Client meals and entertainment
+22171 MACS CONV. STORE 340635	6415	Client meals and entertainment
+22171 MACSCCNV.STOREAIRDRIE AB	9970	Unusual item
+22171 MACSCONV. STORE AIRDRIE AB	2654	Shareholder loan #3 - CC payments
+22171 macsconv. store ardre ab	9970	Unusual item
+22186 MACS CONY	6415	Client meals and entertainment
+2599265 ONTARIO INC	9970	Unusual item
+2614471 ONTARIO INC 032 VAUGHAN	9970	Unusual item
+2CO.COM'MOVAVI.COM 119 AMSTERDAM NL	8600	Office supplies and postage
+2CO.COM*MALWAREBYTES 1511AMSTERDAM	9970	Unusual item
+30NOV2020, PAY TO CRA PAYER ON	9970	Unusual item
+30SEP2020, PAY TO CRA PAYER ON	9970	Unusual item
+346A-GARUDA MANAGEMENT BDTANGERANG	9970	Unusual item
+355856 ALBERTA LTD EDMONTON AB	6415	Client meals and entertainment
+3712-CLGY RELAY	9970	Unusual item
+3712-CLGY RELAY D41K02	9970	Unusual item
+3716-CLGY RELAY	9970	Unusual item
+3716-CLGY RELAY POST I CALGARY AB	9970	Unusual item
+3719-CLGY RUNDLEMRKT	9970	Unusual item
+3CPAYMENTHILTON LONDON	9200	Travel and accomodations
+3CPAYMENTHILTON LONDON S	9200	Travel and accomodations
+3rd Party Loan	2690	Current portion of long-term debt
+400 CHRYSLER DODGE JEEP INNISFIL	9970	Unusual item
+406 LDTOWERLANE AIRDRIE AB	2654	Shareholder loan #3 - CC payments
+420 Premium Markets Calgary Ab	6415	Client meals and entertainment
+4TH SPOT KITCHEN & BAR CALGARY AB	9970	Unusual item
+4th Spot Kitchen & Bar Calgary Ab 45007282	6415	Client meals and entertainment
+4th spot kitchen & bar calgary, ab  e	9970	Unusual item
+50th Parallel Estates Lake Country Bc 45007282	6415	Client meals and entertainment
+52543-ESSO-HWY	9970	Unusual item
+52558-ESSO-7018	9970	Unusual item
+536 CASH MONEY	9970	Unusual item
+5705 FALLS AVENIAGARA FAON	9970	Unusual item
+599 CASH MONEY	9970	Unusual item
+608 CASH MONEY	9970	Unusual item
+61114 MACS CONV	9970	Unusual item
+63033 MACS CONV. STO NEWMARKET	9970	Unusual item
+63033 MACS CONY	9970	Unusual item
+65062 MAC'S CONVENIENCE COLLINGWOOD	9970	Unusual item
+65062 MACS CONV	9970	Unusual item
+66308 MACS CONV	9970	Unusual item
+6928 LET`S BOWL	9970	Unusual item
+6WW043571917310	9970	Unusual item
+6WW082861201440	9970	Unusual item
+6WW180260818470	9970	Unusual item
+6WW350991615030	9970	Unusual item
+6WW420260830020	9970	Unusual item
+7 DAY CONVENIEN	9970	Unusual item
+7 Eleven Escalgary Abca	2654	Shareholder loan #3 - CC payments
+7 Eleven Stire 37785 Calgary Ab	6415	Client meals and entertainment
+7 ELEVEN STORE	9970	Unusual item
+7 ELEVEN STORE #14815 CALGARY AB	6415	Client meals and entertainment
+7 ELEVEN STORE #25349 CALGARY AB	9970	Unusual item
+7 ELEVEN STORE #32847 CALGARY AB	6415	Client meals and entertainment
+7 ELEVEN STORE #32891 CALGARY  AB	6415	Client meals and entertainment
+7 ELEVEN STORE #33010 CALGARY  AB	6415	Client meals and entertainment
+7 ELEVEN STORE #33420 CALGARY  AB	6415	Client meals and entertainment
+7 ELEVEN STORE #36960AIRDRIE AB	6415	Client meals and entertainment
+7 ELEVEN STORE #37833 RED DEER COUN, AB	9970	Unusual item
+7 Eleven Store 14819 Calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 1481calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 1482calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 15482 Calgary Abca	7400	Fuel and oil
+7 Eleven Store 1548calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 1590calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 2091calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 2247calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 2534calgary Abca	7400	Fuel and oil
+7 Eleven Store 25630 Calgary Abca	7400	Fuel and oil
+7 Eleven Store 2563calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 26509 Calgary Ab	9970	Unusual item
+7 Eleven Store 2650calgary Abca	7400	Fuel and oil
+7 Eleven Store 29433 Calgary Abca	7400	Fuel and oil
+7 Eleven Store 2943calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 3284calgary Abca	7400	Fuel and oil
+7 Eleven Store 3301calgary Abca	7400	Fuel and oil
+7 Eleven Store 3678calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 37788 Calgary Abca	7400	Fuel and oil
+7 Eleven Store 37789 Calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 3778calgary Abca	6415	Client meals and entertainment
+7 Eleven Store 37879 Langley Bc	6415	Client meals and entertainment
+7 Eleven Store 38558 Calgary Ab	6415	Client meals and entertainment
+7 Eleven Store 38558 Calgary Ab	6415	Client meals and entertainment
+7 Eleven Store 38965 Calgary Ab	6415	Client meals and entertainment
+7 Eleven Store 38966 Calgary Ab	6415	Client meals and entertainment
+7 Eleven Store 41107 Edmonton Ab	9970	Unusual item
+7-Eleven	9970	Unusual item
+7-ELEVEN #26093	6415	Client meals and entertainment
+7-ELEVEN STORE	9970	Unusual item
+7-ELEVEN STORE #37783 CANMORE AB	6415	Client meals and entertainment
+7-ELEVEN STORE #37801 AIRDRIE AB	6415	Client meals and entertainment
+7-ELEVEN STORE #37833 RED DEER COUN, AB	9970	Unusual item
+7101342 - MILL STREET P MISSISSAUGA	9970	Unusual item
+7105351 - TIM HORTONS A MISSISSAUGA	9970	Unusual item
+722 WORLD BIER HAUS CALGARY	9970	Unusual item
+72ND AVE EDO JAPAN CALGARY	9970	Unusual item
+735 Ld Lakeview Calgary Ab	6415	Client meals and entertainment
+736 Ld Mount Royal Calgary Ab 45006546	8600	Office supplies and postage
+819611 BC LTD. O/A INVERMERE BC	6415	Client meals and entertainment
+849420000247366 ATBOL Bill Payment ATB FINANCIAL	4001	Sales
+849420000247366 Direct Deposit Misc. Payments	4001	Sales
+849420000247366 POS Purchase 324020	4001	Sales
+849420000247366 POS Purchase 506461	4001	Sales
+91 ftn tre f044 edmonton ab  Jm"jm	9970	Unusual item
+911 SUPPLY AND ADVENTURE CALGARY	9970	Unusual item
+98 SUPER PANDA	9970	Unusual item
+='i"d Payment,TD LOAN PAYMNT	9970	Unusual item
+A & W #1710 CRE	9970	Unusual item
+A & W 1722 Hunterhocalgary Abca	6415	Client meals and entertainment
+A & W 1808 Calgary Abca	6415	Client meals and entertainment
+A & W VANCOUVER INTERN VANCOUVER BC	9970	Unusual item
+A Apollo Windows & Doors Calgary Ab	9970	Unusual item
+A B LIQUOR STORE BLAIRMORE AB	9970	Unusual item
+A Plus 1 Convenience calgary Abcd	2654	Shareholder loan #3 - CC payments
+A Plus Insurance	389	Cheque
+A R AUTOMOTIVE	8800	Repairs and maintenance
+A&1MSTORE #1535 ROCKYVIEWCO AB	2654	Shareholder loan #3 - CC payments
+A&1MSTORE INVERMERE INVERMERE BC	2654	Shareholder loan #3 - CC payments
+A&IM#1372 AIRDRIE AB	2654	Shareholder loan #3 - CC payments
+A&IM#1396AIRDRIE AB	8900	Shop supplies
+A&m Mobile Mechanic Ltd Calgary Ab	9970	Unusual item
+A&M#1396AIRDRIE AB	8900	Shop supplies
+A&M#1485 EDMONTON AB	2654	Shareholder loan #3 - CC payments
+A&MSTORE #1535 ROCKYVIEWCO AB	6415	Client meals and entertainment
+A&MSTORE INVERMERE INVERMERE BC	6415	Client meals and entertainment
+A&W # 0637 - SO	9970	Unusual item
+A&W # 1713 BARL	9970	Unusual item
+A&W # 4946 MONA	9970	Unusual item
+A&W #1069	9970	Unusual item
+A&W #1372 263471	6415	Client meals and entertainment
+A&W #1397  HIGH RIVER AB	6415	Client meals and entertainment
+A&W #1473 CALGARY	9970	Unusual item
+A&W #1473 CALGARY AB	9970	Unusual item
+a&w #1480  calgary  ab	6415	Client meals and entertainment
+A&W #1572 CALGA	9970	Unusual item
+A&W #1572 CALGARY CALGARY	9970	Unusual item
+A&W #1574 ROCKY VIEW ROCKY VIEW, AB	9970	Unusual item
+A&W #4570	9970	Unusual item
+A&W #4844 BRADF	9970	Unusual item
+A&W #4917	9970	Unusual item
+A&W #570 KELOWNA BC	9970	Unusual item
+A&w 0553 Vernon Bc	6415	Client meals and entertainment
+A&w 1257 Calgary Abca	6415	Client meals and entertainment
+A&w 1323 Calgary Abca	6415	Client meals and entertainment
+A&w 1558 Glendeer Calgary Ab	6415	Client meals and entertainment
+A&w 1564 North Hill C Calgary Ab	9970	Unusual item
+A&w 1572 Calgary Ab	6415	Client meals and entertainment
+A&w 1582 Calgary Ab	6415	Client meals and entertainment
+A&w 1596 Beacon Hill Calgary Ab	6415	Client meals and entertainment
+A&W BOWDEN 1807  BOWDEN  AB	6415	Client meals and entertainment
+A&W RESTAURANT	9970	Unusual item
+a&w store #2225  prince albert sk	9970	Unusual item
+A&W STORE #2a5  PRINCE ALBERT SK	9970	Unusual item
+A&W#1372 AIRDRIE AB	2654	Shareholder loan #3 - CC payments
+A&WSTORE #1535 ROCKYVIEWCO AB	2654	Shareholder loan #3 - CC payments
+A&WSTORE INVERMERE INVERMERE BC	2654	Shareholder loan #3 - CC payments
+A1 CANTINA	9970	Unusual item
+A1BOL lnterac c-Transfer Sent	9970	Unusual item
+A8W # 4866 ATHE	9970	Unusual item
+A8W #4917	9970	Unusual item
+A8W RESTAURANT	9970	Unusual item
+Aaron Feldman	347	Cheque
+Ab Bill Payment Cra Rev Tax Amount Owing	2620	Income taxes payable-Prov.-current year
+AB TAX ADMIN	2620	Income taxes payable-Prov.-current year
+ABC CHRISTIAN STORE	9970	Unusual item
+ABC*ANYTIME FITNESS 888-8279262	9970	Unusual item
+ABCIT 429920 BUS	9970	Unusual item
+ABCIT 5427210    BUS	2620	Income taxes payable-Prov.-current year
+Abcit 9132161 Gpfs Government Payment	2620	Income taxes payable-Prov.-current year
+ABE'S RESTARAUNTAIRDRIE AB	6415	Client meals and entertainment

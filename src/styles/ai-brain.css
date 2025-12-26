@@ -1,0 +1,138 @@
+/* AI Brain Page Styles */
+
+.ai-brain-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.ai-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.ai-status-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.ai-status-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.status-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.status-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.status-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+
+.status-note {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.capability-section {
+    padding: 1.5rem;
+    border-left: 4px solid var(--primary);
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.capability-section h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.capability-section p {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+}
+
+.conversation-item,
+.pattern-item,
+.knowledge-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: var(--bg-secondary);
+}
+
+.conversation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.conversation-date {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+}
+
+.conversation-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.pattern-type,
+.knowledge-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.pattern-data,
+.knowledge-value {
+    background: var(--bg-primary);
+    padding: 0.75rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+    overflow-x: auto;
+}
+
+.pattern-stats,
+.knowledge-stats {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 0.5rem;
+}
+
+.knowledge-key {
+    font-size: 1.125rem;
+    margin: 0.5rem 0;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
