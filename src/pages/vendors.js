@@ -8,92 +8,74 @@ window.renderVendors = function () {
   console.log('🤖 Robo-Accountant: Rendering AI Brain...');
 
   // State Check
-  const autoPilot = localStorage.getItem('ab3_autopilot') === 'true';
+  // State Check (ALWAYS ON)
+  const autoPilot = true;
+  localStorage.setItem('ab3_autopilot', 'true');
 
   return `
-    <div class="ai-brain-page" style="padding: 24px; max-width: 1400px; margin: 0 auto; font-family: 'Inter', sans-serif;">
+    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
       
-      <!-- HEADER: AI COMMAND CENTER -->
-      <div class="ai-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
-              🧠
+      <!-- HEADER: REMOVED LEGACY AI-HEADER TO CLEAN UP UI -->
+      <!-- HEADER SUMMARY CARD (TRANSACTIONS STYLE) -->
+       <div class="fixed-top-section" style="margin-bottom: 0;">
+          <header class="dashboard-header-modern" style="background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
+                <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🧠</div>
+                <div class="header-info">
+                    <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Vendor Dictionary</h2>
+                    <div class="meta" style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                        <span style="background: #eff6ff; color: #3b82f6; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.7rem;">AI MEMORY</span>
+                        <span>•</span>
+                        <span>Active Learning</span>
+                    </div>
+                </div>
             </div>
-            <div>
-              <h1 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.5px;">Vendor Intelligence</h1>
-              <p style="margin: 0; color: #64748b; font-size: 14px;">The central brain of your Robo-Accountant</p>
+
+            <div class="header-stats" style="display: flex; gap: 24px; background: #f8fafc; padding: 8px 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                <div class="stat-unit">
+                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Vendors</label>
+                    <div id="stat-total-vendors" class="val" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">--</div>
+                </div>
+                <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+                <div class="stat-unit">
+                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Categorized</label>
+                    <div id="stat-categorized" class="val" style="font-size: 1.1rem; color:#10b981; font-weight:600;">--</div>
+                </div>
+                <!--
+                <div class="stat-unit">
+                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Uncategorized</label>
+                    <div id="stat-uncategorized" class="val" style="font-size: 1.1rem; color:#f59e0b; font-weight:600;">--</div>
+                </div>
+                -->
+                <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+                <div class="stat-unit">
+                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Health</label>
+                    <div id="stat-health" class="val" style="font-size: 1.1rem; color:#2563eb; font-weight:700;">--%</div>
+                </div>
+            </div>
+          </header>
+
+          <!-- TOOLBAR (Relocated) -->
+          <div style="padding: 12px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+               <input type="text" placeholder="Search knowledge base..." id="vendor-search" 
+                      onkeyup="window.vendorsGridApi.setQuickFilter(this.value)"
+                      style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; width: 300px; font-size: 13px;">
+            </div>
+
+            <div style="display:flex; gap: 10px;">
+              <button onclick="window.cleanGarbageVendors()" style="background: #ffffff; color: #f59e0b; border: 1px solid #f59e0b; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                 <i class="ph ph-magic-wand"></i> Mega Fix
+              </button>
+              <button onclick="window.addNewVendor()" style="background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                  <span>+</span> Add Rule
+              </button>
             </div>
           </div>
-        </div>
+       </div>
 
-        <!-- AUTO-PILOT TOGGLE -->
-        <div class="autopilot-card" style="background: white; padding: 16px 20px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-          <div>
-            <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Auto-Pilot Mode</div>
-            <div style="font-size: 12px; color: #64748b;">Auto-categorize matching > 90%</div>
-          </div>
-          <label class="toggle-switch" style="position: relative; display: inline-block; width: 48px; height: 28px;">
-            <input type="checkbox" id="autopilot-toggle" ${autoPilot ? 'checked' : ''} onchange="window.toggleAutoPilot(this)">
-            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px;"></span>
-            <span class="knob" style="position: absolute; content: ''; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
-            <style>
-              input:checked + .slider { background-color: #10b981; }
-              input:checked + .slider .knob { transform: translateX(20px); }
-            </style>
-          </label>
-        </div>
-      </div>
-
-      <!-- STATS DASHBOARD -->
-      <div class="ai-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px;">
-        
-        <!-- CARD 1: Rules -->
-        <div class="stat-card" style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Learned Rules</div>
-          <div style="font-size: 32px; font-weight: 800; color: #1e293b; margin: 8px 0;" id="stat-rules-count">--</div>
-          <div style="font-size: 13px; color: #10b981; display: flex; align-items: center; gap: 4px;">
-            <span>+0 new</span>
-            <span style="color: #94a3b8;">this session</span>
-          </div>
-        </div>
-
-        <!-- CARD 2: Confidence -->
-        <div class="stat-card" style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">AI Confidence</div>
-          <div style="font-size: 32px; font-weight: 800; color: #6366f1; margin: 8px 0;">94%</div>
-          <div style="width: 100%; height: 6px; background: #e0e7ff; border-radius: 3px; overflow: hidden;">
-            <div style="width: 94%; height: 100%; background: #6366f1;"></div>
-          </div>
-        </div>
-
-        <!-- CARD 3: Unassigned -->
-        <div class="stat-card" style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; overflow: hidden;">
-          <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;">Needs Review</div>
-          <div style="font-size: 32px; font-weight: 800; color: #f59e0b; margin: 8px 0;" id="stat-needs-review">--</div>
-          <button onclick="window.scanForNewVendors()" style="margin-top: 8px; font-size: 13px; color: #f59e0b; background: #fffbeb; border: 1px solid #fcd34d; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: 600;">
-            ⚡ Scan Transactions
-          </button>
-        </div>
-
-      </div>
-
-      <!-- MAIN GRID CONTAINER -->
-      <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; height: calc(100vh - 350px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        
-        <!-- TOOLBAR -->
-        <div style="padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-          <div style="display: flex; gap: 12px;">
-             <input type="text" placeholder="Search knowledge base..." id="vendor-search" 
-                    onkeyup="window.gridApi.setQuickFilter(this.value)"
-                    style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; width: 300px; font-size: 14px;">
-          </div>
-          <button onclick="window.addNewVendor()" style="background: #1e293b; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-            <span>+</span> Add Rule
-          </button>
-        </div>
-
-        <!-- AG GRID -->
+      <!-- MAIN GRID CONTAINER (Full Width / Fluid) -->
+      <div style="flex: 1; min-height: 0; background: #f1f5f9; padding: 0;">
         <div id="vendorsGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
       </div>
 
@@ -165,7 +147,12 @@ window.initVendorsGrid = async function () {
       headerName: "Occurrences",
       field: "count",
       width: 120,
-      cellStyle: { textAlign: 'center', color: '#64748b' }
+      cellStyle: { textAlign: 'center', color: '#64748b', cursor: 'pointer', textDecoration: 'underline' },
+      onCellClicked: params => {
+        if (params.value > 0) {
+          window.showVendorDrillDown(params.data.name, params.data.count);
+        }
+      }
     },
     {
       headerName: "Actions",
@@ -189,9 +176,24 @@ window.initVendorsGrid = async function () {
     count: v.count || 0
   }));
 
-  // Update Stats
-  const elCount = document.getElementById('stat-rules-count');
-  if (elCount) elCount.innerText = rowData.length;
+  // Update Stats (Header Card)
+  const total = rowData.length;
+  const categorized = rowData.filter(r => r.defaultAccount && r.defaultAccount !== 'Uncategorized').length;
+  const health = total > 0 ? Math.round((categorized / total) * 100) : 0;
+
+  const elTotal = document.getElementById('stat-total-vendors');
+  const elCat = document.getElementById('stat-categorized');
+  const elHealth = document.getElementById('stat-health');
+
+  if (elTotal) elTotal.innerText = total;
+  if (elCat) elCat.innerText = categorized;
+  if (elHealth) {
+    elHealth.innerText = health + '%';
+    // Dynamic Color
+    if (health < 50) elHealth.style.color = '#ef4444';
+    else if (health < 80) elHealth.style.color = '#f59e0b';
+    else elHealth.style.color = '#10b981';
+  }
 
   const gridOptions = {
     columnDefs: columnDefs,
@@ -205,12 +207,21 @@ window.initVendorsGrid = async function () {
       resizable: true
     },
     onGridReady: (params) => {
-      window.gridApi = params.api;
       params.api.sizeColumnsToFit();
+    },
+    onCellValueChanged: async (params) => {
+      if (params.colDef.field === 'defaultAccount') {
+        const newValue = params.newValue;
+        const vendorId = params.data.id;
+        console.log(`💾 Saving Category Change: ${params.data.name} -> ${newValue}`);
+        await window.storage.updateVendor(vendorId, { defaultAccount: newValue });
+        if (window.showToast) window.showToast('Rule saved!', 'success');
+      }
     }
   };
 
-  new agGrid.Grid(gridDiv, gridOptions);
+  // Modern AG Grid
+  window.vendorsGridApi = agGrid.createGrid(gridDiv, gridOptions);
 };
 
 // --- HELPER: Account Names ---
@@ -264,3 +275,94 @@ window.addNewVendor = function () {
     window.initVendorsGrid();
   }
 };
+
+window.cleanGarbageVendors = async function () {
+  if (!confirm("MEGA FIX: 1. Auto-Assign categories based on history?\n2. Delete remaining empty/garbage rules?")) return;
+
+  const vendors = await window.storage.getVendors();
+  let updated = 0;
+
+  // 1. AUTO ASSIGN (Simple Heuristic for now, or just filling Uncategorized)
+  // For now, let's just look for obvious matches or use 'Unknown' -> 'Uncategorized' normalization
+  // Or if we have a CategorizationEngine, use it.
+  if (window.CategorizationEngine) {
+    for (const v of vendors) {
+      if (v.defaultAccount === 'Uncategorized' || !v.defaultAccount) {
+        const suggestion = window.CategorizationEngine.classify({ description: v.name });
+        if (suggestion && suggestion.confidence > 0.8) {
+          await window.storage.updateVendor(v.id, { defaultAccount: suggestion.category });
+          updated++;
+        }
+      }
+    }
+  }
+
+  if (updated > 0) alert(`✅ Auto-Assigned ${updated} vendors.`);
+
+  // 2. GARBAGE COLLECTION
+  const freshVendors = await window.storage.getVendors(); // Reload
+  const garbage = freshVendors.filter(v =>
+    (v.defaultAccount === 'Uncategorized' || !v.defaultAccount) &&
+    (v.name.length < 3 || /^\d+$/.test(v.name)) // Short or Pure Numbers
+  );
+
+  if (garbage.length === 0) {
+    alert("No remaining garbage rules found.");
+    return;
+  }
+
+  if (!confirm(`Found ${garbage.length} remaining garbage rules (Short/Unassigned). Delete them?`)) return;
+
+  // Delete loop
+  for (const v of garbage) {
+    await window.storage.deleteVendor(v.id);
+  }
+
+  window.initVendorsGrid();
+  alert(`Cleaned up ${garbage.length} rules.`);
+};
+
+// --- DRILL DOWN MODAL ---
+window.showVendorDrillDown = async function (vendorName, count) {
+  const modal = document.getElementById('vendor-drilldown-modal');
+  const title = document.getElementById('drilldown-title');
+  const list = document.getElementById('drilldown-list');
+
+  if (!modal || !list) return;
+
+  title.innerText = `${vendorName} (${count} txns)`;
+  list.innerHTML = '<div style="padding:20px; text-align:center;">Loading...</div>';
+
+  modal.style.display = 'flex';
+
+  // Fetch Transactions
+  let allTxns = [];
+  if (window.storage) allTxns = await window.storage.getTransactions();
+
+  const matches = allTxns.filter(t => t.description === vendorName || t.description.includes(vendorName));
+
+  if (matches.length === 0) {
+    list.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">No matching transactions found.</div>';
+    return;
+  }
+
+  const html = matches.map(t => `
+        <div style="padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 600; font-size: 14px; color: #1e293b;">${t.date ? new Date(t.date).toLocaleDateString() : 'N/A'}</div>
+                <div style="font-size: 12px; color: #64748b;">${t.description}</div>
+            </div>
+            <div style="font-weight: 700; color: ${t.type === 'credit' ? '#10b981' : '#1e293b'};">
+                ${t.amount ? '$' + parseFloat(t.amount).toFixed(2) : '-'}
+            </div>
+        </div>
+    `).join('');
+
+  list.innerHTML = html;
+};
+
+window.closeVendorDrillDown = function () {
+  const modal = document.getElementById('vendor-drilldown-modal');
+  if (modal) modal.style.display = 'none';
+};
+

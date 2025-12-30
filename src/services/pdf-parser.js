@@ -75,7 +75,16 @@
                         },
                         identifier: /American Express|Amex|Pt-Trn|AXP/i,
                         dateFormat: 'MMM DD'
-                    }
+                    },
+                    servus: {
+                        name: 'Servus Credit Union',
+                        patterns: {
+                            date: /\d{2}-[A-Z]{3}-\d{4}/i,
+                            transaction: /(\d{2}-[A-Z]{3}-\d{4})\s+(.+?)\s+(-?[\d,]+\.\d{2})/,
+                        },
+                        identifier: /Servus Credit Union|Servus/i,
+                        dateFormat: 'DD-MMM-YYYY'
+                    },
                 };
 
                 // Garbage line patterns (from Monopoly)
@@ -637,6 +646,10 @@
 
                 if (bank.name === 'American Express') {
                     return this.extractAmexTransactions(text);
+                }
+
+                if (bank.name === 'Servus Credit Union') {
+                    return this.extractServusTransactions(text);
                 }
 
                 // If smart parser succeeded, return results
@@ -1656,26 +1669,16 @@
 
                             amount = numbers[numbers.length - 1]; // Last number is likely amount
 
-                            // Try to check column math?
-                            // Can't do running balance check easily without capturing the balance (which is outside chunk)
-                            // So let's rely on Check/Deposit columns/keywords
-
-                            // TD Business often has: Description | Debit | Credit | Date
-                            // If 2 numbers: Debit/Credit?
-                            // Actually usually "Debit" OR "Credit".
-                            // Let's look at keywords/indices.
-
-                            if (numbers.length === 2 && numbers[0] > numbers[1]) {
-                                // Maybe Fee + Amount? Uncertain.
+                            // TD Credit Card: Purchases are debits, Payments are credits
+                            // Look for keywords to determine type
+                            if (fullLine.toUpperCase().includes('PAYMENT') ||
+                                fullLine.toUpperCase().includes('CREDIT') ||
+                                fullLine.toUpperCase().includes('CR') ||
+                                fullLine.toUpperCase().includes('REFUND')) {
+                                type = 'credit';
+                            } else {
+                                type = 'debit'; // Purchases, fees, etc.
                             }
-
-                            // Naive Fallback for now: Last Number is Amount.
-                            // Type detection by keyword or column position is tricky in flattened text.
-                            /* 
-                               Log says: "DESCRIPTION   CHEQUE/DEBIT   DEPOSIT/CREDIT   DATE   BALANCE"
-                               If flattened: "Desc $100.00 -" or "Desc $100.00"
-                               Often Credits have "CR" or "-" sign.
-                            */
                         } else {
                             // Standard Mode (Date First -> Balance at end of chunk)
                             lineBalance = numbers[numbers.length - 1];
@@ -1713,12 +1716,15 @@
                         }
                     } else {
                         amount = numbers[0];
-                        if (fullLine.toUpperCase().includes('DEPOSIT') || fullLine.toUpperCase().includes('CREDIT') || fullLine.toUpperCase().includes('CR')) {
+                        if (fullLine.toUpperCase().includes('DEPOSIT') || fullLine.toUpperCase().includes('CREDIT') || fullLine.toUpperCase().includes('CR') || fullLine.toUpperCase().includes('PAYMENT')) {
                             type = 'credit';
                         } else {
                             type = 'debit';
                         }
                     }
+
+                    // Skip if amount is 0 or negative
+                    if (amount <= 0) continue;
 
                     // 4. CLEAN DESCRIPTION
                     let desc = fullLine.replace(dateStr, '');
@@ -1727,6 +1733,16 @@
                     });
 
                     desc = desc.trim().replace(/^\s*-\s*/, '');
+
+                    // Skip if description is too short or looks like garbage
+                    if (desc.length < 3) continue;
+                    if (desc.match(/^[0-9\s\-\.]+$/)) continue; // Only numbers/symbols
+
+                    // Skip common header/footer patterns
+                    if (desc.match(/^(Q|Retail|Transportation|Professional|Health|Restaurants|Travel)/i) && desc.length < 20) {
+                        // These are likely category labels, not descriptions
+                        continue;
+                    }
 
                     transactions.push({
                         date: dateObj,
@@ -1846,6 +1862,82 @@
                 }
 
                 console.log(`✅ Amex Extracted ${transactions.length} items`);
+                return { transactions, metadata: {} };
+            }
+
+
+
+            /**
+             * Servus Parser (v19 - Smart Slice)
+             * - Matches DD-MMM-YYYY dates
+             * - Handles Debit/Credit detection
+             */
+            extractServusTransactions(text) {
+                const transactions = [];
+                console.log(`🔍 Servus Parser (v19): Starting extraction...`);
+
+                // Regex: DD-MMM-YYYY (e.g. 28-Feb-2023)
+                const dateRgx = /(\d{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4})/gi;
+                const allMatches = [...text.matchAll(dateRgx)];
+                console.log(`🔍 Servus Debug: Found ${allMatches.length} date matches.`);
+
+                const months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+
+                for (let i = 0; i < allMatches.length; i++) {
+                    const match = allMatches[i];
+                    const dateStr = match[0]; // "28-Feb-2023"
+                    const startIndex = match.index;
+                    const nextMatch = allMatches[i + 1];
+                    const endIndex = nextMatch ? nextMatch.index : text.length;
+
+                    // Extract Line
+                    let fullLine = text.substring(startIndex, endIndex).trim();
+                    fullLine = fullLine.replace(/\r?\n|\r/g, ' '); // Flatten
+
+                    // Parse Numbers from end of line
+                    const numbers = fullLine.match(/-?[\d,]+\.\d{2}/g);
+                    if (!numbers || numbers.length === 0) continue;
+
+                    // Logic: If 2 numbers -> [Amount, Balance]. If 1 -> [Amount].
+                    // Assume second to last is amount if >= 2 numbers.
+                    let amountRaw = (numbers.length >= 2) ? numbers[numbers.length - 2] : numbers[numbers.length - 1];
+                    let amount = parseFloat(amountRaw.replace(/,/g, ''));
+
+                    let type = 'debit';
+                    // Check keywords
+                    if (fullLine.toUpperCase().includes('DEPOSIT') || fullLine.toUpperCase().includes('TRANSFER IN') || fullLine.toUpperCase().includes('CREDIT')) {
+                        type = 'credit';
+                        // Credits are usually positive in credit column, but let's trust keywords.
+                    }
+                    if (amount > 0 && type === 'credit') amount = amount; // consistent
+
+                    const dParts = dateStr.split('-');
+                    const day = parseInt(dParts[0]);
+                    const monthNum = months[dParts[1].toUpperCase()];
+                    const year = parseInt(dParts[2]);
+
+                    const dateObj = new Date(year, monthNum, day);
+                    const formattedDate = `${year}-${(monthNum + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+
+                    let desc = fullLine.replace(dateStr, '').replace(amountRaw, '').trim();
+                    // Remove balance if 2 numbers found
+                    if (numbers.length >= 2) {
+                        desc = desc.replace(numbers[numbers.length - 1], '');
+                    }
+                    desc = desc.trim();
+
+                    transactions.push({
+                        date: dateObj, // Keep object for internal sort? 
+                        // Wait, other parsers push Date Object or String? 
+                        // extractAmex uses Date Object. extractTD uses Date Object.
+                        description: desc,
+                        amount: Math.abs(amount),
+                        type: type,
+                        originalDate: dateStr
+                    });
+                }
+
+                console.log(`✅ Servus Extracted ${transactions.length} items`);
                 return { transactions, metadata: {} };
             }
 

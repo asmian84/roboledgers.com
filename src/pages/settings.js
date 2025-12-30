@@ -371,63 +371,48 @@ function renderDataPanel() {
     <div class="settings-panel">
       <h2>Data Management</h2>
       <p class="panel-description">Import, export, and manage your financial data</p>
-      
+
       <div class="form-section">
-        <h3>📦 Data Migration</h3>
+        <h3>AI Processor</h3>
+        <p class="feature-notice">🤖 <strong>Smart Post-Processor:</strong> Upload your raw scan results to auto-assign COA codes and clean merchant names.</p>
         
-        <div class="export-options">
-          <button class="btn-export" onclick="if(window.DataMigration) DataMigration.runFullMigration().then(r => alert(r.success ? '✅ Migration complete!' : '❌ Migration failed')); else alert('Migration tool not loaded');">
-            <span class="export-icon">🚀</span>
-            <div>
-              <div class="export-title">Migrate from Old System</div>
-              <div class="export-desc">Import vendors, COA, and transactions</div>
-            </div>
+        <div class="card" style="border: 1px dashed var(--border-color); padding: 2rem; text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🧠</div>
+          <h3>Upload Scan Results</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Select your <code>scan_results.json</code> file</p>
+          
+          <input type="file" id="json-result-upload" accept=".json" style="display: none;" onchange="window.processJSONUpload(event)">
+          <button class="btn-primary" onclick="document.getElementById('json-result-upload').click()">
+            📂 Select File
           </button>
           
-          <button class="btn-export" onclick="if(window.DataMigration) DataMigration.exportV3Data(); else alert('Migration tool not loaded');">
-            <span class="export-icon">💾</span>
-            <div>
-              <div class="export-title">Backup v3 Data</div>
-              <div class="export-desc">Export all v3 data as JSON</div>
+          <div id="ai-process-stats" style="display: none; margin-top: 1.5rem; text-align: left; background: var(--bg-subtle); padding: 1rem; border-radius: 8px;">
+            <div id="ai-progress-text">Processing...</div>
+            <progress id="ai-progress-bar" value="0" max="100" style="width: 100%; margin-top: 0.5rem;"></progress>
+            <div id="ai-download-area" style="margin-top: 1rem; text-align: center;">
+              <!-- Download button will appear here -->
             </div>
-          </button>
+            
+            <!-- Missing Grid Container -->
+            <div id="ai-preview-grid" class="ag-theme-alpine" style="height: 500px; width: 100%; margin-top: 20px; display: none;"></div>
+          </div>
         </div>
       </div>
-      
+
       <div class="form-section">
-        <h3>Export Data</h3>
+        <h3>Advanced Tools</h3>
         
         <div class="export-options">
-          <button class="btn-export" onclick="exportAllData('json')">
-            <span class="export-icon">📄</span>
+          <button class="btn-export" onclick="window.location.hash = '#/indexer'">
+            <span class="export-icon">🧠</span>
             <div>
-              <div class="export-title">Export as JSON</div>
-              <div class="export-desc">Complete database backup</div>
-            </div>
-          </button>
-          
-          <button class="btn-export" onclick="exportAllData('csv')">
-            <span class="export-icon">📊</span>
-            <div>
-              <div class="export-title">Export as CSV</div>
-              <div class="export-desc">Transactions only</div>
+              <div class="export-title">Data Junkie Console</div>
+              <div class="export-desc">Train the Brain & Bulk Index Files</div>
             </div>
           </button>
         </div>
       </div>
-      
-      <div class="form-section">
-        <h3>Import Data</h3>
-        
-        <div class="import-zone">
-          <input type="file" id="data-import-file" accept=".json,.csv" style="display: none" onchange="handleDataImport(event)">
-          <button class="btn-secondary" onclick="document.getElementById('data-import-file').click()">
-            📥 Choose File to Import
-          </button>
-          <p class="import-hint">Supports JSON (full backup) or CSV (transactions)</p>
-        </div>
-      </div>
-      
+
       <div class="form-section danger-zone">
         <h3>Danger Zone</h3>
         
@@ -449,6 +434,330 @@ function renderDataPanel() {
       </div>
     </div>
   `;
+}
+
+// ==================================================
+// AI POST-PROCESSOR LOGIC
+// ==================================================
+
+// Store raw processed data globally for drill-down access
+window.aiProcessedData = [];
+
+window.processJSONUpload = function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statsDiv = document.getElementById('ai-process-stats');
+  const progressText = document.getElementById('ai-progress-text');
+  const progressBar = document.getElementById('ai-progress-bar');
+  const downloadArea = document.getElementById('ai-download-area');
+  const gridDiv = document.getElementById('ai-preview-grid');
+
+  statsDiv.style.display = 'block';
+  progressText.textContent = 'Reading file...';
+  downloadArea.innerHTML = '';
+  // Reset Grid
+  if (gridDiv) {
+    gridDiv.innerHTML = '';
+    gridDiv.style.display = 'none';
+  }
+
+  progressBar.value = 10;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const rawData = JSON.parse(e.target.result);
+
+      // Fix: Flatten CLI Output (Array of Files) -> Single Transaction List
+      let transactions = [];
+      if (Array.isArray(rawData)) {
+        if (rawData.length > 0 && rawData[0].transactions) {
+          // It's a CLI Scan Result (Array of Files)
+          rawData.forEach(file => {
+            if (Array.isArray(file.transactions)) {
+              transactions.push(...file.transactions);
+            }
+          });
+        } else {
+          // It's likely already a flat list
+          transactions = rawData;
+        }
+      } else if (rawData.transactions) {
+        // Single object wrapper
+        transactions = rawData.transactions;
+      }
+
+      progressText.textContent = `Processing ${transactions.length} transactions...`;
+
+      // Load COA
+      const COA = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+      if (COA.length === 0) {
+        throw new Error("Chart of Accounts not loaded.");
+      }
+
+      window.aiProcessedData = []; // Clear previous
+      let processedCount = 0;
+
+      // Smart loop (non-blocking)
+      const chunkSize = 50;
+
+      const processChunk = async (startIndex) => {
+        const endIndex = Math.min(startIndex + chunkSize, transactions.length);
+
+        for (let i = startIndex; i < endIndex; i++) {
+          const rawTxn = transactions[i];
+
+          // NORMALIZE KEYS (Handle improper casing from CLI)
+          const txn = {
+            Date: rawTxn.Date || rawTxn.date || 'N/A',
+            Description: rawTxn.Description || rawTxn.description || rawTxn.desc || 'Unknown',
+            Amount: rawTxn.Amount || rawTxn.amount || 0
+          };
+
+          // 1. Clean Merchant Name using DataJunkie logic if available
+          let cleanMerchant = txn.Description;
+          if (window.dataJunkie) {
+            const extracted = window.dataJunkie.extractMerchantName(txn.Description);
+            if (extracted) cleanMerchant = extracted;
+          }
+
+          // 2. AI COA Matching
+          const match = findBestCOAMatch(cleanMerchant, txn.Description, COA);
+
+          window.aiProcessedData.push({
+            ...txn,
+            CleanMerchant: cleanMerchant,
+            COA_Account: match.account ? `${match.account.code} - ${match.account.name}` : 'Unassigned',
+            COA_Code: match.account ? match.account.code : '',
+            COA_Name: match.account ? match.account.name : '',
+            Match_Confidence: match.confidence.toFixed(2),
+            Match_Source: match.source
+          });
+        }
+
+        processedCount = endIndex;
+        const percent = Math.round((processedCount / transactions.length) * 100);
+        progressBar.value = percent;
+        progressText.textContent = `Analyzed ${processedCount} / ${transactions.length} transactions...`;
+
+        if (processedCount < transactions.length) {
+          setTimeout(() => processChunk(processedCount), 0); // Yield to UI
+        } else {
+          finishProcessing(window.aiProcessedData, file.name);
+        }
+      };
+
+      processChunk(0);
+
+    } catch (error) {
+      console.error('AI Process Failed:', error);
+      progressText.textContent = `❌ Error: ${error.message}`;
+    }
+  };
+  reader.readAsText(file);
+};
+
+function findBestCOAMatch(cleanName, originalDesc, coa) {
+  const searchTerms = [cleanName, originalDesc].join(' ').toLowerCase();
+
+  let bestMatch = null;
+  let maxScore = 0;
+
+  // Weights
+  const EXACT_NAME_MATCH = 100;
+  const PARTIAL_NAME_MATCH = 50;
+  const KEYWORD_MATCH = 10;
+
+  // Common keyword mappings (Heuristic Brain)
+  const keywords = {
+    'gas': 'fuel', 'station': 'fuel', 'oil': 'fuel', 'petro': 'fuel', 'shell': 'fuel',
+    'hotel': 'travel', 'inn': 'travel', 'airbnb': 'travel', 'flight': 'travel',
+    'food': 'meals', 'restaurant': 'meals', 'cafe': 'meals', 'coffee': 'meals',
+    'uber': 'travel', 'taxi': 'travel', 'lyft': 'travel',
+    'software': 'software', 'adobe': 'software', 'google': 'software',
+    'bank': 'bank charges', 'fee': 'bank charges', 'interest': 'bank charges'
+  };
+
+  coa.forEach(account => {
+    let score = 0;
+    const accName = account.name.toLowerCase();
+    const accCat = account.category.toLowerCase();
+
+    // 1. Check Keywords in Description against Account Name
+    if (searchTerms.includes(accName)) score += EXACT_NAME_MATCH;
+
+    // 2. Check Keywords
+    Object.keys(keywords).forEach(key => {
+      if (searchTerms.includes(key)) {
+        // If keyword maps to this account name/category
+        const target = keywords[key];
+        if (accName.includes(target) || accCat.includes(target)) {
+          score += KEYWORD_MATCH;
+        }
+      }
+    });
+
+    // 3. Simple Token Match
+    const tokens = searchTerms.split(/\s+/);
+    tokens.forEach(token => {
+      if (token.length > 3 && accName.includes(token)) {
+        score += 5;
+      }
+    });
+
+    if (score > maxScore) {
+      maxScore = score;
+      bestMatch = account;
+    }
+  });
+
+  return {
+    account: bestMatch,
+    confidence: maxScore > 0 ? Math.min(maxScore / 100, 1.0) : 0,
+    source: bestMatch ? (maxScore >= 100 ? 'Exact' : 'Heuristic') : 'None'
+  };
+}
+
+function finishProcessing(data, originalFilename) {
+  const progressText = document.getElementById('ai-progress-text');
+  const downloadArea = document.getElementById('ai-download-area');
+  const gridDiv = document.getElementById('ai-preview-grid');
+
+  // Group Data by CleanMerchant
+  const aggregated = {};
+  data.forEach(txn => {
+    const key = txn.CleanMerchant;
+    if (!aggregated[key]) {
+      aggregated[key] = {
+        CleanMerchant: key,
+        Count: 0,
+        Transactions: [],
+        COA_Code: txn.COA_Code,
+        COA_Name: txn.COA_Name,
+        Match_Confidence: parseFloat(txn.Match_Confidence)
+      };
+    }
+    aggregated[key].Count++;
+    aggregated[key].Transactions.push(txn);
+    // Take highest confidence if multiple
+    if (parseFloat(txn.Match_Confidence) > aggregated[key].Match_Confidence) {
+      aggregated[key].Match_Confidence = parseFloat(txn.Match_Confidence);
+      aggregated[key].COA_Code = txn.COA_Code;
+      aggregated[key].COA_Name = txn.COA_Name;
+    }
+  });
+
+  const gridData = Object.values(aggregated);
+
+  progressText.innerHTML = `✅ <strong>Success!</strong> Processed ${data.length} transactions into ${gridData.length} unique merchants.`;
+
+  if (gridDiv) {
+    gridDiv.style.display = 'block';
+
+    const gridOptions = {
+      rowData: gridData,
+      columnDefs: [
+        {
+          field: "CleanMerchant", headerName: "Merchant", flex: 1.5, filter: true, sortable: true, cellRenderer: params => {
+            return `<strong>${params.value || 'Unknown'}</strong>`;
+          }
+        },
+        {
+          field: "Count", headerName: "Description", width: 150, cellRenderer: params => {
+            return `<button class="btn-sm btn-secondary" onclick="window.showAIProcessedDrillDown('${(params.data.CleanMerchant || '').replace(/'/g, "\\'")}')">
+               View ${params.value} Txns
+             </button>`;
+          }
+        },
+        { field: "COA_Code", headerName: "Account #", width: 120, sortable: true },
+        { field: "COA_Name", headerName: "Account Description", flex: 1.5, filter: true },
+        {
+          field: "Match_Confidence", headerName: "Confidence", width: 120, cellStyle: params => {
+            return { color: params.value > 0.8 ? 'green' : (params.value > 0.5 ? 'orange' : 'red'), fontWeight: 'bold' };
+          }
+        }
+      ],
+      defaultColDef: {
+        resizable: true,
+      },
+      pagination: true,
+      paginationPageSize: 100,
+      domLayout: 'autoHeight'
+    };
+
+    gridDiv.innerHTML = '';
+    agGrid.createGrid(gridDiv, gridOptions);
+  }
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const newFilename = originalFilename.replace('.json', '_ai_processed.json');
+
+  // Create CSV Blob
+  const csvContent = "Date,Merchant,Original Description,Amount,Account Code,Account Name,Confidence\n" +
+    data.map(r => `"${r.Date}","${r.CleanMerchant.replace(/"/g, '""')}","${r.Description.replace(/"/g, '""')}",${r.Amount},"${r.COA_Code}","${r.COA_Name}","${r.Match_Confidence}"`).join("\n");
+  const blobCSV = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const urlCSV = URL.createObjectURL(blobCSV);
+
+  downloadArea.innerHTML = `
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <a href="${url}" download="${newFilename}" class="btn-primary" style="text-decoration: none; display: inline-block; background: #64748b;">
+        ⬇️ Download JSON
+      </a>
+      <a href="${urlCSV}" download="${newFilename.replace('.json', '.csv')}" class="btn-primary" style="text-decoration: none; display: inline-block; background: #10b981;">
+        📊 Download Excel (CSV)
+      </a>
+    </div>
+  `;
+}
+
+window.showAIProcessedDrillDown = function (merchantName) {
+  const modal = document.getElementById('vendor-drilldown-modal');
+  if (!modal) return;
+
+  const title = document.getElementById('drilldown-title');
+  const list = document.getElementById('drilldown-list');
+
+  title.textContent = `Transactions for: ${merchantName}`;
+
+  // Filter data
+  const txns = window.aiProcessedData.filter(t => t.CleanMerchant === merchantName);
+
+  let html = `
+      <table style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+           <tr style="background: #f1f5f9; text-align: left;">
+             <th style="padding: 8px;">Date</th>
+             <th style="padding: 8px;">Original Description</th>
+             <th style="padding: 8px; text-align: right;">Amount</th>
+           </tr>
+        </thead>
+        <tbody>
+    `;
+
+  txns.forEach(t => {
+    const dateStr = t.Date ? new Date(t.Date).toISOString().split('T')[0] : 'N/A';
+    const amt = parseFloat(t.Amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    html += `
+         <tr style="border-bottom: 1px solid #e2e8f0;">
+           <td style="padding: 8px;">${dateStr}</td>
+           <td style="padding: 8px;">${t.Description}</td>
+           <td style="padding: 8px; text-align: right; font-weight: 500;">${amt}</td>
+         </tr>
+       `;
+  });
+
+  html += `</tbody></table>`;
+  list.innerHTML = html;
+
+  modal.style.display = 'flex';
+}
+
+// Add close handler globally
+window.closeVendorDrillDown = function () {
+  const modal = document.getElementById('vendor-drilldown-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 // ==================================================

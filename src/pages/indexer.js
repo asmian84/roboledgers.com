@@ -31,12 +31,220 @@ window.indexerState = {
     isPaused: false,
     scanFilter: 'all', // 'all', 'csv', 'xls', 'pdf'
     filenameFilter: '', // text match
+    batchSize: 'all', // 'all', 10, 50, 100
+    batchProcessed: 0,
     dirHandle: null,
     fileHandles: {}, // Transient storage for file handles (for opening)
     logs: [],
     memory: {},
-    gridApi: null
+    gridApi: null,
+    memory: {},
+    gridApi: null,
+    coaCache: null, // Cache for COA lookup
+    pendingGridRows: [],
+    lastAutoSave: 0,
+    scannedRegistry: new Set(), // Set<number> (Hashes of scanned paths)
+    lastRegistrySave: 0,
+    scanQueue: [] // For ETL calc
 };
+
+// HELPER: Format Time (Seconds -> HH:MM:SS)
+window.formatTime = function (seconds) {
+    if (!seconds || seconds < 0) return '00:00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+// HELPER: ETL Calculator
+window.updateETL = function () {
+    if (!window.indexerState.isScanning || window.indexerState.isPaused) return;
+
+    const now = Date.now();
+    const elapsedSeconds = (now - window.indexerState.startTime) / 1000;
+    const processed = window.indexerState.processedCount;
+    const total = window.indexerState.totalScanCount;
+
+    // Only show estimate after we have some velocity data
+    if (processed > 5 && total > 0 && elapsedSeconds > 2) {
+        const rate = processed / elapsedSeconds; // Files per second
+        const remaining = total - processed;
+        const etaSeconds = remaining / rate;
+
+        const el = document.getElementById('idx-etl');
+        if (el) el.textContent = window.formatTime(etaSeconds);
+    }
+};
+
+// HELPER: Simple 32-bit Hash for Filenames (Save Space)
+window.getPathHash = function (path) {
+    let hash = 0;
+    if (path.length === 0) return hash;
+    for (let i = 0; i < path.length; i++) {
+        const char = path.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
+};
+
+// HELPER: Register Scanned File
+window.addToScannedRegistry = function (path) {
+    const hash = window.getPathHash(path);
+    if (!window.indexerState.scannedRegistry.has(hash)) {
+        window.indexerState.scannedRegistry.add(hash);
+
+        // Auto-Save Hash Registry (Periodic - every 5s)
+        const now = Date.now();
+        if (now - window.indexerState.lastRegistrySave > 5000) {
+            const ary = Array.from(window.indexerState.scannedRegistry);
+            localStorage.setItem('indexer_scanned_hashes', JSON.stringify(ary));
+            window.indexerState.lastRegistrySave = now;
+        }
+    }
+};
+
+// ==========================================
+// PERIODIC TASKS (Grid Flush + AutoSave)
+// ==========================================
+window.startPeriodicTasks = function () {
+    if (window.indexerState.periodicInterval) return;
+
+    window.indexerState.periodicInterval = setInterval(() => {
+        // 1. Flush Grid Buffer (UI Optimization)
+        if (window.indexerState.pendingGridRows.length > 0) {
+            const batch = window.indexerState.pendingGridRows.splice(0, window.indexerState.pendingGridRows.length);
+
+            if (window.indexerState.gridApi) {
+                window.indexerState.gridApi.applyTransaction({ add: batch, addIndex: 0 });
+            }
+            if (window.indexerState.popoutGridApi) {
+                window.indexerState.popoutGridApi.applyTransaction({ add: batch, addIndex: 0 });
+            }
+        }
+
+        // 2. Incremental Auto-Save (Persistence)
+        const now = Date.now();
+        if (now - window.indexerState.lastAutoSave > 2000) { // Save every 2 seconds if changed
+            // Only save if we strictly need to? Actually save is cheap if memory object isn't huge.
+            // But JSON.stringify of 5MB is ~20ms. Acceptable every 2s.
+            if (window.indexerState.learnedRules > 0) {
+                localStorage.setItem('ab3_user_memory', JSON.stringify(window.indexerState.memory));
+                window.indexerState.lastAutoSave = now;
+            }
+        }
+    }, 500); // Check every 500ms
+};
+
+// Start immediately
+window.startPeriodicTasks();
+
+// ==========================================
+// CATEGORY TO COA MAPPING
+// ==========================================
+
+/**
+ * Maps AI-generated category names to COA account codes
+ * Uses intelligent fuzzy matching against COA account names
+ * @param {string} categoryName - AI category like "Professional and Financial Services"
+ * @returns {string} COA account code like "8700" or empty string if no match
+ */
+window.mapCategoryToAccount = function (categoryName) {
+    if (!categoryName || categoryName === 'Uncategorized') return '';
+
+    // Lazy load COA
+    if (!window.indexerState.coaCache) {
+        try {
+            const coa = JSON.parse(localStorage.getItem('ab3_coa') || '[]');
+            if (coa.length === 0 && window.DEFAULT_CHART_OF_ACCOUNTS) {
+                window.indexerState.coaCache = window.DEFAULT_CHART_OF_ACCOUNTS;
+            } else {
+                window.indexerState.coaCache = coa;
+            }
+        } catch (e) {
+            console.warn('Failed to load COA for mapping:', e);
+            return '';
+        }
+    }
+
+    const coa = window.indexerState.coaCache;
+    if (!coa || coa.length === 0) return '';
+
+    // Normalize category name for matching
+    const normCat = categoryName.toLowerCase().trim();
+
+    // 1. Try exact match on account name
+    let match = coa.find(acc => acc.name && acc.name.toLowerCase() === normCat);
+    if (match) return match.code || match.accountNumber || '';
+
+    // 2. Try partial match on account name (contains)
+    match = coa.find(acc => acc.name && acc.name.toLowerCase().includes(normCat));
+    if (match) return match.code || match.accountNumber || '';
+
+    // 3. Try reverse partial match (category contains account name)
+    match = coa.find(acc => acc.name && normCat.includes(acc.name.toLowerCase()));
+    if (match) return match.code || match.accountNumber || '';
+
+    // 4. Keyword-based intelligent mapping for common AI categories
+    const keywordMap = {
+        'professional': ['8700', '6450', '7890'], // Professional fees, Consulting, Legal
+        'financial services': ['8700', '6450'],
+        'meals': ['6415'], // Client meals
+        'entertainment': ['6415'],
+        'office': ['8600'], // Office supplies
+        'supplies': ['8600', '8450'],
+        'utilities': ['9500'],
+        'telephone': ['9100'],
+        'phone': ['9100'],
+        'internet': ['9100'],
+        'travel': ['9200'],
+        'vehicle': ['9700', '7400'],
+        'fuel': ['7400'],
+        'insurance': ['7600'],
+        'rent': ['8720'],
+        'advertising': ['6000'],
+        'marketing': ['6000'],
+        'consulting': ['6450'],
+        'legal': ['7890'],
+        'accounting': ['8700'],
+        'bank': ['7700', '6600'], // Interest and bank charges, Credit card charges
+        'interest': ['7700'],
+        'equipment': ['7000', '7100'],
+        'repairs': ['8800'],
+        'maintenance': ['8800'],
+        'wages': ['9800'],
+        'payroll': ['9800'],
+        'salary': ['9800'],
+        'training': ['9250'],
+        'conference': ['6420'],
+        'subscription': ['6800'],
+        'membership': ['6800'],
+        'donation': ['6750']
+    };
+
+    // Search for keyword matches
+    for (const [keyword, codes] of Object.entries(keywordMap)) {
+        if (normCat.includes(keyword)) {
+            // Return first matching code (most specific)
+            const accountCode = codes[0];
+            const account = coa.find(acc => (acc.code || acc.accountNumber) === accountCode);
+            if (account) {
+                console.log(`🎯 Mapped "${categoryName}" → ${accountCode} (${account.name}) via keyword "${keyword}"`);
+                return accountCode;
+            }
+        }
+    }
+
+    // 5. Fallback: Try matching against COA category field
+    match = coa.find(acc => acc.category && acc.category.toLowerCase().includes(normCat));
+    if (match) return match.code || match.accountNumber || '';
+
+    // No match found
+    console.warn(`⚠️ No COA mapping found for category: "${categoryName}"`);
+    return '';
+}
+
 
 // ==========================================
 // CONTROLS LOGIC
@@ -51,6 +259,11 @@ window.setFilenameFilter = function (val) {
     window.indexerState.filenameFilter = val.trim().toLowerCase();
 }
 
+window.setBatchSize = function (val) {
+    window.indexerState.batchSize = val === 'all' ? 'all' : parseInt(val);
+    log(`Batch size set to: ${val === 'all' ? 'Unlimited' : val}`, 'info');
+}
+
 window.togglePause = function () {
     window.indexerState.isPaused = !window.indexerState.isPaused;
     const btn = document.getElementById('btn-pause');
@@ -62,6 +275,13 @@ window.togglePause = function () {
         if (dot) dot.classList.add('paused');
         document.getElementById('status-text').textContent = 'PAUSED';
     } else {
+        // RESUME
+        // Reset batch counter if we were paused due to batch limit
+        if (window.indexerState.batchSize !== 'all' && window.indexerState.batchProcessed >= window.indexerState.batchSize) {
+            window.indexerState.batchProcessed = 0;
+            log('Starting next batch...', 'info');
+        }
+
         btn.innerHTML = '<i class="ph ph-pause"></i> PAUSE';
         log('Resuming Scan...', 'success');
         if (dot) dot.classList.remove('paused');
@@ -77,6 +297,48 @@ window.stopScan = function () {
         log('Scanner Stopped by User.', 'error');
         finishScan();
     });
+}
+
+window.startOverScan = function () {
+    if (!window.indexerState.dirHandle) {
+        alert('No directory selected. Please select a directory first.');
+        return;
+    }
+
+    window.showConfirm('Start Over Scan', 'This will restart the scan from the beginning of the folder (not resume). Continue?', () => {
+        // Reset scan state but keep learned data
+        window.indexerState.processedCount = 0;
+        window.indexerState.totalFiles = 0;
+        window.indexerState.isScanning = false;
+        window.indexerState.isPaused = false;
+
+        // Reset stats display
+        document.getElementById('idx-count').textContent = '0';
+
+        // Clear logs
+        window.indexerState.logs = [];
+        const terminal = document.getElementById('idx-terminal');
+        if (terminal) terminal.innerHTML = '';
+
+        log('🔄 Starting scan over from beginning...', 'info');
+        log(`Keeping ${window.indexerState.learnedRules} learned rules in memory`, 'success');
+
+        // Start fresh scan
+        setTimeout(() => {
+            handleDirectorySelect(window.indexerState.dirHandle);
+        }, 100);
+    });
+}
+
+window.skipCurrentFolder = function () {
+    if (!window.indexerState.isScanning) return;
+    window.indexerState.skipCurrentFolder = true;
+    log('⏭️ Skipping current folder, moving to next root folder...', 'warn');
+    const btn = document.getElementById('btn-skip-folder');
+    if (btn) {
+        btn.disabled = true;
+        setTimeout(() => { if (btn) btn.disabled = false; }, 2000); // Re-enable after 2s
+    }
 }
 
 window.popOutIndexer = function () {
@@ -146,13 +408,25 @@ window.popOutConsole = function () {
             const gridOptions = {
                 rowData: localData,
                 columnDefs: [
-                    { field: 'description', headerName: 'Pattern', flex: 2 },
+                    { field: 'description', headerName: 'Pattern / Vendor', flex: 2, checkboxSelection: true, headerCheckboxSelection: true },
+                    { field: 'parser', headerName: 'Parser', width: 100 },
                     { field: 'accountNumber', headerName: 'Acct #', width: 100 },
-                    { field: 'account', headerName: 'Category', flex: 1 },
-                    { field: 'frequency', headerName: 'Freq', width: 70 }, // New Freq Column
-                    { field: 'confidence', headerName: 'Conf.', width: 80, valueFormatter: p => (p.value * 100).toFixed(0) + '%' }
+                    { field: 'account', headerName: 'Mapped Category', flex: 1 },
+                    { field: 'frequency', headerName: 'Freq', width: 70 },
+                    { field: 'confidence', headerName: 'Conf.', width: 80, valueFormatter: p => (p.value * 100).toFixed(0) + '%' },
+                    {
+                        field: 'source',
+                        headerName: 'Source File',
+                        flex: 1,
+                        cellRenderer: params => {
+                            if (!params.value) return '';
+                            // Clickable Link for local file (Attempt)
+                            return `<span style="cursor:pointer; text-decoration:underline; color:#3b82f6;" onclick="window.openFile(this.innerText)">${params.value.split(/[\\/]/).pop()}</span>`;
+                        }
+                    }
                 ],
                 defaultColDef: { sortable: true, filter: true, resizable: true },
+                rowSelection: 'multiple', // Enable Bulk Selection
                 animateRows: true
             };
 
@@ -229,6 +503,10 @@ window.renderIndexerPage = function () {
                     <span class="stat-label">ELAPSED</span>
                     <span class="stat-value" id="idx-time">00:00:00</span>
                 </div>
+                <div class="stat-box">
+                    <span class="stat-label">EST. REMAINING</span>
+                    <span class="stat-value" id="idx-etl" style="color: #64748b;">--:--</span>
+                </div>
             </div>
         </div>
 
@@ -268,6 +546,17 @@ window.renderIndexerPage = function () {
                 
                 <!-- Account Review Navigator -->
                 <div class="control-group">
+                    <label class="group-label">BATCH SIZE (Files)</label>
+                    <select class="dropdown-select" onchange="setBatchSize(this.value)">
+                        <option value="all" selected>Unlimited (All Files)</option>
+                        <option value="10">10 Files (Safe Mode)</option>
+                        <option value="50">50 Files</option>
+                        <option value="100">100 Files</option>
+                        <option value="500">500 Files</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
                     <label class="group-label">REVIEW ACCOUNT</label>
                     <select id="accountNavigator" class="dropdown-select" onchange="filterGridByAccount(this.value)">
                         <option value="">(All Accounts)</option>
@@ -290,14 +579,35 @@ window.renderIndexerPage = function () {
                         <button class="btn-control stop" id="btn-stop" onclick="stopScan()" disabled>
                             <i class="ph ph-stop"></i> STOP
                         </button>
+                        <button class="btn-control" id="btn-skip-folder" onclick="skipCurrentFolder()" disabled style="background: #f59e0b; border-color: #f59e0b;">
+                            <i class="ph ph-fast-forward"></i> FFW
+                        </button>
                      </div>
                 </div>
                 
                 <hr class="separator">
 
-                <button class="btn-secondary" onclick="promoteToDictionary()">
-                    <i class="ph ph-book-bookmark"></i> PROMOTE KNOWLEDGE
+                <div class="action-buttons-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn-secondary" style="background: #ef4444; color:white; border:none;" onclick="deleteSelected()">
+                        <i class="ph ph-trash"></i> DELETE
+                    </button>
+                    <button class="btn-secondary" style="background: #f59e0b; color:white; border:none;" onclick="megaFix()">
+                        <i class="ph ph-magic-wand"></i> MEGA FIX
+                    </button>
+                </div>
+                
+                <button class="btn-secondary" style="width:100%; margin-bottom: 15px; background: #8b5cf6; color:white; border:none;" onclick="startOverScan()">
+                    <i class="ph ph-arrow-counter-clockwise"></i> START OVER SCAN
                 </button>
+
+                <div class="import-section" style="margin-bottom: 15px;">
+                     <button class="btn-primary" style="width:100%; background: #22c55e; border:none;" onclick="triggerImport(false)">
+                        <i class="ph ph-check-circle"></i> READY TO IMPORT
+                    </button>
+                    <button class="btn-secondary" style="width:100%; margin-top:8px; border-color: #22c55e; color:#15803d;" onclick="triggerImport(true)">
+                        <i class="ph ph-check"></i> IMPORT (NO 9970)
+                    </button>
+                </div>
 
                 <div class="status-indicator">
                     <div class="status-dot" id="status-dot"></div>
@@ -305,6 +615,8 @@ window.renderIndexerPage = function () {
                 </div>
 
                 <div class="memory-actions">
+                    <input type="file" id="json-memory-input" accept=".json" style="display:none" onchange="handleMemoryUpload(this)">
+                    <button class="btn-secondary small" onclick="document.getElementById('json-memory-input').click()">Import JSON</button>
                     <button class="btn-secondary small" onclick="downloadMemory()">Download JSON</button>
                     <button class="btn-secondary small" onclick="downloadLogs()">Download Logs</button>
                     <button class="btn-secondary small" onclick="clearMemory()">Reset Brain</button>
@@ -337,9 +649,9 @@ window.renderIndexerPage = function () {
 
                 <!-- Terminal -->
                 <div class="indexer-card terminal-panel">
-                    <div class="terminal-header">
+                    <div class="terminal-header" style="display:flex; justify-content:space-between;">
                         <span><i class="ph ph-terminal-window"></i> SYSTEM_LOG</span>
-                        <span class="blinking-cursor">_</span>
+                        <span id="terminal-stats" style="color: #22c55e; font-family: monospace; font-size: 0.8rem;">Ready</span>
                     </div>
                     <div class="terminal-window" id="terminal-output">
                         <div class="log-line system">> System Ready.</div>
@@ -475,10 +787,36 @@ window.renderIndexerPage = function () {
 // ==========================================
 
 window.initIndexerGrid = function () {
+    // PRE-LOAD COA FOR VALIDATION
+    try {
+        const coaRaw = localStorage.getItem('ab3_coa') || '[]';
+        const coa = JSON.parse(coaRaw);
+        window.indexerState.validCoaIds = new Set(coa.map(c => String(c.code || c.id || c.accountNumber)));
+        window.indexerState.validCoaIds = new Set(coa.map(c => String(c.code || c.id || c.accountNumber)));
+        console.log(`✅ Loaded ${window.indexerState.validCoaIds.size} Valid COA Accounts for Strict Validation.`);
+    } catch (e) { console.error("Failed to load COA:", e); }
+
+    // PRE-LOAD SCANNED REGISTRY (Smart Resume)
+    try {
+        const hashesRaw = localStorage.getItem('indexer_scanned_hashes') || '[]';
+        const hashes = JSON.parse(hashesRaw);
+        window.indexerState.scannedRegistry = new Set(hashes);
+        console.log(`✅ Smart Resume: Loaded ${hashes.length} previously scanned files.`);
+    } catch (e) { console.error("Failed to load Scanned Registry:", e); }
+
     const gridOptions = {
         rowData: [],
         columnDefs: [
-            { field: 'description', headerName: 'Pattern / Vendor', flex: 2, filter: true, editable: true },
+            {
+                field: 'description',
+                headerName: 'Pattern / Vendor',
+                flex: 2,
+                filter: true,
+                editable: true,
+                checkboxSelection: true,
+                headerCheckboxSelection: true
+            },
+            { field: 'parser', headerName: 'Parser', width: 100, filter: true },
             { field: 'accountNumber', headerName: 'Account #', width: 120, filter: true, editable: true },
             { field: 'account', headerName: 'Mapped Category', flex: 1, filter: true, editable: true },
             { field: 'confidence', headerName: 'Conf.', width: 80, valueFormatter: p => (p.value * 100).toFixed(0) + '%' },
@@ -495,6 +833,7 @@ window.initIndexerGrid = function () {
                 cellRenderer: params => `<div class="action-icon" onclick="deleteRule('${params.data.description.replace(/'/g, "\\'")}')"><i class="ph ph-trash"></i></div>`
             }
         ],
+        rowSelection: 'multiple',
         onCellValueChanged: params => handleGridEdit(params),
         rowClassRules: {
             'suspense-row': params => params.data.accountNumber == '9970' || params.data.accountNumber == 9970
@@ -523,19 +862,222 @@ window.initIndexerGrid = function () {
             if (window.indexerState.gridApi) window.indexerState.gridApi.sizeColumnsToFit();
         });
     }
+
+    // ON LOAD CHECK
+    const crashLog = localStorage.getItem('indexer_crash_log');
+    if (crashLog) {
+        try {
+            const d = JSON.parse(crashLog);
+            // Just warn visually
+            if (document.getElementById('status-text')) {
+                document.getElementById('status-text').textContent = "CRASHED LAST RUN";
+                document.getElementById('status-text').style.color = "red";
+            }
+        } catch (e) { }
+    }
+
+    // CHECK FOR KILLER FILE (User Request: "Know what's crashing it")
+    const lastKiller = localStorage.getItem('indexer_last_file');
+    if (lastKiller) {
+        log(`⚠️ CRASH DETECTED: The system likely crashed while processing: "${lastKiller}"`, 'error');
+        alert(`CRASH REPORT:\nThe last session crashed while processing:\n\n${lastKiller}\n\nWe recommend deleting or skipping this file.`);
+    }
 }
 
-window.selectAndScan = function () {
-    // Trigger the HIDDEN file input instead of showing the API picker
-    // This avoids the "Allow this site to view..." popup every time.
-    const input = document.getElementById('dir-input');
-    if (input) {
-        input.value = ''; // Reset so onChange fires even if same directory selected
-        input.click();
-    } else {
-        alert('Input element missing. Please reload page.');
+// ==========================================
+// NATIVE FILE SYSTEM API (STREAMING)
+// ==========================================
+
+window.selectAndScan = async function () {
+    try {
+        // 1. Open Directory Picker (Native)
+        const dirHandle = await window.showDirectoryPicker();
+
+        // 2. Setup UI
+        const folderName = dirHandle.name;
+        document.getElementById('path-display').textContent = folderName;
+        document.getElementById('status-dot').classList.add('active');
+        document.getElementById('status-text').textContent = 'INDEXING...';
+
+        // 3. Reset State
+        window.indexerState.isScanning = true;
+        window.indexerState.isPaused = false;
+        window.indexerState.startTime = Date.now();
+        window.indexerState.processedCount = 0;
+        window.indexerState.totalScanCount = 0; // Unknown in streaming mode
+
+        // 4. Buttons
+        document.getElementById('btn-pause').disabled = false;
+        document.getElementById('btn-stop').disabled = false;
+        document.getElementById('btn-skip-folder').disabled = false;
+        document.getElementById('btn-play').disabled = true;
+        document.getElementById('btn-play-text').textContent = 'SCANNING...';
+
+        log(`Target acquired: ${folderName}`, 'success');
+        log(`Starting STREAMING scan (Native Mode)...`, 'info');
+
+        // 5. Start Streaming
+        await scanDirectoryStream(dirHandle);
+
+        finishScan();
+
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            log(`Error: ${err.message}`, 'error');
+            console.error(err);
+        }
+        window.indexerState.isScanning = false;
+        finishScanUI();
     }
 };
+
+// Recursive Async Generator for Files
+async function* getFilesRecursively(entry, path = '') {
+    if (entry.kind === 'file') {
+        yield { handle: entry, path: path + entry.name };
+    } else if (entry.kind === 'directory') {
+        const newPath = path + entry.name + '/';
+
+        // SMART SKIP: System Folders
+        const systemFolders = ['node_modules', '.git', 'dist', 'build', '$Recycle.Bin'];
+        if (systemFolders.includes(entry.name)) return;
+
+        // INDEXER SPECIFIC SKIP (Optimization)
+        // Skip non-financial folders early to save recursion time
+        // Only if not root
+        if (path !== '') {
+            const skipFolders = ['Investment', 'Invoice', 'Receipt', 'CRA', 'Authorization'];
+            const nameLower = entry.name.toLowerCase();
+            if (skipFolders.some(s => nameLower.includes(s.toLowerCase()))) return;
+        }
+
+        try {
+            for await (const handle of entry.values()) {
+                yield* getFilesRecursively(handle, newPath);
+            }
+        } catch (e) {
+            console.warn(`Skipping missing/access-denied folder: ${newPath}`, e);
+        }
+    }
+}
+
+// Streaming Scanner
+// Streaming Scanner (Improved with Pre-Discovery for ETL)
+async function scanDirectoryStream(dirHandle) {
+    window.indexerState.batchProcessed = 0;
+
+    // PHASE 1: DISCOVERY (Fast Walk)
+    log('Phase 1: Discovering files... (Building Index)', 'info');
+    document.getElementById('status-text').textContent = 'DISCOVERING...';
+
+    const fileQueue = [];
+    let discoveryCount = 0;
+
+    // Fast walk just to get handles
+    for await (const item of getFilesRecursively(dirHandle)) {
+        if (!window.indexerState.isScanning) break;
+        fileQueue.push(item);
+        discoveryCount++;
+
+        // Update UI occasionally during discovery
+        if (discoveryCount % 100 === 0) {
+            document.getElementById('idx-files').textContent = `${discoveryCount} (Found)`;
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    if (!window.indexerState.isScanning) return;
+
+    // Setup Phase 2
+    window.indexerState.totalScanCount = fileQueue.length;
+    window.indexerState.processedCount = 0; // Reset for actual processing
+    log(`Discovery Complete. Found ${fileQueue.length} files. Starting Deep Scan...`, 'success');
+    document.getElementById('status-text').textContent = 'INDEXING...';
+    window.indexerState.startTime = Date.now(); // Reset timer for accurate ETL
+
+    // PHASE 2: PROCESSING (Deep Scan)
+    let currentRootFolder = null;
+    let skipUntilNewFolder = false;
+
+    for (let i = 0; i < fileQueue.length; i++) {
+        if (!window.indexerState.isScanning) break;
+
+        const { handle, path } = fileQueue[i];
+
+        // Yield to UI
+        if (i % 20 === 0) await new Promise(r => setTimeout(r, 0));
+
+        // ETL Update (Every file or every few)
+        updateETL();
+
+        // SMART RESUME: Skip if already scanned
+        const hash = window.getPathHash(path);
+        if (window.indexerState.scannedRegistry.has(hash)) {
+            continue;
+        }
+
+        // PAUSE & BATCH LOGIC (Same as before)
+        while (window.indexerState.isPaused) {
+            if (!window.indexerState.isScanning) break;
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        if (window.indexerState.batchSize !== 'all' && window.indexerState.batchProcessed >= window.indexerState.batchSize) {
+            log(`Batch limit of ${window.indexerState.batchSize} reached. Pausing...`, 'warn');
+            togglePause();
+            while (window.indexerState.isPaused) {
+                if (!window.indexerState.isScanning) break;
+                await new Promise(r => setTimeout(r, 500));
+            }
+        }
+
+        // FFW / SKIP FOLDER LOGIC
+        const pathParts = path.split('/');
+        const rootFolder = pathParts[0];
+
+        if (currentRootFolder !== rootFolder) {
+            currentRootFolder = rootFolder;
+            skipUntilNewFolder = false;
+        }
+
+        if (window.indexerState.skipCurrentFolder && !skipUntilNewFolder) {
+            skipUntilNewFolder = true;
+            window.indexerState.skipCurrentFolder = false;
+            log(`⏭️ Skipping folder: ${currentRootFolder}`, 'warn');
+        }
+
+        if (skipUntilNewFolder) continue;
+
+        if (skipUntilNewFolder) continue;
+
+        // PROCESS
+        try {
+            const file = await handle.getFile();
+
+            // MOCK HANDLE for processFile compatibility
+            const mockHandle = {
+                name: path, // Full relative path
+                getFile: async () => file
+            };
+
+            // Crash Log
+            localStorage.setItem('indexer_last_file', path);
+
+            await processFile(mockHandle);
+
+        } catch (err) {
+            // Handle "NotFoundError" or other access errors gracefully
+            if (err.name === 'NotFoundError') {
+                log(`⚠️ File not found (moved/deleted): ${path}`, 'warn');
+            } else {
+                log(`⚠️ Error accessing ${path}: ${err.message}`, 'error');
+            }
+        }
+    }
+
+    localStorage.removeItem('indexer_last_file');
+}
+
 
 window.handleDirectorySelect = async function (input) {
     if (!input.files || input.files.length === 0) return;
@@ -556,9 +1098,29 @@ window.handleDirectorySelect = async function (input) {
         document.getElementById('status-dot').classList.add('active');
         document.getElementById('status-text').textContent = 'INDEXING...';
 
+        // CRASH RESUME CHECK
+        let resumeIndex = 0;
+        const crashLog = localStorage.getItem('indexer_crash_log');
+        if (crashLog) {
+            try {
+                const logData = JSON.parse(crashLog);
+                // Simple check: does the folder name match?
+                if (logData.path && logData.path.startsWith(folderName)) {
+                    const doResume = confirm(`⚠️ CRASH DETECTED\n\nLast scan crashed on:\n${logData.path}\n\nResume from file #${logData.index + 2}? (Skips the crashing file)`);
+                    if (doResume) {
+                        resumeIndex = logData.index + 1;
+                        log(`RESUMING from file index ${resumeIndex}...`, 'warn');
+                    } else {
+                        localStorage.removeItem('indexer_crash_log');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
         // Buttons
         document.getElementById('btn-pause').disabled = false;
         document.getElementById('btn-stop').disabled = false;
+        document.getElementById('btn-skip-folder').disabled = false;
         document.getElementById('btn-play').disabled = true;
         document.getElementById('btn-play-text').textContent = 'SCANNING...';
 
@@ -568,10 +1130,18 @@ window.handleDirectorySelect = async function (input) {
         startTimer();
 
         log(`Target acquired: ${folderName}`, 'success');
+        window.indexerState.isScanning = true;
+        window.indexerState.isPaused = false;
+        window.indexerState.startTime = Date.now();
+        window.indexerState.processedCount = 0; // Reset
+        window.indexerState.totalScanCount = files.length; // Set Total
+        startTimer();
+
+        log(`Target acquired: ${folderName}`, 'success');
         log(`Found ${files.length} potential files. Starting crawl...`, 'info');
 
         // New Scan Logic: Iterate flat file list
-        await scanFileList(files);
+        await scanFileList(files, resumeIndex);
 
         // Complete
         finishScan();
@@ -584,10 +1154,27 @@ window.handleDirectorySelect = async function (input) {
     }
 };
 
-async function scanFileList(files) {
+async function scanFileList(files, startIndex = 0) {
     if (!window.indexerState.isScanning) return;
 
-    for (const file of files) {
+    let currentRootFolder = null;
+    let skipUntilNewFolder = false;
+    window.indexerState.batchProcessed = 0; // Reset on new scan start
+
+    for (let i = 0; i < files.length; i++) {
+        // Yield to UI to prevent freezing
+        if (i % 50 === 0) await new Promise(r => setTimeout(r, 0));
+        if (i < startIndex) continue; // SKIP SCAN (Resume)
+
+        // SMART RESUME: Skip if already scanned
+        const file = files[i];
+        const fullPath = file.webkitRelativePath || file.name;
+        const hash = window.getPathHash(fullPath);
+
+        if (window.indexerState.scannedRegistry.has(hash)) {
+            // log(`⏭️ Skipped (Already Scanned): ${fullPath}`, 'debug'); // Too noisy?
+            continue;
+        }
         if (!window.indexerState.isScanning) break;
 
         // PAUSE LOOP
@@ -596,18 +1183,85 @@ async function scanFileList(files) {
             await new Promise(r => setTimeout(r, 500));
         }
 
+        // BATCH CHECK
+        if (window.indexerState.batchSize !== 'all' && window.indexerState.batchProcessed >= window.indexerState.batchSize) {
+            log(`Batch limit of ${window.indexerState.batchSize} reached. Pausing...`, 'warn');
+            togglePause(); // Use existing pause logic
+            // Wait for pause to take effect in the loop
+            while (window.indexerState.isPaused) {
+                if (!window.indexerState.isScanning) break;
+                await new Promise(r => setTimeout(r, 500));
+            }
+        }
+
+        // CRASH LOGGING
+        // const fullPath = file.webkitRelativePath || file.name; // Duplicate removed
+        localStorage.setItem('indexer_crash_log', JSON.stringify({
+            index: i,
+            path: fullPath,
+            timestamp: Date.now()
+        }));
+
+        // FFW LOGIC: Skip current folder
+        const pathParts = fullPath.split('/');
+        const rootFolder = pathParts[0]; // First folder in path
+
+        // Detect folder change
+        if (currentRootFolder !== rootFolder) {
+            currentRootFolder = rootFolder;
+            skipUntilNewFolder = false; // Reset skip flag on new folder
+            log(`📁 Entering folder: ${rootFolder}`, 'info');
+        }
+
+        // Check if skip flag was set
+        if (window.indexerState.skipCurrentFolder && !skipUntilNewFolder) {
+            skipUntilNewFolder = true;
+            window.indexerState.skipCurrentFolder = false; // Reset flag
+            log(`⏭️ Skipping all files in: ${currentRootFolder}`, 'warn');
+        }
+
+        // Skip files if we're in skip mode
+        if (skipUntilNewFolder) {
+            continue;
+        }
+
         try {
             // Check junk folders via path
-            // file.webkitRelativePath contains the full relative path
-            const pathParts = file.webkitRelativePath.split('/');
-            if (pathParts.some(p => ['node_modules', '.git', 'dist', 'build', 'AppData', '$Recycle.Bin', 'System Volume Information', 'CW', 'cw'].includes(p))) {
+            const pathParts = fullPath.split('/');
+
+            // SKIP: System folders
+            const systemFolders = ['node_modules', '.git', 'dist', 'build', 'AppData', '$Recycle.Bin', 'System Volume Information', 'CW', 'cw'];
+            if (pathParts.some(p => systemFolders.includes(p))) {
                 continue;
             }
 
-            // Mock a fileHandle API so we don't have to rewrite processFile logic entirely
-            // processFile expects { name, getFile() }
+            // SKIP: Non-bank folders (Investment, Invoice, Receipt, CRA, Authorization)
+            const skipFolders = ['Investment', 'Invoice', 'Receipt', 'CRA', 'Authorization', 'Invoices', 'Receipts'];
+            const hasSkipFolder = pathParts.some(p => {
+                const pLower = p.toLowerCase();
+                return skipFolders.some(skip => pLower.includes(skip.toLowerCase()));
+            });
+            if (hasSkipFolder) {
+                log(`⏭️ Skipping non-bank folder: ${pathParts[pathParts.length - 2] || pathParts[0]}`, 'system');
+                continue;
+            }
+
+            // ONLY SCAN: Bank/Credit Card statement folders (CHQ, SAV, Visa, MC, or bank account names)
+            const bankKeywords = ['CHQ', 'SAV', 'Visa', 'MC', 'MasterCard', 'Checking', 'Savings', 'Credit', 'Statement', 'Bank'];
+            const hasBankKeyword = pathParts.some(p => {
+                const pUpper = p.toUpperCase();
+                return bankKeywords.some(keyword => pUpper.includes(keyword.toUpperCase()));
+            });
+
+            // If we're more than 2 levels deep and no bank keyword found, skip
+            if (pathParts.length > 2 && !hasBankKeyword) {
+                log(`⏭️ Skipping non-bank path: ${pathParts.slice(0, 3).join('/')}...`, 'system');
+                continue;
+            }
+
+            // Mock a fileHandle API
             const mockHandle = {
-                name: file.name,
+                name: fullPath, // PASS FULL PATH HERE for source tracking
                 getFile: async () => file
             };
 
@@ -617,6 +1271,9 @@ async function scanFileList(files) {
             console.warn(`Skipping file ${file.name}:`, innerErr);
         }
     }
+
+    // SUCCESS - Clear Log
+    localStorage.removeItem('indexer_crash_log');
 }
 
 // Replaces async function scanDirectory(dirHandle) { ... code removed ... }
@@ -625,8 +1282,10 @@ async function scanFileList(files) {
 async function processFile(fileHandle) {
     const name = fileHandle.name.toLowerCase();
 
-    // Store handle
-    window.indexerState.fileHandles[fileHandle.name] = fileHandle;
+    // FORENSICS: Save current file incase of crash
+    localStorage.setItem('indexer_last_file', fileHandle.name);
+
+
 
     // FILENAME CHECK
     const nameFilter = window.indexerState.filenameFilter;
@@ -638,11 +1297,19 @@ async function processFile(fileHandle) {
     if (filter === 'xls' && !name.includes('.xls')) return;
     if (filter === 'pdf' && !name.endsWith('.pdf')) return;
 
+    // Store handle (Optimization: Only relevant files)
+    window.indexerState.fileHandles[fileHandle.name] = fileHandle;
+
+    // Increment batch counter (Only count processed files)
+    if (window.indexerState.batchSize !== 'all') {
+        window.indexerState.batchProcessed++;
+    }
+
     // EXTENSION CHECK (Base)
     if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv') && !name.endsWith('.pdf')) return;
 
     // Increment Total (Visible feedback of progress)
-    window.indexerState.totalFiles++;
+    window.indexerState.processedCount++;
     updateStats();
 
     log(`Reading: ${fileHandle.name}`, 'system');
@@ -749,8 +1416,36 @@ function processExcel(buffer, filename) {
                     // Check exclusion for "Total" rows or empty
                     if (String(desc).toLowerCase().includes('total')) continue;
 
-                    learnPattern(desc, cat || 'Unknown', accNum, filename);
+                    learnPattern(desc, cat || 'Unknown', accNum, filename, 'CSV/Excel');
                     newRules++;
+
+                    // 🧠 BRIDGE TO BRAIN (CSV/XLS Support)
+                    if (window.CategorizationEngine) {
+                        window.CategorizationEngine.learn(desc, cat || 'Uncategorized');
+                    }
+
+                    // 🏢 LEARN IN MERCHANT DICTIONARY
+                    if (window.merchantDictionary && window.dataJunkie) {
+                        const merchantName = window.dataJunkie.extractMerchantName(desc);
+                        if (merchantName) {
+                            // Note: processExcel is async-ish but we are in sync loop. 
+                            // dictionary.learnFromTransaction is async but we can fire-and-forget here 
+                            // or we should make processExcel async?
+                            // processExcel is not async in signature `function processExcel`.
+                            // But learnFromTransaction handles its own state. Check if we need await.
+                            // In processPDF it uses await? No, processPDF loop logs "await" for dictionary? 
+                            // processPDF snippet: `await window.merchantDictionary.learnFromTransaction(...)` 
+                            // If processExcel is sync, awaiting might break flow or standard loop.
+                            // However, we want to ensure it runs.
+                            // Let's fire and forget for now or just call it.
+                            window.merchantDictionary.learnFromTransaction({
+                                raw_description: desc,
+                                merchant_name: merchantName,
+                                category: cat || 'Uncategorized',
+                                source: `Indexer: ${filename}`
+                            });
+                        }
+                    }
                 }
             }
 
@@ -762,6 +1457,16 @@ function processExcel(buffer, filename) {
 
     } catch (e) {
         log(`Parse error in ${filename}: ${e.message}`, 'error');
+    } finally {
+        // MEMORY OPTIMIZATION: Free handle immediately to prevent memory hogging
+        // User requested: "dont want it to halt all the memory"
+        if (window.indexerState.fileHandles[fileHandle.name]) {
+            delete window.indexerState.fileHandles[fileHandle.name];
+        }
+
+        // SMART RESUME: Register success
+        // We use 'name' which is the full path stored in mockHandle
+        window.addToScannedRegistry(name);
     }
 }
 
@@ -823,7 +1528,11 @@ async function processPDF(file, filename) {
                 // But we still call learnPattern to register the description.
                 const categoryForGrid = txn.category || '';
 
-                learnPattern(txn.description, categoryForGrid, '', filename);
+                // 🎯 MAP CATEGORY TO COA ACCOUNT CODE
+                // This is the key fix: convert AI category names to COA account numbers
+                const accountCode = window.mapCategoryToAccount(categoryForGrid);
+
+                learnPattern(txn.description, categoryForGrid, accountCode, filename, result.bank ? result.bank.name : 'PDF');
 
                 // 2. BRIDGE TO BRAIN: Persist to Vector Dictionary
                 if (window.CategorizationEngine) {
@@ -867,7 +1576,11 @@ async function processPDF(file, filename) {
 
     } catch (e) {
         // Validation errors (dupes, unrecognizable) are thrown by parser
-        if (e.message.includes('DUPLICATE')) {
+        if (e.message.includes('IMAGE_PDF')) {
+            // Scanned PDF - requires OCR, skip gracefully
+            log(`⏭️ Skipped ${filename}: Scanned image (OCR required)`, 'system');
+            return;
+        } else if (e.message.includes('DUPLICATE')) {
             // DATA JUNKIE: Don't skip duplicates, just log and continue
             log(`Re-scanning ${filename} for learning (duplicate file)`, 'info');
             // Try again with force flag
@@ -885,8 +1598,30 @@ async function processPDF(file, filename) {
     }
 }
 
-function learnPattern(description, category, accountNumber, sourceFile) {
+function learnPattern(description, category, accountNumber, sourceFile, parserName) {
     const cleanDesc = description.trim();
+
+    // STRICT COA VALIDATION (v23) - Only validate if accountNumber is provided
+    // User Requirement: "Do not import any transaction which doesnt have a corresponding account which matches with COA"
+    // BUT: Allow learning patterns without account numbers (for training mode)
+
+    if (accountNumber) {
+        // Ensure COA is loaded (Lazy Load if needed)
+        if (!window.indexerState.validCoaIds) {
+            try {
+                const coa = JSON.parse(localStorage.getItem('ab3_coa') || '[]');
+                window.indexerState.validCoaIds = new Set(coa.map(c => String(c.code || c.id || c.accountNumber)));
+            } catch (e) { }
+        }
+
+        // Check if Account exists in COA
+        if (window.indexerState.validCoaIds && window.indexerState.validCoaIds.size > 0) {
+            if (!window.indexerState.validCoaIds.has(String(accountNumber))) {
+                // console.warn(`Skipping invalid account: ${accountNumber} for ${cleanDesc}`);
+                return; // REJECT
+            }
+        }
+    }
 
     // Create Item
     const item = {
@@ -894,7 +1629,8 @@ function learnPattern(description, category, accountNumber, sourceFile) {
         account: category,
         accountNumber: accountNumber || '',
         confidence: 1.0,
-        source: sourceFile
+        source: sourceFile,
+        parser: parserName || 'Unknown'
     };
 
     if (window.indexerState.memory[cleanDesc]) {
@@ -907,6 +1643,11 @@ function learnPattern(description, category, accountNumber, sourceFile) {
             entry.account = category; // Update category if we found a better source
         }
 
+        // Update parser if unknown
+        if ((!entry.parser || entry.parser === 'Unknown') && parserName) {
+            entry.parser = parserName;
+        }
+
         // Boost confidence based on frequency
         if (entry.frequency > 2) entry.confidence = Math.min(1.0, entry.confidence + 0.1);
 
@@ -916,18 +1657,8 @@ function learnPattern(description, category, accountNumber, sourceFile) {
         window.indexerState.learnedRules++;
         updateStats();
 
-        // Update Grid (debounced? or batch?)
-        // For visual feedback, update every item might be too slow if 1000s.
-        // Let's do nothing here, and update grid periodically or at end?
-        // Actually user wants to SEE it.
-        if (window.indexerState.gridApi) {
-            window.indexerState.gridApi.applyTransaction({ add: [item], addIndex: 0 });
-        }
-        // LIVE SYNC: Update Pop-out Grid
-        // LIVE SYNC: Update Pop-out Grid
-        if (window.indexerState.popoutGridApi) {
-            window.indexerState.popoutGridApi.applyTransaction({ add: [item], addIndex: 0 });
-        }
+        // Update Grid (Batched)
+        window.indexerState.pendingGridRows.push(item);
     }
 
     // Update Scroll count
@@ -950,7 +1681,13 @@ function finishScan() {
 
     // Auto-Save Memory
     localStorage.setItem('ab3_user_memory', JSON.stringify(window.indexerState.memory));
-    log('Memory saved to browser storage.', 'system');
+
+    // Final Save of Registry
+    const ary = Array.from(window.indexerState.scannedRegistry);
+    localStorage.setItem('indexer_scanned_hashes', JSON.stringify(ary));
+
+    localStorage.removeItem('indexer_last_file'); // Clear crash marker
+    log('Memory & Scan History saved to browser storage.', 'system');
 
     updateAccountNavigator();
 }
@@ -962,6 +1699,7 @@ function finishScanUI() {
 
     document.getElementById('btn-pause').disabled = true;
     document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-skip-folder').disabled = true;
     document.getElementById('btn-play').disabled = false;
     document.getElementById('btn-play-text').textContent = 'START SCAN';
 }
@@ -970,11 +1708,36 @@ function finishScanUI() {
 // ACTION BUTTONS
 // ==========================================
 
-window.promoteToDictionary = async function () {
-    const rules = Object.values(window.indexerState.memory);
+window.promoteToDictionary = async function (skipSuspense = false) {
+    let rules = Object.values(window.indexerState.memory);
     if (!rules.length) {
         window.showAlert('Empty', 'No rules to promote! Scan a drive first.');
         return;
+    }
+
+    if (skipSuspense) {
+        const countBefore = rules.length;
+        rules = rules.filter(r => r.accountNumber !== '9970');
+        const countAfter = rules.length;
+        if (countAfter < countBefore) log(`Filtered out ${countBefore - countAfter} suspense rules from import.`, 'info');
+    }
+
+    // STRICT COA VALIDATION (Import Time)
+    // Ensures we never pollute the dictionary with invalid codes, even from old JSON scans
+    const coaRaw = localStorage.getItem('ab3_coa');
+    if (coaRaw) {
+        try {
+            const coa = JSON.parse(coaRaw);
+            const validIds = new Set(coa.map(c => String(c.code || c.id || c.accountNumber)));
+
+            const beforeCount = rules.length;
+            rules = rules.filter(r => validIds.has(String(r.accountNumber)));
+            const afterCount = rules.length;
+
+            if (afterCount < beforeCount) {
+                log(`🛑 Dropped ${beforeCount - afterCount} rules with INVALID COA codes.`, 'warn');
+            }
+        } catch (e) { console.error("Import COA Check Failed:", e); }
     }
 
     window.showConfirm('Promote to Dictionary', `Are you sure you want to promote ${rules.length} learned rules to the main Vendor Dictionary?`, async () => {
@@ -982,12 +1745,12 @@ window.promoteToDictionary = async function () {
         // ... (promotion logic) ...
         // We need to move the logic inside callback, but wait, promoteToDictionary is async.
         // Confirm modal is callback based. We need to refactor slightly.
-        await doPromotion();
+        await doPromotion(rules);
     });
 }
 
-async function doPromotion() {
-    const rules = Object.values(window.indexerState.memory);
+async function doPromotion(rules) {
+    // const rules = Object.values(window.indexerState.memory); // Use passed rules
     let promoted = 0;
 
     // ... logic ...
@@ -1006,6 +1769,11 @@ async function doPromotion() {
 
 
 window.downloadLogs = function () {
+    // Limit Logs in Memory (Prevent OOM)
+    if (window.indexerState.logs.length > 1000) {
+        window.indexerState.logs.shift(); // Remove oldest
+    }
+
     const content = window.indexerState.logs.join('\n');
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -1013,6 +1781,44 @@ window.downloadLogs = function () {
     a.href = url;
     a.download = `data_junkie_logs_${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
+}
+
+// Global Log Function (Refined)
+function log(msg, type = 'info') {
+    const time = new Date().toLocaleTimeString();
+    const entry = `[${time}] ${msg}`;
+
+    // Add to State
+    window.indexerState.logs.push(entry);
+
+    // Rotate Logs (Memory Safety)
+    if (window.indexerState.logs.length > 1000) {
+        window.indexerState.logs.shift();
+    }
+
+    // Persist Critical Errors
+    if (type === 'error') {
+        try {
+            const crashLog = window.indexerState.logs.slice(-50); // Save last 50 lines context
+            localStorage.setItem('indexer_crash_log', JSON.stringify(crashLog));
+        } catch (e) { }
+    }
+
+    // Update terminal UI (Optimized: Append instead of full re-render if possible, or throttle)
+    // For now, simple append
+    const term = document.getElementById('terminal-output');
+    if (term) {
+        const div = document.createElement('div');
+        div.className = `log-line ${type}`;
+        div.textContent = `> ${msg}`;
+        term.appendChild(div);
+        term.scrollTop = term.scrollHeight;
+
+        // Cleanup DOM? (Optional: remove old lines from DOM too)
+        if (term.childElementCount > 1000) {
+            term.removeChild(term.firstChild);
+        }
+    }
 }
 
 window.downloadMemory = function () {
@@ -1024,6 +1830,60 @@ window.downloadMemory = function () {
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
 }
+
+window.handleMemoryUpload = function (input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const json = JSON.parse(e.target.result);
+            if (!json || typeof json !== 'object') throw new Error("Invalid JSON");
+
+            // Merge Logic
+            let count = 0;
+            const validCoaIds = window.indexerState.validCoaIds || new Set();
+            const checkCoa = (validCoaIds.size > 0);
+
+            for (const key in json) {
+                const item = json[key];
+                // Basic Validation
+                if (!item.description) continue;
+
+                // COA Check (if item has account number)
+                if (checkCoa && item.accountNumber && !validCoaIds.has(String(item.accountNumber))) {
+                    continue; // Skip invalid COA from imported JSON
+                }
+
+                // Merge
+                window.indexerState.memory[key] = item;
+                count++;
+            }
+
+            window.indexerState.learnedRules = Object.keys(window.indexerState.memory).length;
+
+            // Refresh Grid
+            if (window.indexerState.gridApi) {
+                // Determine new rows vs updates? Easier to setRowData for bulk import
+                const allRows = Object.values(window.indexerState.memory);
+                window.indexerState.gridApi.setRowData(allRows);
+            }
+
+            updateStats();
+            updateAccountNavigator();
+
+            log(`📥 Imported ${count} rules from JSON.`, 'success');
+            alert(`Successfully imported ${count} rules!`);
+
+        } catch (err) {
+            alert("Failed to parse JSON: " + err.message);
+            console.error(err);
+        }
+        input.value = ''; // Reset
+    };
+    reader.readAsText(file);
+};
 
 window.clearMemory = function () {
     if (!confirm("Clear session memory?")) return;
@@ -1122,10 +1982,20 @@ window.closePreview = function () {
 function updateStats() {
     const ids = ['idx-files', 'idx-rules', 'idx-time'];
     const values = [
-        window.indexerState.totalFiles,
+        window.indexerState.processedCount || 0, // Top stats just shows count
         window.indexerState.learnedRules,
         document.getElementById('idx-time')?.textContent || '00:00:00'
     ];
+
+    // Terminal Progress
+    const termStats = document.getElementById('terminal-stats');
+    if (termStats) {
+        if (window.indexerState.totalScanCount > 0) {
+            termStats.textContent = `Progress: ${window.indexerState.processedCount || 0} / ${window.indexerState.totalScanCount}`;
+        } else {
+            termStats.textContent = 'Ready';
+        }
+    }
 
     ids.forEach((id, i) => {
         // Local
@@ -1312,4 +2182,107 @@ window.filterGridByAccount = function (val) {
         });
     }
 }
+
+
+
+// =======================================================
+// UI ACTIONS (Added for v20 Enhancements)
+// =======================================================
+
+/**
+ * Open local file using Blob URL (Safe for Browser)
+ */
+window.openFile = async (filename) => {
+    const handle = window.indexerState.fileHandles[filename];
+    if (handle) {
+        try {
+            // Basic permission check? Browser usually prompts on getFile()
+            const file = await handle.getFile();
+            const url = URL.createObjectURL(file);
+            window.open(url, '_blank');
+        } catch (e) { alert('Could not open file: ' + e.message); }
+    } else {
+        alert('File handle not found for: ' + filename);
+    }
+};
+
+/**
+ * Delete Selected Rows
+ */
+window.deleteSelected = () => {
+    const gridApi = window.indexerState.gridApi || window.indexerState.popoutGridApi;
+    if (!gridApi) return;
+
+    const selected = gridApi.getSelectedRows();
+    if (selected.length === 0) {
+        alert("No items selected.");
+        return;
+    }
+
+    if (!confirm(`Delete ${selected.length} items?`)) return;
+
+    // Remove from memory
+    selected.forEach(item => {
+        delete window.indexerState.memory[item.description];
+    });
+
+    // Remove from Grid
+    gridApi.applyTransaction({ remove: selected });
+
+    // Update Count
+    window.indexerState.learnedRules -= selected.length;
+    const badge = document.getElementById('grid-count');
+    if (badge) badge.textContent = `${window.indexerState.learnedRules} items`;
+};
+
+/**
+ * Mega Fix: Remove Garbage / Low Confidence Items
+ */
+window.megaFix = () => {
+    if (!confirm("MEGA FIX: This will delete all items with 'Uncategorized' account or 'Unknown' category. Continue?")) return;
+
+    const gridApi = window.indexerState.gridApi || window.indexerState.popoutGridApi;
+    const allData = [];
+    gridApi.forEachNode(node => allData.push(node.data));
+
+    // Define Garbage Criteria
+    const garbage = allData.filter(item =>
+        (item.account === 'Uncategorized' || item.account === 'Unknown' || !item.account) ||
+        (item.description.length < 3) // Noise
+    );
+
+    if (garbage.length === 0) {
+        alert("No garbage found! Clean machine.");
+        return;
+    }
+
+    // Remove
+    garbage.forEach(item => delete window.indexerState.memory[item.description]);
+    gridApi.applyTransaction({ remove: garbage });
+
+    window.indexerState.learnedRules -= garbage.length;
+    const badge = document.getElementById('grid-count');
+    if (badge) badge.textContent = `${window.indexerState.learnedRules} items`;
+
+    alert(`MEGA FIX Complete: Removed ${garbage.length} items.`);
+};
+
+/**
+ * Trigger Import
+ */
+window.triggerImport = (skipSuspense = false) => {
+    if (window.indexerState.learnedRules === 0) {
+        alert("Nothing to import! Scan some files first.");
+        return;
+    }
+
+    const msg = skipSuspense ?
+        `Ready to import learned rules, EXCLUDING Suspense (9970)?` :
+        `Ready to import ${window.indexerState.learnedRules} learned rules?`;
+
+    if (!confirm(msg)) return;
+
+    // Map to promoteToDictionary
+    promoteToDictionary(skipSuspense);
+};
 

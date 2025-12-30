@@ -5,64 +5,37 @@
 // Route function - returns page HTML
 window.renderAccounts = function () {
   return `
-    <style>
-      #accountsGrid {
-          width: 100%;
-          height: calc(100vh - 220px);
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-      }
-      .accounts-page {
-          width: 100%;
-          height: 100%;
-          padding: 30px;
-          box-sizing: border-box;
-          background-color: #f8fafc;
-      }
-      .page-header {
-          margin-bottom: 25px;
-          padding-bottom: 15px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #cbd5e1;
-      }
-      /* Ensure AG Grid headers stay fixed */
-      #accountsGrid .ag-header {
-          position: sticky !important;
-          top: 0 !important;
-          z-index: 10 !important;
-          background: white !important;
-      }
-      #accountsGrid .ag-header-viewport {
-          background: #f8fafc !important;
-      }
-    </style>
-    <div class="accounts-page">
-      <div class="page-header">
-        <h1>💰 Chart of Accounts</h1>
-        <div class="header-actions">
-           <div class="action-menu">
-                <button class="action-menu-btn" onclick="this.nextElementSibling.classList.toggle('show')">
-                    ...
-                </button>
-                <div class="action-menu-content">
-                    <button class="action-menu-item" onclick="addNewAccount()">➕ Add Account</button>
-                    <button class="action-menu-item" onclick="importCOA()">📥 Import COA</button> 
-                    <!-- Assuming importCOA exists or will be added, or just Add Account for now -->
+    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- FIXED HEADER -->
+        <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+             <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
+                <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">💰</div>
+                <div>
+                    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Chart of Accounts</h1>
+                    <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Manage your financial categories</p>
                 </div>
-            </div>
+             </div>
+             <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                 <div style="position: relative;">
+                     <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
+                     <input type="text" placeholder="Search accounts..." onkeyup="if(window.accountsGridApi) window.accountsGridApi.setQuickFilter(this.value)"
+                            style="padding: 8px 12px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px; font-size: 0.9rem;">
+                 </div>
+                 <button onclick="addNewAccount()" class="btn-primary" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <span>+ Add Account</span>
+                 </button>
+                 <button onclick="importCOA()" class="btn-secondary" style="background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; color: #475569;">
+                    📥 Import
+                 </button>
+             </div>
         </div>
-      </div>
-      
-      <div class="content-area">
-        <div id="accountsGrid" class="ag-theme-alpine" style="height: calc(100vh - 220px); width: 100%;"></div>
-      </div>
+
+        <!-- GRID CONTAINER -->
+        <div style="flex: 1; background: #f1f5f9; padding: 0; position: relative;">
+            <div id="accountsGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+        </div>
     </div>
-    
+
     <script>
       if (typeof initAccountsGrid === 'function') {
         setTimeout(initAccountsGrid, 100);
@@ -176,6 +149,7 @@ async function initAccountsGrid() {
     onGridReady: (event) => {
       console.log('✅ Chart of Accounts grid ready');
       accountsGridApi = event.api;
+      window.accountsGridApi = event.api;
       event.api.sizeColumnsToFit();
     },
     onCellValueChanged: async (event) => {

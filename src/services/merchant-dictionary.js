@@ -262,7 +262,48 @@ class MerchantDictionary {
 
         if (!rawDescription) return null;
 
-        // Step 1: Extract pattern
+        // =========================================
+        // Step 0: Pattern Detection (E-Transfers, PAD, etc.)
+        // =========================================
+        // Use PatternDetector for transaction type classification
+        if (window.patternDetector) {
+            const detection = window.patternDetector.detect(rawDescription);
+
+            // If high confidence detection (E-Transfer, PAD, etc.)
+            if (detection.confidence >= 0.85 && detection.type !== 'unknown') {
+                // Check if we have this merchant in dictionary
+                const normalized = this.normalize(detection.merchantName);
+                const existingId = this.normalizedIndex.get(normalized);
+
+                if (existingId) {
+                    // Found in dictionary - return with detection metadata
+                    const merchant = this.merchants.get(existingId);
+                    return {
+                        merchant: merchant,
+                        matched_pattern: detection.merchantName,
+                        confidence: detection.confidence,
+                        method: 'pattern_detector',
+                        transactionType: detection.type,
+                        metadata: detection.metadata
+                    };
+                } else {
+                    // New merchant - return detection result for learning
+                    return {
+                        merchant: null,
+                        matched_pattern: detection.merchantName,
+                        confidence: detection.confidence,
+                        method: 'pattern_detector_new',
+                        transactionType: detection.type,
+                        suggestedCategory: detection.category,
+                        metadata: detection.metadata
+                    };
+                }
+            }
+        }
+
+        // =========================================
+        // Step 1: Extract pattern (existing logic)
+        // =========================================
         const pattern = this.extractPattern(rawDescription);
         const normalized = this.normalize(pattern);
 
@@ -625,6 +666,69 @@ class MerchantDictionary {
                 amount: m.stats?.total_amount || 0
             }));
     }
+
+    // ============================================
+    // PATTERN DETECTOR INTEGRATION
+    // ============================================
+
+    /**
+     * Learn from a pattern detection result
+     * Creates or updates merchant based on detected transaction type
+     * @param {Object} detection - PatternDetector result
+     * @param {Object} transaction - Original transaction data
+     */
+    async learnFromPatternDetection(detection, transaction) {
+        if (!detection || !detection.merchantName) return null;
+
+        // Normalize the detected name
+        const normalized = this.normalize(detection.merchantName);
+
+        // Check if merchant exists
+        const existingId = this.normalizedIndex.get(normalized);
+
+        if (existingId) {
+            // Update existing merchant with new description
+            const merchant = this.merchants.get(existingId);
+            if (merchant && transaction.description) {
+                // Add to description list if not already present
+                const descLower = transaction.description.toLowerCase();
+                const exists = (merchant.raw_descriptions || [])
+                    .some(d => d.toLowerCase() === descLower);
+
+                if (!exists) {
+                    merchant.raw_descriptions = merchant.raw_descriptions || [];
+                    merchant.raw_descriptions.push(transaction.description);
+                    merchant.stats = merchant.stats || {};
+                    merchant.stats.total_transactions = (merchant.stats.total_transactions || 0) + 1;
+
+                    // Add transaction type if detected
+                    if (detection.type && detection.type !== 'unknown') {
+                        merchant.transaction_type = detection.type;
+                    }
+
+                    await this.saveMerchant(merchant);
+                }
+            }
+            return existingId;
+        } else {
+            // Create new merchant from detection
+            const newMerchant = await this.createMerchant({
+                display_name: detection.merchantName,
+                normalized_name: normalized,
+                raw_descriptions: transaction.description ? [transaction.description] : [],
+                default_category: detection.category || 'Uncategorized',
+                transaction_type: detection.type,
+                default_account: null, // Will be assigned by COA matcher
+                stats: {
+                    total_transactions: 1,
+                    total_amount: transaction.amount || 0
+                }
+            });
+
+            console.log(`🆕 Pattern Detector created: ${detection.merchantName} (${detection.type})`);
+            return newMerchant?.id;
+        }
+    }
 }
 
 // ============================================
@@ -635,6 +739,18 @@ window.merchantDictionary = new MerchantDictionary();
 
 // Auto-initialize
 window.addEventListener('DOMContentLoaded', async () => {
+    // Load Pattern Detector if available
+    if (!window.patternDetector) {
+        try {
+            const script = document.createElement('script');
+            script.src = './services/pattern-detector.js';
+            document.head.appendChild(script);
+            console.log('📦 Pattern Detector loaded');
+        } catch (e) {
+            console.warn('⚠️ Pattern Detector not available:', e.message);
+        }
+    }
+
     await window.merchantDictionary.init();
     console.log('🏢 Merchant Dictionary ready!');
 });

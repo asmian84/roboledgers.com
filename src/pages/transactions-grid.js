@@ -35,6 +35,13 @@ function saveGridData() {
 // --- 2. RENDER (SHELL) ---
 
 window.renderTransactions = function () {
+    // 0. Ensure State Exists (Fixes Crash)
+    if (!window.transactionState) {
+        window.transactionState = {
+            openingBalance: parseFloat(localStorage.getItem('txn_openingBalance')) || 0
+        };
+    }
+
     // 1. Calculate Totals (Initial)
     const data = getGridRowData();
     const openingBal = window.transactionState.openingBalance || 0;
@@ -130,6 +137,19 @@ window.renderTransactions = function () {
 window.initTransactionsGrid = function () {
     const gridDiv = document.querySelector('#txnGrid');
     if (!gridDiv) return;
+
+    // Check if there's no data - show empty state
+    const data = getGridRowData();
+    if (data.length === 0) {
+        gridDiv.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: white; border-radius: 8px;">
+                <img src="../assets/empty-state.png" alt="No transactions" style="max-width: 400px; margin-bottom: 24px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 1.5rem; color: #0f172a;">No transactions yet.</h3>
+                <p style="margin: 0; color: #64748b; font-size: 1rem;">Import your bank statement or add your first entry manually to get started.</p>
+            </div>
+        `;
+        return;
+    }
 
     // Accounts for Dropdown
     const accountNames = getChartOfAccounts();
@@ -240,7 +260,7 @@ window.initTransactionsGrid = function () {
             window.updateHeaderStats();
         },
         onGridReady: (params) => {
-            window.gridApi = params.api;
+            // window.gridApi is set by createGrid below
 
             // RESPONSIVE LOGIC
             const sizeToFit = () => {
@@ -255,7 +275,8 @@ window.initTransactionsGrid = function () {
         }
     };
 
-    new agGrid.Grid(gridDiv, gridOptions);
+    // Use createGrid (v31+ standard)
+    window.gridApi = agGrid.createGrid(gridDiv, gridOptions);
 };
 
 

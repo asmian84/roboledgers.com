@@ -31,70 +31,72 @@ window.renderReports = function (params) {
 
 function renderReportsDashboard() {
   return `
-    <div class="reports-page">
-      <!-- Page Header -->
-      <div class="reports-header">
-        <div>
-          <h1 class="page-title">📈 Reports & Analytics</h1>
-          <p class="page-subtitle">Generate insights from your financial data</p>
-        </div>
-        <div class="date-range-selector">
-          <select id="global-date-range" onchange="updateDateRange()">
-            <option value="this-month">This Month</option>
-            <option value="last-month">Last Month</option>
-            <option value="this-quarter">This Quarter</option>
-            <option value="this-year">This Year</option>
-            <option value="all">All Time</option>
-          </select>
-        </div>
+    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
+      <!-- FIXED HEADER -->
+      <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+         <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
+             <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">📈</div>
+             <div>
+                 <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Reports & Analytics</h1>
+                 <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Generate insights from your financial data</p>
+             </div>
+         </div>
+         <div class="date-range-selector">
+           <select id="global-date-range" onchange="updateDateRange()" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: white;">
+             <option value="this-month">This Month</option>
+             <option value="last-month">Last Month</option>
+             <option value="this-quarter">This Quarter</option>
+             <option value="this-year">This Year</option>
+             <option value="all">All Time</option>
+           </select>
+         </div>
       </div>
 
-
-
-
-      <!-- Report Cards Grid -->
-      <div class="report-cards-grid">
-        <a href="#/reports/profit-loss" class="report-card profit-loss">
-          <div class="report-icon">📊</div>
-          <h3>Profit & Loss</h3>
-          <p>View income and expenses breakdown by period</p>
-          <div class="report-action">View Report →</div>
-        </a>
-        
-        <a href="#/reports/balance-sheet" class="report-card balance-sheet">
-          <div class="report-icon">⚖️</div>
-          <h3>Balance Sheet</h3>
-          <p>Assets, liabilities, and equity snapshot</p>
-          <div class="report-action">View Report →</div>
-        </a>
-        
-        <a href="#/reports/cash-flow" class="report-card cash-flow">
-          <div class="report-icon">💰</div>
-          <h3>Cash Flow</h3>
-          <p>Track cash inflows and outflows</p>
-          <div class="report-action">View Report →</div>
-        </a>
-        
-        <a href="#/reports/vendor-analysis" class="report-card vendor-analysis">
-          <div class="report-icon">🏪</div>
-          <h3>Vendor Analysis</h3>
-          <p>Analyze spending by vendor over time</p>
-          <div class="report-action">View Report →</div>
-        </a>
-        
-        <a href="#/reports/account-summary" class="report-card account-summary">
-          <div class="report-icon">📋</div>
-          <h3>Account Summary</h3>
-          <p>View balances and activity by account</p>
-          <div class="report-action">View Report →</div>
-        </a>
-        
-        <a href="#/reports/custom" class="report-card custom-report">
-          <div class="report-icon">🔧</div>
-          <h3>Custom Report</h3>
-          <p>Build your own custom report</p>
-          <div class="report-action">Build Report →</div>
-        </a>
+      <!-- SCROLLABLE GRID -->
+      <div style="flex: 1; overflow-y: auto; background: #f1f5f9; padding: 24px;">
+        <div class="report-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; max-width: 1400px; margin: 0 auto;">
+          <a href="#/reports/profit-loss" class="report-card profit-loss" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">📊</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Profit & Loss</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">View income and expenses breakdown by period</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Report →</div>
+          </a>
+          
+          <a href="#/reports/balance-sheet" class="report-card balance-sheet" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">⚖️</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Balance Sheet</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">Assets, liabilities, and equity snapshot</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Report →</div>
+          </a>
+          
+          <a href="#/reports/cash-flow" class="report-card cash-flow" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">💰</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Cash Flow</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">Track cash inflows and outflows</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Report →</div>
+          </a>
+          
+          <a href="#/reports/vendor-analysis" class="report-card vendor-analysis" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">🏪</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Vendor Analysis</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">Analyze spending by vendor over time</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Report →</div>
+          </a>
+          
+          <a href="#/reports/account-summary" class="report-card account-summary" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">📋</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Account Summary</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">View balances and activity by account</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Report →</div>
+          </a>
+          
+          <a href="#/reports/custom" class="report-card custom-report" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">🔧</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Custom Report</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">Build your own custom report</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">Build Report →</div>
+          </a>
+        </div>
       </div>
     </div>
     
@@ -112,42 +114,45 @@ function renderReportsDashboard() {
 
 function renderProfitLoss() {
   return `
-    <div class="report-page">
-      <!-- Report Header -->
-      <div class="report-header">
-        <div>
-          <button class="btn-back" onclick="router.navigate('/reports')">← Back to Reports</button>
-          <h1 class="report-title">Profit & Loss Statement</h1>
+    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
+      <!-- FIXED HEADER -->
+      <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="btn-back" onclick="router.navigate('/reports')" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #64748b;">←</button>
+          <div>
+              <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Profit & Loss Statement</h1>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Income vs Expenses</p>
+          </div>
         </div>
         
-        <div class="report-controls">
-          <select id="pl-date-range" onchange="refreshProfitLoss()">
+        <div class="report-controls" style="display: flex; gap: 8px;">
+          <select id="pl-date-range" onchange="refreshProfitLoss()" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;">
             <option value="this-month">This Month</option>
             <option value="last-month">Last Month</option>
             <option value="this-quarter">This Quarter</option>
             <option value="this-year">This Year</option>
           </select>
-          <button class="btn-secondary" onclick="exportReport('pdf')">📄 PDF</button>
-          <button class="btn-secondary" onclick="exportReport('csv')">📊 CSV</button>
+          <button class="btn-secondary" onclick="exportReport('pdf')" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer;">📄 PDF</button>
+          <button class="btn-secondary" onclick="exportReport('csv')" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer;">📊 CSV</button>
         </div>
       </div>
 
       <!-- Report Body -->
-      <div class="report-body">
+      <div class="report-body" style="flex: 1; overflow-y: auto; background: #f1f5f9; padding: 24px;">
         <!-- Chart View -->
-        <div class="report-section">
-          <h3>Income vs Expenses</h3>
-          <canvas id="pl-chart"></canvas>
+        <div class="report-section" style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+          <h3 style="margin-top: 0;">Income vs Expenses</h3>
+          <div style="height: 300px;"><canvas id="pl-chart"></canvas></div>
         </div>
         
         <!-- Table View -->
-        <div class="report-section">
-          <table class="report-table" id="pl-table">
+        <div class="report-section" style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
+          <table class="report-table" id="pl-table" style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr>
-                <th>Account</th>
-                <th class="amount">Amount</th>
-                <th class="percentage">% of Total</th>
+              <tr style="border-bottom: 2px solid #e2e8f0; text-align: left;">
+                <th style="padding: 12px;">Account</th>
+                <th class="amount" style="text-align: right;">Amount</th>
+                <th class="percentage" style="text-align: right;">% of Total</th>
               </tr>
             </thead>
             <tbody id="pl-table-body">

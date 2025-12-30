@@ -166,75 +166,83 @@ window.renderDataImportPage = function () {
     const container = document.getElementById('app');
 
     container.innerHTML = `
-        <div class="data-import-container">
+        <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
             
-            <!-- Default Page Header -->
-            <div class="page-header" id="default-page-header">
-                <h1>Data Import</h1>
-                <p class="page-subtitle">Universal import engine for PDF and CSV bank statements</p>
-            </div>
-
-            <!-- MOVED TOP: Summary Stats -->
-            <div id="preview-summary-wrapper" class="preview-summary-wrapper" style="display: none;">
-                <div class="summary-card sleek-card compact-row">
-                    <!-- LEFT: Bank Info -->
-                    <div class="sc-section sc-info">
-                        <div class="sc-bank-row">
-                            <span id="summary-bank-name" class="sc-bank-name">Unknown Bank</span>
-                            <!-- Clickable Badge for Switching Type -->
-                            <span id="account-type-badge" class="badge badge-gray cursor-pointer" onclick="toggleAccountType()" title="Click to switch type">Type</span>
-                        </div>
-                        <span class="sc-filename" id="sc-filename">Imports loaded</span>
-                    </div>
-
-                    <!-- MIDDLE: Metrics -->
-                    <div class="sc-section sc-metrics-compact">
-                        <div class="metric-group-compact">
-                            <label class="metric-label-left">Opening</label>
-                            <div class="input-inline-wrapper modern-input-wrapper">
-                                <span class="currency-symbol">$</span>
-                                <input type="number" id="opening-balance" class="input-inline modern-input" value="0.00" onchange="recalculateTotals()">
+            <!-- FIXED TOP -->
+            <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
+                <header class="dashboard-header-modern" style="background: white; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
+                        <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">📥</div>
+                        <div class="header-info">
+                            <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Data Import</h2>
+                            <div class="meta" style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                                <span style="background: #d1fae5; color: #059669; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.7rem;">IMPORT ENGINE</span>
+                                <span>•</span>
+                                <span>PDF and CSV bank statements</span>
                             </div>
                         </div>
-                        <div class="metric-divider"></div>
-                        <div class="metric-group-compact">
-                            <!-- Label ID for In/Credit -->
-                            <label id="label-in" class="metric-label-left">Credits <span id="count-in" class="metric-count">(0)</span></label>
-                            <span id="summary-total-in" class="val-in left-align">+0.00</span>
-                        </div>
-                        <div class="metric-divider"></div>
-                        <div class="metric-group-compact">
-                            <!-- Label ID for Out/Debit -->
-                            <label id="label-out" class="metric-label-left">Debits <span id="count-out" class="metric-count">(0)</span></label>
-                            <span id="summary-total-out" class="val-out left-align">-0.00</span>
-                        </div>
-                        <div class="metric-divider"></div>
-                        <div class="metric-group-compact highlight">
-                            <label class="metric-label-left">Ending</label>
-                            <span id="summary-ending-balance" class="val-end left-align">$0.00</span>
-                        </div>
                     </div>
+                </header>
 
-                    <!-- RIGHT: Actions Menu -->
-                    <div class="sc-section sc-menu">
-                        <div class="dropdown-container">
-                            <button class="btn-icon-menu" onclick="toggleActionMenu(event)" title="Actions">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                            </button>
-                            <div id="sc-dropdown-menu" class="dropdown-menu hidden">
-                                <button onclick="downloadCSV()" class="dropdown-item">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                    <span>CSV Export</span>
+                <!-- MOVED TOP: Summary Stats -->
+                <div id="preview-summary-wrapper" class="preview-summary-wrapper" style="display: none; padding: 0 24px 16px 24px; margin: 0; width: auto;">
+                    <div class="summary-card sleek-card compact-row" style="margin: 0;">
+                        <!-- LEFT: Bank Info -->
+                        <div class="sc-section sc-info">
+                            <div class="sc-bank-row">
+                                <span id="summary-bank-name" class="sc-bank-name">Unknown Bank</span>
+                                <span id="account-type-badge" class="badge badge-gray cursor-pointer" onclick="toggleAccountType()" title="Click to switch type">Type</span>
+                            </div>
+                            <span class="sc-filename" id="sc-filename">Imports loaded</span>
+                        </div>
+
+                        <!-- MIDDLE: Metrics -->
+                        <div class="sc-section sc-metrics-compact">
+                            <div class="metric-group-compact">
+                                <label class="metric-label-left">Opening</label>
+                                <div class="input-inline-wrapper modern-input-wrapper">
+                                    <span class="currency-symbol">$</span>
+                                    <input type="number" id="opening-balance" class="input-inline modern-input" value="0.00" onchange="recalculateTotals()">
+                                </div>
+                            </div>
+                            <div class="metric-divider"></div>
+                            <div class="metric-group-compact">
+                                <label id="label-in" class="metric-label-left">Credits <span id="count-in" class="metric-count">(0)</span></label>
+                                <span id="summary-total-in" class="val-in left-align">+0.00</span>
+                            </div>
+                            <div class="metric-divider"></div>
+                            <div class="metric-group-compact">
+                                <label id="label-out" class="metric-label-left">Debits <span id="count-out" class="metric-count">(0)</span></label>
+                                <span id="summary-total-out" class="val-out left-align">-0.00</span>
+                            </div>
+                            <div class="metric-divider"></div>
+                            <div class="metric-group-compact highlight">
+                                <label class="metric-label-left">Ending</label>
+                                <span id="summary-ending-balance" class="val-end left-align">$0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Actions Menu -->
+                        <div class="sc-section sc-menu">
+                            <div class="dropdown-container">
+                                <button class="btn-icon-menu" onclick="toggleActionMenu(event)" title="Actions">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                                 </button>
-                                <button onclick="loadToTransactions()" class="dropdown-item">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                                    <span>To Ledger</span>
-                                </button>
-                                <div class="dropdown-divider"></div>
-                                <button onclick="clearPreview()" class="dropdown-item danger">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                                    <span>Clear Data</span>
-                                </button>
+                                <div id="sc-dropdown-menu" class="dropdown-menu hidden">
+                                    <button onclick="downloadCSV()" class="dropdown-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span>CSV Export</span>
+                                    </button>
+                                    <button onclick="loadToTransactions()" class="dropdown-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                        <span>To Ledger</span>
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button onclick="clearPreview()" class="dropdown-item danger">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                        <span>Clear Data</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -242,11 +250,11 @@ window.renderDataImportPage = function () {
             </div>
 
             <!-- Main Layout: Sidebar + Content -->
-            <div class="import-layout">
+            <div class="import-layout" style="flex: 1; min-height: 0; display: flex; gap: 24px; padding: 24px; background: #f1f5f9; overflow: hidden;">
                 
                 <!-- Left Sidebar: Import Explorer -->
-                <aside class="upload-explorer">
-                    <div class="explorer-header">
+                <aside class="upload-explorer" style="width: 300px; display: flex; flex-direction: column; align-self: flex-start;">
+                    <div class="explorer-header" style="flex-shrink: 0;">
                         <h3>Import History</h3>
                         <div class="explorer-actions">
                              <input type="file" id="sidebar-upload-input" accept=".pdf,.csv,.xls,.xlsx" multiple style="display: none;">
@@ -255,12 +263,12 @@ window.renderDataImportPage = function () {
                              <button class="btn-xs btn-secondary" onclick="refreshBatchList()" title="Refresh">🔄</button>
                         </div>
                     </div>
-                    <div id="batch-list" class="batch-list"></div>
+                    <div id="batch-list" class="batch-list" style="overflow-y: auto;"></div>
                 </aside>
 
                 <!-- Main Content Area -->
-                <main class="import-content">
-                    <div id="upload-zone" class="compact-upload-zone">
+                <main class="import-content" style="flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0;">
+                    <div id="upload-zone" class="compact-upload-zone" style="flex-shrink: 0;">
                         <svg class="upload-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <div class="upload-text">
                             <span class="upload-main">Drag and drop files here</span>
@@ -269,8 +277,8 @@ window.renderDataImportPage = function () {
                         <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('import-file-input').click()">Browse files</button>
                         <input type="file" id="import-file-input" accept=".pdf,.csv,.xls,.xlsx" multiple style="display: none;">
                     </div>
-                    <div id="preview-section" style="display: none;">
-                        <div id="import-preview-grid" class="ag-theme-alpine"></div>
+                    <div id="preview-section" style="display: none; flex: 1; min-height: 0; margin-top: 24px;">
+                        <div id="import-preview-grid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
                     </div>
                 </main>
             </div>
@@ -293,16 +301,10 @@ window.renderDataImportPage = function () {
         </div>
         
         <style>
-            .data-import-container { padding: 20px; max-width: 1600px; margin: 0 auto; }
-            .page-header h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.02em; }
-            .page-subtitle { color: #64748b; margin-top: 4px; }
-            .preview-summary-wrapper { margin-top: 0; width: 100%; margin-bottom: 24px; }
-            .import-layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; margin-top: 24px; }
-            @media (max-width: 1024px) { .import-layout { grid-template-columns: 1fr; } }
-
+            /* Updated for Full-Width Layout */
             .upload-explorer {
                 background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-                padding: 16px; height: fit-content; max-height: 80vh; overflow-y: auto;
+                padding: 16px; 
             }
             .explorer-header {
                 display: flex; justify-content: space-between; align-items: center;
@@ -316,7 +318,9 @@ window.renderDataImportPage = function () {
             #btn-append-selected:hover { background: #15803d; }
             
             .batch-list { display: flex; flex-direction: column; gap: 8px; }
-            .batch-item { padding: 10px 12px; border: 1px solid #f1f5f9; border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative; background: white; }
+            .empty-state { padding: 8px 0; margin: 0; }
+            .empty-state p { margin: 0; padding: 4px 0; font-size: 0.85rem; color: #94a3b8; text-align: center; }
+            .batch-item { padding: 10px 12px; border: 1px solid #f1f5f9; border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative; background: white; flex-shrink: 0; }
             .batch-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
             .batch-item.selected { border-color: #3b82f6; background: #eff6ff; }
             .batch-row-top { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
@@ -389,7 +393,8 @@ window.renderDataImportPage = function () {
             .dropdown-item.danger:hover { background: #fee2e2; }
             .dropdown-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
 
-            #import-preview-grid { flex: 1; background: white; border-radius: 8px; border: 1px solid #e2e8f0; height: calc(100vh - 280px); min-height: 400px; width: 100%; overflow: hidden; }
+            /* Updated Grid Height */
+            #import-preview-grid { flex: 1; background: white; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 480px; width: 100%; overflow: hidden; }
             
             .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
             .modal-card { background: white; border-radius: 12px; width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden; }
@@ -818,6 +823,18 @@ function renderPreviewGrid(parsedData) {
     if (!gridDiv) return;
 
     gridDiv.innerHTML = '';
+
+    // Check if there's no data - show empty state
+    if (!parsedData || parsedData.length === 0) {
+        gridDiv.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: white; border-radius: 8px;">
+                <img src="../assets/empty-state.png" alt="No transactions" style="max-width: 400px; margin-bottom: 24px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 1.5rem; color: #0f172a;">No transactions yet.</h3>
+                <p style="margin: 0; color: #64748b; font-size: 1rem;">Import your bank statement or add your first entry manually to get started.</p>
+            </div>
+        `;
+        return;
+    }
 
     const columnDefs = [
         {
