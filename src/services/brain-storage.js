@@ -14,7 +14,20 @@ class BrainStorage {
         if (this.db) return; // Already open
 
         return new Promise((resolve, reject) => {
+            // Add timeout to prevent infinite hang
+            const timeout = setTimeout(() => {
+                console.warn('🧠 BrainStorage: Init timeout (5s) - possibly blocked by other tabs');
+                this.db = null; // Mark as failed
+                resolve(); // Resolve anyway to not block parsing
+            }, 5000);
+
             const request = indexedDB.open(this.dbName, 3); // Upgrade to V3
+
+            request.onblocked = () => {
+                console.warn('🧠 BrainStorage: DB upgrade blocked by other tabs. Close other tabs and refresh.');
+                clearTimeout(timeout);
+                resolve(); // Don't hang, continue without DB
+            };
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
@@ -34,14 +47,16 @@ class BrainStorage {
             };
 
             request.onsuccess = (event) => {
+                clearTimeout(timeout);
                 this.db = event.target.result;
                 console.log(`🧠 BrainStorage: Connected to ${this.dbName} (v${this.db.version})`);
                 resolve();
             };
 
             request.onerror = (event) => {
+                clearTimeout(timeout);
                 console.error('🧠 BrainStorage: Error opening DB', event);
-                reject('Failed to open Brain DB');
+                resolve(); // Don't reject, allow parsing to continue without DB
             };
         });
     }
@@ -98,6 +113,8 @@ class BrainStorage {
      */
     async hasParsedFile(hash) {
         if (!this.db) await this.init();
+        if (!this.db) return false; // DB unavailable, allow import
+
         return new Promise((resolve) => {
             const tx = this.db.transaction(['ProcessedFiles'], 'readonly');
             const store = tx.objectStore('ProcessedFiles');
@@ -113,6 +130,8 @@ class BrainStorage {
      */
     async markFileParsed(hash) {
         if (!this.db) await this.init();
+        if (!this.db) return; // DB unavailable, skip silently
+
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['ProcessedFiles'], 'readwrite');
             const store = tx.objectStore('ProcessedFiles');

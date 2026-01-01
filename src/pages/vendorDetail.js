@@ -92,7 +92,7 @@ function renderTabContent(tab) {
             ➕ Add Transaction
           </button>
         </div>
-        <div id="vendor-transactions-grid" class="ag-theme-alpine grid-container-small"></div>
+        <div id="vendor-transactions-grid" class="ag-theme-quartz grid-container-small"></div>
         <div class="transactions-summary" id="transactions-summary"></div>
       </div>
     `;

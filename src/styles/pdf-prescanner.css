@@ -51,10 +51,11 @@
     background: white;
     border-radius: 16px;
     max-width: 800px;
-    width: 90%;
+    width: 95%;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    margin: 20px;
 }
 
 .prescan-header {
@@ -259,4 +260,33 @@
 
 .btn-cancel:hover {
     background: #cbd5e1;
+}
+
+@media (max-width: 600px) {
+
+    .prescan-header,
+    .prescan-body,
+    .prescan-actions {
+        padding: 1rem;
+    }
+
+    .prescan-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .prescan-actions {
+        flex-direction: column;
+    }
+
+    .prescan-actions button {
+        width: 100%;
+    }
+
+    .upload-mode-selector {
+        flex-direction: column;
+    }
+
+    .category-header h4 {
+        font-size: 0.875rem;
+    }
 }

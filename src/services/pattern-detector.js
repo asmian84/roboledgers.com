@@ -430,6 +430,3 @@ if (typeof window !== 'undefined') {
     window.PatternDetector = PatternDetector;
     window.patternDetector = patternDetector;
 }
-
-// Export for ES Modules
-export { PatternDetector, patternDetector };

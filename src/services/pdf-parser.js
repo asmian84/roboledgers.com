@@ -292,16 +292,14 @@
                     Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
                 };
 
-                // Detect if CIBC (has category column)
-                const hasCategoryColumn = /CIBC|Costco.*World.*Mastercard/i.test(text);
-
-                let previousMonth = -1;
-                let currentYear = year;
-                let descBuffer = '';
-
-                // Base pattern: MMM DD   MMM DD   DESCRIPTION   AMOUNT
-                // Handles: RBC, BMO, TD, Amex, Scotia, ATB, Capital One
+                // Credit card transaction pattern: 
+                // Trans Date (MMM DD)   Post Date (MMM DD)   Description   Amount
                 const basePattern = /^([A-Z][a-z]{2})\s+(\d{1,2})\s+([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2}[-]?)$/;
+
+                let lastSeenDate = null;
+                let descBuffer = '';
+                let currentYear = year;
+                let previousMonth = -1;
 
                 for (const line of lines) {
                     const trimmed = line.trim();
@@ -325,29 +323,57 @@
                         }
                         previousMonth = monthNum;
 
+                        // Clean description - remove transaction reference numbers
+                        let cleanDesc = description
+                            .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
+                            .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
+                            .trim();
+
+                        // Add buffered description (multi-line handling)
+                        let finalDesc = descBuffer ? descBuffer + ' ' + cleanDesc : cleanDesc;
+                        descBuffer = '';
+
                         // Parse amount (handle various formats)
                         let amount = parseFloat(amountStr.replace(/[$,\-]/g, ''));
 
-                        // Scotia format: -123.45- means credit
-                        if (amountStr.match(/^-[\d,]+\.?\d{2}-$/)) {
-                            amount = -Math.abs(amount);
-                        } else if (amountStr.startsWith('-')) {
+                        // Scotia format: -123.45- means credit (payment/refund)
+                        // Negative means credit (payment TO card), positive means debit (purchase)
+                        if (amountStr.match(/^-[\d,]+\.?\d{2}-$/) || amountStr.startsWith('-')) {
                             amount = -Math.abs(amount);
                         }
 
-                        // Add buffered description (multi-line handling)
-                        let finalDesc = descBuffer ? descBuffer + ' ' + description : description;
-                        descBuffer = '';
+                        const date = `${currentYear}-${String(monthNum + 1).padStart(2, '0')}-${transDay.padStart(2, '0')}`;
+                        lastSeenDate = date;
 
                         transactions.push({
-                            date: `${currentYear}-${String(monthNum + 1).padStart(2, '0')}-${transDay.padStart(2, '0')}`,
-                            description: finalDesc.trim(),
+                            date: date,
+                            description: finalDesc,
                             amount: Math.abs(amount),
-                            type: amount < 0 ? 'credit' : 'debit'
+                            type: amount < 0 ? 'credit' : 'debit'  // Credit = payment, Debit = purchase
                         });
-                    } else if (trimmed.length > 5 && !/^\d/.test(trimmed) && !/^[A-Z]{3}\s+\d{1,2}/.test(trimmed)) {
-                        // Continuation line (multi-line description)
-                        descBuffer += ' ' + trimmed;
+                    } else if (lastSeenDate) {
+                        // TRY DATELESS FALLBACK: Pattern for lines WITH amounts but NO dates
+                        // Look for: [Description] [Amount]
+                        const fallbackMatch = trimmed.match(/^(.+?)\s+([-]?\$?[\d,]+\.?\d{2}[-]?)$/);
+                        if (fallbackMatch) {
+                            const [, desc, amountStr] = fallbackMatch;
+                            if (!/DATE|DESCRIPTION|AMOUNT|TOTAL|BALANCE/i.test(desc)) {
+                                let amount = parseFloat(amountStr.replace(/[$,\-]/g, ''));
+                                if (amountStr.match(/^-[\d,]+\.?\d{2}-$/) || amountStr.startsWith('-')) {
+                                    amount = -Math.abs(amount);
+                                }
+
+                                transactions.push({
+                                    date: lastSeenDate,
+                                    description: desc.trim(),
+                                    amount: Math.abs(amount),
+                                    type: amount < 0 ? 'credit' : 'debit'
+                                });
+                            }
+                        } else if (trimmed.length > 5 && !/^\d/.test(trimmed) && !/^[A-Z]{3}\s+\d{1,2}/.test(trimmed)) {
+                            // Continuation line (multi-line description)
+                            descBuffer += ' ' + trimmed;
+                        }
                     }
                 }
 
@@ -378,6 +404,9 @@
                 const hasMonthDay = /[A-Z][a-z]{2}\s+\d{1,2}/.test(text);
                 const hasDayMonth = /\d{1,2}\s+[A-Z][a-z]{2}/.test(text);
 
+                let lastSeenDate = null;
+                let previousBalance = null; // Track balance for BMO debit/credit detection
+
                 for (const line of lines) {
                     const trimmed = line.trim();
 
@@ -388,18 +417,28 @@
 
                     let transaction = null;
 
-                    // Try MM/DD/YYYY format (Scotia Chequing)
+                    // Try MM/DD/YYYY format (Scotia/BMO Chequing)
+                    // Format: MM/DD/YYYY Description [RefNumber] Withdrawal Deposit Balance
                     if (hasSlashDate) {
+                        // Match with optional reference numbers (e.g., TF 0000000022181093804, AP 0000000022233362595, NO.78783249)
                         const match = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2})$/);
                         if (match) {
                             const [, date, desc, withdrawal, deposit, balance] = match;
                             const [month, day, fullYear] = date.split('/');
+
+                            // Clean description - remove transaction reference numbers
+                            // Patterns: TF 0000000022181093804, AP 0000000022233362595, NO.78783249 001
+                            let cleanDesc = desc
+                                .replace(/\s+(TF|AP|NO\.)\s*\d{10,}/g, '')  // Remove "TF 0000000022181093804" style refs
+                                .replace(/\s+\d{12,}/g, '')                  // Remove any standalone 12+ digit numbers
+                                .trim();
+
                             const amount = withdrawal !== '-' ? parseFloat(withdrawal.replace(/,/g, '')) : parseFloat(deposit.replace(/,/g, ''));
                             const type = withdrawal !== '-' ? 'debit' : 'credit';
 
                             transaction = {
                                 date: `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
-                                description: desc.trim(),
+                                description: cleanDesc,
                                 amount,
                                 type
                             };
@@ -410,15 +449,21 @@
                     if (!transaction && hasDayMonth) {
                         const match = trimmed.match(/^(\d{1,2})\s+([A-Z][a-z]{2})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)$/);
                         if (match) {
-                            const [, day, month, desc, withdrawal, deposit, balance] = match;
+                            const [, day, month, rawDesc, withdrawal, deposit, balance] = match;
                             const monthNum = months[month];
                             if (monthNum !== undefined) {
+                                // Clean description - remove transaction reference numbers
+                                let cleanDesc = rawDesc
+                                    .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
+                                    .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
+                                    .trim();
+
                                 const amount = withdrawal !== '-' ? parseFloat(withdrawal.replace(/,/g, '')) : parseFloat(deposit.replace(/,/g, ''));
                                 const type = withdrawal !== '-' ? 'debit' : 'credit';
 
                                 transaction = {
                                     date: `${year}-${String(monthNum + 1).padStart(2, '0')}-${day.padStart(2, '0')}`,
-                                    description: desc.trim(),
+                                    description: cleanDesc,
                                     amount,
                                     type
                                 };
@@ -426,19 +471,63 @@
                         }
                     }
 
-                    // Try MMM DD format (ATB, Servus)
+                    // Try MMM DD format - BMO SPECIFIC (has reference numbers in description)
+                    // Format: Dec 27   Online Transfer, TF 0005524890013997002   1,000.00   49.32
+                    // Note: BMO has SINGLE amount column (not separate debit/credit) + balance
+                    if (!transaction && hasMonthDay && /BMO|Bank of Montreal/i.test(text)) {
+                        // Match: Month Day   Description [with ref numbers]   Amount   Balance
+                        const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([\d,]+\.?\d{2})\s+([-]?[\d,]+\.?\d{2})$/);
+                        if (match) {
+                            const [, month, day, rawDesc, amount, balance] = match;
+                            const monthNum = months[month];
+                            if (monthNum !== undefined) {
+                                // Clean description - remove transaction reference numbers
+                                let cleanDesc = rawDesc
+                                    .replace(/,?\s*(TF|AP|NO\.)\s*\d{10,}/g, '')  // Remove "TF 0005524890013997002"
+                                    .replace(/\s+\d{12,}/g, '')                     // Remove standalone long numbers
+                                    .trim();
+
+                                const amt = parseFloat(amount.replace(/,/g, ''));
+                                const bal = parseFloat(balance.replace(/,/g, ''));
+
+                                // Determine if debit or credit by watching balance trend
+                                let type = 'debit';
+                                if (previousBalance !== null) {
+                                    // If balance increased, it's a credit (money in)
+                                    // If balance decreased, it's a debit (money out)
+                                    type = bal > previousBalance ? 'credit' : 'debit';
+                                }
+                                previousBalance = bal;
+
+                                transaction = {
+                                    date: `${year}-${String(monthNum + 1).padStart(2, '0')}-${day.padStart(2, '0')}`,
+                                    description: cleanDesc,
+                                    amount: amt,
+                                    type
+                                };
+                            }
+                        }
+                    }
+
+                    // Try MMM DD format (ATB, Servus, RBC)
                     if (!transaction && hasMonthDay) {
                         const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+(\$?[\d,]+\.?\d{2}|-)\s+\$?([\d,]+\.?\d{2})$/);
                         if (match) {
-                            const [, month, day, desc, debit, credit, balance] = match;
+                            const [, month, day, rawDesc, debit, credit, balance] = match;
                             const monthNum = months[month];
                             if (monthNum !== undefined) {
+                                // Clean description - remove transaction reference numbers
+                                let cleanDesc = rawDesc
+                                    .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
+                                    .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
+                                    .trim();
+
                                 const amount = debit !== '-' ? parseFloat(debit.replace(/[$,]/g, '')) : parseFloat(credit.replace(/[$,]/g, ''));
                                 const type = debit !== '-' ? 'debit' : 'credit';
 
                                 transaction = {
                                     date: `${year}-${String(monthNum + 1).padStart(2, '0')}-${day.padStart(2, '0')}`,
-                                    description: desc.trim(),
+                                    description: cleanDesc,
                                     amount,
                                     type
                                 };
@@ -447,7 +536,27 @@
                     }
 
                     if (transaction) {
+                        lastSeenDate = transaction.date;
                         transactions.push(transaction);
+                    } else if (lastSeenDate) {
+                        // TRY CARLESS FALLBACK: Pattern for lines WITH amounts but NO dates
+                        // We look for [Description] [Withdrawal] [Deposit] [Balance]
+                        const fallbackMatch = trimmed.match(/^(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2})$/);
+                        if (fallbackMatch) {
+                            const [, desc, withdrawal, deposit, balance] = fallbackMatch;
+                            // Ensure it's not a garbage header line that matched accidentally
+                            if (!/DATE|DESCRIPTION|WITHDRAWALS|DEPOSITS|BALANCE/i.test(desc)) {
+                                const amount = withdrawal !== '-' ? parseFloat(withdrawal.replace(/,/g, '')) : parseFloat(deposit.replace(/,/g, ''));
+                                const type = withdrawal !== '-' ? 'debit' : 'credit';
+
+                                transactions.push({
+                                    date: lastSeenDate,
+                                    description: desc.trim(),
+                                    amount,
+                                    type
+                                });
+                            }
+                        }
                     }
                 }
 
@@ -475,13 +584,40 @@
                     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     console.log(`📄 PDF loaded: ${pdf.numPages} pages`);
 
-                    // 2. Extract text from all pages
+                    // 2. Extract text from all pages (PRESERVE LINE STRUCTURE)
                     let fullText = '';
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(' ');
-                        fullText += pageText + '\n';
+
+                        // Sort items by Y position (descending) then X position (ascending)
+                        const items = textContent.items.slice().sort((a, b) => {
+                            const yDiff = b.transform[5] - a.transform[5]; // Y is inverted in PDF
+                            if (Math.abs(yDiff) > 5) return yDiff; // Different line
+                            return a.transform[4] - b.transform[4]; // Same line, sort by X
+                        });
+
+                        // Group items by Y position (within tolerance)
+                        let lastY = null;
+                        let lineBuffer = [];
+
+                        for (const item of items) {
+                            const y = item.transform[5];
+                            if (lastY !== null && Math.abs(y - lastY) > 5) {
+                                // New line - flush buffer
+                                if (lineBuffer.length > 0) {
+                                    fullText += lineBuffer.join(' ') + '\n';
+                                    lineBuffer = [];
+                                }
+                            }
+                            lineBuffer.push(item.str);
+                            lastY = y;
+                        }
+                        // Flush remaining
+                        if (lineBuffer.length > 0) {
+                            fullText += lineBuffer.join(' ') + '\n';
+                        }
+                        fullText += '\n'; // Page break
                     }
 
                     console.log(`📄 Extracted ${fullText.length} characters`);
@@ -610,6 +746,15 @@
              * Identify bank from PDF text
              */
             identifyBank(text) {
+                if (window.BankRegistry) {
+                    const registryBank = window.BankRegistry.identify(text);
+                    if (registryBank) {
+                        // Map registry object to internal bank config format
+                        return this.banks[registryBank.id.split('_')[0]] || { name: registryBank.name, id: registryBank.id };
+                    }
+                }
+
+                // Legacy fallback
                 for (const [key, bank] of Object.entries(this.banks)) {
                     if (bank.identifier.test(text)) {
                         return bank;
@@ -911,6 +1056,7 @@
                         if (match) {
                             const val = parseFloat(match[0].replace(/[$,]/g, ''));
                             metadata.openingBalance = val;
+                            console.log(`💰 RBC Parser: Found Opening Balance = $${val.toFixed(2)}`);
                             // Initialize tracking for Delta Logic
                             // Note: Opening Balance line is BEFORE transactions usually.
                             if (previousBalance === null) previousBalance = val;
@@ -1108,7 +1254,7 @@
                     const mIdx = months[mStr] + 1;
                     const mNum = mIdx ? mIdx.toString().padStart(2, '0') : '01';
 
-                    const isoDate = `${currentYear} -${mNum} -${dStr} `;
+                    const isoDate = `${currentYear}-${mNum}-${dStr}`;
 
                     transactions.push({
                         date: isoDate,
@@ -1124,173 +1270,157 @@
                 return { transactions, metadata };
             }
 
-            /**
-             * BMO Bank of Montreal Credit Card Parser
-             * Format: TRANS_DATE   POST_DATE   DESCRIPTION   REFERENCE_NO   AMOUNT
-             * Example: Mar 8   Mar 8   DIN THE STORE #0405   9301151476406   237.95
-             */
             extractBMOTransactions(text) {
                 const transactions = [];
+                const lines = text.split('\n');
 
                 // Detect year from statement period
-                let year = new Date().getFullYear();
+                let currentYear = new Date().getFullYear();
                 const periodMatch = text.match(/PERIOD COVERED BY THIS STATEMENT.*?(\d{4})/i);
-                if (periodMatch) {
-                    year = parseInt(periodMatch[1]);
-                }
+                if (periodMatch) currentYear = parseInt(periodMatch[1]);
 
-                // Extract metadata
+                // Metadata extraction
                 const metadata = {
                     accountHolder: null,
                     accountNumber: null,
                     statementPeriod: null,
                     previousBalance: null,
                     newBalance: null,
-                    cardType: 'BMO Mastercard'
+                    cardType: 'BMO Statement'
                 };
 
-                // Extract customer name
                 const nameMatch = text.match(/Customer Name\s+(.+)/i);
-                if (nameMatch) {
-                    metadata.accountHolder = nameMatch[1].trim();
-                }
+                if (nameMatch) metadata.accountHolder = nameMatch[1].trim();
 
-                // Extract card number
                 const cardMatch = text.match(/Card Number\s+(\d{4}\s+\d{4}\s+\d{4}\s+\d{4})/i);
                 if (cardMatch) {
                     const lastFour = cardMatch[1].trim().split(/\s+/).pop();
                     metadata.accountNumber = `**** ${lastFour}`;
                 }
 
-                // Extract statement period
-                const periodMatch2 = text.match(/PERIOD COVERED BY THIS STATEMENT\s+(.+)/i);
-                if (periodMatch2) {
-                    metadata.statementPeriod = periodMatch2[1].trim();
-                }
-
-                // Extract previous balance
-                const prevBalMatch = text.match(/Previous Balance.*?\$?([\d,]+\.?\d{2})/i);
-                if (prevBalMatch) {
-                    metadata.previousBalance = parseFloat(prevBalMatch[1].replace(/,/g, ''));
-                }
-
-                // Extract new balance
-                const newBalMatch = text.match(/New Balance.*?\$?([\d,]+\.?\d{2})/i);
-                if (newBalMatch) {
-                    metadata.newBalance = parseFloat(newBalMatch[1].replace(/,/g, ''));
-                }
-
                 const months = {
                     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-                    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+                    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+                    JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+                    JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11
                 };
 
+                let lastSeenDate = null;
                 let previousMonth = -1;
-                let currentYear = year;
 
-                // Pattern: MMM DD   MMM DD   DESCRIPTION   REFERENCE_NO   AMOUNT (global for matchAll)
-                // Updated to be optional on Reference Number
-                // Updated to handle optional periods in months (e.g. "Jan.") and dollar signs
+                // Loop through lines
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.length < 10) continue;
 
-                // Debug: Show a snippet of the text to understand the format (remove after fix)
-                console.log('📝 BMO Sample Text (First 200 chars):', text.substring(0, 200).replace(/\n/g, ' '));
+                    // Skip common headers
+                    if (/TRANSACTION|POSTING|DATE|DESCRIPTION|AMOUNT|ACTIVITY|BALANCE/i.test(trimmed)) continue;
+                    if (/STATEMENT|CUSTOMER|ACCOUNT|SUMMARY|PERIOD/i.test(trimmed)) continue;
 
-                // Try strict pattern first (with Ref Number)
-                // [A-Za-z]{3}\.? matches "Jan", "Jan.", "JAN"
-                // \$? matches optional dollar sign
-                let bmoPattern = /([A-Za-z]{3}\.?)\s+(\d{1,2})\s+([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+(\d{8,})\s+([-]?\$?[\d,]+\.?\d{2})/g;
+                    // PATTERN 1: BMO Credit Card (MMM DD   MMM DD   DESC   [REF]   AMOUNT)
+                    const ccMatch = trimmed.match(/^([A-Za-z]{3}\.?)\s+(\d{1,2})\s+([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})$/);
+                    if (ccMatch) {
+                        const [, transMonthRaw, transDay, postMonthRaw, postDay, descRaw, amountStr] = ccMatch;
 
-                let matches = [...text.matchAll(bmoPattern)];
+                        const transMonth = transMonthRaw.replace('.', '');
+                        const monthNum = months[transMonth] || months[transMonth.toUpperCase()];
 
-                if (matches.length === 0) {
-                    console.log('⚠️ Strict BMO pattern failed. Trying relaxed pattern (no ref number)...');
-                    console.log('⚠️ Debugging Relaxed Pattern. Sample middle text (chars 1000-1500):', text.substring(1000, 1500).replace(/\n/g, ' '));
+                        if (monthNum !== undefined) {
+                            // Year rollover
+                            if (previousMonth !== -1 && previousMonth === 11 && monthNum === 0) {
+                                currentYear++;
+                            }
+                            previousMonth = monthNum;
 
-                    // Relaxed pattern: No 10-digit ref number requirement. 
-                    // Assumes Amount is at the end of the line/block.
-                    bmoPattern = /([A-Za-z]{3}\.?)\s+(\d{1,2})\s+([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})/g;
-                    matches = [...text.matchAll(bmoPattern)];
-                }
+                            const month = (monthNum + 1).toString().padStart(2, '0');
+                            const day = transDay.padStart(2, '0');
+                            const isoDate = `${currentYear}-${month}-${day}`;
+                            lastSeenDate = isoDate;
 
-                // 3. Try BMO Chequing Pattern (Single Date, Desc, Amount, Balance)
-                // Log sample: "Dec 02   Debit Card Purchase, SYLVAN STAR CHE   10.95   12,308.55"
-                // Regex: MMM DD   DESCRIPTION   AMOUNT   BALANCE
-                if (matches.length === 0) {
-                    console.log('⚠️ Relaxed BMO pattern failed. Trying BMO Chequing pattern...');
+                            // Parse amount
+                            let amount = parseFloat(amountStr.replace(/[$,]/g, ''));
 
-                    // Matches "MMM DD   Description...  Amount   Balance"
-                    // Group 1: Month
-                    // Group 2: Day
-                    // Group 3: Description
-                    // Group 4: Amount
-                    // Group 5: Balance (not captured for transaction but part of line)
-                    bmoPattern = /([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})\s+([-]?\$?[\d,]+\.?\d{2})/g;
-                    matches = [...text.matchAll(bmoPattern)];
+                            // If it's a credit card statement, negative usually means payment (credit)
+                            let type = amount < 0 ? 'credit' : 'debit';
 
-                    if (matches.length > 0) {
-                        console.log(`🎯 BMO Chequing Pattern matched ${matches.length} items.`);
-                    }
-                }
-
-                // Use matchAll to find all transactions
-                // const matches = text.matchAll(bmoPattern); // Already array-ified above
-
-                for (const match of matches) {
-                    let transMonthRaw, transDay, postMonthRaw, postDay, description, refNo, amountStr;
-
-                    if (match.length === 8) {
-                        // Strict match result (Ref No included)
-                        [, transMonthRaw, transDay, postMonthRaw, postDay, description, refNo, amountStr] = match;
-                    } else if (match.length === 7) {
-                        // Relaxed match result (No Ref No)
-                        [, transMonthRaw, transDay, postMonthRaw, postDay, description, amountStr] = match;
-                        refNo = 'N/A';
-                    } else if (match.length === 6) {
-                        // Chequing match result (Single Date, Desc, Amount, Balance)
-                        // [full, month, day, desc, amount, balance]
-                        [, transMonthRaw, transDay, description, amountStr] = match;
-                        refNo = 'N/A';
-                    } else {
-                        console.warn('⚠️ Unknown match length:', match.length, match);
-                        continue;
+                            transactions.push({
+                                date: isoDate,
+                                description: descRaw.replace(/\d{8,}/, '').trim(), // Remove ref numbers from desc
+                                amount: Math.abs(amount),
+                                type: type,
+                                originalDate: `${transMonth} ${transDay}`
+                            });
+                            continue;
+                        }
                     }
 
+                    // PATTERN 2: BMO Bank Account (MMM DD   DESCRIPTION   AMOUNT   BALANCE)
+                    const bankMatch = trimmed.match(/^([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})\s+([-]?\$?[\d,]+\.?\d{2})$/);
+                    if (bankMatch) {
+                        const [, monthRaw, dayRaw, descRaw, amountStr, balanceStr] = bankMatch;
 
-                    // Normalize month (remove dot, ensure Title Case)
-                    const normalizeMonth = (m) => {
-                        if (!m) return m;
-                        const clean = m.replace('.', '').toLowerCase();
-                        return clean.charAt(0).toUpperCase() + clean.slice(1);
-                    };
+                        const monthName = monthRaw.replace('.', '');
+                        const monthNum = months[monthName] || months[monthName.toUpperCase()];
 
-                    const transMonth = normalizeMonth(transMonthRaw);
-                    const monthNum = months[transMonth];
+                        if (monthNum !== undefined) {
+                            if (previousMonth !== -1 && previousMonth === 11 && monthNum === 0) {
+                                currentYear++;
+                            }
+                            previousMonth = monthNum;
 
-                    // Handle year rollover
-                    if (previousMonth !== -1 && previousMonth === 11 && monthNum === 0) {
-                        currentYear++;
+                            const month = (monthNum + 1).toString().padStart(2, '0');
+                            const day = dayRaw.padStart(2, '0');
+                            const isoDate = `${currentYear}-${month}-${day}`;
+                            lastSeenDate = isoDate;
+
+                            const amount = parseFloat(amountStr.replace(/[$,]/g, ''));
+
+                            // Smart Type Detection for Bank Accounts
+                            const lowerDesc = descRaw.toLowerCase();
+                            const creditKeywords = ['deposit', 'credit', 'received', 'transfer in', 'refund'];
+                            let type = creditKeywords.some(k => lowerDesc.includes(k)) ? 'credit' : 'debit';
+
+                            transactions.push({
+                                date: isoDate,
+                                description: descRaw.trim(),
+                                amount: Math.abs(amount),
+                                type: type,
+                                Balance: parseFloat(balanceStr.replace(/[$,]/g, ''))
+                            });
+                        }
                     }
-                    previousMonth = monthNum !== undefined ? monthNum : previousMonth;
 
+                    // PATTERN 3: BMO Personal Line of Credit (MMM DD  DESCRIPTION  AMOUNT)
+                    // (Logic consolidated from Riebart/BMOStatementParsers)
+                    const plocMatch = trimmed.match(/^([A-Za-z]{3}\.?)\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})$/);
+                    if (plocMatch && !bankMatch && !ccMatch) {
+                        const [, monthRaw, dayRaw, descRaw, amountStr] = plocMatch;
+                        const monthName = monthRaw.replace('.', '');
+                        const monthNum = months[monthName] || months[monthName.toUpperCase()];
 
-                    // Parse amount
-                    let amount = parseFloat(amountStr.replace(/[$,]/g, ''));
-                    const type = amount < 0 ? 'credit' : 'debit';
-                    amount = Math.abs(amount);
+                        if (monthNum !== undefined) {
+                            if (previousMonth !== -1 && previousMonth === 11 && monthNum === 0) currentYear++;
+                            previousMonth = monthNum;
 
-                    // Format date
-                    const month = (monthNum + 1).toString().padStart(2, '0');
-                    const day = transDay.padStart(2, '0');
-                    const isoDate = `${currentYear}-${month}-${day}`;
+                            const month = (monthNum + 1).toString().padStart(2, '0');
+                            const day = dayRaw.padStart(2, '0');
+                            const isoDate = `${currentYear}-${month}-${day}`;
+                            lastSeenDate = isoDate;
 
-                    transactions.push({
-                        date: isoDate,
-                        description: description.trim(),
-                        amount: amount,
-                        type: type,
-                        referenceNumber: refNo,
-                        originalDate: `${transMonth} ${transDay}`
-                    });
+                            let amount = parseFloat(amountStr.replace(/[$,]/g, ''));
+
+                            // PLOC: Negative usually means cash advance (debit), positive means payment (credit)
+                            // or vice versa depending on perspective. Standardizing:
+                            const type = amount < 0 ? 'credit' : 'debit';
+
+                            transactions.push({
+                                date: isoDate,
+                                description: `[PLOC] ${descRaw.trim()}`,
+                                amount: Math.abs(amount),
+                                type: type
+                            });
+                        }
+                    }
                 }
 
                 console.log(`🎯 BMO Parser: Extracted ${transactions.length} transactions`);

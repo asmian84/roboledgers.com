@@ -5,7 +5,7 @@
 
 class SupabaseClient {
     constructor() {
-        this.url = 'https://rpwbfaahsbkfhtexaxuv.supabase.co';
+        this.url = 'https://qygddrggoywhvlwhuzil.supabase.co';
         this.anonKey = null;
         this.client = null;
         this.isConnected = false;

@@ -118,33 +118,36 @@ function renderRoadmap() {
                                 <h4>✅ Pattern Analysis</h4>
                                 <ul>
                                     <li><strong>26 Canadian bank statement types</strong> analyzed</li>
-                                    <li>14 credit card formats (RBC, BMO, TD, CIBC, Scotia, Amex, ATB, Capital One)</li>
-                                    <li>10 bank account formats (chequing, savings, business)</li>
                                     <li>Multi-currency support (CAD/USD)</li>
-                                </ul>
-
-                                <h4>✅ Intelligent Classification</h4>
-                                <ul>
-                                    <li>Auto-detect credit card vs bank account</li>
                                     <li>Bank identification from 9 institutions</li>
-                                    <li>Pattern-based extraction</li>
-                                    <li>Fallback to legacy parsers</li>
                                 </ul>
-
-                                <h4>✅ Universal Metadata Extraction</h4>
+                                <h4>✅ Universal Metadata</h4>
                                 <ul>
-                                    <li>Account holder name</li>
-                                    <li>Account number (masked)</li>
-                                    <li>Statement period</li>
-                                    <li>Previous & new balances</li>
+                                    <li>Account number masking & period extraction</li>
+                                    <li>Multi-line description support</li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                                <h4>✅ Edge Case Handling</h4>
+                    <!-- Phase 4: UI Snugging -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">January 2026</div>
+                            <h3>Phase 4: RoboLedgers 4.0 UI "Snugging"</h3>
+                            <div class="timeline-details">
+                                <h4>✅ The "Yellow Box" Standard</h4>
                                 <ul>
-                                    <li>Multi-line descriptions</li>
-                                    <li>Year rollover (Dec → Jan)</li>
-                                    <li>Multi-cardholder statements</li>
-                                    <li>Various date formats</li>
+                                    <li>Narrow 520px settings cards for focus</li>
+                                    <li>High-density layouts across all 7 panels</li>
+                                    <li>3x2 Grid standard for theme selection</li>
+                                </ul>
+                                <h4>✅ Performance UI</h4>
+                                <ul>
+                                    <li>Micro-animations and slide-up transitions</li>
+                                    <li>Standardized typography system</li>
+                                    <li>Ultra-compact mode for heavy data users</li>
                                 </ul>
                             </div>
                         </div>
@@ -160,27 +163,41 @@ function renderRoadmap() {
                 </div>
 
                 <div class="timeline">
-                    <!-- Testing Phase -->
+                    <!-- Partner Ecosystem -->
                     <div class="timeline-item in-progress">
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
-                            <div class="timeline-date">Week of Dec 24, 2025</div>
-                            <h3>Testing & Validation</h3>
+                            <div class="timeline-date">January 2026</div>
+                            <h3>Partner Ecosystem & Integrations</h3>
                             <div class="timeline-details">
-                                <h4>🔄 Smart Parser Testing</h4>
+                                <h4>🔄 Integration Layer</h4>
                                 <ul>
-                                    <li>Test with all 26 PDF samples</li>
-                                    <li>Verify transaction extraction accuracy</li>
-                                    <li>Validate metadata extraction</li>
-                                    <li>Test edge cases (multi-line, year rollover)</li>
+                                    <li><strong>Supabase DB:</strong> Real-time ledger sync</li>
+                                    <li><strong>QuickBooks:</strong> Bi-directional export</li>
+                                    <li><strong>Stripe:</strong> Payment fee auto-matching</li>
+                                    <li><strong>Xero:</strong> Ledger bridge</li>
                                 </ul>
-
-                                <h4>🔄 Bug Fixes & Optimization</h4>
+                                <h4>🔄 Partner Expansion</h4>
                                 <ul>
-                                    <li>Fix any parsing errors discovered</li>
-                                    <li>Optimize performance for large statements</li>
-                                    <li>Improve error handling</li>
-                                    <li>Document test results</li>
+                                    <li>Shopify, Sage, and Wave placeholders</li>
+                                    <li>Partner API documentation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layout Polish -->
+                    <div class="timeline-item in-progress">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">Active Refinement</div>
+                            <h3>Layout Root-Cause Optimization</h3>
+                            <div class="timeline-details">
+                                <h4>🔄 Scrollbar-Free UI</h4>
+                                <ul>
+                                    <li>Standardizing viewport heights</li>
+                                    <li>Eliminating redundant browser scrollbars</li>
+                                    <li>Fixing overflow logic in nested grids</li>
                                 </ul>
                             </div>
                         </div>
@@ -393,10 +410,10 @@ function renderRoadmap() {
 
                                 <h4>🚀 Impact</h4>
                                 <ul>
-                                    <li>Save business owners 10+ hours/month</li>
-                                    <li>Reduce bookkeeping costs by 70%</li>
-                                    <li>Empower accountants to serve 10x more clients</li>
-                                    <li>Make financial data accessible to everyone</li>
+                                    <li>Save business owners 20+ hours/month</li>
+                                    <li>Reduce bookkeeping overhead by 90% via AI</li>
+                                    <li>Automated Tax Filing for Canadian SMBs</li>
+                                    <li>Real-time Financial Health Score</li>
                                 </ul>
                             </div>
                         </div>

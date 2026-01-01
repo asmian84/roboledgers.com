@@ -91,6 +91,37 @@ COMMON_CITIES = [
     'MIAMI', 'ORLANDO', 'TAMPA', 'PITTSBURGH', 'MINNEAPOLIS', 'CLEVELAND', 'DETROIT'
 ]
 
+# Garbage words that should NOT be used as merchant names
+# These are common PDF artifacts, incomplete captures, or too generic
+# From dictionary analysis: these had 100+ occurrences as "merchants" but are garbage
+GARBAGE_MERCHANT_WORDS = [
+    'brwsr',          # 1817 occurrences - browser artifact
+    'send',           # 466 occurrences - incomplete transfer
+    'internet',       # 392 occurrences - too generic
+    'exchange rate',  # 301 occurrences - not a merchant
+    'type',           # 163 occurrences - PDF artifact
+    'email',          # 147 occurrences - too generic
+    'cap',            # 82 occurrences - incomplete capture
+    'sq',             # 76 occurrences - Square prefix (needs full name)
+    'mb-trans',       # 69 occurrences - bank code
+    'pc-trans',       # 78 occurrences - bank code
+    'pre-authorized', # 70 occurrences - classification not name
+    'trsf',           # transfer code
+    'pc - payment',   # 67 occurrences - bank code
+    'www',            # web prefix
+    'http',           # URL
+    'null',           # programming artifact
+    'none',           # programming artifact
+    'n/a',            # not applicable
+    'na',             # not applicable
+    'tbd',            # to be determined
+    'test',           # test data
+    'unknown',        # unknown
+    'misc',           # miscellaneous
+    'other',          # too generic
+    'pending'         # status not merchant
+]
+
 # ============================================
 # UTILITY FUNCTIONS
 # ============================================
@@ -781,6 +812,20 @@ def process_file(file_path):
         
         # Check if merchant has NO letters (e.g., "---" or "12345")
         if not re.search(r'[a-zA-Z]', merchant):
+            skipped_junk += 1
+            continue
+        
+        # =========================================
+        # GARBAGE WORD CHECK (from dictionary analysis)
+        # =========================================
+        # If merchant name is a known garbage word, DELETE the row
+        merchant_lower = merchant.lower().strip()
+        is_garbage = False
+        for gw in GARBAGE_MERCHANT_WORDS:
+            if merchant_lower == gw or merchant_lower.startswith(gw + ' '):
+                is_garbage = True
+                break
+        if is_garbage:
             skipped_junk += 1
             continue
         

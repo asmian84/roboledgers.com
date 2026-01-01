@@ -6,70 +6,238 @@ window.renderSettings = function (params) {
   const panel = params?.panel || 'general';
 
   return `
-    <div class="settings-page">
-      <!-- Settings Navigation (Left Sidebar) -->
-      <nav class="settings-nav">
-        <a href="#/settings" class="settings-nav-item ${panel === 'general' ? 'active' : ''}">
-          <i class="icon">⚙️</i>
-          <div>
-            <div class="nav-title">General</div>
-            <div class="nav-desc">Company & preferences</div>
-          </div>
-        </a>
+    <div class="settings-layout">
+      <!-- Modern Sidebar -->
+      <aside class="settings-sidebar">
+        <div class="sidebar-header">
+            <h3>App Settings</h3>
+            <p>Configure RoboLedgers</p>
+        </div>
         
-        <a href="#/settings/accounts" class="settings-nav-item ${panel === 'accounts' ? 'active' : ''}">
-          <i class="icon">🏦</i>
-          <div>
-            <div class="nav-title">Accounts</div>
-            <div class="nav-desc">Manage bank accounts</div>
-          </div>
-        </a>
-        
-        <a href="#/settings/appearance" class="settings-nav-item ${panel === 'appearance' ? 'active' : ''}">
-          <i class="icon">🎨</i>
-          <div>
-            <div class="nav-title">Appearance</div>
-            <div class="nav-desc">Themes & display</div>
-          </div>
-        </a>
-        
-        <a href="#/settings/data" class="settings-nav-item ${panel === 'data' ? 'active' : ''}">
-          <i class="icon">💾</i>
-          <div>
-            <div class="nav-title">Data</div>
-            <div class="nav-desc">Import, export & backup</div>
-          </div>
-        </a>
-        
-        <a href="#/settings/integrations" class="settings-nav-item ${panel === 'integrations' ? 'active' : ''}">
-          <i class="icon">🔗</i>
-          <div>
-            <div class="nav-title">Integrations</div>
-            <div class="nav-desc">Bank & API connections</div>
-          </div>
-        </a>
-        
-        <a href="#/settings/subscription" class="settings-nav-item ${panel === 'subscription' ? 'active' : ''}">
-          <i class="icon">💳</i>
-          <div>
-            <div class="nav-title">Subscription</div>
-            <div class="nav-desc">Billing & plan</div>
-          </div>
-        </a>
-        
-        <a href="#/settings/about" class="settings-nav-item ${panel === 'about' ? 'active' : ''}">
-          <i class="icon">ℹ️</i>
-          <div>
-            <div class="nav-title">About</div>
-            <div class="nav-desc">Version & system info</div>
-          </div>
-        </a>
-      </nav>
+        <nav class="settings-nav">
+          <a href="#/settings" class="settings-nav-item ${panel === 'general' ? 'active' : ''}">
+            <i class="ph ph-sliders"></i>
+            <div>
+              <div class="nav-title">General</div>
+              <div class="nav-desc">Preferences</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/accounts" class="settings-nav-item ${panel === 'accounts' ? 'active' : ''}">
+            <i class="ph ph-bank"></i>
+            <div>
+              <div class="nav-title">Accounts</div>
+              <div class="nav-desc">Bank & cards</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/appearance" class="settings-nav-item ${panel === 'appearance' ? 'active' : ''}">
+            <i class="ph ph-palette"></i>
+            <div>
+              <div class="nav-title">Appearance</div>
+              <div class="nav-desc">Themes</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/data" class="settings-nav-item ${panel === 'data' ? 'active' : ''}">
+            <i class="ph ph-database"></i>
+            <div>
+              <div class="nav-title">Data</div>
+              <div class="nav-desc">Backup / AI</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/integrations" class="settings-nav-item ${panel === 'integrations' ? 'active' : ''}">
+            <i class="ph ph-plugs"></i>
+            <div>
+              <div class="nav-title">Integrations</div>
+              <div class="nav-desc">Cloud & Wiki</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/subscription" class="settings-nav-item ${panel === 'subscription' ? 'active' : ''}">
+            <i class="ph ph-credit-card"></i>
+            <div>
+              <div class="nav-title">Billing</div>
+              <div class="nav-desc">Plan</div>
+            </div>
+          </a>
+          
+          <a href="#/settings/about" class="settings-nav-item ${panel === 'about' ? 'active' : ''}">
+            <i class="ph ph-info"></i>
+            <div>
+              <div class="nav-title">About</div>
+              <div class="nav-desc">Version</div>
+            </div>
+          </a>
+        </nav>
+      </aside>
 
-      <!-- Settings Content Panel -->
-      <div class="settings-content">
+      <!-- Panel Content -->
+      <main class="settings-panel-container">
         ${renderSettingsPanel(panel)}
-      </div>
+      </main>
+
+      <style>
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            height: calc(100vh - 80px); /* Fit within viewport minus breadcrumb */
+            background: #f8fafc;
+            overflow: hidden;
+            margin: -32px; /* Compensate for app-container padding */
+        }
+
+        @media (max-width: 768px) {
+            .settings-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                margin: -1rem;
+                height: calc(100vh - 60px);
+            }
+            .settings-sidebar {
+                border-right: none;
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                flex-direction: row !important;
+                overflow-x: auto;
+                padding: 10px !important;
+                gap: 10px;
+                scrollbar-width: none;
+            }
+            .settings-sidebar::-webkit-scrollbar { display: none; }
+            .sidebar-header { display: none; }
+            .settings-nav { flex-direction: row !important; }
+            .settings-nav-item { padding: 8px 12px !important; white-space: nowrap; }
+            .settings-panel { max-width: 100% !important; }
+        }
+
+        /* SIDEBAR - Compact */
+        .settings-sidebar {
+            background: #fff;
+            border-right: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+        }
+        .sidebar-header { margin-bottom: 24px; padding: 0 10px; }
+        .sidebar-header h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sidebar-header p { margin: 2px 0 0; font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+
+        .settings-nav { display: flex; flex-direction: column; gap: 4px; }
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            color: #64748b;
+        }
+        .settings-nav-item i { font-size: 1.15rem; }
+        .settings-nav-item .nav-title { font-weight: 700; font-size: 0.9rem; color: #334155; }
+        .settings-nav-item .nav-desc { font-size: 0.7rem; color: #94a3b8; font-weight: 500; display: none; } /* Hide desc for snugness */
+        
+        .settings-nav-item:hover { background: #f8fafc; color: #2563eb; }
+        .settings-nav-item.active { background: #eff6ff; color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.1); }
+        .settings-nav-item.active i { color: #2563eb; }
+        .settings-nav-item.active .nav-title { color: #1e40af; }
+
+        /* CONTENT PANEL - Optimized */
+        .settings-panel-container {
+            padding: 16px 24px;
+            overflow-y: auto;
+            background: #f8fafc;
+            /* Completely hide scrollbars but maintain scrollability */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        .settings-panel-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        .settings-panel { max-width: 520px; margin: 0; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .settings-panel h2 { font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; letter-spacing: -0.02em; }
+        .panel-description { color: #64748b; font-size: 0.75rem; margin-bottom: 8px; font-weight: 500; }
+
+        .form-section { 
+            background: white; 
+            border: 1px solid rgba(226, 232, 240, 0.7); 
+            border-radius: 12px; 
+            padding: 12px 14px; 
+            margin-bottom: 10px; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02); 
+        }
+        .form-section h3 { 
+            margin: 0 0 8px 0; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            font-weight: 800; 
+            color: #64748b; 
+            border-bottom: 1px solid #f8fafc; 
+            padding-bottom: 6px; 
+        }
+
+        .form-group { margin-bottom: 8px; }
+        .form-group label { display: block; font-size: 0.7rem; font-weight: 800; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.85rem; transition: all 0.2s; background: #fff; color: #1e293b;
+            font-weight: 500;
+        }
+        .form-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* THEME CARDS EXTREME */
+        .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        .theme-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 20px; cursor: pointer; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .theme-card:hover { transform: translateY(-4px); border-color: #3b82f6; box-shadow: 0 8px 16px rgba(0,0,0,0.05); }
+        .theme-card.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        .theme-icon { font-size: 2rem; margin-bottom: 12px; }
+        .theme-name { font-weight: 800; font-size: 1rem; color: #0f172a; margin-bottom: 4px; }
+        .theme-desc { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+
+        /* ACCOUNT CARDS */
+        .account-card {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 20px; display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s;
+        }
+        .account-card:hover { border-color: #cbd5e1; background: #f1f5f9; }
+        .account-card-icon { font-size: 1.5rem; width: 48px; height: 48px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .account-card-details h4 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+        .account-card-details p { margin: 2px 0 0; font-size: 0.85rem; color: #64748b; }
+
+        .btn-upgrade { 
+            width: 100%; border-radius: 12px; font-weight: 800; font-size: 1rem; 
+            background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; padding: 16px;
+        }
+
+        .ultra-compact .form-section { padding: 8px 12px; margin-bottom: 8px; }
+        .ultra-compact .form-group { margin-bottom: 4px; }
+        .ultra-compact .settings-panel h2 { font-size: 1rem; }
+        .ultra-compact .panel-description { margin-bottom: 4px; font-size: 0.7rem; }
+        
+        /* Clean scrollbars - only visible when scrolling */
+        .settings-panel-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .settings-panel-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .settings-panel-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+      </style>
     </div>
     
     <script>
@@ -109,62 +277,29 @@ function renderGeneralPanel() {
   return `
     <div class="settings-panel">
       <h2>General Settings</h2>
-      <p class="panel-description">Configure your company information and application preferences</p>
-      
-      <form id="general-settings-form" onsubmit="saveGeneralSettings(event)">
-        <div class="form-section">
-          <h3>Company Information</h3>
-          
-          <div class="form-group">
-            <label>Company Name</label>
-            <input type="text" id="company-name" placeholder="My Business Inc">
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>Fiscal Year End</label>
-              <select id="fiscal-year-end">
-                <option value="12-31">December 31</option>
-                <option value="06-30">June 30</option>
-                <option value="03-31">March 31</option>
-                <option value="09-30">September 30</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label>Currency</label>
-              <select id="currency">
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="CAD">CAD ($)</option>
-              </select>
-            </div>
-          </div>
-        </div>
+      <p class="panel-description">Configure core application identity and behavior</p>
         
         <div class="form-section">
-          <h3>Preferences</h3>
+          <h3>Application Behavior</h3>
           
           <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" id="auto-save">
-              <span>Auto-save changes</span>
+            <label class="checkbox-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" id="auto-save" style="width: 18px; height: 18px;">
+              <span style="font-weight: 500; color: #334155; font-size: 0.8rem;">Auto-sync changes to cloud (Supabase)</span>
             </label>
           </div>
           
           <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" id="show-hints">
-              <span>Show helpful hints</span>
+            <label class="checkbox-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" id="show-hints" style="width: 18px; height: 18px;" checked>
+              <span style="font-weight: 500; color: #334155; font-size: 0.8rem;">Enable AI Categorization Assistant</span>
             </label>
           </div>
         </div>
         
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">💾 Save Changes</button>
+        <div class="form-actions" style="display: flex; justify-content: flex-end; margin-top: -4px;">
+          <button class="btn btn-primary" onclick="saveGeneralSettings(event)" style="padding: 8px 16px; font-size: 0.85rem; font-weight: 700;">💾 Save Preferences</button>
         </div>
-      </form>
     </div>
   `;
 }
@@ -176,94 +311,23 @@ function renderGeneralPanel() {
 function renderAccountsPanel() {
   return `
     <div class="settings-panel">
-      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
         <div>
-          <h2>Accounts</h2>
-          <p class="panel-description">Manage your bank accounts and credit cards</p>
+          <h2>Financial Accounts</h2>
+          <p class="panel-description">Manage your primary ledgers and credit lines.</p>
         </div>
-        <button class="btn-primary" onclick="window.accountSwitcher.showAddAccountModal()">
-          + Add Account
+        <button class="btn btn-primary btn-sm" onclick="window.accountSwitcher.showAddAccountModal()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem;">
+          <i class="ph ph-plus-circle"></i> Add Account
         </button>
       </div>
 
       <div class="form-section">
-        <h3>Active Accounts</h3>
-        <div id="accounts-list" class="accounts-grid">
-          <!-- Populated via JS -->
-          <div class="loading-state">Loading accounts...</div>
+        <h3>Connected Ledger Nodes</h3>
+        <div id="accounts-list" style="display: grid; gap: 12px;">
+          <div class="loading-state">Syncing ledger records...</div>
         </div>
       </div>
     </div>
-    
-    <style>
-      .accounts-grid {
-        display: grid;
-        gap: 16px;
-      }
-      
-      .account-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .account-card-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      
-      .account-card-icon {
-        font-size: 1.5rem;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-        border-radius: 50%;
-      }
-      
-      .account-card-details h4 {
-        margin: 0;
-        color: #1e293b;
-      }
-      
-      .account-card-details p {
-        margin: 2px 0 0;
-        color: #64748b;
-        font-size: 0.9rem;
-      }
-      
-      .account-card-actions {
-        display: flex;
-        gap: 8px;
-      }
-      
-      .btn-icon {
-        background: none;
-        border: none;
-        padding: 8px;
-        cursor: pointer;
-        color: #94a3b8;
-        border-radius: 4px;
-        transition: all 0.2s;
-      }
-      
-      .btn-icon:hover {
-        background: #f1f5f9;
-        color: #475569;
-      }
-      
-      .btn-icon.delete:hover {
-        background: #fef2f2;
-        color: #ef4444;
-      }
-    </style>
   `;
 }
 
@@ -274,88 +338,62 @@ function renderAccountsPanel() {
 function renderAppearancePanel() {
   return `
     <div class="settings-panel">
-      <h2>Appearance</h2>
-      <p class="panel-description">Customize the look and feel of your application</p>
+      <h2>Visual Interface</h2>
+      <p class="panel-description">Personalize the application design system</p>
       
       <div class="form-section">
-        <h3>Theme Selection</h3>
-        
-        <div class="theme-grid">
-          <div class="theme-card" data-theme="daylight" onclick="applyTheme('daylight')">
-            <div class="theme-icon">☀️</div>
-            <div class="theme-name">Daylight</div>
-            <div class="theme-desc">Classic Light</div>
-            <button class="btn-apply" onclick="applyTheme('daylight'); event.stopPropagation();">Apply</button>
+        <h3>Color Archetypes</h3>
+        <div class="theme-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div class="theme-card" data-theme="daylight" onclick="applyTheme('daylight')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #f59e0b; font-size: 1.25rem;">☀️</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Daylight</div>
           </div>
           
-          <div class="theme-card" data-theme="midnight" onclick="applyTheme('midnight')">
-            <div class="theme-icon">🌑</div>
-            <div class="theme-name">Midnight</div>
-            <div class="theme-desc">OLED Dark</div>
-            <button class="btn-apply" onclick="applyTheme('midnight'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="midnight" onclick="applyTheme('midnight')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #1e293b; font-size: 1.25rem;">🌑</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Midnight</div>
           </div>
           
-          <div class="theme-card" data-theme="sage" onclick="applyTheme('sage')">
-            <div class="theme-icon">🌿</div>
-            <div class="theme-name">Sage</div>
-            <div class="theme-desc">Soft Green</div>
-            <button class="btn-apply" onclick="applyTheme('sage'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="sage" onclick="applyTheme('sage')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #10b981; font-size: 1.25rem;">🌿</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Sage</div>
           </div>
           
-          <div class="theme-card" data-theme="ocean" onclick="applyTheme('ocean')">
-            <div class="theme-icon">🌊</div>
-            <div class="theme-name">Ocean</div>
-            <div class="theme-desc">Calm Blue</div>
-            <button class="btn-apply" onclick="applyTheme('ocean'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="ocean" onclick="applyTheme('ocean')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #0ea5e9; font-size: 1.25rem;">🌊</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Ocean</div>
           </div>
           
-          <div class="theme-card" data-theme="rose" onclick="applyTheme('rose')">
-            <div class="theme-icon">🌸</div>
-            <div class="theme-name">Rose</div>
-            <div class="theme-desc">Warm Pink</div>
-            <button class="btn-apply" onclick="applyTheme('rose'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="rose" onclick="applyTheme('rose')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #f43f5e; font-size: 1.25rem;">🌸</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Rose</div>
           </div>
 
-          <div class="theme-card" data-theme="cloud" onclick="applyTheme('cloud')">
-            <div class="theme-icon">☁️</div>
-            <div class="theme-name">Cloud</div>
-            <div class="theme-desc">Soft Grey</div>
-            <button class="btn-apply" onclick="applyTheme('cloud'); event.stopPropagation();">Apply</button>
-          </div>
-
-          <div class="theme-card" data-theme="lavender" onclick="applyTheme('lavender')">
-            <div class="theme-icon">💜</div>
-            <div class="theme-name">Lavender</div>
-            <div class="theme-desc">Soft Purple</div>
-            <button class="btn-apply" onclick="applyTheme('lavender'); event.stopPropagation();">Apply</button>
-          </div>
-
-          <div class="theme-card" data-theme="autumn" onclick="applyTheme('autumn')">
-            <div class="theme-icon">🍂</div>
-            <div class="theme-name">Autumn</div>
-            <div class="theme-desc">Warm Orange</div>
-            <button class="btn-apply" onclick="applyTheme('autumn'); event.stopPropagation();">Apply</button>
+          <div class="theme-card" data-theme="lavender" onclick="applyTheme('lavender')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #8b5cf6; font-size: 1.25rem;">💜</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Lavender</div>
           </div>
         </div>
       </div>
       
       <div class="form-section">
-        <h3>Display Options</h3>
-        
-        <div class="form-group">
-          <label>Font Size</label>
-          <select id="font-size">
-            <option value="small">Small</option>
-            <option value="medium" selected>Medium</option>
-            <option value="large">Large</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="compact-mode">
-            <span>Compact mode (reduce spacing)</span>
-          </label>
+        <h3>Typography & Grid</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>System Font Size</label>
+                <select id="font-size" style="padding: 8px 12px;">
+                    <option value="small">Comfortable</option>
+                    <option value="medium" selected>Standard</option>
+                    <option value="large">Accessible</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="padding-top: 28px;">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="compact-mode" style="width: 16px; height: 16px;">
+                    <span style="font-weight: 700; color: #64748b; font-size: 0.8rem;">Ultra-Compact Mode</span>
+                </label>
+            </div>
         </div>
       </div>
     </div>
@@ -369,67 +407,51 @@ function renderAppearancePanel() {
 function renderDataPanel() {
   return `
     <div class="settings-panel">
-      <h2>Data Management</h2>
-      <p class="panel-description">Import, export, and manage your financial data</p>
+      <h2>Data Infrastructure</h2>
+      <p class="panel-description">Manage local storage and AI post-processing</p>
 
       <div class="form-section">
-        <h3>AI Processor</h3>
-        <p class="feature-notice">🤖 <strong>Smart Post-Processor:</strong> Upload your raw scan results to auto-assign COA codes and clean merchant names.</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h3 style="margin: 0; border: none; padding: 0;">AI Processor</h3>
+                <p style="color: #64748b; font-size: 0.8rem; margin: 4px 0 0;">Mass-cleanup <code>scan_results.json</code> files.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('json-result-upload').click()" style="padding: 6px 12px; font-size: 0.75rem;">
+                📂 Browse JSON
+            </button>
+        </div>
         
-        <div class="card" style="border: 1px dashed var(--border-color); padding: 2rem; text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 1rem;">🧠</div>
-          <h3>Upload Scan Results</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Select your <code>scan_results.json</code> file</p>
-          
-          <input type="file" id="json-result-upload" accept=".json" style="display: none;" onchange="window.processJSONUpload(event)">
-          <button class="btn-primary" onclick="document.getElementById('json-result-upload').click()">
-            📂 Select File
-          </button>
-          
-          <div id="ai-process-stats" style="display: none; margin-top: 1.5rem; text-align: left; background: var(--bg-subtle); padding: 1rem; border-radius: 8px;">
-            <div id="ai-progress-text">Processing...</div>
-            <progress id="ai-progress-bar" value="0" max="100" style="width: 100%; margin-top: 0.5rem;"></progress>
-            <div id="ai-download-area" style="margin-top: 1rem; text-align: center;">
-              <!-- Download button will appear here -->
+        <input type="file" id="json-result-upload" accept=".json" style="display: none;" onchange="window.processJSONUpload(event)">
+
+        <div id="ai-process-stats" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+            <div id="ai-progress-text" style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 0.85rem;">Initializing...</div>
+            <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 16px;">
+                <progress id="ai-progress-bar" value="0" max="100" style="width: 100%; height: 100%; appearance: none; border: none;"></progress>
+            </div>
+            <div id="ai-download-area"></div>
+            <div id="ai-preview-grid" class="ag-theme-alpine" style="height: 350px; width: 100%; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0; display: none;"></div>
+        </div>
+      </div>
+
+      <div class="form-section danger-zone" style="border-color: #fee2e2; background: #fffcfc; padding: 20px;">
+        <h3 style="color: #991b1b; border-bottom-color: #fee2e2; margin-bottom: 16px;">System Maintenance</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #fee2e2; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 800; color: #b91c1c; font-size: 0.85rem;">Wipe Database</div>
+                    <div style="font-size: 0.75rem; color: #991b1b;">Irreversible deletion.</div>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="padding: 4px 10px; font-size: 0.75rem;">Destroy</button>
             </div>
             
-            <!-- Missing Grid Container -->
-            <div id="ai-preview-grid" class="ag-theme-alpine" style="height: 500px; width: 100%; margin-top: 20px; display: none;"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Advanced Tools</h3>
-        
-        <div class="export-options">
-          <button class="btn-export" onclick="window.location.hash = '#/indexer'">
-            <span class="export-icon">🧠</span>
-            <div>
-              <div class="export-title">Data Junkie Console</div>
-              <div class="export-desc">Train the Brain & Bulk Index Files</div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 800; color: #334155; font-size: 0.85rem;">Reset Samples</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">Seed training data.</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="resetToDemo()" style="padding: 4px 10px; font-size: 0.75rem;">Seed</button>
             </div>
-          </button>
-        </div>
-      </div>
-
-      <div class="form-section danger-zone">
-        <h3>Danger Zone</h3>
-        
-        <div class="danger-action">
-          <div>
-            <div class="danger-title">Clear All Data</div>
-            <div class="danger-desc">Permanently delete all transactions, vendors, and accounts</div>
-          </div>
-          <button class="btn-danger" onclick="clearAllData()">Clear Database</button>
-        </div>
-        
-        <div class="danger-action">
-          <div>
-            <div class="danger-title">Reset to Demo Data</div>
-            <div class="danger-desc">Replace current data with sample demo data</div>
-          </div>
-          <button class="btn-danger" onclick="resetToDemo()">Reset to Demo</button>
         </div>
       </div>
     </div>
@@ -765,51 +787,111 @@ window.closeVendorDrillDown = function () {
 // ==================================================
 
 function renderIntegrationsPanel() {
-  const supabaseUrl = 'https://rpwbfaahsbkfhtexaxuv.supabase.co';
+  const supabaseUrl = 'https://qygddrggoywhvlwhuzil.supabase.co';
 
   return `
     <div class="settings-panel">
-      <h2>Integrations</h2>
-      <p class="panel-description">Connect your bank accounts and external services</p>
+      <h2>Cloud Infrastructure</h2>
+      <p class="panel-description">Integrate external ledger sync and AI metadata</p>
       
-      <div class="form-section">
-        <h3>Supabase Cloud Sync</h3>
-        
-        <div class="integration-card">
-          <div class="integration-header">
-            <div class="integration-icon">☁️</div>
-            <div>
-              <div class="integration-name">Supabase</div>
-              <div class="integration-status disconnected">Not Connected</div>
+      <div class="form-section" style="padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; background: #3ecf8e15; color: #3ecf8e; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    <i class="ph ph-cloud"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Supabase DB</h4>
+                    <div style="font-size: 0.7rem; color: #10b981; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 5px; height: 5px; background: #10b981; border-radius: 50%;"></span> ACTIVE SYNC
+                    </div>
+                </div>
             </div>
-          </div>
-          
-          <p>Sync your data to the cloud for backup and multi-device access</p>
-          
-          <div class="form-group">
-            <label>Supabase URL</label>
-            <input type="url" id="supabase-url" value="${supabaseUrl}" readonly>
-            <small style="color: var(--text-secondary);">✓ Your project URL is configured</small>
-          </div>
-          
-          <div class="form-group">
-            <label>API Key (anon/public)</label>
-            <input type="password" id="supabase-key" placeholder="Enter your anon key">
-            <small style="color: var(--text-secondary);">Find this in your Supabase project settings</small>
-          </div>
-          
-          <button class="btn-primary" onclick="connectSupabase()">🔗 Connect to Cloud</button>
+            <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Modify Key</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.65rem;">Database URL</label>
+                <div style="background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${supabaseUrl}
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 0.65rem;">API Access</label>
+                <div style="background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 0.75rem; color: #64748b;">
+                    ••••••••••••••••
+                </div>
+            </div>
         </div>
       </div>
       
-      <div class="form-section">
-        <h3>Bank Connections</h3>
-        
-        <p class="feature-notice">🚧 Bank integrations coming soon! Connect your bank accounts to automatically import transactions.</p>
-        
-        <div class="bank-placeholder">
-          <div class="placeholder-icon">🏦</div>
-          <p>Plaid integration in development</p>
+      <div class="form-section" style="padding: 14px;">
+        <h3 style="font-size: 0.8rem;">Partner Ecosystem</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">🏦</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Plaid</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">COMING SOON</div>
+                </div>
+            </div>
+            
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">💳</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Stripe</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">REQUEST ACCESS</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">📖</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Wikipedia</div>
+                    <div style="font-size: 0.65rem; color: #10b981; font-weight: 700;">ENABLED</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">📊</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">QuickBooks</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">PLANNED</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">🏢</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Xero</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">BETA TESTING</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">🛍️</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Shopify</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">PLANNED</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">🌿</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Sage</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">PLANNED</div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
+                <div style="font-size: 1.15rem;">🌊</div>
+                <div>
+                    <div style="font-weight: 700; color: #334155; font-size: 0.8rem;">Wave</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">PLANNED</div>
+                </div>
+            </div>
         </div>
       </div>
     </div>
@@ -823,41 +905,24 @@ function renderIntegrationsPanel() {
 function renderSubscriptionPanel() {
   return `
     <div class="settings-panel">
-      <h2>Subscription & Billing</h2>
-      <p class="panel-description">Manage your subscription plan and billing information</p>
+      <h2>Licensing & Tiers</h2>
+      <p class="panel-description">Manage your professional RoboLedgers access</p>
       
-      <div class="subscription-card">
-        <div class="subscription-badge">FREE PLAN</div>
-        <h3>AutoBookkeeping Free</h3>
-        <p>Fully functional offline bookkeeping with unlimited transactions</p>
-        
-        <ul class="feature-list">
-          <li>✅ Unlimited transactions</li>
-          <li>✅ Unlimited vendors & accounts</li>
-          <li>✅ Full offline access</li>
-          <li>✅ Data import/export</li>
-          <li>❌ Cloud sync</li>
-          <li>❌ Multi-device access</li>
-          <li>❌ Automatic bank imports</li>
-          <li>❌ Advanced reporting</li>
-        </ul>
-      </div>
-      
-      <div class="upgrade-section">
-        <h3>Upgrade to Pro</h3>
-        <p>Get cloud sync, bank integrations, and advanced features</p>
-        
-        <div class="pricing-card">
-          <div class="price">$9.99<span>/month</span></div>
-          <ul class="pro-features">
-            <li>☁️ Cloud sync across devices</li>
-            <li>🏦 Automatic bank imports</li>
-            <li>📊 Advanced analytics</li>
-            <li>👥 Multi-user access</li>
-            <li>🔒 Enhanced security</li>
-          </ul>
-          <button class="btn-primary btn-upgrade" disabled>Coming Soon</button>
-        </div>
+      <div class="form-section" style="background: linear-gradient(135deg, #0f172a, #27272a); padding: 16px; border: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                  <div style="background: #3b82f630; color: #60a5fa; padding: 3px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 800; display: inline-block; margin-bottom: 8px; border: 1px solid #3b82f650;">LIFETIME PRO</div>
+                  <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: white; border: none; padding: 0;">Unlimited Enterprise</h3>
+              </div>
+              <div style="font-size: 2rem;">🏆</div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #e2e8f0; font-weight: 600;"><i class="ph ph-check-circle" style="color: #10b981;"></i> Multi-Entity</div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #e2e8f0; font-weight: 600;"><i class="ph ph-check-circle" style="color: #10b981;"></i> Cloud Backup</div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #e2e8f0; font-weight: 600;"><i class="ph ph-check-circle" style="color: #10b981;"></i> AI Indexing</div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #e2e8f0; font-weight: 600;"><i class="ph ph-check-circle" style="color: #10b981;"></i> API Access</div>
+          </div>
       </div>
     </div>
   `;
@@ -870,64 +935,49 @@ function renderSubscriptionPanel() {
 function renderAboutPanel() {
   return `
     <div class="settings-panel">
-      <h2>About AutoBookkeeping</h2>
-      <p class="panel-description">Version information and system details</p>
+      <h2>System Diagnostics</h2>
+      <p class="panel-description">Technical specifications and application metadata</p>
       
-      <div class="about-card">
-        <div class="app-logo">💰</div>
-        <h3>AutoBookkeeping v3.0</h3>
-        <p class="version-info">Build: 2024.12.17</p>
+      <div class="form-section" style="text-align: center; padding: 24px 0;">
+          <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 20px;">
+              🤖
+          </div>
+          <h3 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">RoboLedgers 4.0</h3>
+          <p style="color: #64748b; font-weight: 600; font-size: 0.9rem;">Intelligence-First Accounting Engine</p>
+          <div style="background: #e2e8f0; height: 1px; width: 100px; margin: 20px auto;"></div>
+          <p style="font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Build Hash: V4.0.2026.JAN</p>
       </div>
       
       <div class="form-section">
-        <h3>System Information</h3>
-        
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Browser</div>
-            <div class="info-value" id="browser-info">-</div>
+        <h3>Resource Allocation</h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+          <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; margin-bottom: 8px;">Nodes</div>
+            <div id="total-transactions" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">-</div>
           </div>
           
-          <div class="info-item">
-            <div class="info-label">Storage Used</div>
-            <div class="info-value" id="storage-used">-</div>
+          <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; margin-bottom: 8px;">Entities</div>
+            <div id="total-vendors" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">-</div>
           </div>
           
-          <div class="info-item">
-            <div class="info-label">Total Transactions</div>
-            <div class="info-value" id="total-transactions">-</div>
+          <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; margin-bottom: 8px;">Storage</div>
+            <div id="storage-used" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">-</div>
           </div>
-          
-          <div class="info-item">
-            <div class="info-label">Total Vendors</div>
-            <div class="info-value" id="total-vendors">-</div>
+
+          <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; margin-bottom: 8px;">Uptime</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">99.9%</div>
           </div>
         </div>
       </div>
       
       <div class="form-section">
-        <h3>Credits</h3>
-        <p>Built with modern web technologies:</p>
-        <ul class="credits-list">
-          <li>AG Grid Community (Data Tables)</li>
-          <li>Chart.js (Visualizations)</li>
-          <li>Vanilla JavaScript (Zero frameworks!)</li>
-        </ul>
-      </div>
-      
-      <div class="form-section">
-        <h3>Resources</h3>
-        <div class="resource-links">
-          <a href="https://github.com/your-repo" target="_blank" class="resource-link">
-            📚 Documentation
-          </a>
-          <a href="https://github.com/your-repo/issues" target="_blank" class="resource-link">
-            🐛 Report Bug
-          </a>
-          <a href="mailto:support@autobookkeeping.com" class="resource-link">
-            📧 Contact Support
-          </a>
-        </div>
+        <h3>Engine Credits</h3>
+        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.6;">
+            RoboLedgers is built on high-performance foundation layers including <strong>AG Grid Corporate</strong>, <strong>Chart.js High-Fidelity</strong>, and <strong>Supabase Realtime Sync</strong>.
+        </p>
       </div>
     </div>
   `;
@@ -946,11 +996,41 @@ async function initSettingsPage(panel) {
 
     // Populate forms based on panel
     if (panel === 'general') {
-      document.getElementById('company-name').value = settings.companyName || '';
-      document.getElementById('fiscal-year-end').value = settings.fiscalYearEnd || '12-31';
-      document.getElementById('currency').value = settings.currency || 'USD';
+      if (document.getElementById('company-name')) document.getElementById('company-name').value = settings.companyName || '';
+      if (document.getElementById('fiscal-year-end')) document.getElementById('fiscal-year-end').value = settings.fiscalYearEnd || '12-31';
+      if (document.getElementById('currency')) document.getElementById('currency').value = settings.currency || 'USD';
     } else if (panel === 'accounts') {
       renderAccountsList();
+    } else if (panel === 'appearance') {
+      const fontSize = localStorage.getItem('ab_font_size') || 'medium';
+      const compactMode = localStorage.getItem('ab_compact_mode') === 'true';
+
+      const fontSizeSelect = document.getElementById('font-size');
+      const compactCheckbox = document.getElementById('compact-mode');
+
+      // Apply globally
+      document.documentElement.setAttribute('data-font-size', fontSize);
+      document.documentElement.classList.toggle('ultra-compact', compactMode);
+
+      if (fontSizeSelect) {
+        fontSizeSelect.value = fontSize;
+        fontSizeSelect.addEventListener('change', (e) => {
+          const newSize = e.target.value;
+          localStorage.setItem('ab_font_size', newSize);
+          document.documentElement.setAttribute('data-font-size', newSize);
+          console.log(`📏 Font size set to: ${newSize}`);
+        });
+      }
+
+      if (compactCheckbox) {
+        compactCheckbox.checked = compactMode;
+        compactCheckbox.addEventListener('change', (e) => {
+          const enabled = e.target.checked;
+          localStorage.setItem('ab_compact_mode', enabled);
+          document.documentElement.classList.toggle('ultra-compact', enabled);
+          console.log(`📦 Compact mode: ${enabled}`);
+        });
+      }
     } else if (panel === 'about') {
       // Populate system info
       document.getElementById('browser-info').textContent = navigator.userAgent.split(' ').pop();
@@ -977,22 +1057,35 @@ async function initSettingsPage(panel) {
 }
 
 async function saveGeneralSettings(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
 
   try {
-    const settings = {
-      companyName: document.getElementById('company-name').value,
-      fiscalYearEnd: document.getElementById('fiscal-year-end').value,
-      currency: document.getElementById('currency').value
-    };
+    const settings = await window.storage.getSettings();
+
+    // Update fields if they exist in DOM
+    if (document.getElementById('auto-save')) settings.autoSave = document.getElementById('auto-save').checked;
+    if (document.getElementById('show-hints')) settings.showHints = document.getElementById('show-hints').checked;
+    if (document.getElementById('company-name')) settings.companyName = document.getElementById('company-name').value;
+    if (document.getElementById('fiscal-year-end')) settings.fiscalYearEnd = document.getElementById('fiscal-year-end').value;
+    if (document.getElementById('currency')) settings.currency = document.getElementById('currency').value;
 
     await window.storage.updateSettings(settings);
 
-    alert('✅ Settings saved successfully!');
+    // Visual feedback
+    const btn = event?.target || document.querySelector('.btn-primary');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ Saved';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 2000);
+
+    console.log('✓ General settings updated');
 
   } catch (error) {
     console.error('Failed to save settings:', error);
-    alert('Failed to save settings');
   }
 }
 
@@ -1107,7 +1200,12 @@ function renderAccountsList() {
   const accounts = window.accountManager.getAllAccounts();
 
   if (accounts.length === 0) {
-    container.innerHTML = '<div class="empty-state">No accounts found. Create one to get started.</div>';
+    container.innerHTML = `
+        <div style="text-align: center; padding: 24px; background: #fdfdfd; border-radius: 10px; border: 1px dashed #e2e8f0;">
+            <div style="font-size: 1.5rem; margin-bottom: 8px;">🏦</div>
+            <p style="color: #94a3b8; font-size: 0.85rem; font-weight: 600; margin: 0;">No active ledgers detected.</p>
+        </div>
+    `;
     return;
   }
 
@@ -1115,31 +1213,29 @@ function renderAccountsList() {
     const balance = window.accountManager.getAccountBalance(acc.id);
     const balanceFormatted = Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Bank: Positive = Green (Asset), Credit: Positive = Red (Liability) usually
-    // But for simple visualization:
-    // Bank: >0 Green, <0 Red
-    // Credit: >0 Red (Owe money), <0 Green (Overpaid) - Assuming credit balance is stored as positive if owed
-    // Let's stick to simple logic: 
-    const balanceColor = '#1e293b'; // Neutral color for now to avoid confusion
-
     return `
-      <div class="account-card">
-        <div class="account-card-info">
-          <div class="account-card-icon">
-            ${acc.type === 'bank' ? '🏦' : '💳'}
+      <div class="account-card" style="background: #fff; border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; background: ${acc.type === 'bank' ? '#eff6ff' : '#fff1f2'}; color: ${acc.type === 'bank' ? '#2563eb' : '#e11d48'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="ph ${acc.type === 'bank' ? 'ph-bank' : 'ph-credit-card'}"></i>
           </div>
-          <div class="account-card-details">
-            <h4>${acc.accountName}</h4>
-            <p>
-              ${acc.type === 'bank' ? 'Bank Account' : 'Credit Card'} • ${acc.accountNumber} <br>
-              Balance: <span style="font-weight: 600;">$${balanceFormatted}</span>
-            </p>
+          <div>
+            <h4 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #1e293b;">${acc.accountName}</h4>
+            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">
+              ${acc.type.toUpperCase()} • ${acc.accountNumber}
+            </div>
           </div>
         </div>
-        <div class="account-card-actions">
-           ${accounts.length > 1 ? `
-            <button class="btn-icon delete" title="Delete Account" onclick="window.deleteAccountSettings('${acc.id}')">
-              🗑️
+        
+        <div style="text-align: right; display: flex; align-items: center; gap: 16px;">
+          <div>
+            <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 2px;">Value</div>
+            <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">$${balanceFormatted}</div>
+          </div>
+          
+          ${accounts.length > 1 ? `
+            <button class="btn-icon delete" title="Delete" onclick="window.deleteAccountSettings('${acc.id}')" style="color: #cbd5e1; background: none; border: none; padding: 6px; cursor: pointer; transition: 0.2s; border-radius: 6px;">
+                <i class="ph ph-trash-simple" style="font-size: 1rem;"></i>
             </button>
           ` : ''}
         </div>

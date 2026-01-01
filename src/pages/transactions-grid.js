@@ -4,6 +4,7 @@
  */
 
 // --- 1. DATA & HELPERS ---
+console.log('%c🚀 AUTOBOOKKEEPING v4.0 ACTIVE', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
 
 function getChartOfAccounts() {
     const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
@@ -12,8 +13,43 @@ function getChartOfAccounts() {
         rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]');
     } catch (e) { console.error('Failed to load custom COA', e); }
 
-    // Return flat list for AG Grid Select Editor
-    return [...rawDefault, ...rawCustom].map(a => a.name);
+    const all = [...rawDefault, ...rawCustom];
+
+    // DEBUG: Identify the source of "Invalid" strings
+    const invalidEntries = all.filter(a => a.name && a.name.toString().toLowerCase().includes("invalid"));
+    if (invalidEntries.length > 0) {
+        console.warn('🚨 FOUND INVALID ENTRIES IN COA:', invalidEntries);
+    }
+
+    // Return flat list for AG Grid Select Editor, aggressively filtering variations of "Invalid Number"
+    return all
+        .map(a => a.name)
+        .filter(name => name && !name.toString().toLowerCase().includes("invalid"));
+}
+
+function resolveAccountName(val) {
+    if (!val) return 'Uncategorized';
+    val = val.toString().trim();
+
+    // DEFENSIVE SHIELD: If value is "Invalid Number" or contains "invalid", force Uncategorized
+    if (val.toLowerCase().includes("invalid")) return 'Uncategorized';
+
+    // If it's just a 4-digit code, look it up
+    if (val.match(/^\d{4}$/)) {
+        const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+        let rawCustom = [];
+        try { rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]'); } catch (e) { }
+        const all = [...rawDefault, ...rawCustom];
+        const match = all.find(a => a.code === val);
+        if (match && match.name && !match.name.toLowerCase().includes("invalid")) return match.name;
+    }
+
+    // Smart Clean: Only strip 4-digit code if descriptive text follows
+    if (val.match(/^\d{4}\b\s+.+/)) {
+        return val.replace(/^\d{4}\b\s*/, '');
+    }
+
+    return val;
 }
 
 function getGridRowData() {
@@ -57,7 +93,7 @@ window.renderTransactions = function () {
     }, 0);
     const ending = parseFloat(openingBal) + totalIn - totalOut;
 
-    const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    const fmt = (n) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n));
 
     // 2. Return HTML (Retaining Original Header Style)
     return `
@@ -69,53 +105,99 @@ window.renderTransactions = function () {
          .amount-positive { color: #10b981; font-weight: 500; }
          .amount-negative { color: #334155; } /* Standard color for debits */
          .cell-action-btn:hover { background-color: #f1f5f9; border-radius: 4px; }
+
+         /* DROPDOWN SYSTEM */
+         .dropdown-container { position: relative; }
+         .btn-icon-menu { 
+             background: white; border: 1px solid #e2e8f0; border-radius: 6px; color: #64748b; 
+             padding: 6px; cursor: pointer; transition: all 0.2s; height: 32px; width: 32px; 
+             display: flex; align-items: center; justify-content: center; 
+         }
+         .btn-icon-menu:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+         .dropdown-menu {
+             position: absolute; top: 100%; right: 0; margin-top: 4px;
+             background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+             box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 160px; z-index: 1000;
+             padding: 4px; display: flex; flex-direction: column;
+         }
+         .dropdown-menu.hidden { display: none; }
+         .dropdown-item { 
+             display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: none; 
+             background: none; width: 100%; text-align: left; font-size: 0.85rem; font-weight: 500; 
+             color: #334155; cursor: pointer; border-radius: 6px; transition: background 0.1s; 
+         }
+         .dropdown-item:hover { background: #f1f5f9; }
+         .dropdown-item.danger { color: #ef4444; }
+         .dropdown-item.danger:hover { background: #fee2e2; }
+         .dropdown-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
        </style>
 
        <!-- FIXED HEADER (MATCHING EXISTING) -->
        <div class="fixed-top-section">
-          <header class="dashboard-header-modern" style="background: white; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-            <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
-                <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🏦</div>
+          <header class="dashboard-header-modern">
+            <div class="header-brand">
+                <div class="icon-box">🏦</div>
                 <div class="header-info">
-                    <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Imported Transactions (Grid)</h2>
-                    <div class="meta" style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
-                        <span style="background: #eff6ff; color: #3b82f6; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.7rem;">CHECKING</span>
+                    <h2>Imported Transactions (Grid)</h2>
+                    <div class="meta">
+                        <span class="badge-account">CHECKING</span>
                         <span>•</span>
                         <span>Ready for Review</span>
                     </div>
                 </div>
             </div>
 
-            <div class="header-stats" style="display: flex; gap: 24px; background: #f8fafc; padding: 8px 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
+            <div class="header-stats-container">
                 <div class="stat-unit">
-                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Opening Bal</label>
-                    <div class="val">$<input type="number" value="${openingBal}" onchange="updateOpeningBalance(this.value)" style="border:none; bg:transparent; width:80px;"></div>
+                    <label>Opening Bal</label>
+                    <div class="val">$<input type="number" value="${openingBal}" onchange="updateOpeningBalance(this.value)" class="invisible-input"></div>
                 </div>
-                <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+                <div class="stat-divider-v"></div>
                 <div class="stat-unit">
-                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total In</label>
-                    <div id="stat-total-in" class="val" style="color:#10b981; font-weight:600;">+${fmt(totalIn).replace('$', '')}</div>
+                    <label>Total In</label>
+                    <div id="stat-total-in" class="val val-positive">+${fmt(totalIn)}</div>
                 </div>
                 <div class="stat-unit">
-                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Out</label>
-                    <div id="stat-total-out" class="val" style="color:#ef4444; font-weight:600;">-${fmt(totalOut).replace('$', '')}</div>
+                    <label>Total Out</label>
+                    <div id="stat-total-out" class="val">-${fmt(totalOut)}</div>
                 </div>
-                <div style="width: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+                <div class="stat-divider-v"></div>
                 <div class="stat-unit">
-                    <label style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Ending Bal</label>
-                    <div id="stat-ending-bal" class="val" style="color:#2563eb; font-weight:700;">${fmt(ending)}</div>
+                    <label>Ending Bal</label>
+                    <div id="stat-ending-bal" class="val val-bold">$${fmt(ending)}</div>
                 </div>
             </div>
           </header>
           
           <!-- TOOLBAR -->
-           <div class="control-bar" style="padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; background: #fdfdfd;">
-               <div style="display:flex; gap: 10px;">
-                  <button onclick="window.gridApi.exportDataAsCsv()" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-size: 13px;">📥 Export CSV</button>
-                  <button onclick="window.clearGrid()" style="padding: 6px 12px; border: 1px solid #ef4444; color: #ef4444; border-radius: 6px; background: white; font-size: 13px;">🗑️ Clear All</button>
+           <div class="control-bar-grid">
+                <div class="control-left-grid">
+                  <div id="bulk-actions-area" class="bulk-actions-pill" style="display: none;">
+                    <span id="selection-count">0 selected</span>
+                    <button onclick="window.bulkCategorize()" class="btn-bulk-action" id="btn-bulk-cat">✨ Bulk Categorize</button>
+                    <button onclick="window.deselectGrid()" class="btn-clear-selection">✕ Clear</button>
+                  </div>
+                  <div class="search-wrapper-grid">
+                    <input type="text" placeholder="Search transactions..." onkeyup="window.gridApi.setQuickFilter(this.value)" class="grid-search-input">
+                  </div>
                </div>
-               <input type="text" placeholder="Search transactions..." onkeyup="window.gridApi.setQuickFilter(this.value)" 
-                      style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px;">
+               
+               <div class="dropdown-container">
+                    <button class="btn-icon-menu" onclick="window.toggleTxnMenu(event)" title="More Options">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                    </button>
+                     <div id="txn-dropdown-menu" class="dropdown-menu hidden">
+                        <button onclick="window.exportGrid()" class="dropdown-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Export CSV</span>
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button onclick="window.clearGrid()" class="dropdown-item danger">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+               </div>
            </div>
        </div>
 
@@ -142,10 +224,10 @@ window.initTransactionsGrid = function () {
     const data = getGridRowData();
     if (data.length === 0) {
         gridDiv.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: white; border-radius: 8px;">
-                <img src="../assets/empty-state.png" alt="No transactions" style="max-width: 400px; margin-bottom: 24px;">
-                <h3 style="margin: 0 0 8px 0; font-size: 1.5rem; color: #0f172a;">No transactions yet.</h3>
-                <p style="margin: 0; color: #64748b; font-size: 1rem;">Import your bank statement or add your first entry manually to get started.</p>
+            <div class="grid-empty-state">
+                <img src="assets/empty-state.png" alt="No transactions">
+                <h3>No transactions yet</h3>
+                <p>Import your bank statement or add your first entry manually to get started.</p>
             </div>
         `;
         return;
@@ -156,58 +238,94 @@ window.initTransactionsGrid = function () {
 
     const columnDefs = [
         {
+            headerName: "",
+            width: 50,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            suppressMenu: true,
+            pinned: 'left'
+        },
+        {
             field: "date",
             headerName: "Date",
-            width: 110,
-            editable: true,
+            width: 120,
             sortable: true,
-            cellEditor: 'agDateCellEditor'
+            filter: 'agDateColumnFilter'
         },
         {
             field: "description",
             headerName: "Payee / Description",
-            flex: 2,
+            flex: 3,
+            minWidth: 300,
             editable: true,
-            filter: true
+            filter: true,
+            valueFormatter: params => (params.value || '').toUpperCase(),
+            cellStyle: { fontWeight: 500 }
         },
         {
             field: "accountDescription",
             headerName: "Account",
-            flex: 1.5,
+            minWidth: 150,
+            autoHeight: true,
             editable: true,
             cellEditor: 'agSelectCellEditor',
             cellEditorParams: {
                 values: ['Uncategorized', ...accountNames]
             },
             cellRenderer: params => {
-                if (!params.value || params.value === 'Uncategorized')
+                let displayVal = resolveAccountName(params.value);
+
+                if (!params.value || displayVal === 'Uncategorized')
                     return '<span style="color:#cbd5e1; font-style:italic;">Uncategorized</span>';
-                return `<span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:12px; font-weight:600; font-size:12px;">${params.value}</span>`;
+                return `<span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:12px; font-weight:600; font-size:12px;">${displayVal}</span>`;
             }
         },
-        // DISPLAY DEBIT (if net < 0)
+        {
+            headerName: "Status",
+            width: 110,
+            valueGetter: params => {
+                const rawVal = params.data.accountDescription || params.data.category;
+                const clean = resolveAccountName(rawVal);
+                return (clean && clean !== 'Uncategorized' && clean !== '') ? 'Matched' : 'Unmatched';
+            },
+            cellRenderer: params => {
+                const color = params.value === 'Matched' ? '#10b981' : '#f59e0b';
+                return `<div style="text-align: center;"><span style="font-size: 11px; font-weight: 700; color: ${color}; background: ${color}15; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">${params.value}</span></div>`;
+            }
+        },
+        {
+            headerName: "Actions",
+            width: 80,
+            cellRenderer: params => {
+                return `
+                  <div style="display:flex; gap: 8px; align-items: center; height: 100%;">
+                    <button title="Swap" onclick="window.gridSwap(${params.rowIndex})" style="border:none; background:#f1f5f9; cursor:pointer; padding: 2px 6px; border-radius: 4px;">⇄</button>
+                    <button title="Delete" onclick="window.gridDelete(${params.rowIndex})" style="border:none; background:#fef2f2; color:#ef4444; cursor:pointer; padding: 2px 6px; border-radius: 4px;">✕</button>
+                  </div>
+                `;
+            }
+        }
+    ];
+
+    // Restore Debit/Credit columns properly
+    columnDefs.splice(4, 0,
         {
             headerName: "Debit",
-            width: 100,
             valueGetter: params => {
                 const debit = parseFloat(params.data.debit) || 0;
                 const credit = parseFloat(params.data.credit) || 0;
                 const amount = parseFloat(params.data.amount) || 0;
                 const type = params.data.type;
-
-                // Logic: if stored as deb/cred, use that. else use amount/type
                 let val = debit;
-                if (debit === 0 && credit === 0 && amount !== 0) {
-                    if (type === 'debit') val = amount;
-                }
-
-                // If it's effectively a debit (leaving account)
+                if (debit === 0 && credit === 0 && amount !== 0 && type === 'debit') val = amount;
                 return val > 0 ? val : null;
             },
-            valueFormatter: params => params.value ? '$' + params.value.toFixed(2) : '',
-            cellStyle: { color: '#334155' }
+            valueFormatter: params => {
+                if (!params.value) return '';
+                return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(params.value);
+            },
+            cellStyle: { color: '#334155', textAlign: 'right' }
         },
-        // DISPLAY CREDIT (if net > 0)
         {
             headerName: "Credit",
             width: 100,
@@ -216,37 +334,39 @@ window.initTransactionsGrid = function () {
                 const credit = parseFloat(params.data.credit) || 0;
                 const amount = parseFloat(params.data.amount) || 0;
                 const type = params.data.type;
-
                 let val = credit;
-                if (debit === 0 && credit === 0 && amount !== 0) {
-                    if (type === 'credit') val = amount;
-                }
-
+                if (debit === 0 && credit === 0 && amount !== 0 && type === 'credit') val = amount;
                 return val > 0 ? val : null;
             },
-            valueFormatter: params => params.value ? '$' + params.value.toFixed(2) : '',
-            cellStyle: { color: '#10b981', fontWeight: 'bold' }
-        },
-        // ACTIONS
-        {
-            headerName: "Actions",
-            width: 100,
-            cellRenderer: params => {
-                return `
-                  <button title="Swap" onclick="window.gridSwap(${params.rowIndex})" style="border:none; bg:none; cursor:pointer;">⇄</button>
-                  <button title="Delete" onclick="window.gridDelete(${params.rowIndex})" style="border:none; bg:none; color:red; cursor:pointer;">×</button>
-                `;
-            }
+            valueFormatter: params => {
+                if (!params.value) return '';
+                return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(params.value);
+            },
+            cellStyle: { color: '#10b981', fontWeight: 'bold', textAlign: 'right' }
         }
-    ];
+    );
 
     const gridOptions = {
         columnDefs: columnDefs,
         rowData: getGridRowData(),
-        rowHeight: 40,
+        rowSelection: 'multiple',
+        rowHeight: 48,
         headerHeight: 40,
         animateRows: true,
         enableCellTextSelection: true,
+
+        onSelectionChanged: () => {
+            if (!window.gridApi) return;
+            const nodes = window.gridApi.getSelectedNodes();
+            const count = nodes.length;
+            const bulkArea = document.getElementById('bulk-actions-area');
+            const countLabel = document.getElementById('selection-count');
+
+            if (bulkArea) {
+                bulkArea.style.display = count > 0 ? 'flex' : 'none';
+                if (countLabel) countLabel.innerText = `${count} selected`;
+            }
+        },
 
         onCellValueChanged: (params) => {
             // Update Underlying Data
@@ -260,18 +380,7 @@ window.initTransactionsGrid = function () {
             window.updateHeaderStats();
         },
         onGridReady: (params) => {
-            // window.gridApi is set by createGrid below
-
-            // RESPONSIVE LOGIC
-            const sizeToFit = () => {
-                const width = document.body.clientWidth;
-                if (width > 768) {
-                    params.api.sizeColumnsToFit();
-                }
-            };
-
-            sizeToFit();
-            window.addEventListener('resize', sizeToFit);
+            console.log("📈 Transactions Grid: Ready & Adjusted");
         }
     };
 
@@ -319,9 +428,27 @@ window.gridDelete = function (index) {
     if (!confirm('Delete this transaction?')) return;
 
     window.transactionData.splice(index, 1);
-    window.gridApi.setRowData(window.transactionData);
+
+    if (window.gridApi) {
+        window.gridApi.setGridOption('rowData', window.transactionData);
+    }
+
     saveGridData();
     window.updateHeaderStats();
+};
+
+window.deselectGrid = function () {
+    if (window.gridApi) {
+        window.gridApi.deselectAll();
+    }
+};
+
+window.exportGrid = function () {
+    if (window.gridApi) {
+        window.gridApi.exportDataAsCsv();
+    } else {
+        alert('Grid is still loading or empty.');
+    }
 };
 
 window.updateOpeningBalance = function (val) {
@@ -345,7 +472,7 @@ window.updateHeaderStats = function () {
     }, 0);
     const ending = parseFloat(openingBal) + totalIn - totalOut;
 
-    const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).replace('$', '');
+    const fmt = (n) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n));
 
     // Update DOM
     const elIn = document.getElementById('stat-total-in');
@@ -353,14 +480,97 @@ window.updateHeaderStats = function () {
     const elEnd = document.getElementById('stat-ending-bal');
 
     if (elIn) elIn.innerText = '+' + fmt(totalIn);
-    if (elOut) elOut.innerText = '-' + fmt(totalOut);
+    if (elOut) {
+        elOut.innerText = '-' + fmt(totalOut);
+        elOut.style.color = '#334155'; // Force black for debits
+    }
     if (elEnd) elEnd.innerText = '$' + fmt(ending);
 };
 
 window.clearGrid = function () {
     if (!confirm('Clear ALL transactions?')) return;
     window.transactionData = [];
-    window.gridApi.setRowData([]);
+    window.gridApi.setGridOption('rowData', []);
     saveGridData();
     window.updateHeaderStats();
 }
+
+// --- 5. BULK ACTIONS & INTELLIGENCE ---
+
+window.bulkCategorize = async function () {
+    if (!window.gridApi) return;
+    const selectedNodes = window.gridApi.getSelectedNodes();
+    if (selectedNodes.length === 0) return;
+
+    const category = prompt(`Select category for ${selectedNodes.length} items:`);
+    if (!category) return;
+
+    selectedNodes.forEach(node => {
+        node.data.accountDescription = category;
+        node.data.category = category;
+    });
+
+    window.gridApi.refreshCells({ force: true });
+    window.gridApi.deselectAll();
+    saveGridData();
+    if (window.showToast) window.showToast(`Updated ${selectedNodes.length} items`, 'success');
+};
+
+window.categorizeLedger = async function () {
+    console.log('🔮 Transactions: Starting Ledger Intelligence scan...');
+    const data = window.transactionData || [];
+    let updatedCount = 0;
+
+    for (const txn of data) {
+        if (txn.accountDescription && txn.accountDescription !== 'Uncategorized') continue;
+
+        let match = null;
+        if (window.patternDetector) {
+            const detection = window.patternDetector.detect(txn.description);
+            if (detection && detection.confidence > 0.6) {
+                match = { category: detection.category };
+            }
+        }
+
+        if (window.merchantDictionary && !match) {
+            const dictMatch = await window.merchantDictionary.matchTransaction(txn.description);
+            if (dictMatch) {
+                match = { category: dictMatch.merchant?.default_category || dictMatch.suggestedCategory };
+            }
+        }
+
+        if (match) {
+            txn.accountDescription = match.category;
+            txn.category = match.category;
+            updatedCount++;
+        }
+    }
+
+    if (updatedCount > 0) {
+        console.log(`✅ Ledger Intelligence: Matched ${updatedCount} transactions.`);
+        if (window.gridApi) window.gridApi.setGridOption('rowData', window.transactionData);
+        saveGridData();
+    }
+};
+
+// --- 6. GLOBAL EVENT LISTENERS ---
+
+window.toggleTxnMenu = function (e) {
+    e.stopPropagation();
+    const menu = document.getElementById('txn-dropdown-menu');
+    if (menu) menu.classList.toggle('hidden');
+};
+
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('txn-dropdown-menu');
+    if (menu && !menu.classList.contains('hidden')) {
+        if (!e.target.closest('.dropdown-container')) {
+            menu.classList.add('hidden');
+        }
+    }
+});
+
+// Start intelligence
+setTimeout(() => {
+    if (window.categorizeLedger) window.categorizeLedger();
+}, 2000);

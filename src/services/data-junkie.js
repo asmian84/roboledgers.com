@@ -207,27 +207,13 @@ class DataJunkie {
         if (!window.merchantDictionary) return;
 
         try {
-            // Extract merchant name using smart extraction
-            const merchantName = this.extractMerchantName(transaction.Description);
-            if (!merchantName) return;
+            // Let the dictionary handle canonicalization, extraction, and purging
+            await window.merchantDictionary.learnFromTransaction({
+                raw_description: transaction.Description,
+                source: 'Data Junkie - Duplicate'
+            });
 
-            // Find existing merchant
-            const merchants = await window.merchantDictionary.getAllMerchants();
-            const normalized = window.merchantDictionary.normalize(merchantName);
-            const merchant = merchants.find(m =>
-                window.merchantDictionary.normalize(m.display_name) === normalized
-            );
-
-            if (merchant) {
-                // Reinforce pattern
-                await window.merchantDictionary.learnFromTransaction({
-                    raw_description: transaction.Description,
-                    merchant_id: merchant.id,
-                    source: 'Data Junkie - Duplicate'
-                });
-
-                console.log(`🧠 Reinforced: ${merchantName}`);
-            }
+            console.log(`🧠 Data Junkie: Reinforced pattern from duplicate using v4 dictionary`);
         } catch (error) {
             console.warn('Failed to learn from duplicate:', error);
         }

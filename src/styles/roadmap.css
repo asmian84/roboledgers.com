@@ -78,12 +78,11 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(to bottom, 
-        var(--success) 0%, 
-        var(--success) 50%, 
-        var(--primary) 50%, 
-        var(--primary) 100%
-    );
+    background: linear-gradient(to bottom,
+            var(--success) 0%,
+            var(--success) 50%,
+            var(--primary) 50%,
+            var(--primary) 100%);
 }
 
 /* Timeline Item */
@@ -124,10 +123,13 @@
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.2);
         opacity: 0.8;
@@ -295,17 +297,36 @@
 
     .roadmap-stats {
         grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .roadmap-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .timeline-content {
+        padding: 1rem;
+    }
+
+    .timeline-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
     }
 }
 
 /* Dark Mode Support */
 [data-theme="dark"] .timeline::before {
-    background: linear-gradient(to bottom, 
-        #10b981 0%, 
-        #10b981 50%, 
-        #3b82f6 50%, 
-        #3b82f6 100%
-    );
+    background: linear-gradient(to bottom,
+            #10b981 0%,
+            #10b981 50%,
+            #3b82f6 50%,
+            #3b82f6 100%);
 }
 
 [data-theme="dark"] .timeline-marker {

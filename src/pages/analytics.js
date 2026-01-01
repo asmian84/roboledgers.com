@@ -64,7 +64,7 @@ window.renderAnalyticsPage = async function (container) {
                         <button onclick="document.getElementById('drilldown-modal').style.display='none'" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #64748b;">&times;</button>
                     </div>
                     <!-- AG GRID Container -->
-                    <div id="drilldown-grid" class="ag-theme-alpine" style="flex: 1; width: 100%;"></div>
+                    <div id="drilldown-grid" class="ag-theme-quartz" style="flex: 1; width: 100%;"></div>
                 </div>
             </div>
         </div>

@@ -5,53 +5,330 @@
 // Route function - returns page HTML
 window.renderAccounts = function () {
   return `
-    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
-        <!-- FIXED HEADER -->
-        <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-             <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
-                <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">💰</div>
-                <div>
-                    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Chart of Accounts</h1>
-                    <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Manage your financial categories</p>
-                </div>
-             </div>
-             <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
-                 <div style="position: relative;">
-                     <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
-                     <input type="text" placeholder="Search accounts..." onkeyup="if(window.accountsGridApi) window.accountsGridApi.setQuickFilter(this.value)"
-                            style="padding: 8px 12px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px; font-size: 0.9rem;">
-                 </div>
-                 <button onclick="addNewAccount()" class="btn-primary" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <span>+ Add Account</span>
-                 </button>
-                 <button onclick="importCOA()" class="btn-secondary" style="background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; color: #475569;">
-                    📥 Import
-                 </button>
-             </div>
-        </div>
-
-        <!-- GRID CONTAINER -->
-        <div style="flex: 1; background: #f1f5f9; padding: 0; position: relative;">
-            <div id="accountsGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
-        </div>
-    </div>
-
-    <script>
-      if (typeof initAccountsGrid === 'function') {
-        setTimeout(initAccountsGrid, 100);
+    <style>
+      .coa-wrapper {
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        background: var(--bg-secondary, #f8fafc);
+        font-family: var(--font-family, sans-serif);
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
       }
-    </script>
+
+      .coa-header {
+        margin-bottom: 1rem;
+        flex-shrink: 0;
+      }
+
+      .coa-scroll-container {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 1rem;
+      }
+
+      /* ACCORDION ROW */
+      .coa-row {
+        background: var(--bg-surface, #ffffff);
+        border: 1px solid var(--border-color, #e2e8f0);
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        
+        /* Contracted State: "Card" Look */
+        width: 50%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .coa-row.active {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        border-color: var(--primary, #3b82f6);
+        margin-bottom: 1rem;
+        margin-top: 0.5rem;
+        
+        /* Expanded State: Full Width */
+        width: 100%;
+      }
+
+      /* ROW HEADER - Snug & Sleek */
+      .coa-row-header {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1.25rem;
+        cursor: pointer;
+        user-select: none;
+        height: 48px; /* Slightly taller than 42px for better touch targets, still snug */
+      }
+
+      .coa-row-header:hover {
+        background: var(--bg-subtle, #f8fafc);
+      }
+
+      /* Icons removed as requested */
+      .row-info { flex: 1; }
+
+      .row-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary, #1e293b);
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .row-subtitle { display: none; } /* Hide subtitle for cleaner look if present */
+
+      .row-count-badge {
+        font-size: 0.75rem;
+        background: var(--bg-tertiary, #f1f5f9);
+        color: var(--text-secondary, #64748b);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+      }
+
+      .row-desc-preview {
+        font-size: 0.85rem; /* Slightly larger for readability */
+        color: var(--text-tertiary, #94a3b8);
+        margin-left: 1rem;
+        font-weight: 400;
+        opacity: 0.8;
+      }
+
+      .row-chevron {
+        font-size: 1rem;
+        color: var(--text-tertiary, #94a3b8);
+        transition: transform 0.3s;
+      }
+
+      .coa-row.active .row-chevron {
+        transform: rotate(180deg);
+        color: var(--primary, #3b82f6);
+      }
+
+      /* ROW CONTENT (Expandable) */
+      .coa-row-content {
+        height: 0;
+        overflow: hidden;
+        transition: height 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+        background: var(--bg-surface, #ffffff); /* Match row bg for seamless look */
+        border-top: 1px solid var(--border-color, #e2e8f0);
+      }
+      
+      .coa-grid-placeholder {
+        height: 100%; 
+        width: 100%; 
+        padding: 0; /* No padding for snug fit */
+        display: flex; 
+        flex-direction: column;
+      }
+
+      /* Category Indicating Left Borders */
+      .theme-asset { border-left: 4px solid #10b981; }
+      .theme-liability { border-left: 4px solid #ef4444; } /* Fixed typo */
+      .theme-equity { border-left: 4px solid #8b5cf6; }
+      .theme-revenue { border-left: 4px solid #3b82f6; }
+      .theme-expense { border-left: 4px solid #f59e0b; }
+
+    </style>
+
+    <div class="coa-wrapper">
+      <div class="coa-header">
+        <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">Chart of Accounts</h1>
+      </div>
+
+      <div class="coa-scroll-container">
+        
+        <!-- ASSETS -->
+        <div class="coa-row theme-asset" id="row-asset">
+          <div class="coa-row-header" onclick="window.toggleCoARow('asset')">
+            <div class="row-info">
+              <div class="row-title">
+                Assets 
+                <!-- <span class="row-count-badge">--</span> -->
+                <span class="row-desc-preview">Cash, Inventory, Equipment</span>
+              </div>
+            </div>
+            <i class="ph ph-caret-down row-chevron"></i>
+          </div>
+          <div class="coa-row-content" id="content-asset">
+             <!-- Grid will be moved here -->
+          </div>
+        </div>
+
+        <!-- LIABILITIES -->
+        <div class="coa-row theme-liability" id="row-liability">
+          <div class="coa-row-header" onclick="window.toggleCoARow('liability')">
+            <div class="row-info">
+               <div class="row-title">
+                Liabilities
+                <span class="row-desc-preview">Loans, Payables, Credit Cards</span>
+              </div>
+            </div>
+            <i class="ph ph-caret-down row-chevron"></i>
+          </div>
+          <div class="coa-row-content" id="content-liability"></div>
+        </div>
+
+        <!-- EQUITY -->
+        <div class="coa-row theme-equity" id="row-equity">
+          <div class="coa-row-header" onclick="window.toggleCoARow('equity')">
+            <div class="row-info">
+               <div class="row-title">
+                Equity
+                <span class="row-desc-preview">Owner's Capital, Retained Earnings</span>
+              </div>
+            </div>
+            <i class="ph ph-caret-down row-chevron"></i>
+          </div>
+          <div class="coa-row-content" id="content-equity"></div>
+        </div>
+
+        <!-- REVENUE -->
+        <div class="coa-row theme-revenue" id="row-revenue">
+          <div class="coa-row-header" onclick="window.toggleCoARow('revenue')">
+            <div class="row-info">
+               <div class="row-title">
+                Revenue
+                <span class="row-desc-preview">Sales, Services, Income</span>
+              </div>
+            </div>
+            <i class="ph ph-caret-down row-chevron"></i>
+          </div>
+          <div class="coa-row-content" id="content-revenue"></div>
+        </div>
+
+        <!-- EXPENSES -->
+        <div class="coa-row theme-expense" id="row-expense">
+          <div class="coa-row-header" onclick="window.toggleCoARow('expense')">
+            <div class="row-info">
+               <div class="row-title">
+                Expenses
+                <span class="row-desc-preview">Advertising, Office, Travel</span>
+              </div>
+            </div>
+            <i class="ph ph-caret-down row-chevron"></i>
+          </div>
+          <div class="coa-row-content" id="content-expense"></div>
+        </div>
+
+      </div>
+
+      <!-- Hidden Container for the Single Grid Instance -->
+      <div id="hiddenGridContainer" style="display:none;">
+          <div id="sharedAccountsGrid" class="ag-theme-quartz" style="height: 100%; width: 100%;"></div>
+      </div>
+
+    </div>
   `;
+};
+
+// ----------------------------------------------------
+// GLOBAL LOGIC (Defined Outside Render Function)
+// ----------------------------------------------------
+
+let currentActiveRow = null;
+
+window.toggleCoARow = function (type) {
+  const rowId = 'row-' + type;
+  const contentId = 'content-' + type;
+  const row = document.getElementById(rowId);
+  const content = document.getElementById(contentId);
+  const container = document.querySelector('.coa-scroll-container');
+
+  // If clicking already active row, collapse it
+  if (currentActiveRow === type) {
+    collapseAllRows();
+    currentActiveRow = null;
+    return;
+  }
+
+  // 1. Collapse others
+  collapseAllRows();
+
+  // 2. Expand this one
+  if (row && content && container) {
+    row.classList.add('active');
+
+    // Dynamic Height Calculation:
+    // Available Height = Container Height - (Header Heights * 5) - Margins
+    // Roughly fill 70-80% of remaining space or at least 500px
+    const containerHeight = container.clientHeight || 800;
+    const reservedHeight = (5 * 60) + 100; // Headers + margins
+    const targetHeight = Math.max(500, containerHeight - reservedHeight);
+
+    content.style.height = targetHeight + 'px';
+
+    // 3. Move Grid into this content
+    const gridEl = document.getElementById('sharedAccountsGrid');
+
+    // Ensure grid takes up space
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'coa-grid-placeholder';
+    gridContainer.appendChild(gridEl);
+
+    // Clear current content and append grid
+    content.innerHTML = '';
+    content.appendChild(gridContainer);
+
+    currentActiveRow = type;
+
+    // 4. Initialize/Filter Grid
+    setTimeout(() => {
+      if (!window.accountsGridApi) {
+        // First init needs to target the shared ID
+        initAccountsGrid(type); // Pass filter
+      } else {
+        window.applyCoAFilter(type);
+        // Force layout refresh since it moved in DOM
+        window.accountsGridApi.sizeColumnsToFit();
+      }
+    }, 450); // Wait for transition (slightly longer than CSS transition)
+  }
+};
+
+function collapseAllRows() {
+  ['asset', 'liability', 'equity', 'revenue', 'expense'].forEach(t => {
+    const r = document.getElementById('row-' + t);
+    const c = document.getElementById('content-' + t);
+    if (r) r.classList.remove('active');
+    if (c) {
+      c.style.height = '0';
+      // Don't remove innerHTML immediately to allow transition
+    }
+  });
+}
+
+window.applyCoAFilter = function (type) {
+  if (!window.accountsGridApi) return;
+
+  if (!type) {
+    window.accountsGridApi.setFilterModel(null);
+  } else {
+    window.accountsGridApi.setFilterModel({
+      type: {
+        filterType: 'text',
+        type: 'equals',
+        filter: type
+      }
+    });
+  }
+  window.accountsGridApi.onFilterChanged();
 };
 
 let accountsGridApi;
 
 // Initialize the grid with data from storage
-// Initialize the grid with data from storage
-async function initAccountsGrid() {
-  console.log('🔷 Initializing Chart of Accounts Grid...');
+async function initAccountsGrid(initialFilterType = null) {
+  console.log('🔷 Initializing Chart of Accounts Grid (Shared Instance)...');
 
-  const gridDiv = document.querySelector('#accountsGrid');
+  // TARGET THE SHARED GRID ELEMENT
+  const gridDiv = document.querySelector('#sharedAccountsGrid');
   if (!gridDiv) {
     console.warn('⚠️ Accounts grid container not found during init');
     return;
@@ -73,7 +350,8 @@ async function initAccountsGrid() {
     rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]');
   } catch (e) { }
 
-  let accountData = [...rawDefault, ...rawCustom];
+  let accountData = [...rawDefault, ...rawCustom]
+    .filter(a => a.name && !a.name.toString().toLowerCase().includes("invalid"));
 
   // Sort by code
   accountData.sort((a, b) => (parseInt(a.code) || 0) - (parseInt(b.code) || 0));
@@ -151,6 +429,26 @@ async function initAccountsGrid() {
       accountsGridApi = event.api;
       window.accountsGridApi = event.api;
       event.api.sizeColumnsToFit();
+
+      // Apply initial filter if requested
+      if (initialFilterType) {
+        window.applyCoAFilter(initialFilterType);
+      }
+
+      // Auto-resize when window changes
+      const resizeHandler = () => {
+        if (event.api) {
+          event.api.sizeColumnsToFit();
+        }
+      };
+
+      // Remove old listener if exists
+      if (window._accountsGridResizeHandler) {
+        window.removeEventListener('resize', window._accountsGridResizeHandler);
+      }
+
+      window.addEventListener('resize', resizeHandler);
+      window._accountsGridResizeHandler = resizeHandler;
     },
     onCellValueChanged: async (event) => {
       if (window.storage) {
@@ -211,6 +509,21 @@ window.importCOA = function () {
   } else {
     alert('Import COA feature coming soon!');
   }
+};
+
+/**
+ * EXPORT COA TO EXCEL (CSV)
+ */
+window.exportCoaToExcel = function () {
+  if (!window.accountsGridApi) {
+    console.error('❌ Accounts Grid API not found');
+    return;
+  }
+  const params = {
+    fileName: `Pristine_Accounts_${new Date().toISOString().split('T')[0]}.csv`,
+    allColumns: true
+  };
+  window.accountsGridApi.exportDataAsCsv(params);
 };
 
 // Watch for grid container with MutationObserver

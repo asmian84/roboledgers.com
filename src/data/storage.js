@@ -1,5 +1,5 @@
 /**
- * AutoBookkeeping v3.0 - Storage Service
+ * RoboLedgers 4.0 - Storage Service
  * Offline-first data storage using localStorage
  * Full CRUD operations for all data entities
  */
@@ -22,7 +22,8 @@ class StorageService {
     _get(key) {
         try {
             const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : [];
+            if (!data || data === 'undefined') return [];
+            return JSON.parse(data);
         } catch (error) {
             console.error(`Failed to get ${key}:`, error);
             return [];
@@ -31,12 +32,13 @@ class StorageService {
 
     _set(key, data) {
         try {
+            if (data === undefined) return false;
             // Look up the actual storage key (e.g., 'transactions' -> 'ab3_transactions')
             const storageKey = this.keys[key] || key;
             localStorage.setItem(storageKey, JSON.stringify(data));
             return true;
         } catch (error) {
-            console.error(`Failed to set ${storageKey}:`, error);
+            console.error(`Failed to set ${key}:`, error);
             return false;
         }
     }
@@ -174,17 +176,38 @@ class StorageService {
     // ====================================
 
     async getVendors() {
-        const vendors = this._get(this.keys.vendors);
+        let vendors = [];
+
+        // 1. Try to get from Merchant Dictionary (IndexedDB) first - handles 10k+ records
+        if (window.merchantDictionary) {
+            try {
+                if (!window.merchantDictionary.isInitialized) await window.merchantDictionary.init();
+                vendors = await window.merchantDictionary.getAllMerchants();
+                if (vendors.length > 0) {
+                    // console.log(`💾 Storage: Loaded ${vendors.length} vendors from MerchantDictionary`);
+                } else {
+                    // Fallback to localStorage if Dictionary is empty
+                    vendors = this._get(this.keys.vendors);
+                }
+            } catch (e) {
+                console.warn('💾 Storage: Failed to load from Dictionary, using LocalStorage fallback', e);
+                vendors = this._get(this.keys.vendors);
+            }
+        } else {
+            vendors = this._get(this.keys.vendors);
+        }
+
         const transactions = this._get(this.keys.transactions);
 
         // Compute totalSpent, transactionCount, lastTransaction
         return vendors.map(vendor => {
-            const vendorTxns = transactions.filter(t => t.vendorId === vendor.id);
+            const vendorTxns = transactions.filter(t => t.vendorId === (vendor.id || vendor.name));
             const totalSpent = vendorTxns.reduce((sum, t) => sum + (t.type === 'debit' ? t.amount : 0), 0);
             const lastTxn = vendorTxns.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
             return {
                 ...vendor,
+                name: vendor.display_name || vendor.name, // Normalization
                 totalSpent,
                 transactionCount: vendorTxns.length,
                 lastTransaction: lastTxn ? lastTxn.date : null
@@ -207,8 +230,9 @@ class StorageService {
         const vendors = this._get(this.keys.vendors);
 
         const vendor = {
-            id: this._generateId(),
+            id: data.id || this._generateId(),
             name: data.name,
+            display_name: data.name, // Dictionary compatibility
             category: data.category || '',
             defaultAccountId: data.defaultAccountId || null,
             notes: data.notes || '',
@@ -219,7 +243,17 @@ class StorageService {
         vendors.push(vendor);
         this._set(this.keys.vendors, vendors);
 
-        console.log('💾 Vendor created:', vendor.id);
+        // SYNC TO DICTIONARY
+        if (window.merchantDictionary) {
+            await window.merchantDictionary.createMerchant({
+                id: vendor.id,
+                display_name: vendor.name,
+                default_category: vendor.category,
+                default_account: vendor.defaultAccountId
+            });
+        }
+
+        console.log('💾 Vendor created and synced:', vendor.id);
         return vendor;
     }
 
@@ -227,21 +261,28 @@ class StorageService {
         const vendors = this._get(this.keys.vendors);
         const index = vendors.findIndex(v => v.id === id);
 
-        if (index === -1) {
-            throw new Error(`Vendor ${id} not found`);
-        }
-
         const updated = {
-            ...vendors[index],
+            ...(index !== -1 ? vendors[index] : { id }),
             ...updates,
             id,
             updatedAt: this._now()
         };
 
-        vendors[index] = updated;
-        this._set(this.keys.vendors, vendors);
+        if (index !== -1) {
+            vendors[index] = updated;
+            this._set(this.keys.vendors, vendors);
+        }
 
-        console.log('💾 Vendor updated:', id);
+        // SYNC TO DICTIONARY
+        if (window.merchantDictionary) {
+            await window.merchantDictionary.updateMerchant(id, {
+                display_name: updated.name || updated.display_name,
+                default_category: updated.category || updated.default_category,
+                default_account: updated.defaultAccountId || updated.default_account
+            });
+        }
+
+        console.log('💾 Vendor updated and synced:', id);
         return updated;
     }
 
@@ -269,6 +310,26 @@ class StorageService {
     async getAccounts() {
         let accounts = this._get(this.keys.accounts);
 
+        // 1. CLOUD SYNC: Try to fetch from Supabase
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                // Smart discovery of table name
+                const candidates = ['chart_of_accounts', 'coa', 'accounts', 'account', 'COA', 'Categories', 'categories'];
+                const table = await window.supabaseService.discoverTable(candidates, 'accounts');
+
+                const { data, error } = await window.supabaseService.from(table).select('*');
+                if (!error && data && data.length > 0) {
+                    console.log(`☁️ Storage: Synced ${data.length} accounts from Supabase ("${table}")`);
+                    accounts = data;
+                    this._set(this.keys.accounts, accounts); // Sync local cache
+                } else if (error) {
+                    console.warn(`☁️ Storage: Supabase fail on "${table}":`, error.message);
+                }
+            } catch (e) {
+                console.warn('☁️ Storage: Supabase sync failed, using local cache', e);
+            }
+        }
+
         // Auto-initialize with DEFAULT_CHART_OF_ACCOUNTS if empty
         if (accounts.length === 0 && window.DEFAULT_CHART_OF_ACCOUNTS) {
             console.log('📊 Initializing Chart of Accounts from defaults...');
@@ -284,8 +345,18 @@ class StorageService {
                 updatedAt: this._now()
             }));
             this._set(this.keys.accounts, accounts);
+
+            // Push to cloud if online
+            if (window.supabaseService && window.supabaseService.isOnline) {
+                window.supabaseService.from('accounts').upsert(accounts).then(({ error }) => {
+                    if (!error) console.log('☁️ Storage: Initialized accounts pushed to cloud');
+                });
+            }
             console.log(`✅ Initialized ${accounts.length} accounts`);
         }
+
+        // DATA INTEGRITY HOOK: Filter out "Invalid Number" entries at the source
+        accounts = accounts.filter(acc => acc.name && !acc.name.toLowerCase().includes("invalid"));
 
         const transactions = this._get(this.keys.transactions);
 
@@ -333,6 +404,16 @@ class StorageService {
         accounts.push(account);
         this._set(this.keys.accounts, accounts);
 
+        // SYNC TO CLOUD
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from('accounts').insert([account]);
+                if (error) console.error('☁️ Storage: Failed to push account to cloud:', error);
+            } catch (e) {
+                console.warn('☁️ Storage: Supabase error during createAccount', e);
+            }
+        }
+
         console.log('💾 Account created:', account.id);
         return account;
     }
@@ -355,6 +436,16 @@ class StorageService {
         accounts[index] = updated;
         this._set(this.keys.accounts, accounts);
 
+        // SYNC TO CLOUD
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from('accounts').update(updated).eq('id', id);
+                if (error) console.error('☁️ Storage: Failed to update account in cloud:', error);
+            } catch (e) {
+                console.warn('☁️ Storage: Supabase error during updateAccount', e);
+            }
+        }
+
         console.log('💾 Account updated:', id);
         return updated;
     }
@@ -368,6 +459,17 @@ class StorageService {
         }
 
         this._set(this.keys.accounts, filtered);
+
+        // SYNC TO CLOUD
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from('accounts').delete().eq('id', id);
+                if (error) console.error('☁️ Storage: Failed to delete account from cloud:', error);
+            } catch (e) {
+                console.warn('☁️ Storage: Supabase error during deleteAccount', e);
+            }
+        }
+
         console.log('💾 Account deleted:', id);
         return true;
     }

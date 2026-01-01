@@ -26,7 +26,30 @@ class MerchantDictionary {
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 this.db = request.result;
-                this.loadMerchantsIntoMemory().then(() => {
+                this.loadMerchantsIntoMemory().then(async () => {
+                    // 1. CLOUD SYNC: Try to fetch from Supabase if online
+                    if (window.supabaseService && window.supabaseService.isOnline) {
+                        try {
+                            console.log('☁️ Dictionary: Syncing with Supabase...');
+                            // Smart discovery of table name
+                            const candidates = ['vendors', 'vendor', 'merchants', 'merchant', 'Vendors', 'Merchants'];
+                            const table = await window.supabaseService.discoverTable(candidates, 'merchants');
+
+                            const { data, error } = await window.supabaseService.from(table).select('*');
+                            if (!error && data && data.length > 0) {
+                                console.log(`☁️ Dictionary: Synced ${data.length} merchants from cloud ("${table}")`);
+                                // Update IndexedDB in background
+                                this.importBackup(data).then(() => {
+                                    console.log('✅ Dictionary: Cloud sync merged into local cache');
+                                });
+                            } else if (error) {
+                                console.warn(`☁️ Dictionary: Cloud sync fail on "${table}":`, error.message);
+                            }
+                        } catch (e) {
+                            console.warn('☁️ Dictionary: Cloud sync failed, using local cache', e);
+                        }
+                    }
+
                     this.isInitialized = true;
                     console.log('✅ Merchant Dictionary initialized');
                     console.log(`📊 Loaded ${this.merchants.size} merchants`);
@@ -90,37 +113,30 @@ class MerchantDictionary {
     }
 
     // ============================================
-    // PATTERN EXTRACTION
+    // PATTERN EXTRACTION (Legacy - used for fallback)
     // ============================================
 
     extractPattern(rawDescription) {
         if (!rawDescription) return '';
 
         return rawDescription
-            // Remove transaction IDs (e.g., *AB123CD, *XY789ZZ)
             .replace(/\*[A-Z0-9]{6,}/gi, '')
-            // Remove reference numbers (e.g., #123456, REF:789012)
             .replace(/[#]?\d{6,}/g, '')
             .replace(/REF:\s*\d+/gi, '')
-            // Remove dates (MM/DD/YY, DD/MM/YYYY, etc.)
             .replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, '')
-            // Remove times (HH:MM, HH:MM:SS)
             .replace(/\d{1,2}:\d{2}(:\d{2})?/g, '')
-            // Remove card last 4 digits patterns
             .replace(/XXXX\s*\d{4}/gi, '')
             .replace(/\*{4}\s*\d{4}/gi, '')
-            // Remove extra whitespace
             .replace(/\s+/g, ' ')
             .trim();
     }
 
     normalize(text) {
         if (!text) return '';
-
         return text
             .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, '') // Remove special chars
-            .replace(/\s+/g, ' ') // Normalize spaces
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, ' ')
             .trim();
     }
 
@@ -138,47 +154,61 @@ class MerchantDictionary {
             return null;
         }
 
-        // Extract pattern from raw description
-        const pattern = this.extractPattern(raw_description);
-        const normalized = this.normalize(pattern);
+        // 1. Resolve Merchant Info using Categorizer v4 (Persistent Cleaning)
+        const cleanResult = window.merchantCategorizer.cleanTransaction(raw_description);
 
-        if (!pattern || !normalized) {
-            console.warn('⚠️ Could not extract pattern from:', raw_description);
+        // Phase 1: PURGE logic - don't learn garbage
+        if (cleanResult.status === 'ignore') {
+            console.log(`🗑️ Dictionary: Skipping learning for junk description: "${raw_description}"`);
             return null;
         }
 
-        // 1. Resolve Merchant ID
+        const canonicalName = cleanResult.clean_name;
+        const normalizedCanonical = this.normalize(canonicalName);
+
         let merchant = null;
 
         if (merchant_id) {
             merchant = this.merchants.get(merchant_id);
-        } else if (merchant_name) {
-            // Try to find by name
-            const normalizedName = this.normalize(merchant_name);
+        } else {
+            // Try to find by canonical name!
             for (const m of this.merchants.values()) {
-                if (m.normalized_name === normalizedName) {
+                if (m.normalized_name === normalizedCanonical) {
                     merchant = m;
                     break;
                 }
             }
 
-            // Still not found? Create it! 
+            // Still not found? Create it using the canonicalized name! 
             if (!merchant) {
-                console.log(`🆕 Auto-creating new merchant: "${merchant_name}"`);
+                // Use categorizer hints if available
+                let cleanCategory = cleanResult.default_category || category || 'Uncategorized';
+                if (cleanCategory.toString().match(/^\d{4}\s+/)) {
+                    cleanCategory = cleanCategory.replace(/^\d{4}\s+/, '');
+                }
+
+                console.log(`🆕 Dictionary: Learning NEW canonical merchant: "${canonicalName}" from "${raw_description}"`);
                 merchant = await this.createMerchant({
-                    display_name: merchant_name,
-                    default_category: category || 'Uncategorized',
-                    source: 'Auto-Learner'
+                    display_name: canonicalName,
+                    default_category: cleanCategory,
+                    default_account: cleanResult.default_account,
+                    industry: cleanResult.industry,
+                    categorization_confidence: cleanResult.confidence,
+                    source: 'Auto-Learner-v4'
                 });
             }
         }
 
         if (!merchant) {
-            console.warn(`⚠️ Merchant ID/Name not provided or could not be created, cannot learn`);
+            console.warn(`⚠️ Merchant could not be resolved or created, cannot learn`);
             return null;
         }
 
         merchant_id = merchant.id;
+
+        // Use v4 cleaned name for the pattern as well (STRIP logic)
+        const pattern = canonicalName;
+        const normalized = normalizedCanonical;
 
         // Initialize description_patterns if needed
         if (!merchant.description_patterns) {
@@ -195,15 +225,13 @@ class MerchantDictionary {
             patternObj.match_count++;
             patternObj.last_seen = new Date().toISOString();
 
-            // Add raw example only if unique (to avoid bloating storage)
+            // Add raw example only if unique
             if (!patternObj.raw_examples.includes(raw_description)) {
                 patternObj.raw_examples.push(raw_description);
-                console.log(`✅ Added new raw variation: "${raw_description}"`);
-            } else {
-                console.log(`✅ Incremented count for existing pattern: "${pattern}" (Count: ${patternObj.match_count})`);
+                console.log(`✅ Dictionary: Linked new variation: "${raw_description}" → ${merchant.display_name}`);
             }
         } else {
-            // New pattern - learn it!
+            // New variation - learn it!
             patternObj = {
                 pattern: pattern,
                 normalized_pattern: normalized,
@@ -227,12 +255,12 @@ class MerchantDictionary {
                 merchant_id: merchant_id
             });
 
-            console.log(`✅ Learned NEW pattern: "${pattern}" → ${merchant.display_name}`);
+            console.log(`✅ Dictionary: Learned pattern variation: "${pattern}" → ${merchant.display_name}`);
         }
 
         // Update merchant stats
         merchant.stats = merchant.stats || {};
-        merchant.stats.total_transactions = (merchant.stats.total_transactions || 0) + 1; // Increment total seen
+        merchant.stats.total_transactions = (merchant.stats.total_transactions || 0) + 1;
         merchant.stats.unique_patterns = merchant.description_patterns.length;
         merchant.stats.unique_raw_descriptions = merchant.description_patterns.reduce(
             (sum, p) => sum + p.raw_examples.length, 0
@@ -242,15 +270,22 @@ class MerchantDictionary {
         // Save merchant
         await this.saveMerchant(merchant);
 
-        // IMPORTANT: raw_description is NEVER modified!
-        // console.log(`✅ Preserved raw: "${raw_description}"`); // Reduced log noise
-
-
         return {
             pattern: pattern,
             merchant: merchant.display_name,
             is_new_pattern: patternObj.match_count === 1
         };
+    }
+
+    async confirmCategorization(rawDescription, category, merchantName) {
+        if (!this.isInitialized) await this.init();
+        console.log(`🧠 Active Learning: Confirming "${rawDescription}" → ${category}`);
+        return await this.learnFromTransaction({
+            raw_description: rawDescription,
+            merchant_name: merchantName || this.extractPattern(rawDescription),
+            category: category,
+            source: 'User-Confirmation'
+        });
     }
 
     // ============================================
@@ -259,67 +294,43 @@ class MerchantDictionary {
 
     async matchTransaction(rawDescription) {
         if (!this.isInitialized) await this.init();
-
         if (!rawDescription) return null;
 
-        // =========================================
-        // Step 0: Pattern Detection (E-Transfers, PAD, etc.)
-        // =========================================
-        // Use PatternDetector for transaction type classification
-        if (window.patternDetector) {
-            const detection = window.patternDetector.detect(rawDescription);
+        // Step 0: v4 Clean Check
+        const cleanResult = window.merchantCategorizer.cleanTransaction(rawDescription);
+        if (cleanResult.status === 'ignore') return null;
 
-            // If high confidence detection (E-Transfer, PAD, etc.)
-            if (detection.confidence >= 0.85 && detection.type !== 'unknown') {
-                // Check if we have this merchant in dictionary
-                const normalized = this.normalize(detection.merchantName);
-                const existingId = this.normalizedIndex.get(normalized);
-
-                if (existingId) {
-                    // Found in dictionary - return with detection metadata
-                    const merchant = this.merchants.get(existingId);
-                    return {
-                        merchant: merchant,
-                        matched_pattern: detection.merchantName,
-                        confidence: detection.confidence,
-                        method: 'pattern_detector',
-                        transactionType: detection.type,
-                        metadata: detection.metadata
-                    };
-                } else {
-                    // New merchant - return detection result for learning
-                    return {
-                        merchant: null,
-                        matched_pattern: detection.merchantName,
-                        confidence: detection.confidence,
-                        method: 'pattern_detector_new',
-                        transactionType: detection.type,
-                        suggestedCategory: detection.category,
-                        metadata: detection.metadata
-                    };
-                }
-            }
-        }
-
-        // =========================================
-        // Step 1: Extract pattern (existing logic)
-        // =========================================
-        const pattern = this.extractPattern(rawDescription);
-        const normalized = this.normalize(pattern);
-
-        // Step 2: Exact match on normalized pattern
+        // Step 1: Exact Match on cleaned name
+        const normalized = this.normalize(cleanResult.clean_name);
         const exactMatch = this.normalizedIndex.get(normalized);
         if (exactMatch) {
             const merchant = this.merchants.get(exactMatch);
             return {
                 merchant: merchant,
-                matched_pattern: pattern,
+                matched_pattern: cleanResult.clean_name,
                 confidence: 1.0,
-                method: 'exact'
+                method: 'v4-exact'
             };
         }
 
-        // Step 3: Fuzzy match
+        // Step 2: Pattern Detector Hook
+        if (window.patternDetector) {
+            const detection = window.patternDetector.detect(rawDescription);
+            if (detection.confidence >= 0.85 && detection.type !== 'unknown') {
+                const normDetect = this.normalize(detection.merchantName);
+                const existingId = this.normalizedIndex.get(normDetect);
+                if (existingId) {
+                    return {
+                        merchant: this.merchants.get(existingId),
+                        matched_pattern: detection.merchantName,
+                        confidence: detection.confidence,
+                        method: 'pattern_detector'
+                    };
+                }
+            }
+        }
+
+        // Step 3: Fuzzy match (Fallback)
         const fuzzyMatch = await this.fuzzyMatch(normalized);
         if (fuzzyMatch && fuzzyMatch.confidence > 0.8) {
             return {
@@ -330,24 +341,11 @@ class MerchantDictionary {
             };
         }
 
-        // Step 4: Pattern match (check if starts with known pattern)
-        const patternMatch = await this.patternMatch(normalized);
-        if (patternMatch) {
-            return {
-                merchant: patternMatch.merchant,
-                matched_pattern: patternMatch.pattern,
-                confidence: patternMatch.confidence,
-                method: 'pattern'
-            };
-        }
-
-        // No match found
         return null;
     }
 
     async fuzzyMatch(normalized) {
         const candidates = [];
-
         for (const [pattern, merchantId] of this.normalizedIndex) {
             const similarity = this.calculateSimilarity(normalized, pattern);
             if (similarity > 0.7) {
@@ -358,74 +356,27 @@ class MerchantDictionary {
                 });
             }
         }
-
-        if (candidates.length > 0) {
-            return candidates.sort((a, b) => b.confidence - a.confidence)[0];
-        }
-
-        return null;
+        return candidates.length > 0 ? candidates.sort((a, b) => b.confidence - a.confidence)[0] : null;
     }
-
-    async patternMatch(normalized) {
-        // Check if normalized starts with any known pattern
-        for (const [pattern, merchantId] of this.normalizedIndex) {
-            if (normalized.startsWith(pattern) || pattern.startsWith(normalized)) {
-                const merchant = this.merchants.get(merchantId);
-                const confidence = Math.min(pattern.length, normalized.length) /
-                    Math.max(pattern.length, normalized.length);
-
-                if (confidence > 0.7) {
-                    return {
-                        merchant: merchant,
-                        pattern: pattern,
-                        confidence: confidence
-                    };
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // ============================================
-    // SIMILARITY CALCULATION (Levenshtein)
-    // ============================================
 
     calculateSimilarity(str1, str2) {
         const longer = str1.length > str2.length ? str1 : str2;
         const shorter = str1.length > str2.length ? str2 : str1;
-
         if (longer.length === 0) return 1.0;
-
         const distance = this.levenshteinDistance(longer, shorter);
         return (longer.length - distance) / longer.length;
     }
 
     levenshteinDistance(str1, str2) {
         const matrix = [];
-
-        for (let i = 0; i <= str2.length; i++) {
-            matrix[i] = [i];
-        }
-
-        for (let j = 0; j <= str1.length; j++) {
-            matrix[0][j] = j;
-        }
-
+        for (let i = 0; i <= str2.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= str1.length; j++) matrix[0][j] = j;
         for (let i = 1; i <= str2.length; i++) {
             for (let j = 1; j <= str1.length; j++) {
-                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
-                } else {
-                    matrix[i][j] = Math.min(
-                        matrix[i - 1][j - 1] + 1,
-                        matrix[i][j - 1] + 1,
-                        matrix[i - 1][j] + 1
-                    );
-                }
+                if (str2.charAt(i - 1) === str1.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+                else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
             }
         }
-
         return matrix[str2.length][str1.length];
     }
 
@@ -435,7 +386,6 @@ class MerchantDictionary {
 
     async createMerchant(data) {
         if (!this.isInitialized) await this.init();
-
         const merchant = {
             id: data.id || `merchant_${Date.now()}`,
             display_name: data.display_name,
@@ -445,23 +395,13 @@ class MerchantDictionary {
             categorization_confidence: data.categorization_confidence || 0.5,
             description_patterns: [],
             aliases: data.aliases || [],
-            website: data.website || null,
             industry: data.industry || null,
-            stats: {
-                total_transactions: 0,
-                total_amount: 0,
-                average_amount: 0,
-                unique_patterns: 0,
-                unique_raw_descriptions: 0
-            },
+            stats: { total_transactions: 0, unique_patterns: 0, unique_raw_descriptions: 0 },
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
-
         this.merchants.set(merchant.id, merchant);
         await this.saveMerchant(merchant);
-
-        console.log(`✅ Created merchant: ${merchant.display_name}`);
         return merchant;
     }
 
@@ -477,283 +417,277 @@ class MerchantDictionary {
 
     async updateMerchant(merchantId, updates) {
         if (!this.isInitialized) await this.init();
-
         const merchant = this.merchants.get(merchantId);
         if (!merchant) return null;
-
         Object.assign(merchant, updates);
         merchant.updated_at = new Date().toISOString();
-
         await this.saveMerchant(merchant);
         return merchant;
     }
 
     async deleteMerchant(merchantId) {
         if (!this.isInitialized) await this.init();
-
         const merchant = this.merchants.get(merchantId);
         if (!merchant) return false;
-
-        // Remove from memory
         this.merchants.delete(merchantId);
-
-        // Remove patterns from indexes
-        if (merchant.description_patterns) {
-            merchant.description_patterns.forEach(p => {
-                this.patternIndex.delete(p.pattern);
-                this.normalizedIndex.delete(p.normalized_pattern);
-            });
-        }
-
-        // Remove from database
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
-            const merchantStore = transaction.objectStore('merchants');
-            const cacheStore = transaction.objectStore('pattern_cache');
-
-            merchantStore.delete(merchantId);
-
-            // Delete all patterns for this merchant
-            const index = cacheStore.index('merchant_id');
+            transaction.objectStore('merchants').delete(merchantId);
+            const index = transaction.objectStore('pattern_cache').index('merchant_id');
             const request = index.openCursor(IDBKeyRange.only(merchantId));
-
-            request.onsuccess = (event) => {
-                const cursor = event.target.result;
-                if (cursor) {
-                    cursor.delete();
-                    cursor.continue();
-                }
+            request.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) { cursor.delete(); cursor.continue(); }
             };
-
             transaction.oncomplete = () => resolve(true);
             transaction.onerror = () => reject(transaction.error);
         });
-    }
 
-    // ============================================
-    // BULK OPERATIONS
-    // ============================================
-
-    async bulkRecategorize(merchantId, newCategory, newAccount) {
-        if (!this.isInitialized) await this.init();
-
-        const merchant = this.merchants.get(merchantId);
-        if (!merchant) {
-            return { success: false, error: 'Merchant not found', count: 0 };
+        // SYNC TO CLOUD
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from('merchants').delete().eq('id', merchantId);
+                if (error) console.error('☁️ Dictionary: Failed to delete merchant from cloud:', error);
+            } catch (e) {
+                console.warn('☁️ Dictionary: Supabase error during deleteMerchant', e);
+            }
         }
 
-        const oldCategory = merchant.default_category;
-        const oldAccount = merchant.default_account;
-
-        // Update merchant defaults
-        merchant.default_category = newCategory;
-        merchant.default_account = newAccount;
-        merchant.updated_at = new Date().toISOString();
-
-        await this.saveMerchant(merchant);
-
-        console.log(`✅ Bulk recategorize: ${merchant.display_name}`);
-        console.log(`   From: ${oldCategory} (${oldAccount})`);
-        console.log(`   To: ${newCategory} (${newAccount})`);
-
-        // Note: Actual transaction updates would happen in the transaction service
-        // This just updates the merchant's defaults
-
-        return {
-            success: true,
-            merchant: merchant.display_name,
-            from: { category: oldCategory, account: oldAccount },
-            to: { category: newCategory, account: newAccount }
-        };
+        return true;
     }
 
-    // ============================================
-    // DATABASE OPERATIONS
-    // ============================================
-
     async saveMerchant(merchant) {
-        return new Promise((resolve, reject) => {
+        // 1. Local Persistence
+        await new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants'], 'readwrite');
-            const store = transaction.objectStore('merchants');
-
-            const request = store.put(merchant);
-
+            const request = transaction.objectStore('merchants').put(merchant);
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
+
+        // 2. Cloud Persistence
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from('merchants').upsert(merchant);
+                if (error) console.error('☁️ Dictionary: Failed to sync merchant to cloud:', error);
+            } catch (e) {
+                console.warn('☁️ Dictionary: Supabase error during saveMerchant', e);
+            }
+        }
     }
 
     async savePatternCache(pattern) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['pattern_cache'], 'readwrite');
-            const store = transaction.objectStore('pattern_cache');
-
-            const request = store.put(pattern);
-
+            const request = transaction.objectStore('pattern_cache').put(pattern);
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
     }
 
-    // ============================================
-    // MERCHANT DETAILS / DRILL-DOWN
-    // ============================================
-
-    async getMerchantDetails(merchantId) {
-        if (!this.isInitialized) await this.init();
-
-        const merchant = this.merchants.get(merchantId);
-        if (!merchant) return null;
-
-        return {
-            merchant: {
-                id: merchant.id,
-                display_name: merchant.display_name,
-                default_category: merchant.default_category,
-                default_account: merchant.default_account,
-                industry: merchant.industry,
-                website: merchant.website
-            },
-            patterns: (merchant.description_patterns || []).map(p => ({
-                pattern: p.pattern,
-                match_count: p.match_count,
-                raw_examples: p.raw_examples.slice(0, 10), // First 10
-                total_raw_examples: p.raw_examples.length,
-                first_seen: p.first_seen,
-                last_seen: p.last_seen,
-                learned_from: p.learned_from_source
-            })),
-            stats: merchant.stats || {}
-        };
-    }
-
-    // ============================================
-    // STATISTICS
-    // ============================================
-
-    async getStats() {
-        if (!this.isInitialized) await this.init();
-
-        const merchants = Array.from(this.merchants.values());
-
-        return {
-            total_merchants: merchants.length,
-            total_patterns: this.patternIndex.size,
-            total_raw_descriptions: merchants.reduce((sum, m) =>
-                sum + (m.stats?.unique_raw_descriptions || 0), 0
-            ),
-            merchants_by_category: this.groupByCategory(merchants),
-            top_merchants: this.getTopMerchants(merchants, 10)
-        };
-    }
-
-    groupByCategory(merchants) {
-        const groups = {};
-        merchants.forEach(m => {
-            const cat = m.default_category || 'Uncategorized';
-            groups[cat] = (groups[cat] || 0) + 1;
-        });
-        return groups;
-    }
-
-    getTopMerchants(merchants, limit) {
-        return merchants
-            .sort((a, b) => (b.stats?.total_transactions || 0) - (a.stats?.total_transactions || 0))
-            .slice(0, limit)
-            .map(m => ({
-                name: m.display_name,
-                transactions: m.stats?.total_transactions || 0,
-                amount: m.stats?.total_amount || 0
-            }));
-    }
-
-    // ============================================
-    // PATTERN DETECTOR INTEGRATION
-    // ============================================
-
     /**
-     * Learn from a pattern detection result
-     * Creates or updates merchant based on detected transaction type
-     * @param {Object} detection - PatternDetector result
-     * @param {Object} transaction - Original transaction data
+     * Bulk save merchants using a single transaction for efficiency/atomicity
      */
-    async learnFromPatternDetection(detection, transaction) {
-        if (!detection || !detection.merchantName) return null;
+    async bulkSaveMerchants(merchants, progressCallback, clearFirst = false) {
+        if (!this.isInitialized) await this.init();
+        if (!Array.isArray(merchants)) return 0;
 
-        // Normalize the detected name
-        const normalized = this.normalize(detection.merchantName);
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+            const store = transaction.objectStore('merchants');
+            const cacheStore = transaction.objectStore('pattern_cache');
+            let saved = 0;
 
-        // Check if merchant exists
-        const existingId = this.normalizedIndex.get(normalized);
+            if (clearFirst) {
+                console.log('🗑️ Dictionary: Clearing before bulk save...');
+                store.clear();
+                cacheStore.clear();
+                this.merchants.clear();
+                this.patternIndex.clear();
+                this.normalizedIndex.clear();
+            }
 
-        if (existingId) {
-            // Update existing merchant with new description
-            const merchant = this.merchants.get(existingId);
-            if (merchant && transaction.description) {
-                // Add to description list if not already present
-                const descLower = transaction.description.toLowerCase();
-                const exists = (merchant.raw_descriptions || [])
-                    .some(d => d.toLowerCase() === descLower);
+            transaction.oncomplete = () => {
+                // Update in-memory map AFTER transaction success
+                merchants.forEach(m => this.merchants.set(m.id, m));
+                console.log(`✅ Bulk save complete: ${saved} merchants persisted`);
+                resolve(saved);
+            };
 
-                if (!exists) {
-                    merchant.raw_descriptions = merchant.raw_descriptions || [];
-                    merchant.raw_descriptions.push(transaction.description);
-                    merchant.stats = merchant.stats || {};
-                    merchant.stats.total_transactions = (merchant.stats.total_transactions || 0) + 1;
+            transaction.onerror = (e) => {
+                console.error('❌ Bulk save transaction failed:', e);
+                reject(e);
+            };
 
-                    // Add transaction type if detected
-                    if (detection.type && detection.type !== 'unknown') {
-                        merchant.transaction_type = detection.type;
+            for (const merchant of merchants) {
+                const request = store.put(merchant);
+                request.onsuccess = () => {
+                    saved++;
+                    if (progressCallback && saved % 500 === 0) {
+                        progressCallback(saved, merchants.length);
                     }
+                };
+            }
+        });
 
-                    await this.saveMerchant(merchant);
+        // SYNC TO CLOUD
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                console.log(`☁️ Dictionary: Pushing ${merchants.length} merchants to cloud...`);
+                const { error } = await window.supabaseService.from('merchants').upsert(merchants);
+                if (error) console.error('☁️ Dictionary: Bulk cloud push failed:', error);
+                else console.log('✅ Dictionary: Bulk cloud push successful');
+            } catch (e) {
+                console.warn('☁️ Dictionary: Supabase error during bulkSaveMerchants', e);
+            }
+        }
+
+        return merchants.length;
+    }
+
+    async bulkCategorizeMerchants(progressCallback) {
+        if (!this.isInitialized) await this.init();
+        const merchants = Array.from(this.merchants.values());
+        let updated = 0;
+        for (let i = 0; i < merchants.length; i++) {
+            const m = merchants[i];
+            const result = window.merchantCategorizer.cleanTransaction(m.display_name);
+            m.display_name = (result.status === 'ignore') ? m.display_name : result.clean_name;
+            m.industry = result.industry || 'Miscellaneous';
+            m.default_account = result.default_account || '5718';
+            m.default_category = result.default_category || 'Miscellaneous';
+            m.categorization_confidence = result.confidence;
+            await this.saveMerchant(m);
+            updated++;
+            if (progressCallback) progressCallback(i, merchants.length, m);
+        }
+        return updated;
+    }
+
+    async clearDictionary() {
+        if (!this.db) await this.init();
+
+        console.log('🗑️ Dictionary: Clearing all entries...');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+            transaction.objectStore('merchants').clear();
+            transaction.objectStore('pattern_cache').clear();
+
+            transaction.oncomplete = () => {
+                this.merchants.clear();
+                this.patternIndex.clear();
+                this.normalizedIndex.clear();
+                console.log('✅ Dictionary cleared successfully');
+                resolve();
+            };
+            transaction.onerror = (e) => {
+                console.error('❌ Failed to clear dictionary:', e);
+                reject(e);
+            };
+        });
+    }
+
+    async importBackup(backupData) {
+        if (!backupData) {
+            console.error('❌ No backup data provided');
+            return;
+        }
+
+        const merchants = backupData.merchants || backupData; // Handle both wrapper and raw array
+        if (!Array.isArray(merchants)) {
+            console.error('❌ Invalid backup format - expected array of merchants');
+            return;
+        }
+
+        console.log(`📥 Importing ${merchants.length} merchants...`);
+        const total = merchants.length;
+        let imported = 0;
+
+        for (const m of merchants) {
+            this.merchants.set(m.id, m);
+            await this.saveMerchant(m);
+
+            // Rebuild pattern indexes
+            if (m.description_patterns) {
+                for (const p of m.description_patterns) {
+                    this.patternIndex.set(p.pattern, m.id);
+                    this.normalizedIndex.set(p.normalized_pattern, m.id);
+                    await this.savePatternCache({
+                        pattern: p.pattern,
+                        normalized: p.normalized_pattern,
+                        merchant_id: m.id
+                    });
                 }
             }
-            return existingId;
-        } else {
-            // Create new merchant from detection
-            const newMerchant = await this.createMerchant({
-                display_name: detection.merchantName,
-                normalized_name: normalized,
-                raw_descriptions: transaction.description ? [transaction.description] : [],
-                default_category: detection.category || 'Uncategorized',
-                transaction_type: detection.type,
-                default_account: null, // Will be assigned by COA matcher
-                stats: {
-                    total_transactions: 1,
-                    total_amount: transaction.amount || 0
-                }
-            });
-
-            console.log(`🆕 Pattern Detector created: ${detection.merchantName} (${detection.type})`);
-            return newMerchant?.id;
+            imported++;
+            if (imported % 500 === 0) console.log(`   Progress: ${imported}/${total}...`);
         }
+
+        console.log(`✅ Successfully imported ${imported} merchants`);
+        return imported;
+    }
+
+    async rebuildPatternCache() {
+        console.log('🔨 Rebuilding pattern cache...');
+
+        // Clear existing pattern cache
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+            const merchantStore = transaction.objectStore('merchants');
+            const cacheStore = transaction.objectStore('pattern_cache');
+
+            // Clear cache first
+            cacheStore.clear();
+
+            // Clear in-memory indexes
+            this.patternIndex.clear();
+            this.normalizedIndex.clear();
+
+            let processed = 0;
+
+            // Rebuild from all merchants
+            merchantStore.openCursor().onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const merchant = cursor.value;
+
+                    // Rebuild from description_patterns
+                    if (merchant.description_patterns) {
+                        for (const p of merchant.description_patterns) {
+                            this.patternIndex.set(p.pattern, merchant.id);
+                            this.normalizedIndex.set(p.normalized_pattern, merchant.id);
+                            cacheStore.put({
+                                pattern: p.pattern,
+                                normalized: p.normalized_pattern,
+                                merchant_id: merchant.id
+                            });
+                        }
+                    }
+
+                    // Also index by merchant canonical/normalized name
+                    if (merchant.canonical_name) {
+                        const norm = this.normalize(merchant.canonical_name);
+                        this.normalizedIndex.set(norm, merchant.id);
+                        cacheStore.put({
+                            pattern: merchant.canonical_name,
+                            normalized: norm,
+                            merchant_id: merchant.id
+                        });
+                    }
+
+                    processed++;
+                    cursor.continue();
+                } else {
+                    console.log(`✅ Rebuilt pattern cache for ${processed} merchants`);
+                }
+            };
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
     }
 }
 
-// ============================================
-// GLOBAL INSTANCE
-// ============================================
-
+// Global Singleton
 window.merchantDictionary = new MerchantDictionary();
-
-// Auto-initialize
-window.addEventListener('DOMContentLoaded', async () => {
-    // Load Pattern Detector if available
-    if (!window.patternDetector) {
-        try {
-            const script = document.createElement('script');
-            script.src = './services/pattern-detector.js';
-            document.head.appendChild(script);
-            console.log('📦 Pattern Detector loaded');
-        } catch (e) {
-            console.warn('⚠️ Pattern Detector not available:', e.message);
-        }
-    }
-
-    await window.merchantDictionary.init();
-    console.log('🏢 Merchant Dictionary ready!');
-});
-
-// Export
-window.MerchantDictionary = MerchantDictionary;
+console.log('📚 Merchant Dictionary v4 (Persistent Cleaning) Loaded');

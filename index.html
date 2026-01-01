@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoBookkeeping v1.3</title>
+  <title>RoboLedgers 4.0</title>
   <link rel="stylesheet" href="src/styles/styles.css">
   <link rel="stylesheet" href="src/styles/import-summary.css">
   <link rel="stylesheet" href="src/styles/roadmap.css">
@@ -16,13 +16,20 @@
   <!-- AG Grid Community -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-quartz.css">
+  <link rel="stylesheet" href="src/styles/ag-grid-fixes.css">
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- SheetJS for Excel Import -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
   <!-- PDF.js for PDF Import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script>
     // Initialize PDF.js - disable worker for file:// protocol to avoid cross-origin issues
     if (window.location.protocol === 'file:') {
@@ -125,11 +132,6 @@
           <span class="nav-label">Roadmap</span>
         </a>
 
-        <a href="#/ai-chat" class="nav-item" data-route="/ai-chat">
-          <i class="ph ph-robot nav-icon"></i>
-          <span class="nav-label">AI Chat</span>
-          <span class="nav-badge blue">NEW</span>
-        </a>
       </div>
 
     </nav>
@@ -206,15 +208,21 @@
   <script src="src/core/system-log.js"></script> <!-- Load early for logging support -->
   <script src="src/data/utils.js"></script>
   <script src="src/data/models.js"></script>
-  <script src="src/data/storage.js"></script>
+  <script src="src/data/storage.js?v=20260101_v5"></script>
+  <script src="src/utils/data-integrity.js?v=20251230_v14"></script>
   <script src="src/data/default-coa.js"></script>
-  <!-- REMOVED CONFLICTING account-chart.js -->
-  <script src="src/data/supabase.js"></script>
+  <!-- Supabase Service -->
+  <script src="src/services/supabase-service.js?v=20260101_v6"></script>
 
   <!-- NEW: Enhanced Import Services -->
+  <script src="src/services/bank-registry.js?v=20251230_v1"></script>
   <script src="src/services/pdf-debug.js"></script>
-  <script src="src/services/pdf-parser.js?v=20251225td_v17_smart"></script>
+  <script src="src/services/pdf-parser.js?v=20251230_v19"></script>
   <script src="src/services/bayesian-matcher.js"></script>
+  <script src="src/services/merchant-categorizer.js?v=20251231_v5"></script>
+  <script src="src/utils/nuclear-cleanup.js"></script>
+  <script src="src/utils/bulk-delete-vendors.js"></script>
+  <script src="src/utils/bulk-operations.js"></script>
   <script src="src/services/upload-history.js"></script>
 
   <!-- Global Modal Service -->
@@ -228,9 +236,11 @@
   <script src="src/services/ai-memory-bridge.js"></script>
   <script src="src/services/ai-context-injector.js"></script>
   <script src="src/services/audit-logger.js"></script>
-  <script src="src/services/merchant-dictionary.js"></script>
+  <script src="src/services/merchant-dictionary.js?v=20260101_v5"></script>
   <script src="src/services/data-junkie.js"></script>
   <script src="src/services/pdf-pre-scanner.js"></script>
+  <script src="src/services/wiki-service.js"></script>
+  <script src="src/services/outsource-service.js"></script>
 
   <!-- AI Knowledge Layer -->
   <script src="src/data/global_vendor_db.js"></script>
@@ -252,13 +262,13 @@
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
-  <script src="src/pages/data-import.js?v=20251223clear"></script>
+  <script src="src/pages/data-import.js?v=20251230_v17"></script>
   <script src="src/pages/profile.js"></script>
   <!-- <script src="src/pages/transactions-fixed.js"></script> LEGACY -->
-  <script src="src/pages/transactions-grid.js?v=20251223ml_v1"></script>
-  <script src="src/pages/vendors.js?v=20251223cols"></script>
+  <script src="src/pages/transactions-grid.js?v=20260101_v3"></script>
+  <script src="src/pages/vendors.js?v=20260101_v3"></script>
   <script src="src/pages/vendorDetail.js"></script>
-  <script src="src/pages/accounts.js?v=20251221ap"></script>
+  <script src="src/pages/accounts.js?v=20251230_v13"></script>
   <script src="src/pages/accountDetail.js"></script>
   <script src="src/pages/reports.js"></script>
   <script src="src/pages/reconciliation.js"></script>
@@ -284,8 +294,18 @@
     <script src="src/data/seed-data.js"></script>
 
 
-
     <script>
+      // Apply saved theme and appearance settings immediately
+      (function () {
+        const theme = localStorage.getItem('preferred_theme') || 'daylight';
+        const fontSize = localStorage.getItem('ab_font_size') || 'medium';
+        const compactMode = localStorage.getItem('ab_compact_mode') === 'true';
+
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-font-size', fontSize);
+        if (compactMode) document.documentElement.classList.add('ultra-compact');
+      })();
+
       // Initialize application state
       const appState = createStore({
         currentUser: null,
@@ -336,43 +356,38 @@
         }
       }
 
-      // CLEANUP: Remove old localStorage keys from previous versions
+      // CLEANUP: Remove old localStorage keys and corrupted entries
       function cleanupOldStorage() {
-        // Remove old 'transactions' key (we now use 'ab3_transactions')
-        if (localStorage.getItem('transactions')) {
-          console.log('🧹 Cleaning up old localStorage key: transactions');
-          localStorage.removeItem('transactions');
+        // 1. Target specifically corrupted "undefined" strings
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          const val = localStorage.getItem(key);
+          if (val === 'undefined' || val === 'null' || !val) {
+            console.warn(`🧹 Purging corrupted/empty localStorage key: ${key}`);
+            localStorage.removeItem(key);
+            i--;
+          }
         }
-        // Remove any other legacy keys if needed
-        if (localStorage.getItem('openingBalance')) {
-          console.log('🧹 Migrating openingBalance to ab3_settings');
-          const balance = localStorage.getItem('openingBalance');
-          localStorage.removeItem('openingBalance');
-          // Note: Opening balance will be managed through settings now
+        // 2. Remove old legacy keys
+        if (localStorage.getItem('transactions')) {
+          localStorage.removeItem('transactions');
         }
       }
 
-      // Run cleanup immediately
       cleanupOldStorage();
 
-      // Initialize data when DOM is ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeDataLayer);
       } else {
-        // Already loaded
         setTimeout(initializeDataLayer, 0);
       }
 
-      // Active nav updater
       function updateActiveNav(path) {
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
           const route = item.getAttribute('data-route');
           if (!route) return;
-
-          // Exact match or starts with (for nested routes)
-          if (route === path ||
-            (path !== '/' && path.startsWith(route) && route !== '/')) {
+          if (route === path || (path !== '/' && path.startsWith(route) && route !== '/')) {
             item.classList.add('active');
           } else {
             item.classList.remove('active');
@@ -380,9 +395,10 @@
         });
       }
 
-      // Update breadcrumb and nav on route change
       router.onChange((route) => {
-        breadcrumbManager.update(route.path, route.params);
+        if (window.breadcrumbManager) {
+          window.breadcrumbManager.update(route.path, route.params);
+        }
         updateActiveNav(route.path);
       });
 
@@ -393,96 +409,86 @@
       const mainContent = document.querySelector('.main-content');
 
       hamburger?.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        appState.setState({ sidebarOpen: true });
+        sidebar?.classList.add('open');
       });
 
       sidebarClose?.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        appState.setState({ sidebarOpen: false });
+        sidebar?.classList.remove('open');
       });
 
-      // Close sidebar when clicking outside on mobile
       mainContent?.addEventListener('click', () => {
-        if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
-          sidebar.classList.remove('open');
-          appState.setState({ sidebarOpen: false });
+        if (window.innerWidth < 768 && sidebar?.classList.contains('open')) {
+          sidebar?.classList.remove('open');
         }
       });
 
       // ====================================
       // ROUTE REGISTRATION
       // ====================================
-
-      // Home page renders inline for simplicity
+      // Home page renders inline for simplicity if not using external file
       function renderHomePage() {
         return `
-        <div class="page">
-          <div class="page-header">
-            <h1 class="page-title">Welcome to AutoBookkeeping v3.0</h1>
-            <p class="page-subtitle">Your intelligent bookkeeping assistant</p>
+          <div class="page">
+            <div class="page-header">
+              <h1 class="page-title">Welcome to RoboLedgers 4.0</h1>
+              <p class="page-subtitle">Your intelligent bookkeeping assistant</p>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="card stat-card">
+                <div class="stat-icon">💰</div>
+                <h3>Total Transactions</h3>
+                <p class="stat-value" id="dash-transactions">-</p>
+                <a href="#/transactions" class="stat-link">View all →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">🏢</div>
+                <h3>Vendors</h3>
+                <p class="stat-value" id="dash-vendors">-</p>
+                <a href="#/vendors" class="stat-link">Manage →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">📊</div>
+                <h3>Accounts</h3>
+                <p class="stat-value" id="dash-accounts">-</p>
+                <a href="#/accounts" class="stat-link">View chart →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">📈</div>
+                <h3>Reports</h3>
+                <p class="stat-value">Ready</p>
+                <a href="#/reports" class="stat-link">Generate →</a>
+              </div>
+            </div>
+
+            <div class="card quick-actions">
+              <h2>Quick Actions</h2>
+              <div class="action-buttons">
+                <button class="btn-primary" onclick="window.router.navigate('/data-import')">📥 Import Transactions</button>
+                <button class="btn-secondary" onclick="window.router.navigate('/vendors/new')">➕ Add Vendor</button>
+                <button class="btn-secondary" onclick="window.router.navigate('/settings')">⚙️ Settings</button>
+              </div>
+            </div>
           </div>
-
-          <div class="dashboard-grid">
-            <div class="card stat-card">
-              <div class="stat-icon">💰</div>
-              <h3>Total Transactions</h3>
-              <p class="stat-value">0</p>
-              <a href="#/transactions" class="stat-link">View all →</a>
-            </div>
-
-            <div class="card stat-card">
-              <div class="stat-icon">🏢</div>
-              <h3>Vendors</h3>
-              <p class="stat-value">0</p>
-              <a href="#/vendors" class="stat-link">Manage →</a>
-            </div>
-
-            <div class="card stat-card">
-              <div class="stat-icon">📊</div>
-              <h3>Accounts</h3>
-              <p class="stat-value">0</p>
-              <a href="#/accounts" class="stat-link">View chart →</a>
-            </div>
-
-            <div class="card stat-card">
-              <div class="stat-icon">📈</div>
-              <h3>Reports</h3>
-              <p class="stat-value">Ready</p>
-              <a href="#/reports" class="stat-link">Generate →</a>
-            </div>
-          </div>
-
-          <div class="card quick-actions">
-            <h2>Quick Actions</h2>
-            <div class="action-buttons">
-              <button class="btn-primary">📥 Import Transactions</button>
-              <button class="btn-secondary">➕ Add Vendor</button>
-              <button class="btn-secondary">📋 Create Rule</button>
-            </div>
-          </div>
-        </div>
-      `;
+        `;
       }
 
-      // Initialize session on app load
-      Session.init().then(authenticated => {
-        if (!authenticated) {
-          console.log('No active session, will show login modal for protected routes');
-        }
-      });
-
-      // Home/Dashboard
-      // Home/Dashboard
+      // Root Route
       router.register('/', async () => {
         const app = document.getElementById('app');
-        app.innerHTML = '<div class="page loading"><div class="spinner"></div><p>Loading Command Center...</p></div>';
+        app.innerHTML = '<div class="page"><p>Loading Command Center...</p></div>';
         try {
-          const html = await window.renderHome();
-          app.innerHTML = html;
+          if (window.renderHome) {
+            app.innerHTML = await window.renderHome();
+          } else {
+            app.innerHTML = renderHomePage();
+          }
         } catch (e) {
           console.error('Dashboard render error:', e);
-          app.innerHTML = '<div class="page error"><p>Failed to load dashboard.</p></div>';
+          app.innerHTML = '<div class="page"><p>Failed to load dashboard.</p></div>';
         }
       });
 
@@ -535,14 +541,9 @@
 
       // Vendors List
       router.register('/vendors', () => {
-        const phtml = renderVendors();
-        console.log('🧭 Router: Received HTML for vendors. Length:', phtml ? phtml.length : 'NULL');
-        document.getElementById('app').innerHTML = phtml;
-
-        // Force init explicitly after DOM insertion
+        document.getElementById('app').innerHTML = renderVendors();
         setTimeout(() => {
           if (typeof initVendorsGrid === 'function') {
-            console.log('🧭 Router: Triggering Grid Init...');
             initVendorsGrid();
           }
         }, 50);
@@ -660,6 +661,10 @@
         document.getElementById('app').innerHTML = renderSettings({ panel: 'general' });
       });
 
+      router.register('/settings/accounts', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'accounts' });
+      });
+
       router.register('/settings/appearance', () => {
         document.getElementById('app').innerHTML = renderSettings({ panel: 'appearance' });
       });
@@ -691,7 +696,7 @@
             <p>Team management features coming soon</p>
           </div>
         </div>
-      `;
+        `;
       });
 
       // Roadmap
@@ -728,7 +733,7 @@
             </div>
           </div>
         </div>
-      `;
+        `;
       });
 
       router.register('/indexer', () => {

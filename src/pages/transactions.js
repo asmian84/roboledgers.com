@@ -6,6 +6,9 @@
 if (typeof window.transactionData === 'undefined') {
   window.transactionData = [];
 }
+if (typeof window.selectedTransactionIds === 'undefined') {
+  window.selectedTransactionIds = new Set();
+}
 
 // Ensure at least one dummy data for visualization if empty
 if (window.transactionData.length === 0) {
@@ -39,6 +42,19 @@ if (window.transactionData.length === 0) {
     }
   ];
 }
+
+// Inject CSS for Transactions Page Improvements
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+    .row-selected { background: #f8fafc !important; }
+    .w-actions { width: 80px; text-align: center; }
+    .btn-icon-xs { border: none; background: #f1f5f9; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 12px; transition: all 0.2s; color: #475569; }
+    .btn-icon-xs:hover { background: #e2e8f0; transform: scale(1.1); }
+    .btn-icon-xs.text-red { color: #ef4444; }
+    .btn-icon-xs.text-red:hover { background: #fee2e2; }
+    .uc-table tr.row-selected td { border-bottom: 2px solid #3b82f6; }
+`;
+document.head.appendChild(styleSheet);
 
 window.renderTransactions = function () {
   const opening = 0.00;
@@ -79,6 +95,14 @@ window.renderTransactions = function () {
             </div>
             
             <div class="control-right btn-group">
+               ${window.selectedTransactionIds && window.selectedTransactionIds.size > 0 ? `
+                 <button class="uc-btn uc-btn-primary" style="background: #8b5cf6;" onclick="window.bulkCategorizePrompt()">
+                   ✨ Bulk Categorize (${window.selectedTransactionIds.size})
+                 </button>
+                 <button class="uc-btn uc-btn-outline" onclick="window.selectedTransactionIds.clear(); window.renderApp();">
+                   ✕ Clear Selection
+                 </button>
+               ` : ''}
                <button class="uc-btn uc-btn-outline" onclick="showCSVImport()">
                  📥 Import CSV
                </button>
@@ -100,17 +124,16 @@ window.renderTransactions = function () {
         <table class="uc-table">
           <thead>
             <tr>
-              <th class="w-check"><input type="checkbox"></th>
-              <th class="w-ref">REF #</th>
+              <th class="w-check">
+                <input type="checkbox" id="select-all-transactions" onchange="window.toggleAllTransactions(this.checked)">
+              </th>
               <th class="w-date">DATE</th>
-              <th class="w-payee">PAYEE</th>
-              <th class="w-icon">📎</th>
-              <th class="w-icon">⑃</th>
-              <th class="w-reconcile">✓</th>
+              <th class="w-payee">PAYEE / DESCRIPTION</th>
               <th class="w-account">ACCOUNT</th>
               <th class="w-amount">DEBIT</th>
               <th class="w-amount">CREDIT</th>
-              <th class="w-amount">BALANCE</th>
+              <th class="w-status">STATUS</th>
+              <th class="w-actions">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -163,17 +186,26 @@ function renderTableRows() {
         </div>
     `;
 
+    // Format Date 1:1 with Import Grid (DD/MM/YYYY)
+    let displayDate = txn.date;
+    try {
+      const dObj = new Date(txn.date);
+      if (!isNaN(dObj.getTime())) {
+        displayDate = dObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+    } catch (e) { }
+
+    const isSelected = window.selectedTransactionIds.has(txn.id || index.toString());
+    const status = (txn.category && txn.category !== 'Uncategorized') || (txn.accountDescription && txn.accountDescription !== 'Uncategorized') ? 'Matched' : 'Unmatched';
+    const statusColor = status === 'Matched' ? '#10b981' : '#f59e0b';
+
     return `
-      <tr>
-        <td class="w-check"><input type="checkbox"></td>
-        <td class="w-ref">${txn.refNumber}</td>
-        <td class="w-date">${txn.date}</td>
-        <td class="w-payee">${txn.description}</td>
-        <td class="w-icon clickable">📎</td>
-        <td class="w-icon clickable icon-split">⑃</td>
-        <td class="w-reconcile">
-            <span class="reconcile-dot ${txn.reconciled ? 'checked' : ''}" onclick="toggleReconcile(${index})"></span>
+      <tr class="${isSelected ? 'row-selected' : ''}">
+        <td class="w-check">
+            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.toggleTransactionSelection('${txn.id || index}', this.checked)">
         </td>
+        <td class="w-date">${displayDate}</td>
+        <td class="w-payee" style="font-weight: 500;">${(txn.description || '').toUpperCase()}</td>
         <td class="w-account">
             <div class="smart-dropdown-wrapper">
                 <div class="smart-pill ${txn.accountDescription === 'Meals & Entertainment (95%)' ? 'smart-pill-highlight' : ''}" onclick="toggleDropdown(${index})">
@@ -184,11 +216,44 @@ function renderTableRows() {
         </td>
         <td class="w-amount">${debit > 0 ? '$' + debit.toFixed(2) : ''}</td>
         <td class="w-amount text-green">${credit > 0 ? '$' + credit.toFixed(2) : ''}</td>
-        <td class="w-amount" style="font-weight: 600;">$${runningBalance.toFixed(2)}</td>
+        <td class="w-status">
+            <span style="font-size: 0.75rem; font-weight: 600; color: ${statusColor}; background: ${statusColor}15; padding: 2px 6px; border-radius: 4px;">
+                ${status}
+            </span>
+        </td>
+        <td class="w-actions">
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="btn-icon-xs" title="Swap Sign" onclick="window.swapTransactionSign(${index})">⇄</button>
+                <button class="btn-icon-xs text-red" title="Delete" onclick="window.deleteLedgerTransaction(${index})">✕</button>
+            </div>
+        </td>
       </tr>
     `;
   }).join('');
 }
+
+// --- BULK SELECTION HANDLERS ---
+
+window.toggleTransactionSelection = function (id, isSelected) {
+  if (isSelected) {
+    window.selectedTransactionIds.add(id);
+  } else {
+    window.selectedTransactionIds.delete(id);
+  }
+  // Re-render only rows would be better but for legacy we re-render app or local
+  window.renderApp();
+};
+
+window.toggleAllTransactions = function (isSelected) {
+  if (isSelected) {
+    window.transactionData.forEach((txn, index) => {
+      window.selectedTransactionIds.add(txn.id || index.toString());
+    });
+  } else {
+    window.selectedTransactionIds.clear();
+  }
+  window.renderApp();
+};
 
 // --- INTERACTIVITY ---
 
@@ -228,6 +293,103 @@ window.toggleReconcile = function (index) {
   }
   saveTransactions();
 };
+
+// --- BULK ACTION LOGIC ---
+
+window.bulkCategorizePrompt = async function () {
+  if (window.selectedTransactionIds.size === 0) return;
+
+  // Use custom prompt or standard for now
+  const category = prompt("Enter category for selected items:");
+  if (!category) return;
+
+  let count = 0;
+  window.transactionData.forEach((txn, index) => {
+    if (window.selectedTransactionIds.has(txn.id || index.toString())) {
+      txn.accountDescription = category;
+      txn.category = category; // Sync both fields
+      count++;
+    }
+  });
+
+  window.selectedTransactionIds.clear();
+  window.renderApp();
+  saveTransactions();
+  window.showToast(`Updated ${count} transactions to "${category}"`, 'success');
+};
+
+window.swapTransactionSign = function (index) {
+  const txn = window.transactionData[index];
+  if (!txn) return;
+
+  // Simple toggle between debit/credit
+  const temp = txn.debit;
+  txn.debit = txn.credit;
+  txn.credit = temp;
+
+  window.renderApp();
+  saveTransactions();
+  window.showToast('Sign swapped', 'info');
+};
+
+window.deleteLedgerTransaction = async function (index) {
+  const txn = window.transactionData[index];
+  if (!txn) return;
+
+  if (!confirm(`Are you sure you want to delete "${txn.description}"?`)) return;
+
+  window.transactionData.splice(index, 1);
+  window.renderApp();
+  saveTransactions();
+  window.showToast('Transaction deleted', 'success');
+};
+
+// --- AI INTELLIGENCE WIRING ---
+
+window.categorizeLedger = async function () {
+  console.log('🔮 Transactions: Starting Ledger Intelligence scan...');
+  let updatedCount = 0;
+
+  for (const txn of window.transactionData) {
+    // Only categorize if uncategorized or "Uncategorized" label
+    if (txn.accountDescription && txn.accountDescription !== 'Uncategorized') continue;
+
+    let match = null;
+
+    // 1. Regex Pattern Match (from data-import style)
+    if (window.patternDetector) {
+      const detection = window.patternDetector.detect(txn.description);
+      if (detection && detection.confidence > 0.6) {
+        match = { category: detection.category };
+      }
+    }
+
+    // 2. Dictionary Match
+    if (window.merchantDictionary) {
+      const dictMatch = await window.merchantDictionary.matchTransaction(txn.description);
+      if (dictMatch) {
+        match = { category: dictMatch.merchant?.default_category || dictMatch.suggestedCategory };
+      }
+    }
+
+    if (match) {
+      txn.accountDescription = match.category;
+      txn.category = match.category;
+      updatedCount++;
+    }
+  }
+
+  if (updatedCount > 0) {
+    console.log(`✅ Ledger Intelligence: Matched ${updatedCount} transactions.`);
+    window.renderApp();
+    saveTransactions();
+  }
+};
+
+// Start intelligence after a short delay
+setTimeout(() => {
+  if (window.categorizeLedger) window.categorizeLedger();
+}, 1500);
 
 window.addNewTransaction = function () {
   window.transactionData.unshift({
