@@ -149,6 +149,19 @@ class SupabaseClient {
             hasKey: !!this.anonKey
         };
     }
+    // Get or Create Persistent User ID
+    getUserId() {
+        let userId = localStorage.getItem('supabase_user_id');
+        if (!userId) {
+            // Generate a random UUID-like string if none exists
+            userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            localStorage.setItem('supabase_user_id', userId);
+        }
+        return userId;
+    }
 }
 
 // Create global instance

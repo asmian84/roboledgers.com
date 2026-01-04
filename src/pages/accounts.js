@@ -6,26 +6,40 @@
 window.renderAccounts = function () {
   return `
     <style>
-      .coa-wrapper {
+      /* Layout Container */
+      /* Layout Container */
+      .ai-brain-page {
         width: 100%;
-        height: 100vh;
-        overflow: hidden;
-        background: var(--bg-secondary, #f8fafc);
-        font-family: var(--font-family, sans-serif);
+        min-height: 100%; /* Allow growth */
         display: flex;
         flex-direction: column;
-        padding: 1.5rem;
+        background: var(--bg-secondary, #f8fafc);
+        font-family: var(--font-family, sans-serif);
+      }
+      
+      /* NATURAL SCROLLING ENABLED */
+      /* We explicitly allow the main window to scroll by NOT constraining body/html */
+
+      /* Unified Header */
+/* Unused fixed-top-section removed */
+      
+      .header-brand { display: flex; align-items: center; gap: 12px; }
+      .icon-box {
+        width: 40px; height: 40px;
+        background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+        color: white; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem;
       }
 
-      .coa-header {
-        margin-bottom: 1rem;
-        flex-shrink: 0;
-      }
-
+      /* Scroll Container - Natural Height */
       .coa-scroll-container {
-        flex: 1;
-        overflow-y: auto;
-        padding-bottom: 1rem;
+        height: auto;
+        padding: 1rem;
+        max-width: 1000px;
+        width: 100%;
+        margin: 0 auto;
+        overflow: visible;
       }
 
       /* ACCORDION ROW */
@@ -61,14 +75,13 @@ window.renderAccounts = function () {
         padding: 0.5rem 1.25rem;
         cursor: pointer;
         user-select: none;
-        height: 48px; /* Slightly taller than 42px for better touch targets, still snug */
+        height: 48px;
       }
 
       .coa-row-header:hover {
         background: var(--bg-subtle, #f8fafc);
       }
 
-      /* Icons removed as requested */
       .row-info { flex: 1; }
 
       .row-title {
@@ -81,8 +94,6 @@ window.renderAccounts = function () {
         gap: 8px;
       }
       
-      .row-subtitle { display: none; } /* Hide subtitle for cleaner look if present */
-
       .row-count-badge {
         font-size: 0.75rem;
         background: var(--bg-tertiary, #f1f5f9);
@@ -93,7 +104,7 @@ window.renderAccounts = function () {
       }
 
       .row-desc-preview {
-        font-size: 0.85rem; /* Slightly larger for readability */
+        font-size: 0.85rem;
         color: var(--text-tertiary, #94a3b8);
         margin-left: 1rem;
         font-weight: 400;
@@ -116,32 +127,49 @@ window.renderAccounts = function () {
         height: 0;
         overflow: hidden;
         transition: height 0.4s cubic-bezier(0.33, 1, 0.68, 1);
-        background: var(--bg-surface, #ffffff); /* Match row bg for seamless look */
+        background: var(--bg-surface, #ffffff);
         border-top: 1px solid var(--border-color, #e2e8f0);
       }
       
       .coa-grid-placeholder {
         height: 100%; 
         width: 100%; 
-        padding: 0; /* No padding for snug fit */
+        padding: 0;
         display: flex; 
         flex-direction: column;
       }
 
       /* Category Indicating Left Borders */
       .theme-asset { border-left: 4px solid #10b981; }
-      .theme-liability { border-left: 4px solid #ef4444; } /* Fixed typo */
+      .theme-liability { border-left: 4px solid #ef4444; }
       .theme-equity { border-left: 4px solid #8b5cf6; }
       .theme-revenue { border-left: 4px solid #3b82f6; }
       .theme-expense { border-left: 4px solid #f59e0b; }
 
     </style>
 
-    <div class="coa-wrapper">
-      <div class="coa-header">
-        <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">Chart of Accounts</h1>
+    <div class="ai-brain-page">
+      
+      <!-- NATURAL FLOW HEADER -->
+      <div class="std-page-header">
+         <div class="header-brand">
+             <div class="icon-box"><i class="ph ph-books"></i></div>
+             <div>
+                 <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Chart of Accounts</h1>
+                 <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Manage your financial categories</p>
+             </div>
+         </div>
+         <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" onclick="window.exportCoaToExcel()" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #334155;">
+                <i class="ph ph-export" style="margin-right:4px;"></i> Export
+            </button>
+            <button onclick="addNewAccount()" style="padding: 6px 12px; border: 1px solid #3b82f6; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+                <i class="ph ph-plus" style="margin-right:4px;"></i> Add Account
+            </button>
+         </div>
       </div>
 
+      <!-- MAIN SCROLLABLE CONTENT -->
       <div class="coa-scroll-container">
         
         <!-- ASSETS -->
@@ -150,7 +178,6 @@ window.renderAccounts = function () {
             <div class="row-info">
               <div class="row-title">
                 Assets 
-                <!-- <span class="row-count-badge">--</span> -->
                 <span class="row-desc-preview">Cash, Inventory, Equipment</span>
               </div>
             </div>
@@ -239,7 +266,6 @@ window.toggleCoARow = function (type) {
   const contentId = 'content-' + type;
   const row = document.getElementById(rowId);
   const content = document.getElementById(contentId);
-  const container = document.querySelector('.coa-scroll-container');
 
   // If clicking already active row, collapse it
   if (currentActiveRow === type) {
@@ -252,43 +278,49 @@ window.toggleCoARow = function (type) {
   collapseAllRows();
 
   // 2. Expand this one
-  if (row && content && container) {
+  if (row && content) {
     row.classList.add('active');
 
-    // Dynamic Height Calculation:
-    // Available Height = Container Height - (Header Heights * 5) - Margins
-    // Roughly fill 70-80% of remaining space or at least 500px
-    const containerHeight = container.clientHeight || 800;
-    const reservedHeight = (5 * 60) + 100; // Headers + margins
-    const targetHeight = Math.max(500, containerHeight - reservedHeight);
+    // Natural Height Expansion for Page Scrolling
+    content.style.height = 'auto';
+    content.style.overflow = 'visible';
+    content.style.minHeight = '300px';
 
-    content.style.height = targetHeight + 'px';
-
-    // 3. Move Grid into this content
+    // 3. Move Grid into this content (Robust Re-attachment)
     const gridEl = document.getElementById('sharedAccountsGrid');
+    if (gridEl) {
+      // Create a wrapper
+      const gridContainer = document.createElement('div');
+      gridContainer.className = 'coa-grid-placeholder';
+      gridContainer.style.height = 'auto'; // allow natural growth
+      gridContainer.style.width = '100%';
 
-    // Ensure grid takes up space
-    const gridContainer = document.createElement('div');
-    gridContainer.className = 'coa-grid-placeholder';
-    gridContainer.appendChild(gridEl);
+      // Move shared grid element into this new container
+      gridContainer.appendChild(gridEl);
 
-    // Clear current content and append grid
-    content.innerHTML = '';
-    content.appendChild(gridContainer);
+      // Clear current content and append wrapper
+      content.innerHTML = '';
+      content.appendChild(gridContainer);
+    } else {
+      console.error("CRITICAL: Shared Grid Element Not Found");
+    }
 
     currentActiveRow = type;
 
-    // 4. Initialize/Filter Grid
+    // 4. Initialize/Filter Grid with Retry Logic
+    // Wait for CSS transition (approx 300ms) plus a buffer
     setTimeout(() => {
-      if (!window.accountsGridApi) {
-        // First init needs to target the shared ID
-        initAccountsGrid(type); // Pass filter
+      if (!window.accountsGridApi || window.accountsGridApi.destroyCalled) {
+        initAccountsGrid(type);
       } else {
         window.applyCoAFilter(type);
-        // Force layout refresh since it moved in DOM
+        // Switch to autoHeight to let it grow naturally
+        window.accountsGridApi.setGridOption('domLayout', 'autoHeight');
         window.accountsGridApi.sizeColumnsToFit();
+        // Often needed if the container started at 0 height
+
       }
-    }, 450); // Wait for transition (slightly longer than CSS transition)
+    }, 450);
   }
 };
 
@@ -299,7 +331,8 @@ function collapseAllRows() {
     if (r) r.classList.remove('active');
     if (c) {
       c.style.height = '0';
-      // Don't remove innerHTML immediately to allow transition
+      c.style.minHeight = '0'; // RESET min-height
+      c.style.overflow = 'hidden'; // RESET overflow
     }
   });
 }
@@ -326,6 +359,11 @@ let accountsGridApi;
 // Initialize the grid with data from storage
 async function initAccountsGrid(initialFilterType = null) {
   console.log('🔷 Initializing Chart of Accounts Grid (Shared Instance)...');
+
+  // Refresh balances first to ensure latest data
+  if (window.refreshAccountBalances) {
+    window.refreshAccountBalances();
+  }
 
   // TARGET THE SHARED GRID ELEMENT
   const gridDiv = document.querySelector('#sharedAccountsGrid');
@@ -379,14 +417,16 @@ async function initAccountsGrid(initialFilterType = null) {
       field: 'name',
       sortable: true,
       filter: true,
-      flex: 1
+      flex: 2,
+      minWidth: 200
     },
     {
       headerName: 'Type',
       field: 'type',
       sortable: true,
       filter: true,
-      width: 150,
+      width: 120,
+      type: 'numericColumn',
       valueFormatter: params => {
         if (!params.value) return '';
         // Capitalize first letter (asset -> Asset)
@@ -395,11 +435,39 @@ async function initAccountsGrid(initialFilterType = null) {
     },
     {
       headerName: 'Balance',
-      field: 'currentBalance',
-      width: 150,
-      valueFormatter: (params) => {
-        return params.value ? '$' + parseFloat(params.value).toFixed(2) : '-';
+      field: 'balance',
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        if (val === 0) return '$0.00';
+        const formatted = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(Math.abs(val));
+
+        // Show negative balances in parentheses
+        return val < 0 ? `($${formatted})` : `$${formatted}`;
+      },
+      cellStyle: params => {
+        const val = parseFloat(params.value) || 0;
+        return {
+          fontWeight: '600',
+          color: val < 0 ? '#ef4444' : val > 0 ? '#10b981' : '#64748b'
+        };
       }
+    },
+    {
+      headerName: 'Tx',
+      field: 'transactionCount',
+      width: 80,
+      type: 'numericColumn',
+      headerTooltip: 'Transaction Count',
+      valueFormatter: params => {
+        const val = parseInt(params.value) || 0;
+        return val === 0 ? '-' : val.toString();
+      },
+      cellStyle: { textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }
     },
     {
       headerName: '',
@@ -415,6 +483,7 @@ async function initAccountsGrid(initialFilterType = null) {
   const gridOptions = {
     columnDefs: columnDefs,
     rowData: accountData,
+    domLayout: 'autoHeight', // Enable Natural Scrolling
     defaultColDef: {
       sortable: true,
       filter: true,
@@ -423,7 +492,8 @@ async function initAccountsGrid(initialFilterType = null) {
     },
     animateRows: true,
     suppressHorizontalScroll: false,
-    headerHeight: 48,
+    headerHeight: 40,
+    rowHeight: 38,
     onGridReady: (event) => {
       console.log('✅ Chart of Accounts grid ready');
       accountsGridApi = event.api;

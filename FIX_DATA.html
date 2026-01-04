@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>FIX YOUR DATA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: monospace;
+            background: #1e293b;
+            color: #10b981;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #10b981;
+            color: #1e293b;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #059669;
+        }
+
+        #log {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin: 20px 0;
+            padding: 10px;
+            background: white;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>⚠️ EMERGENCY DATA RESTORE</h1>
+    <p>Your IndexedDB keeps getting cleared. This will restore it PROPERLY.</p>
+
+    <input type="file" id="file" accept=".json">
+    <button onclick="restore()">RESTORE NOW (Synchronous)</button>
+    <div id="log"></div>
+
+    <script>
+        let data = null;
+        const log = (msg) => document.getElementById('log').innerHTML += msg + '\n';
+
+        document.getElementById('file').onchange = async (e) => {
+            try {
+                const text = await e.target.files[0].text();
+                const parsed = JSON.parse(text);
+                data = Array.isArray(parsed) ? parsed : (parsed.merchants || Object.values(parsed)[0]);
+                log(`✅ Loaded ${data.length} items`);
+            } catch (err) {
+                log(`❌ ${err.message}`);
+            }
+        };
+
+        function restore() {
+            if (!data) { alert('Select file first!'); return; }
+
+            log('\n🔧 Opening DB...');
+            const req = indexedDB.open('MerchantDictionaryDB', 1);
+
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('merchants')) {
+                    db.createObjectStore('merchants', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('pattern_cache')) {
+                    db.createObjectStore('pattern_cache');
+                }
+                log('✅ DB created');
+            };
+
+            req.onsuccess = (e) => {
+                const db = e.target.result;
+                log('✅ DB opened');
+
+                // CLEAR
+                log('🗑️ Clearing...');
+                const clearTx = db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+                clearTx.objectStore('merchants').clear();
+                clearTx.objectStore('pattern_cache').clear();
+
+                clearTx.oncomplete = () => {
+                    log('✅ Cleared');
+
+                    // IMPORT
+                    log(`💾 Importing ${data.length} items...`);
+                    const tx = db.transaction('merchants', 'readwrite');
+                    const store = tx.objectStore('merchants');
+
+                    let count = 0;
+                    for (const item of data) {
+                        store.add(item);
+                        count++;
+                        if (count % 1000 === 0) log(`   ${count}/${data.length}...`);
+                    }
+
+                    tx.oncomplete = () => {
+                        log(`✅ DONE! ${count} items saved`);
+                        log('\n🎯 Data is NOW in IndexedDB.');
+                        log('👉 Refresh vendors page to see it.');
+                        db.close();
+
+                        setTimeout(() => {
+                            window.location.href = 'index.html#/vendors';
+                        }, 2000);
+                    };
+
+                    tx.onerror = () => log(`❌ Import failed: ${tx.error}`);
+                };
+            };
+
+            req.onerror = () => log(`❌ DB error: ${req.error}`);
+        }
+    </script>
+</body>
+
+</html>

@@ -440,6 +440,9 @@ body {
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
+  /* Safeguard: Ensure breadcrumb stays above content */
+  position: relative;
+  z-index: 10;
 }
 
 .breadcrumb::-webkit-scrollbar {
@@ -1592,10 +1595,19 @@ button {
 
 
 /* Dropdown */
-.dropdown {
-  position: relative;
-  display: inline-block;
+
+/* Standardized Page Header */
+.std-page-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
+
+
 
 .dropdown-toggle {
   cursor: pointer;
@@ -4293,7 +4305,7 @@ button {
 }
 
 .grid-empty-state img {
-  max-width: 380px;
+  max-width: 270px;
   width: 100%;
   margin-bottom: 24px;
 }
@@ -4332,7 +4344,7 @@ button {
   }
 
   .grid-empty-state img {
-    max-width: 240px;
+    max-width: 170px;
   }
 }
 

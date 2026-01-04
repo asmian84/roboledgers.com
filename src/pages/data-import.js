@@ -132,6 +132,24 @@ async function handleBatchHistoryLoad() {
     renderBatchList();
 }
 
+window.handleLoadAllHistory = function () {
+    const history = getImportHistory();
+    if (history.length === 0) {
+        window.showToast('No history to load', 'info');
+        return;
+    }
+
+    // Select all
+    window.selectedHistoryIds = new Set(history.map(item => item.id));
+
+    // Refresh list to show selection (visual feedback)
+    renderBatchList();
+
+    // Trigger load
+    handleBatchHistoryLoad();
+    window.showToast(`Loading all ${history.length} batches...`, 'info');
+};
+
 
 window.renderBatchList = function () {
     const listEl = document.getElementById('batch-list');
@@ -214,7 +232,7 @@ window.renderDataImportPage = function () {
             
             <!-- FIXED TOP -->
             <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
-                <header class="dashboard-header-modern" style="background: white; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <header class="std-page-header">
                     <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
                         <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">📥</div>
                         <div class="header-info">
@@ -321,6 +339,9 @@ window.renderDataImportPage = function () {
                              <input type="file" id="sidebar-upload-input" accept=".pdf,.csv,.xls,.xlsx" multiple style="display: none;">
                              <button id="btn-append-selected" class="btn-xs btn-primary-inv" style="display: none;" onclick="handleBatchHistoryLoad()">Append</button>
                              
+                             <!-- NEW: Load All Button -->
+                             <button id="btn-load-all-history" class="btn-xs btn-secondary" onclick="handleLoadAllHistory()" title="Load all files from history">Load All</button>
+
                              <div class="dropdown-container">
                                 <button class="btn-icon-menu" onclick="toggleActionMenu(event, 'history-options-dropdown')" title="Options">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
@@ -630,6 +651,16 @@ window.renderDataImportPage = function () {
     } else {
         console.warn('loadSessionState unsupported');
     }
+
+    // CRITICAL: Cleanup function to destroy grid when page is unmounted
+    // This prevents stale grid instances when navigating away and back
+    return () => {
+        if (window.previewGrid && window.previewGrid.api) {
+            console.log('🗑️ Cleaning up Data Import page - destroying grid...');
+            window.previewGrid.api.destroy();
+            window.previewGrid = null;
+        }
+    };
 };
 
 function saveSessionState() {
@@ -1125,15 +1156,23 @@ function showImmediatePreview(file, parsedData, replace = true, metadata = null)
 
     window.recalculateTotals();
 
-    if (!window.previewGrid) {
-        renderPreviewGrid(parsedData);
-    } else {
-        // Just refresh data
-        if (window.previewGrid.api) {
-            window.previewGrid.api.setGridOption('rowData', parsedData);
-            window.previewGrid.api.refreshCells({ force: true });
-        }
+    // SAFETY CHECK: Verify grid container exists
+    const gridDiv = document.getElementById('import-preview-grid');
+    if (!gridDiv) {
+        console.error('❌ Grid container not found!');
+        return;
     }
+
+    // CRITICAL FIX: Always destroy old grid instance before creating new one
+    // This prevents stale grid references after navigation
+    if (window.previewGrid && window.previewGrid.api) {
+        console.log('🗑️ Destroying old grid instance...');
+        window.previewGrid.api.destroy();
+        window.previewGrid = null;
+    }
+
+    // Always re-render grid to ensure it's properly initialized
+    renderPreviewGrid(parsedData);
 }
 
 function renderPreviewGrid(parsedData) {
@@ -1156,7 +1195,20 @@ function renderPreviewGrid(parsedData) {
 
     const columnDefs = [
         {
-            field: 'Description', headerName: 'Description', flex: 3, minWidth: 300, sortable: true, resizable: true,
+            field: 'Date', headerName: 'Date', width: 120, sortable: true, resizable: true,
+            valueFormatter: p => {
+                if (!p.value) return '';
+                try {
+                    const date = new Date(p.value);
+                    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                } catch {
+                    return p.value;
+                }
+            },
+            cellStyle: { color: '#64748b', fontWeight: '500' }
+        },
+        {
+            field: 'Description', headerName: 'Description', flex: 3, minWidth: 250, sortable: true, resizable: true,
             wrapText: true, autoHeight: true,
             valueFormatter: p => (p.value || '').toString().toUpperCase()
         },
@@ -1602,6 +1654,10 @@ window.loadToTransactions = async function () {
         }
     }
 
+    // DEBUG: Verify Verification
+    const finalStored = JSON.parse(localStorage.getItem('ab3_transactions') || '[]');
+    console.log(`💾 Import Logic Check: Saved ${savedCount} txns. LocalStorage now has ${finalStored.length} txns.`);
+
     window.showToast(`Successfully saved ${savedCount} transactions`, 'success');
 
     // Trigger Auto-Categorize & Sanitize
@@ -1613,6 +1669,16 @@ window.loadToTransactions = async function () {
             // console.log('Running Post-Import Sanitization');
             window.sanitizeData();
         }
+
+        // Refresh account balances after import
+        if (window.refreshAccountBalances) {
+            window.refreshAccountBalances();
+        }
+
+        // FORCE RELOAD DATA IN MEMORY TO ENSURE GRID SEES IT
+        if (window.transactionData) window.transactionData = [];
+
+        console.log('🚀 Navigating to Transactions...');
         window.router.navigate('/transactions');
     }, 500);
 };

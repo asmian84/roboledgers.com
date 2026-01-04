@@ -10,7 +10,7 @@ window.renderAnalyticsPage = async function (container) {
         <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
 
             <!-- FIXED HEADER -->
-            <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="std-page-header">
                  <div class="header-brand" style="display: flex; align-items: center; gap: 12px;">
                     <div class="icon-box" style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">📊</div>
                     <div>

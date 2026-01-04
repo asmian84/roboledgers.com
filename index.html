@@ -106,7 +106,7 @@
 
         <a href="#/accounts" class="nav-item" data-route="/accounts">
           <i class="ph ph-piggy-bank nav-icon"></i>
-          <span class="nav-label">Accounts</span>
+          <span class="nav-label">Chart of Accounts</span>
         </a>
 
       </div>
@@ -223,6 +223,7 @@
   <script src="src/utils/nuclear-cleanup.js"></script>
   <script src="src/utils/bulk-delete-vendors.js"></script>
   <script src="src/utils/bulk-operations.js"></script>
+  <script src="src/utils/loading-overlay.js"></script>
   <script src="src/services/upload-history.js"></script>
 
   <!-- Global Modal Service -->
@@ -236,7 +237,10 @@
   <script src="src/services/ai-memory-bridge.js"></script>
   <script src="src/services/ai-context-injector.js"></script>
   <script src="src/services/audit-logger.js"></script>
-  <script src="src/services/merchant-dictionary.js?v=20260101_v5"></script>
+  <script src="src/services/merchant-dictionary.js?v=20260102_v1"></script>
+  <script src="src/services/account-balances.js"></script>
+  <script src="src/services/pattern-detector.js"></script>
+  <script src="src/services/transaction-matcher.js"></script>
   <script src="src/services/data-junkie.js"></script>
   <script src="src/services/pdf-pre-scanner.js"></script>
   <script src="src/services/wiki-service.js"></script>
@@ -259,6 +263,9 @@
   <script src="src/features/accounts/account-manager.js"></script>
   <script src="src/features/accounts/account-switcher.js"></script>
   <script src="src/features/accounts/report-data-manager.js"></script>
+
+  <!-- COA Balance Verification Utility (Dev Tool) -->
+  <script src="src/utils/verify-coa-balances.js"></script>
 
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
@@ -350,6 +357,13 @@
           const accounts = await window.storage.getAccounts();
 
           console.log(`📊 Loaded: ${vendors.length} vendors, ${accounts.length} accounts`);
+
+          // ✅ REFRESH ACCOUNT BALANCES ON APP LOAD
+          if (window.refreshAccountBalances) {
+            console.log('🔄 Calculating initial account balances from transactions...');
+            window.refreshAccountBalances();
+            console.log('✅ Account balances initialized');
+          }
 
         } catch (error) {
           console.error('❌ Failed to initialize data layer:', error);
@@ -451,7 +465,7 @@
 
               <div class="card stat-card">
                 <div class="stat-icon">📊</div>
-                <h3>Accounts</h3>
+                <h3>Chart of Accounts</h3>
                 <p class="stat-value" id="dash-accounts">-</p>
                 <a href="#/accounts" class="stat-link">View chart →</a>
               </div>

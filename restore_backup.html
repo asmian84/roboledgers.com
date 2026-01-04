@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restore Merchant Dictionary</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 28px;
+        }
+
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #10b981;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        #log {
+            background: #1e293b;
+            color: #10b981;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Merchant Dictionary Restore</h1>
+
+        <div class="warning">
+            <strong>⚠️ CRITICAL RESTORE</strong><br>
+            This will restore your merchant dictionary from the backup created on 2025-12-31 @ 9:34 AM.
+            This backup contains <strong>7,827+ merchants</strong> and will completely replace the current (empty)
+            dictionary.
+        </div>
+
+        <div class="info">
+            <strong>File Location:</strong><br>
+            <code>C:\Users\asmia\Downloads\merchant_backup_2025-12-31 (2).json</code>
+        </div>
+
+        <input type="file" id="fileInput" accept=".json" />
+        <button onclick="restoreBackup()" id="restoreBtn" disabled>Restore Merchants</button>
+
+        <div class="progress" id="progressBar">
+            <div class="progress-bar" id="progressBarFill"></div>
+        </div>
+
+        <div id="log"></div>
+
+        <button onclick="window.location.href='index.html#/vendors'" style="background: #64748b; display: none;"
+            id="goToVendors">Go to Vendors Page</button>
+    </div>
+
+    <script>
+        let backupData = null;
+
+        const log = (msg, type = 'info') => {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#10b981';
+            logDiv.innerHTML += `<span style="color: ${color}">${new Date().toLocaleTimeString()} - ${msg}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        const updateProgress = (percent) => {
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('progressBarFill').style.width = percent + '%';
+        };
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            log(`📁 Loading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)...`);
+
+            try {
+                const text = await file.text();
+                backupData = JSON.parse(text);
+                log(`✅ Loaded ${backupData.length.toLocaleString()} merchants from backup`, 'success');
+                document.getElementById('restoreBtn').disabled = false;
+            } catch (error) {
+                log(`❌ Error reading file: ${error.message}`, 'error');
+                backupData = null;
+            }
+        });
+
+        async function restoreBackup() {
+            if (!backupData) {
+                alert('Please select a backup file first');
+                return;
+            }
+
+            if (!confirm(`⚠️ This will restore ${backupData.length.toLocaleString()} merchants.\n\nAny existing data will be replaced.\n\nContinue?`)) {
+                return;
+            }
+
+            const restoreBtn = document.getElementById('restoreBtn');
+            restoreBtn.disabled = true;
+            restoreBtn.textContent = 'Restoring...';
+
+            try {
+                log('🔓 Opening IndexedDB...');
+
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('MerchantDictionaryDB', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('merchants')) {
+                            db.createObjectStore('merchants', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('pattern_cache')) {
+                            db.createObjectStore('pattern_cache');
+                        }
+                    };
+                });
+
+                log('✅ Database opened');
+                log('🗑️ Clearing old data...');
+
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+                    tx.objectStore('merchants').clear();
+                    tx.objectStore('pattern_cache').clear();
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+
+                log('✅ Old data cleared');
+                log('💾 Importing merchants (this may take a moment)...');
+
+                // Batch import for performance
+                const BATCH_SIZE = 100;
+                let imported = 0;
+
+                for (let i = 0; i < backupData.length; i += BATCH_SIZE) {
+                    const batch = backupData.slice(i, i + BATCH_SIZE);
+
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction('merchants', 'readwrite');
+                        const store = tx.objectStore('merchants');
+
+                        for (const merchant of batch) {
+                            store.add(merchant);
+                        }
+
+                        tx.oncomplete = () => {
+                            imported += batch.length;
+                            const percent = Math.round((imported / backupData.length) * 100);
+                            updateProgress(percent);
+                            log(`⏳ Imported ${imported.toLocaleString()}/${backupData.length.toLocaleString()} (${percent}%)`);
+                            resolve();
+                        };
+                        tx.onerror = () => reject(tx.error);
+                    });
+                }
+
+                log(`✅ Successfully imported ${imported.toLocaleString()} merchants!`, 'success');
+
+                // Rebuild pattern cache
+                log('🔨 Rebuilding pattern cache...');
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+                    const merchantStore = tx.objectStore('merchants');
+                    const cacheStore = tx.objectStore('pattern_cache');
+
+                    const patterns = {};
+
+                    merchantStore.openCursor().onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            const merchant = cursor.value;
+                            if (merchant.patterns) {
+                                for (const pattern of merchant.patterns) {
+                                    if (!patterns[pattern]) patterns[pattern] = [];
+                                    patterns[pattern].push(merchant.id);
+                                }
+                            }
+                            cursor.continue();
+                        } else {
+                            // Save patterns to cache
+                            for (const [pattern, ids] of Object.entries(patterns)) {
+                                cacheStore.put(ids, pattern);
+                            }
+                        }
+                    };
+
+                    tx.oncomplete = () => {
+                        log(`✅ Pattern cache rebuilt (${Object.keys(patterns).length} patterns)`, 'success');
+                        resolve();
+                    };
+                    tx.onerror = () => reject(tx.error);
+                });
+
+                db.close();
+                updateProgress(100);
+
+                log('🎉 RESTORE COMPLETE!', 'success');
+                document.getElementById('goToVendors').style.display = 'block';
+
+                setTimeout(() => {
+                    window.location.href = 'index.html#/vendors';
+                }, 2000);
+
+            } catch (error) {
+                log(`❌ FATAL ERROR: ${error.message}`, 'error');
+                console.error(error);
+                restoreBtn.disabled = false;
+                restoreBtn.textContent = 'Restore Merchants';
+                alert('Error during restore: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

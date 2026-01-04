@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restore Vendors</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            color: #1e293b;
+            font-size: 28px;
+        }
+
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-weight: 600;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #log {
+            background: #1e293b;
+            color: #10b981;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Vendor Dictionary Restore</h1>
+        <div class="status info">
+            <strong>Found:</strong> vendor_import.json (241 vendors)
+        </div>
+
+        <button onclick="convertAndRestore()">Convert & Restore Vendors</button>
+        <button onclick="window.location.href='index.html#/vendors'" style="background: #64748b;">Go to Vendors
+            Page</button>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `${new Date().toLocaleTimeString()} - ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        async function convertAndRestore() {
+            try {
+                log('📥 Loading vendor_import.json...');
+                const response = await fetch('_backups/archived_scripts_20251230/vendor_import.json');
+                const vendors = await response.json();
+                log(`✅ Loaded ${vendors.length} vendors`);
+
+                log('🔄 Converting to merchant dictionary format...');
+                const merchantData = [];
+
+                for (const vendor of vendors) {
+                    const merchant = {
+                        id: `vendor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        display_name: vendor.name || 'Unknown',
+                        canonical_name: vendor.name?.toUpperCase() || 'UNKNOWN',
+                        industry: 'Other', // Will be categorized
+                        default_category: vendor.defaultAccount || 'Miscellaneous',
+                        categorization_confidence: (vendor.confidence || 50) / 100, // Convert to 0-1
+                        is_subscription: false,
+                        patterns: [vendor.name?.toLowerCase()],
+                        stats: {
+                            total_transactions: 1,
+                            total_amount: 0,
+                            first_seen: new Date().toISOString(),
+                            last_seen: new Date().toISOString()
+                        },
+                        metadata: {
+                            account_number: vendor.accountNumber,
+                            source: 'vendor_import_backup'
+                        }
+                    };
+                    merchantData.push(merchant);
+                }
+
+                log(`✅ Converted ${merchantData.length} merchants`);
+                log('💾 Opening IndexedDB...');
+
+                // Open IndexedDB
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('MerchantDictionaryDB', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('merchants')) {
+                            db.createObjectStore('merchants', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('pattern_cache')) {
+                            db.createObjectStore('pattern_cache');
+                        }
+                    };
+                });
+
+                log('✅ Database opened');
+                log('🗑️ Clearing old data...');
+
+                // Clear existing data
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+                    tx.objectStore('merchants').clear();
+                    tx.objectStore('pattern_cache').clear();
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+
+                log('✅ Old data cleared');
+                log('💾 Importing merchants...');
+
+                // Import merchants
+                let imported = 0;
+                for (const merchant of merchantData) {
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction('merchants', 'readwrite');
+                        const request = tx.objectStore('merchants').add(merchant);
+                        request.onsuccess = () => {
+                            imported++;
+                            if (imported % 50 === 0) log(`⏳ Imported ${imported}/${merchantData.length}...`);
+                            resolve();
+                        };
+                        request.onerror = () => reject(request.error);
+                    });
+                }
+
+                log(`✅ Imported ${imported} merchants successfully!`);
+                db.close();
+
+                alert(`✅ Successfully restored ${imported} vendors!\n\nClick OK to go to the Vendors page.`);
+                window.location.href = 'index.html#/vendors';
+
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`);
+                console.error(error);
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

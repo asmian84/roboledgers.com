@@ -11,6 +11,10 @@ class MerchantDictionary {
         this.normalizedIndex = new Map(); // normalized → merchant_id
         this.db = null;
         this.isInitialized = false;
+        this.isInitialized = false;
+        this.tableName = 'merchants'; // Default, updated by discovery
+        this.cloudSchema = null; // Dynamically detected keys
+        this.cloudBlocklist = new Set(); // Auto-learned bad columns
     }
 
     // ============================================
@@ -19,45 +23,62 @@ class MerchantDictionary {
 
     async init() {
         if (this.isInitialized) return;
+        console.log('🏁 Dictionary: Init called...');
 
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('MerchantDictionaryDB', 1);
+            console.log('🏁 Dictionary: Opening IndexedDB...');
+            // Bump version to 2 for 'backups' store
+            const request = indexedDB.open('MerchantDictionaryDB', 2);
 
-            request.onerror = () => reject(request.error);
+            request.onerror = (e) => {
+                console.error('❌ Dictionary: IDB Open Error', e);
+                reject(request.error);
+            };
+
+            // CHECKPOINT: Handle Version Upgrade Block (Multiple Tabs)
+            request.onblocked = () => {
+                console.warn('⚠️ Dictionary: IDB Blocked! Close other tabs.');
+                const overlay = document.getElementById('v-loading-overlay');
+                if (overlay) {
+                    overlay.innerHTML = `
+                        <div style="text-align:center; color:#dc2626; padding:20px; font-family:sans-serif;">
+                            <div style="font-size:40px; margin-bottom:10px;">🛑</div>
+                            <h3 style="margin:0 0 10px 0;">Database Update Blocked</h3>
+                            <p style="margin:0 0 15px 0; line-height:1.5;">
+                                A critical database upgrade (v2) is pending.<br>
+                                <strong>You have other tabs open with the old version.</strong>
+                            </p>
+                            <div style="background:#fee2e2; border:1px solid #fca5a5; padding:10px; border-radius:8px; display:inline-block; font-weight:bold;">
+                                1. Close ALL other tabs of this app.<br>
+                                2. Then click Reload below.
+                            </div>
+                            <br><br>
+                            <button onclick="location.reload()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px;">🔄 Reload Now</button>
+                        </div>
+                    `;
+                } else {
+                    alert('⚠️ Database Update Blocked!\n\nPlease close ALL other tabs of this app to allow the update to finish.');
+                }
+            };
+
             request.onsuccess = () => {
+                console.log('✅ Dictionary: IDB Opened. Loading memory...');
                 this.db = request.result;
-                this.loadMerchantsIntoMemory().then(async () => {
-                    // 1. CLOUD SYNC: Try to fetch from Supabase if online
-                    if (window.supabaseService && window.supabaseService.isOnline) {
-                        try {
-                            console.log('☁️ Dictionary: Syncing with Supabase...');
-                            // Smart discovery of table name
-                            const candidates = ['vendors', 'vendor', 'merchants', 'merchant', 'Vendors', 'Merchants'];
-                            const table = await window.supabaseService.discoverTable(candidates, 'merchants');
-
-                            const { data, error } = await window.supabaseService.from(table).select('*');
-                            if (!error && data && data.length > 0) {
-                                console.log(`☁️ Dictionary: Synced ${data.length} merchants from cloud ("${table}")`);
-                                // Update IndexedDB in background
-                                this.importBackup(data).then(() => {
-                                    console.log('✅ Dictionary: Cloud sync merged into local cache');
-                                });
-                            } else if (error) {
-                                console.warn(`☁️ Dictionary: Cloud sync fail on "${table}":`, error.message);
-                            }
-                        } catch (e) {
-                            console.warn('☁️ Dictionary: Cloud sync failed, using local cache', e);
-                        }
-                    }
-
+                this.loadMerchantsIntoMemory().then(() => {
+                    // ✅ Local data loaded - UNBLOCK UI IMMEDIATELY
                     this.isInitialized = true;
-                    console.log('✅ Merchant Dictionary initialized');
-                    console.log(`📊 Loaded ${this.merchants.size} merchants`);
+                    console.log(`✅ Dictionary: Memory Loaded (Size: ${this.merchants.size})`);
                     resolve();
+
+                    // ☁️ CLOUD SYNC: Run in background (fire & forget)
+                    if (window.supabaseService && window.supabaseService.isOnline) {
+                        this.syncWithCloud().catch(err => console.warn('Background Cloud Sync Error:', err));
+                    }
                 });
             };
 
             request.onupgradeneeded = (event) => {
+                console.log('💾 Dictionary: Upgrading DB...');
                 const db = event.target.result;
 
                 // Merchants store
@@ -77,13 +98,23 @@ class MerchantDictionary {
                     cacheStore.createIndex('merchant_id', 'merchant_id', { unique: false });
                     cacheStore.createIndex('normalized', 'normalized', { unique: false });
                 }
+
+                // NEW (v2): Backups Store
+                if (!db.objectStoreNames.contains('backups')) {
+                    const backupStore = db.createObjectStore('backups', { keyPath: 'id' });
+                    backupStore.createIndex('timestamp', 'timestamp');
+                    console.log('💾 DB Upgrade: Created "backups" store');
+                }
             };
         });
     }
 
     async loadMerchantsIntoMemory() {
+        console.log('🔄 Dictionary: starting loadMerchantsIntoMemory...');
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readonly');
+            console.log('🔄 Dictionary: Transaction started...');
+
             const merchantStore = transaction.objectStore('merchants');
             const cacheStore = transaction.objectStore('pattern_cache');
 
@@ -93,6 +124,7 @@ class MerchantDictionary {
             transaction.oncomplete = () => {
                 const merchants = merchantRequest.result;
                 const patterns = cacheRequest.result;
+                console.log(`DETAILS: Read ${merchants.length} merchants and ${patterns.length} patterns from IDB.`);
 
                 // Load merchants
                 merchants.forEach(merchant => {
@@ -108,8 +140,43 @@ class MerchantDictionary {
                 resolve();
             };
 
-            transaction.onerror = () => reject(transaction.error);
+            transaction.onerror = (e) => {
+                console.error('❌ Dictionary: Transaction Error', e);
+                reject(transaction.error);
+            };
         });
+    }
+
+    async syncWithCloud() {
+        try {
+            console.log('☁️ Dictionary: Starting background sync...');
+            // Smart discovery of table name
+            const candidates = ['vendors', 'vendor', 'merchants', 'merchant', 'Vendors', 'Merchants'];
+            const table = await window.supabaseService.discoverTable(candidates, 'merchants');
+            this.tableName = table; // STORE DISCOVERED NAME
+
+            const { data, error } = await window.supabaseService.from(this.tableName).select('*');
+            if (!error && data && data.length > 0) {
+                // DETECT SCHEMA: Capture keys from the first record
+                this.cloudSchema = Object.keys(data[0]);
+                console.log(`☁️ Dictionary: Synced ${data.length} merchants from cloud ("${table}"). Schema detected:`, this.cloudSchema);
+
+                // Update IndexedDB & Memory
+                const count = await this.importBackup(data);
+
+                // Optional: Notify UI if significantly different?
+                // For now just log it. If user is on grid, they might need a refresh to see new cloud items,
+                // but this prevents the "Hang".
+                console.log('✅ Dictionary: Background sync complete');
+
+                // If on Vendors page, refresh grid gently? 
+                // We'll leave that for now to avoid jumpiness.
+            } else if (error) {
+                console.warn(`☁️ Dictionary: Cloud sync fail on "${table}":`, error.message);
+            }
+        } catch (e) {
+            console.warn('☁️ Dictionary: Background sync failed', e);
+        }
     }
 
     // ============================================
@@ -388,6 +455,7 @@ class MerchantDictionary {
         if (!this.isInitialized) await this.init();
         const merchant = {
             id: data.id || `merchant_${Date.now()}`,
+            user_id: (window.SupabaseSync && window.SupabaseSync.getUserId) ? window.SupabaseSync.getUserId() : null,
             display_name: data.display_name,
             normalized_name: this.normalize(data.display_name),
             default_category: data.default_category || null,
@@ -430,7 +498,7 @@ class MerchantDictionary {
         const merchant = this.merchants.get(merchantId);
         if (!merchant) return false;
         this.merchants.delete(merchantId);
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
             transaction.objectStore('merchants').delete(merchantId);
             const index = transaction.objectStore('pattern_cache').index('merchant_id');
@@ -446,7 +514,7 @@ class MerchantDictionary {
         // SYNC TO CLOUD
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                const { error } = await window.supabaseService.from('merchants').delete().eq('id', merchantId);
+                const { error } = await window.supabaseService.from(this.tableName).delete().eq('id', merchantId);
                 if (error) console.error('☁️ Dictionary: Failed to delete merchant from cloud:', error);
             } catch (e) {
                 console.warn('☁️ Dictionary: Supabase error during deleteMerchant', e);
@@ -454,6 +522,247 @@ class MerchantDictionary {
         }
 
         return true;
+    }
+
+    /**
+     * Bulk Delete Merchants (v25.0)
+     * Optimized batch deletion for cloud sync
+     */
+    async bulkDeleteMerchants(merchantIds) {
+        if (!this.isInitialized) await this.init();
+        if (!merchantIds || merchantIds.length === 0) return 0;
+
+        // 🛡️ AUTO-BACKUP
+        await this.createRestorePoint(`Before Bulk Delete (${merchantIds.length} items)`);
+
+        console.log(`🗑️ Bulk Deleting ${merchantIds.length} merchants...`);
+
+        // 1. Local Deletion
+        for (const id of merchantIds) {
+            this.merchants.delete(id);
+        }
+
+        await new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+            const store = transaction.objectStore('merchants');
+            const cacheStore = transaction.objectStore('pattern_cache');
+            const cacheIndex = cacheStore.index('merchant_id');
+
+            for (const id of merchantIds) {
+                store.delete(id);
+                // Also purge patterns
+                const request = cacheIndex.openCursor(IDBKeyRange.only(id));
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) { cursor.delete(); cursor.continue(); }
+                };
+            }
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = (e) => reject(e);
+        });
+
+        // 2. Cloud Persistence (Batch Delete)
+        if (window.supabaseService && window.supabaseService.isOnline) {
+            try {
+                const { error } = await window.supabaseService.from(this.tableName).delete().in('id', merchantIds);
+                if (error) console.error('☁️ Dictionary: Failed to bulk delete from cloud:', error);
+                else console.log('✅ Dictionary: Bulk cloud delete successful');
+            } catch (e) {
+                console.warn('☁️ Dictionary: Supabase error during bulkDeleteMerchants', e);
+            }
+        }
+
+        return merchantIds.length;
+    }
+
+    /**
+     * Bulk Find & Replace (v26.0)
+     * Safely renames multiple merchants at once
+     */
+    async bulkFindAndReplace(merchantIds, findText, replaceText) {
+        if (!this.isInitialized) await this.init();
+        if (!merchantIds || merchantIds.length === 0) return 0;
+
+        // 🛡️ AUTO-BACKUP
+        await this.createRestorePoint(`Before Find/Replace: "${findText}" -> "${replaceText}"`);
+
+        console.log(`🧹 Processing Find & Replace for ${merchantIds.length} items...`);
+        const updates = [];
+
+        // Prepare regex for case-insensitive global replacement
+        // Escaping special characters in findText
+        const escapedFind = findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedFind, 'gi');
+
+        for (const id of merchantIds) {
+            const m = this.merchants.get(id);
+            if (m && m.display_name && regex.test(m.display_name)) {
+                // Creates a new string with the replacement
+                m.display_name = m.display_name.replace(regex, replaceText).trim();
+                m.normalized_name = this.normalize(m.display_name); // Re-normalize!
+                m.updated_at = new Date().toISOString();
+                updates.push(m);
+            }
+        }
+
+        if (updates.length > 0) {
+            await this.bulkSaveMerchants(updates, null, false);
+        }
+
+        return updates.length;
+    }
+
+
+    /**
+     * Converts any string ID to a deterministic UUID for cloud compatibility
+     * Keeps valid UUIDs as-is. Hashes other strings (like 'merchant_123') to UUID format.
+     */
+    ensureUUID(id) {
+        // 1. If it's already a valid UUID, return it
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(id)) return id;
+
+        // 2. Otherwise, hash it strictly to UUID format (v4-like structure)
+        // Simple string hashing since we don't have crypto lib access here comfortably
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+            hash = ((hash << 5) - hash) + id.charCodeAt(i);
+            hash |= 0; // Convert to 32bit integer
+        }
+
+        // Seed a pseudo-random generator with the hash to be deterministic
+        const seed = Math.abs(hash);
+        const rng = (offset) => {
+            const val = Math.sin(seed + offset) * 10000;
+            return Math.floor((val - Math.floor(val)) * 256);
+        }
+
+        // Generate hex parts
+        const hex = (offset, len) => {
+            let s = '';
+            for (let i = 0; i < len; i++) {
+                s += rng(offset + i).toString(16).padStart(2, '0');
+            }
+            return s;
+        };
+
+        // Format: 8-4-4-4-12 (32 hex digits / 16 bytes)
+        // UUID v4 structure: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        return `${hex(0, 4)}-${hex(4, 2)}-${hex(6, 2)}-${hex(8, 2)}-${hex(10, 6)}`;
+    }
+
+    /**
+     * Sanitizes merchant object for cloud storage
+     * Uses dynamic schema detection AND auto-learned blocklist
+     */
+    sanitizeForCloud(merchant) {
+        let candidate = {};
+
+        // OPTION A: Use detected schema if available AND valid (must have display_name)
+        if (this.cloudSchema && this.cloudSchema.includes('display_name')) {
+            this.cloudSchema.forEach(key => {
+                if (merchant[key] !== undefined) candidate[key] = merchant[key];
+            });
+        }
+        // OPTION B: Fallback (Dynamic Safe Set)
+        else {
+            if (this.cloudSchema) {
+                console.warn('⚠️ Dictionary: Detected schema is too thin (missing display_name). Using loose mode.');
+            }
+            candidate = { ...merchant };
+
+            // 1. Fix ID & Inject Owner
+            candidate.id = this.ensureUUID(merchant.id);
+            // FIXED: Use correct service instance
+            if (window.supabaseService && window.supabaseService.getUserId) {
+                const uid = window.supabaseService.getUserId();
+                if (!candidate.user_id) candidate.user_id = uid;
+                console.log(`🔧 Injecting user_id: ${uid} into merchant ${candidate.display_name}`);
+            } else {
+                console.warn('⚠️ SupabaseSync or getUserId missing during sanitization');
+            }
+
+            // 2. Remove Internal/Computed Fields
+            const internalFields = ['stats', 'normalized_name', 'match_confidence', 'match_method', 'is_new', 'auto_categorized', 'categorized_at', 'is_subscription', 'notes', 'website'];
+            internalFields.forEach(f => delete candidate[f]);
+
+            // 3. Remove detected blocklisted fields (Auto-Healing)
+            if (this.cloudBlocklist) {
+                this.cloudBlocklist.forEach(blocked => delete candidate[blocked]);
+            }
+        }
+
+        // Also ensure ID is UUID if we used Option A
+        if (candidate.id) {
+            candidate.id = this.ensureUUID(candidate.id);
+        }
+
+        // APPLY BLOCKLIST (Self-Healing)
+        // Removes fields that previously caused PGRST204 errors
+        if (this.cloudBlocklist.size > 0) {
+            // CRITICAL FIX: Never block user_id, as it's required for RLS
+            // (Previous logic removed: Do not force-restore user_id if it was blocked by auto-healing)
+
+            this.cloudBlocklist.forEach(badKey => {
+                delete candidate[badKey];
+            });
+        }
+
+        return candidate;
+    }
+
+    /**
+     * Create a Restore Point (Backup)
+     * Saves entire dictionary state to 'backups' store
+     */
+    async createRestorePoint(reason = 'Auto-Backup') {
+        if (!this.isInitialized) await this.init();
+
+        try {
+            const allMerchants = Array.from(this.merchants.values());
+            const backup = {
+                id: `backup_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                reason: reason,
+                count: allMerchants.length,
+                data: allMerchants // Deep snapshot
+            };
+
+            await new Promise((resolve, reject) => {
+                // Open separate transaction for backups to avoid locking main stores too long if possible (though single db instance shares lock scope usually)
+                const tx = this.db.transaction(['backups'], 'readwrite');
+                const store = tx.objectStore('backups');
+
+                // Save new backup
+                store.add(backup);
+
+                // Pruning: Keep only last 5 backups to save space
+                // We'll just do a quick getAllKeys or Count check
+                // For simplicity/perf in IndexedDB, listing keys is cheaper
+                const keyRequest = store.getAllKeys();
+
+                keyRequest.onsuccess = () => {
+                    const keys = keyRequest.result;
+                    if (keys.length > 5) {
+                        // Sort keys (ids are timestamped)
+                        keys.sort();
+                        const toDelete = keys.slice(0, keys.length - 5);
+                        toDelete.forEach(k => store.delete(k));
+                        console.log(`🧹 Pruned ${toDelete.length} old backups`);
+                    }
+                };
+
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+
+            console.log(`💾 Restore Point Created: "${reason}" (${allMerchants.length} items)`);
+            return backup.id;
+        } catch (e) {
+            console.error('⚠️ Failed to create restore point:', e);
+            return null;
+        }
     }
 
     async saveMerchant(merchant) {
@@ -465,13 +774,50 @@ class MerchantDictionary {
             request.onerror = () => reject(request.error);
         });
 
-        // 2. Cloud Persistence
+        // 2. Cloud Persistence with AUTO-HEALING
+        // Retries if schema mismatch is detected
         if (window.supabaseService && window.supabaseService.isOnline) {
-            try {
-                const { error } = await window.supabaseService.from('merchants').upsert(merchant);
-                if (error) console.error('☁️ Dictionary: Failed to sync merchant to cloud:', error);
-            } catch (e) {
-                console.warn('☁️ Dictionary: Supabase error during saveMerchant', e);
+            let attempt = 0;
+            const maxAttempts = 10;
+
+            while (attempt < maxAttempts) {
+                try {
+                    const cloudSafe = this.sanitizeForCloud(merchant);
+                    console.log('☁️ Uploading Merchant Payload:', JSON.stringify(cloudSafe));
+                    const { error } = await window.supabaseService.from(this.tableName).upsert(cloudSafe);
+
+                    if (error) {
+                        // DETECT SCHEMA ERROR (PGRST204)
+                        // Example: "Could not find the 'description_patterns' column..."
+                        if (error.code === 'PGRST204') {
+                            const match = error.message.match(/Could not find the '(\w+)' column/);
+                            if (match && match[1]) {
+                                const badColumn = match[1];
+
+                                // CRITICAL: Do not blocking essential columns
+                                if (badColumn === 'user_id') {
+                                    console.warn('⚠️ Dictionary: "user_id" column missing in DB. Removing it to allow sync.');
+                                    // Allow fall-through to blocklist logic below
+                                }
+
+                                console.warn(`🩹 Dictionary: Auto-healing key '${badColumn}'. Removing from future syncs.`);
+                                this.cloudBlocklist.add(badColumn);
+                                attempt++; // Retry with new blocklist
+                                continue;
+                            }
+                        }
+
+                        console.error('☁️ Dictionary: Cloud sync failed:', error);
+                        break; // Stop on non-recoverable error
+                    }
+
+                    // Success
+                    return;
+
+                } catch (e) {
+                    console.warn('☁️ Dictionary: Supabase error during saveMerchant', e);
+                    break;
+                }
             }
         }
     }
@@ -533,8 +879,9 @@ class MerchantDictionary {
         // SYNC TO CLOUD
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                console.log(`☁️ Dictionary: Pushing ${merchants.length} merchants to cloud...`);
-                const { error } = await window.supabaseService.from('merchants').upsert(merchants);
+                console.log(`☁️ Dictionary: Pushing ${merchants.length} merchants to cloud ("${this.tableName}")...`);
+                const cloudSafeList = merchants.map(m => this.sanitizeForCloud(m));
+                const { error } = await window.supabaseService.from(this.tableName).upsert(cloudSafeList);
                 if (error) console.error('☁️ Dictionary: Bulk cloud push failed:', error);
                 else console.log('✅ Dictionary: Bulk cloud push successful');
             } catch (e) {

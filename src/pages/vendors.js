@@ -46,9 +46,9 @@ window.renderVendors = function () {
         
         /* PREMIUM HEADER STYLE */
         .v-premium-header { 
-            background: white; 
             padding: 16px 24px; 
             border-bottom: 1px solid #e2e8f0; 
+            background: white;
             display: flex; 
             justify-content: space-between; 
             align-items: center;
@@ -116,7 +116,7 @@ window.renderVendors = function () {
          }
          .btn-icon-menu:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
          .dropdown-menu {
-             position: absolute; top: 100%; right: 0; margin-top: 6px;
+             position: absolute; top: 100%; right: 0; left: auto; margin-top: 6px;
              background: white; border: 1px solid #e2e8f0; border-radius: 12px;
              box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); 
              width: 200px; z-index: 1000; padding: 6px; display: flex; flex-direction: column;
@@ -175,6 +175,7 @@ window.renderVendors = function () {
                 <span id="selection-count" style="font-size: 13px; font-weight: 800; color: #4f46e5; margin-right: 8px;">0 selected</span>
                 <button class="v-btn v-btn-primary" style="padding: 4px 10px; font-size: 11px; background:#4f46e5;" onclick="window.bulkRecategorizeVendors()">✨ Recategorize</button>
                 <button class="v-btn v-btn-secondary" style="padding: 4px 10px; font-size: 11px; color:#4f46e5; border-color:#4f46e5;" onclick="window.bulkWikiEnrich()">🌐 Wiki Enrich</button>
+                <button class="v-btn v-btn-secondary" style="padding: 4px 10px; font-size: 11px; color:#10b981; border-color:#10b981;" onclick="window.bulkCleanVendors()">🪄 Clean</button>
                 <button class="v-btn v-btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="window.bulkDeleteVendors()">🗑️ Delete</button>
             </div>
             <input type="text" placeholder="Filter dictionary..." id="vendor-search" 
@@ -327,11 +328,24 @@ window.initVendorsGrid = async function () {
   if (!container) return;
 
   try {
+    console.time('Vendors:TotalInit');
+
+    // 1. INIT DICTIONARY
+    console.time('Vendors:InitDictionary');
     if (!window.merchantDictionary.isInitialized) await window.merchantDictionary.init();
+    console.timeEnd('Vendors:InitDictionary');
+
+    // 2. FETCH DATA
+    console.time('Vendors:GetMerchants');
     const rawMerchants = await window.merchantDictionary.getAllMerchants();
+    console.timeEnd('Vendors:GetMerchants');
+
+    console.log(`📝 Dictionary: Fetched ${rawMerchants.length} vendors for grid.`);
+
     // coaNames is no longer needed here as CategoryCellEditor fetches it internally.
 
     // Stats Calculation
+    console.time('Vendors:Stats');
     const total = rawMerchants.length;
     const avgConfidence = total > 0 ? Math.round((rawMerchants.reduce((s, m) => s + (m.categorization_confidence || 0), 0) / total) * 100) : 0;
 
@@ -527,14 +541,21 @@ window.nuclearPurgeVendors = async function () {
 /**
  * ACTIONS
  */
-window.deleteVendor = async (id) => {
-  if (confirm("Delete this vendor?")) {
-    await window.merchantDictionary.deleteMerchant(id);
-    location.reload();
-  }
+window.deleteVendor = (id) => {
+  window.ModalService.confirm(
+    "Delete Vendor",
+    "Are you sure you want to delete this vendor? This action cannot be undone.",
+    async () => {
+      const overlay = document.getElementById('v-loading-overlay');
+      if (overlay) { overlay.style.display = 'flex'; overlay.querySelector('p').textContent = 'Deleting logic...'; }
+      await window.merchantDictionary.deleteMerchant(id);
+      location.reload();
+    },
+    'danger'
+  );
 };
 
-window.bulkDeleteVendors = async () => {
+window.bulkDeleteVendors = () => {
   // Safe Selection: Only grab nodes that are currently passing the active filter
   const selectedNodes = window.vendorsGridApi.getSelectedNodes();
   const filteredNodes = [];
@@ -543,15 +564,29 @@ window.bulkDeleteVendors = async () => {
   });
 
   if (filteredNodes.length === 0) {
-    alert("No visible, selected items found to delete.");
+    if (window.ModalService) {
+      window.ModalService.alert("No selection", "No visible, selected items found to delete.");
+    } else {
+      alert("No visible, selected items found to delete.");
+    }
     return;
   }
 
-  if (confirm(`🚨 BULK DELETE CONFIRMATION\n\nAre you sure you want to delete ${filteredNodes.length} items?\n\nThis will ONLY delete items that are currently SELECTED and VISIBLE in your search.`)) {
-    const ids = filteredNodes.map(n => n.data.id);
-    for (const id of ids) await window.merchantDictionary.deleteMerchant(id);
-    location.reload();
-  }
+  window.ModalService.confirm(
+    "Bulk Delete Confirmation",
+    `Are you sure you want to delete <strong>${filteredNodes.length} items</strong>?<br><br>This will ONLY delete items that are currently SELECTED and VISIBLE in your search.`,
+    async () => {
+      const ids = filteredNodes.map(n => n.data.id);
+      const overlay = document.getElementById('v-loading-overlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.querySelector('p').textContent = `🗑️ Deleting ${filteredNodes.length} vendors...`;
+      }
+      await window.merchantDictionary.bulkDeleteMerchants(ids);
+      location.reload();
+    },
+    'danger'
+  );
 };
 
 window.bulkRecategorizeVendors = async () => {
@@ -604,6 +639,24 @@ window.bulkRecategorizeVendors = async () => {
     if (overlay) overlay.style.display = 'none';
   }
 };
+
+/**
+ * UI HELPERS
+ */
+window.toggleVendorMenu = function (e) {
+  e.stopPropagation();
+  const menu = document.getElementById('vendor-dropdown-menu');
+  if (menu) menu.classList.toggle('hidden');
+};
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('vendor-dropdown-menu');
+  if (menu && !menu.classList.contains('hidden')) {
+    if (!e.target.closest('.dropdown-container')) {
+      menu.classList.add('hidden');
+    }
+  }
+});
 
 window.restoreFromVendorsFile = (input) => {
   const reader = new FileReader();
@@ -676,6 +729,7 @@ window.bulkWikiEnrich = async function () {
   location.reload();
 };
 
+
 window.exportVendorsToExcel = function () {
   if (!window.vendorsGridApi) return;
 
@@ -692,4 +746,47 @@ window.exportVendorsToExcel = function () {
   };
 
   window.vendorsGridApi.exportDataAsCsv(params);
+};
+
+window.bulkCleanVendors = () => {
+  const selectedNodes = window.vendorsGridApi.getSelectedNodes();
+  if (selectedNodes.length === 0) {
+    if (window.ModalService) {
+      window.ModalService.alert("No selection", "Select multiple vendors to perform a bulk clean.");
+    } else {
+      alert("Select multiple vendors to perform a bulk clean.");
+    }
+    return;
+  }
+
+  // Smart Pre-fill: Use current filter value
+  const searchInput = document.getElementById('vendor-search');
+  const currentFilter = searchInput ? searchInput.value.trim() : "";
+
+  window.ModalService.form(
+    "🪄 Bulk Find & Replace",
+    [
+      { label: "Find text (e.g. 'DEBIT CARD')", name: 'find', value: currentFilter, placeholder: 'Text to remove...' },
+      { label: "Replace with (leave empty to remove)", name: 'replace', placeholder: 'Replacement text...' }
+    ],
+    async (values) => {
+      if (!values.find) return;
+
+      const overlay = document.getElementById('v-loading-overlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.querySelector('p').textContent = `🧹 Creating Backup & Cleaning ${selectedNodes.length} items...`;
+      }
+
+      const ids = selectedNodes.map(n => n.data.id);
+      const count = await window.merchantDictionary.bulkFindAndReplace(ids, values.find, values.replace || '');
+
+      if (window.ModalService) {
+        window.ModalService.alert("Clean Complete", `✅ Cleaned ${count} merchant names.\nA restore point was created automatically.`);
+      } else {
+        alert(`✅ Cleaned ${count} merchant names.\nA restore point was created automatically.`);
+      }
+      location.reload();
+    }
+  );
 };

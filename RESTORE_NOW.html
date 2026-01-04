@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>RESTORE YOUR DATA NOW</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 30px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .steps {
+            text-align: left;
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .step-num {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            margin: 20px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin: 20px 0;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #progress {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        #log {
+            background: #1e293b;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚨 YOUR DATA IS EMPTY</h1>
+
+        <div class="status">
+            Your IndexedDB has <strong>0 merchants</strong>.<br>
+            You must restore from your backup file!
+        </div>
+
+        <div class="steps">
+            <h2 style="margin-bottom: 20px;">Follow These Steps:</h2>
+
+            <div class="step">
+                <span class="step-num">1</span>
+                <strong>Click "Choose File" below</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-num">2</span>
+                <strong>Select this file:</strong><br>
+                <code>C:\Users\asmia\Downloads\merchant_backup_2025-12-31 (2).json</code>
+            </div>
+
+            <div class="step">
+                <span class="step-num">3</span>
+                <strong>Click "RESTORE NOW"</strong>
+            </div>
+
+            <div class="step">
+                <span class="step-num">4</span>
+                <strong>Wait for completion</strong> (auto-redirects to Vendors page)
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept=".json">
+        <button id="restoreBtn" onclick="restoreNow()" disabled>RESTORE NOW</button>
+
+        <div id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let backupData = null;
+
+        const log = (msg, color = '#10b981') => {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+            logDiv.innerHTML += `<span style="color: ${color}">${new Date().toLocaleTimeString()} - ${msg}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            log(`📁 Loading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)...`);
+
+            try {
+                const text = await file.text();
+                const parsed = JSON.parse(text);
+
+                // Handle both formats: direct array OR object with merchants property
+                if (Array.isArray(parsed)) {
+                    backupData = parsed;
+                } else if (parsed.merchants && Array.isArray(parsed.merchants)) {
+                    backupData = parsed.merchants;
+                } else if (typeof parsed === 'object') {
+                    // Try to find an array property
+                    const arrays = Object.values(parsed).filter(v => Array.isArray(v));
+                    if (arrays.length > 0) {
+                        backupData = arrays[0]; // Use first array found
+                    } else {
+                        throw new Error('No merchant array found in backup file');
+                    }
+                } else {
+                    throw new Error('Invalid backup format');
+                }
+
+                log(`✅ Loaded ${backupData.length.toLocaleString()} merchants!`, '#10b981');
+                document.getElementById('restoreBtn').disabled = false;
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, '#ef4444');
+                console.error('Full error:', error);
+                backupData = null;
+            }
+        });
+
+        async function restoreNow() {
+            if (!backupData) {
+                alert('Please select a backup file first!');
+                return;
+            }
+
+            const btn = document.getElementById('restoreBtn');
+            btn.disabled = true;
+            btn.textContent = 'RESTORING...';
+
+            try {
+                log('🔓 Opening IndexedDB...');
+
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('MerchantDictionaryDB', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('merchants')) {
+                            db.createObjectStore('merchants', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('pattern_cache')) {
+                            db.createObjectStore('pattern_cache');
+                        }
+                    };
+                });
+
+                log('🗑️ Clearing old data...');
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(['merchants', 'pattern_cache'], 'readwrite');
+                    tx.objectStore('merchants').clear();
+                    tx.objectStore('pattern_cache').clear();
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+
+                log('💾 Importing merchants...');
+                document.getElementById('progress').style.display = 'block';
+
+                const BATCH_SIZE = 100;
+                let imported = 0;
+
+                for (let i = 0; i < backupData.length; i += BATCH_SIZE) {
+                    const batch = backupData.slice(i, i + BATCH_SIZE);
+
+                    await new Promise((resolve, reject) => {
+                        const tx = db.transaction('merchants', 'readwrite');
+                        const store = tx.objectStore('merchants');
+
+                        for (const merchant of batch) {
+                            store.add(merchant);
+                        }
+
+                        tx.oncomplete = () => {
+                            imported += batch.length;
+                            const percent = Math.round((imported / backupData.length) * 100);
+                            document.getElementById('progressBar').style.width = percent + '%';
+                            log(`⏳ Imported ${imported.toLocaleString()}/${backupData.length.toLocaleString()} (${percent}%)`);
+                            resolve();
+                        };
+                        tx.onerror = () => reject(tx.error);
+                    });
+                }
+
+                log(`✅ Successfully imported ${imported.toLocaleString()} merchants!`, '#10b981');
+                db.close();
+
+                setTimeout(() => {
+                    window.location.href = 'index.html#/vendors';
+                }, 1500);
+
+            } catch (error) {
+                log(`❌ FATAL ERROR: ${error.message}`, '#ef4444');
+                console.error(error);
+                btn.disabled = false;
+                btn.textContent = 'RESTORE NOW';
+            }
+        }
+    </script>
+</body>
+
+</html>

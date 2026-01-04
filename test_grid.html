@@ -1,0 +1,42 @@
+// QUICK TEST: Minimal AG Grid Test
+// Open this in browser to test if AG Grid works at all
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AG Grid Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-quartz.css" />
+</head>
+
+<body>
+    <h1>AG Grid Test</h1>
+    <div id="myGrid" class="ag-theme-quartz" style="height: 500px; width: 100%;"></div>
+
+    <script>
+        const columnDefs = [
+            { field: 'name' },
+            { field: 'value' }
+        ];
+
+        const rowData = [
+            { name: 'Test 1', value: '100' },
+            { name: 'Test 2', value: '200' },
+            { name: 'Test 3', value: '300' }
+        ];
+
+        const gridOptions = {
+            columnDefs: columnDefs,
+            rowData: rowData
+        };
+
+        const gridDiv = document.querySelector('#myGrid');
+        agGrid.createGrid(gridDiv, gridOptions);
+
+        console.log('Grid created with', rowData.length, 'rows');
+    </script>
+</body>
+
+</html>

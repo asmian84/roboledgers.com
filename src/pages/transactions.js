@@ -68,7 +68,7 @@ window.renderTransactions = function () {
     <div class="transaction-page">
       
       <!-- FIXED SECTION: Header & Controls -->
-      <div class="fixed-top-section">
+      <div class="std-page-header">
           <!-- Row 1: Context & Stats -->
           <header class="uc-header">
             <div class="uc-subtitle">
