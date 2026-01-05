@@ -646,20 +646,21 @@ function recalculateAllBalances() {
   let runningBalance = V5State.openingBalance || 0;
 
   V5State.gridData.forEach(txn => {
-    const debit = parseFloat(txn.debit) || 0;
-    const credit = parseFloat(txn.credit) || 0;
+    // Support both capitalized and lowercase field names
+    const debit = parseFloat(txn.Debit || txn.debit) || 0;
+    const credit = parseFloat(txn.Credit || txn.credit) || 0;
 
     if (isCreditCard) {
       // Credit Card (Liability): Balance = Opening - Debit + Credit
       // Payments (debit) reduce what you owe, Purchases (credit) increase what you owe
       runningBalance = runningBalance - debit + credit;
     } else {
-      // Bank Account (Asset): Balance = Opening + Debit - Credit
-      // Deposits (debit) increase balance, Withdrawals (credit) decrease balance
-      runningBalance = runningBalance + debit - credit;
+      // Bank Account (Asset): FIXED - Credits = deposits (IN), Debits = withdrawals (OUT)
+      // Balance = Opening + Credits - Debits
+      runningBalance = runningBalance + credit - debit;
     }
 
-    txn.balance = runningBalance;
+    txn.balance = parseFloat(runningBalance.toFixed(2)); // Round to avoid floating point errors
   });
 
   // Refresh grid to show updated balances
@@ -671,8 +672,9 @@ function recalculateAllBalances() {
   updateReconciliationCard();
 }
 
-window.swapDebitCredit = function (rowId) {
-  const row = V5State.gridData.find(r => r.id === rowId);
+window.swapDebitCredit = function (rowIndex) {
+  if (!V5State.gridData || !V5State.gridApi) return;
+  const row = V5State.gridData[rowIndex];
   if (!row) return;
 
   // Swap debit and credit
@@ -680,8 +682,19 @@ window.swapDebitCredit = function (rowId) {
   row.debit = row.credit;
   row.credit = temp;
 
+  // Also swap capitalized versions
+  if (row.Debit !== undefined || row.Credit !== undefined) {
+    const tempCap = row.Debit;
+    row.Debit = row.Credit;
+    row.Credit = tempCap;
+  }
+
   // Recalculate all balances
   recalculateAllBalances();
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  updateReconciliationCard();
+  captureState();
+  saveData();
 };
 
 window.deleteRow = function (rowId) {
@@ -793,7 +806,7 @@ window.deselectAllV5 = function () {
 // ============================================
 
 function updateReconciliationCard() {
-  if (V5State.gridData.length === 0) {
+  if (!V5State.gridData || V5State.gridData.length === 0) {
     document.getElementById('v5-recon-inline').style.display = 'none';
     return;
   }
@@ -801,27 +814,30 @@ function updateReconciliationCard() {
   // Show inline recon
   document.getElementById('v5-recon-inline').style.display = 'flex';
 
-  // Calculate values
-  let totalIn = 0;
-  let totalOut = 0;
+  // FIXED: Calculate totals from Debit/Credit columns, not amount field
+  let totalIn = 0;  // Credits = money IN
+  let totalOut = 0; // Debits = money OUT
 
   V5State.gridData.forEach(txn => {
-    const amount = parseFloat(txn.amount) || 0;
-    if (amount > 0) {
-      totalIn += amount;
-    } else if (amount < 0) {
-      totalOut += Math.abs(amount);
-    }
+    const credit = parseFloat(txn.Credit || txn.credit) || 0;
+    const debit = parseFloat(txn.Debit || txn.debit) || 0;
+
+    totalIn += credit;   // Sum all credits
+    totalOut += debit;   // Sum all debits
   });
 
   const openingBal = V5State.openingBalance || 0.00;
   const endingBal = openingBal + totalIn - totalOut;
 
-  // Update inline display
-  document.getElementById('v5-opening-bal-mini').textContent = `$${openingBal.toFixed(0)}`;
-  document.getElementById('v5-total-in-mini').textContent = `+${totalIn.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  document.getElementById('v5-total-out-mini').textContent = `-${totalOut.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  document.getElementById('v5-ending-bal-mini').textContent = `$${endingBal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  // Update inline display with proper formatting
+  document.getElementById('v5-opening-bal-mini').textContent =
+    '$' + openingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('v5-total-in-mini').textContent =
+    '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('v5-total-out-mini').textContent =
+    '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('v5-ending-bal-mini').textContent =
+    '$' + endingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ============================================
