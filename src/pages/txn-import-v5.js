@@ -530,6 +530,51 @@ window.toggleV5ActionMenu = function () {
 };
 
 // ============================================
+// ACCOUNT TYPE DETECTION
+// ============================================
+
+function detectAccountType(transactions) {
+  if (!transactions || transactions.length === 0) return 'CHECKING';
+
+  // Analyze transaction pattern
+  let positiveCount = 0;
+  let negativeCount = 0;
+  let totalPositive = 0;
+  let totalNegative = 0;
+
+  transactions.forEach(txn => {
+    const amount = parseFloat(txn.amount) || 0;
+    if (amount > 0) {
+      positiveCount++;
+      totalPositive += amount;
+    } else if (amount < 0) {
+      negativeCount++;
+      totalNegative += Math.abs(amount);
+    }
+  });
+
+  // Credit Card Pattern: Mostly positive (charges), few large negatives (payments)
+  // Bank Account Pattern: Mix or mostly negative (withdrawals more common)
+
+  const positiveRatio = positiveCount / transactions.length;
+
+  // If 70%+ transactions are positive AND average positive is small (typical purchases)
+  // AND there are a few large negatives (payments) → Credit Card
+  if (positiveRatio > 0.7 && positiveCount > 0) {
+    const avgPositive = totalPositive / positiveCount;
+    const avgNegative = negativeCount > 0 ? totalNegative / negativeCount : 0;
+
+    // Credit cards: many small charges, few large payments
+    if (avgNegative > avgPositive * 3) {
+      return 'CREDIT_CARD';
+    }
+  }
+
+  // Default to bank account
+  return 'CHECKING';
+}
+
+// ============================================
 // DEBIT/CREDIT/BALANCE HELPERS
 // ============================================
 
@@ -542,10 +587,7 @@ function updateRowBalance(row) {
 function recalculateAllBalances() {
   if (!V5State.gridData || V5State.gridData.length === 0) return;
 
-  // Detect account type from first transaction or page title
-  // Credit cards are liabilities (codes 2xxx), Bank accounts are assets (1xxx)
-  const isCreditCard = V5State.accountType === 'CREDIT_CARD' ||
-    document.querySelector('.v5-account-type')?.textContent?.includes('CREDIT');
+  const isCreditCard = V5State.accountType === 'CREDIT_CARD';
 
   let runningBalance = V5State.openingBalance || 0;
 
@@ -820,9 +862,12 @@ window.parseV5Files = async function () {
     // Load into grid
     V5State.gridData = categorized;
 
+    // AUTO-DETECT account type from transaction patterns
+    V5State.accountType = detectAccountType(categorized);
+    console.log(`📊 Detected account type: ${V5State.accountType}`);
+
     // Generate IDs and convert Amount to Debit/Credit
-    const isCreditCard = V5State.accountType === 'CREDIT_CARD' ||
-      document.querySelector('.v5-account-type')?.textContent?.includes('CREDIT');
+    const isCreditCard = V5State.accountType === 'CREDIT_CARD';
 
     let runningBalance = V5State.openingBalance || 0;
     categorized.forEach((txn, index) => {
