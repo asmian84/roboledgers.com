@@ -1258,19 +1258,17 @@ window.deselectAllV5 = function () {
 // ============================================
 
 function updateReconciliationCard() {
-  if (!V5State.gridData || V5State.gridData.length === 0) {
-    document.getElementById('v5-recon-inline').style.display = 'none';
+  const gridData = V5State.gridData || [];
+  if (gridData.length === 0) {
+    console.log('⚠️ No grid data to update balance card');
     return;
   }
-
-  // Show inline recon
-  document.getElementById('v5-recon-inline').style.display = 'flex';
 
   // FIXED: Calculate totals from Debit/Credit columns, not amount field
   let totalIn = 0;  // Credits = money IN
   let totalOut = 0; // Debits = money OUT
 
-  V5State.gridData.forEach(txn => {
+  gridData.forEach(txn => {
     const credit = parseFloat(txn.Credit || txn.credit) || 0;
     const debit = parseFloat(txn.Debit || txn.debit) || 0;
 
@@ -1281,15 +1279,22 @@ function updateReconciliationCard() {
   const openingBal = V5State.openingBalance || 0.00;
   const endingBal = openingBal + totalIn - totalOut;
 
-  // Update inline display with proper formatting
-  document.getElementById('v5-opening-bal-mini').textContent =
+  // PHASE 3: Update NEW balance card in control toolbar
+  const openingEl = document.getElementById('v5-opening-bal');
+  const totalInEl = document.getElementById('v5-total-in');
+  const totalOutEl = document.getElementById('v5-total-out');
+  const endingEl = document.getElementById('v5-ending-bal');
+
+  if (openingEl) openingEl.textContent =
     '$' + openingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  document.getElementById('v5-total-in-mini').textContent =
+  if (totalInEl) totalInEl.textContent =
     '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  document.getElementById('v5-total-out-mini').textContent =
+  if (totalOutEl) totalOutEl.textContent =
     '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  document.getElementById('v5-ending-bal-mini').textContent =
+  if (endingEl) endingEl.textContent =
     '$' + endingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  console.log('✅ Balance card updated:', { openingBal, totalIn, totalOut, endingBal });
 }
 
 // ============================================
