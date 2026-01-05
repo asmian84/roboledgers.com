@@ -1650,6 +1650,18 @@ window.cancelStartOverInline = function () {
   if (startoverMode) startoverMode.style.display = 'none';
 };
 
+// Update Ref# prefix and refresh grid
+window.updateRefPrefix = function (value) {
+  V5State.refPrefix = value.toUpperCase().trim();
+
+  // Refresh grid to show new Ref# values
+  if (V5State.gridApi) {
+    V5State.gridApi.refreshCells({ columns: ['refNumber'], force: true });
+  }
+
+  console.log(`✅ Ref# prefix updated: "${V5State.refPrefix}"`);
+};
+
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
