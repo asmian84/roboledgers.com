@@ -1548,6 +1548,13 @@ window.parseV5Files = async function () {
     };
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
+    // PART 2: Refresh history panel if visible
+    const historyPanel = document.getElementById('v5-history-panel');
+    if (historyPanel && historyPanel.style.display !== 'none') {
+      loadImportHistory();
+      console.log('📜 History panel refreshed after upload');
+    }
+
 
     // Clear files
     clearV5Files();
@@ -1839,16 +1846,16 @@ function handleV5KeyboardShortcut(e) {
   if (isCtrl && e.key === 's') {
     e.preventDefault();
     saveData();
-    if (window.showToast) {
-      window.showToast('success', 'Data saved');
-    }
+    // PART 3: Silent operation - no toast
+    console.log('💾 Data saved to cache');
   }
+}
 
-  // Delete: Delete selected rows
-  if (e.key === 'Delete' && !e.target.matches('input, textarea')) {
-    e.preventDefault();
-    deleteV5SelectedRows();
-  }
+// Delete: Delete selected rows
+if (e.key === 'Delete' && !e.target.matches('input, textarea')) {
+  e.preventDefault();
+  deleteV5SelectedRows();
+}
 }
 
 // ============================================
@@ -2005,9 +2012,8 @@ window.confirmStartOver = async function () {
   // Reset UI
   updateUndoButton();
 
-  if (window.showToast) {
-    window.showToast('success', 'All data cleared');
-  }
+  // PART 3: Silent operation - no toast
+  console.log('🗑️ All data cleared');
 };
 
 window.popOutV5Grid = function () {
@@ -2163,15 +2169,24 @@ window.toggleV5Menu = function () {
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 };
 
+// ==================================================
+// EXCEL EXPORT - PART 2 FIX
+// ==================================================
+
 window.exportV5Excel = function () {
-  if (!V5State.gridApi) return;
-  V5State.gridApi.exportDataAsExcel({
-    fileName: `transactions_${new Date().toISOString().split('T')[0]}.xlsx`
+  if (!V5State.gridApi) {
+    console.warn('Grid not initialized');
+    return;
+  }
+
+  const fileName = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+
+  V5State.gridApi.exportDataAsCsv({
+    fileName: fileName,
+    columnKeys: ['Date', 'Description', 'Debit', 'Credit', 'Balance', 'Account']
   });
 
-  if (window.showToast) {
-    window.showToast('success', 'Excel file downloaded');
-  }
+  console.log(`📊 Excel export: ${fileName}`);
 };
 
 window.printV5Preview = function () {
@@ -2198,9 +2213,8 @@ function deleteV5SelectedRows() {
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
   saveData();
 
-  if (window.showToast) {
-    window.showToast('success', `Deleted ${selectedRows.length} transaction(s)`);
-  }
+  // PART 3: Silent operation - no toast
+  console.log(`🗑️ Deleted ${selectedRows.length} transaction(s)`);
 }
 
 function updateSelectionCount() {
