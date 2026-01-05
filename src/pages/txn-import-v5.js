@@ -717,7 +717,9 @@ window.handleV5DragLeave = function (e) {
 window.handleV5Drop = function (e) {
   e.preventDefault();
   e.stopPropagation();
-  e.currentTarget.classList.remove('drag-over');
+
+  // Hide overlay
+  document.getElementById('v5-drop-overlay').style.display = 'none';
 
   const files = Array.from(e.dataTransfer.files).filter(f =>
     f.name.endsWith('.pdf') || f.name.endsWith('.csv')
@@ -725,14 +727,20 @@ window.handleV5Drop = function (e) {
 
   if (files.length > 0) {
     V5State.selectedFiles = files;
-    displayV5SelectedFiles();
+
+    // Automatically start parsing
+    parseV5Files();
   }
 };
 
 window.handleV5FileSelect = function (e) {
   const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
   V5State.selectedFiles = files;
-  displayV5SelectedFiles();
+
+  // Automatically start parsing
+  parseV5Files();
 };
 
 function displayV5SelectedFiles() {
