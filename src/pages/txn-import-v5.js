@@ -1148,12 +1148,115 @@ async function loadData() {
 }
 
 // ============================================
+// CACHE RESTORE HELPERS
+// ============================================
+
+window.restorePreviousImport = async function () {
+  // Remove banner
+  document.getElementById('v5-restore-banner')?.remove();
+
+  // Load cached data
+  await loadData();
+
+  if (window.showToast) {
+    window.showToast('success', 'Previous import restored');
+  }
+};
+
+window.startFreshImport = async function () {
+  // Remove banner
+  document.getElementById('v5-restore-banner')?.remove();
+
+  // Clear all caches
+  await window.CacheManager.clearAll();
+  await window.BrainStorage.clearAllFileHashes();
+
+  // Reset grid
+  V5State.gridData = [];
+  if (V5State.gridApi) {
+    V5State.gridApi.setGridOption('rowData', []);
+  }
+
+  if (window.showToast) {
+    window.showToast('success', 'Ready for new import');
+  }
+};
+
+// ============================================
 // AUTO-INITIALIZE
 // ============================================
 
 window.initTxnImportV5Grid = async function () {
-  // Load cached data on page load
-  await loadData();
+  // Check if there are cached transactions
+  const cachedTransactions = await window.CacheManager.getTransactions();
+
+  if (cachedTransactions && cachedTransactions.length > 0) {
+    // Show in-page prompt banner
+    const banner = document.createElement('div');
+    banner.id = 'v5-restore-banner';
+    banner.style.cssText = `
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      animation: slideDown 0.3s ease;
+    `;
+
+    banner.innerHTML = `
+      <i class="ph ph-database" style="font-size: 24px;"></i>
+      <div style="flex: 1;">
+        <div style="font-weight: 600; margin-bottom: 4px;">Previous import found</div>
+        <div style="font-size: 0.875rem; opacity: 0.9;">${cachedTransactions.length} transactions from last session</div>
+      </div>
+      <button onclick="restorePreviousImport()" style="
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+      ">
+        Reload Previous
+      </button>
+      <button onclick="startFreshImport()" style="
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.4);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+      ">
+        Start Over
+      </button>
+      <button onclick="this.parentElement.remove()" style="
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 4px 8px;
+      ">
+        ×
+      </button>
+    `;
+
+    document.body.appendChild(banner);
+
+    // Don't auto-load - wait for user choice
+  } else {
+    // No cached data, show empty state
+    await loadData();
+  }
 };
 
 console.log('✅ Txn Import V5 loaded successfully');
