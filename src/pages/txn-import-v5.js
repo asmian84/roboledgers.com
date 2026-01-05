@@ -1485,14 +1485,52 @@ window.updateV5SelectionUI = function () {
 
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
-  if (selectedRows.length === 0) {
-    alert('No rows selected');
-    return;
-  }
+  if (selectedRows.length === 0) return;
 
-  console.log(`🏷️ Bulk categorize ${selectedRows.length} transactions`);
-  // TODO: Implement bulk categorize modal
-  alert(`Bulk Categorize feature coming soon!\n${selectedRows.length} transactions selected`);
+  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  const cats = {
+    'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
+    'Liabilities': coa.filter(a => a.code >= 2000 && a.code < 3000),
+    'Equity': coa.filter(a => a.code >= 3000 && a.code < 4000),
+    'Revenue': coa.filter(a => a.code >= 4000 && a.code < 5000),
+    'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
+  };
+
+  let opts = '<select id="bulk-acct" style="width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:6px"><option value="">Select Account...</option>';
+  Object.keys(cats).forEach(cat => {
+    if (cats[cat].length > 0) {
+      opts += `<optgroup label="${cat}">`;
+      cats[cat].forEach(a => opts += `<option value="${a.code}">${a.code} - ${a.name}</option>`);
+      opts += '</optgroup>';
+    }
+  });
+  opts += '</select>';
+
+  const m = document.createElement('div');
+  m.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000';
+  m.innerHTML = `<div style="background:white;border-radius:8px;padding:2rem;width:500px;max-width:90vw">
+<h2 style="margin:0 0 1rem 0">Bulk Categorize</h2>
+<p style="color:#6b7280;margin-bottom:1.5rem">${selectedRows.length} items selected</p>
+<div style="margin-bottom:1.5rem"><label style="display:block;font-weight:600;margin-bottom:0.5rem">Account:</label>${opts}</div>
+<div style="display:flex;gap:0.5rem;justify-content:flex-end">
+<button onclick="this.closest('div[style*=fixed]').remove()" style="padding:0.5rem 1rem;border:1px solid #d1d5db;background:white;border-radius:6px;cursor:pointer">Cancel</button>
+<button onclick="window.applyBulkCat()" style="padding:0.5rem 1rem;border:none;background:#3b82f6;color:white;border-radius:6px;cursor:pointer">Apply</button>
+</div></div>`;
+  document.body.appendChild(m);
+};
+
+window.applyBulkCat = function () {
+  const code = document.getElementById('bulk-acct').value;
+  if (!code) return;
+  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  const acct = coa.find(a => a.code == code);
+  const rows = V5State.gridApi.getSelectedRows();
+  rows.forEach(r => { r.account = `${acct.code} - ${acct.name}`; r.category = acct.name; });
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  saveData();
+  console.log(`✅ Categorized ${rows.length} to ${acct.name}`);
+  document.querySelector('div[style*="fixed"]').remove();
+  cancelBulkSelection();
 };
 
 window.bulkRenameV5 = function () {
