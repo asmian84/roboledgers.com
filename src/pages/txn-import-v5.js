@@ -28,11 +28,30 @@ const V5_MAX_UNDO_STEPS = 10;
 // ============================================
 
 function get5TierCoAAccounts() {
-  if (!window.storage) return [];
+  // Try multiple sources for accounts
+  let accounts = [];
 
-  const accounts = window.storage.getAccountsSync ?
-    window.storage.getAccountsSync() :
-    JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+  // Source 1: window.storage (preferred)
+  if (window.storage?.getAccountsSync) {
+    accounts = window.storage.getAccountsSync();
+    console.log('📊 Loaded', accounts.length, 'accounts from window.storage');
+  }
+
+  // Source 2: localStorage fallback
+  if (accounts.length === 0) {
+    accounts = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+    console.log('📊 Loaded', accounts.length, 'accounts from localStorage');
+  }
+
+  // Source 3: window.chartOfAccounts fallback
+  if (accounts.length === 0 && window.chartOfAccounts) {
+    accounts = window.chartOfAccounts;
+    console.log('📊 Loaded', accounts.length, 'accounts from window.chartOfAccounts');
+  }
+
+  if (accounts.length === 0) {
+    console.warn('⚠️ No COA accounts found! Account dropdown will be empty.');
+  }
 
   // Group into 5 tiers based on account code ranges
   const tiers = {
