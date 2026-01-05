@@ -1002,6 +1002,7 @@ window.initV5Grid = function () {
   container.style.display = 'block';
 
   console.log('✅ Initializing grid with', V5State.gridData.length, 'transactions');
+  console.log('📊 First 3 transactions:', V5State.gridData.slice(0, 3));
 
   const columnDefs = [
     {
@@ -1091,24 +1092,28 @@ window.initV5Grid = function () {
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
             <button 
-              onclick="swapDebitCredit('${params.data.id}')" 
-              style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: white; cursor: pointer;"
+              class="action-btn" 
+              onclick="window.swapDebitCredit(${params.node.rowIndex})" 
               title="Swap Debit/Credit"
-            >
-              ⇄
-            </button>
+              style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;"
+            >⇄</button>
             <button 
-              onclick="deleteRow('${params.data.id}')" 
-              style="padding: 4px 8px; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; background: white; cursor: pointer;"
+              class="action-btn delete-btn" 
+              onclick="window.deleteV5Row(${params.node.rowIndex})" 
               title="Delete"
-            >
-              ✕
-            </button>
+              style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;"
+            >✕</button>
           </div>
         `;
       }
     }
   ];
+
+  console.log('📋 Column Definitions:', columnDefs);
+  console.log('📊 Total columns:', columnDefs.length);
+  columnDefs.forEach((col, i) => {
+    console.log(`  Column ${i}: "${col.headerName}" (field: ${col.field}, width: ${col.width})`);
+  });
 
   const gridOptions = {
     columnDefs,
@@ -1139,12 +1144,24 @@ window.initV5Grid = function () {
       V5State.gridApi = params.api;
       params.api.sizeColumnsToFit();
       console.log('✅ Grid API stored and columns sized');
+
+      // Log grid state
+      const rect = container.getBoundingClientRect();
+      console.log('📐 Grid container dimensions:', {
+        width: rect.width,
+        height: rect.height,
+        top: rect.top,
+        left: rect.left,
+        visible: rect.height > 0 && rect.width > 0
+      });
+      console.log('🎯 Grid has', params.api.getDisplayedRowCount(), 'displayed rows');
     }
   };
 
   // Initialize grid
   console.log('🔧 Creating AG Grid instance...');
   console.log('Container element:', container);
+  console.log('Container computed style:', window.getComputedStyle(container).display, window.getComputedStyle(container).height);
   console.log('Grid options:', gridOptions);
 
   try {
