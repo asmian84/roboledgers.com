@@ -317,7 +317,7 @@ window.renderTxnImportV5Page = function () {
   return `
     <div class="txn-import-v5-container">
       
-      <!-- Header - Icon + Title + Reconciliation Balances + Basic Actions -->
+      <!-- Header - Icon + Title + Reconciliation Balances + Browse/Drop + Actions -->
       <div class="v5-header-unified">
         <!-- Left: Icon + Title -->
         <div class="v5-title-section">
@@ -334,7 +334,7 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
         
-        <!-- Right: Reconciliation Balances -->
+        <!-- Center: Reconciliation Balances (shown when data loaded) -->
         <div class="v5-recon-inline" id="v5-recon-inline" style="display: none;">
           <div class="v5-recon-mini">
             <div class="v5-recon-mini-label">OPENING BAL</div>
@@ -342,19 +342,29 @@ window.renderTxnImportV5Page = function () {
           </div>
           <div class="v5-recon-mini">
             <div class="v5-recon-mini-label">TOTAL IN</div>
-            <div class="v5-recon-mini-value positive" id="v5-total-in-mini">+77,337.67</div>
+            <div class="v5-recon-mini-value positive" id="v5-total-in-mini">+0.00</div>
           </div>
           <div class="v5-recon-mini">
             <div class="v5-recon-mini-label">TOTAL OUT</div>
-            <div class="v5-recon-mini-value negative" id="v5-total-out-mini">-1,967,049.00</div>
+            <div class="v5-recon-mini-value negative" id="v5-total-out-mini">-0.00</div>
           </div>
           <div class="v5-recon-mini ending">
             <div class="v5-recon-mini-label">ENDING BAL</div>
-            <div class="v5-recon-mini-value" id="v5-ending-bal-mini">$1,889,711.33</div>
+            <div class="v5-recon-mini-value" id="v5-ending-bal-mini">$0.00</div>
           </div>
         </div>
         
-        <!-- Far Right: Basic Actions -->
+        <!-- Center-Right: Browse/Drop Files (always visible) -->
+        <div class="v5-browse-section">
+          <button class="btn-browse" onclick="document.getElementById('v5-file-input').click()">
+            <i class="ph ph-cloud-arrow-up"></i>
+            Browse / Drop Files
+          </button>
+          <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
+                 style="display: none;" onchange="handleV5FileSelect(event)">
+        </div>
+        
+        <!-- Right: Icon Actions + Menu -->
         <div class="v5-header-actions-basic">
           <button class="btn-icon" onclick="startOverV5()" title="Start Over">
             <i class="ph ph-arrows-counter-clockwise"></i>
@@ -365,36 +375,48 @@ window.renderTxnImportV5Page = function () {
           <button class="btn-icon" onclick="popOutV5Grid()" title="Pop Out">
             <i class="ph ph-arrow-square-out"></i>
           </button>
-          <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More">
-            <i class="ph ph-dots-three"></i>
-          </button>
+          <div class="v5-menu-wrapper">
+            <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More" id="v5-header-menu-btn">
+              <i class="ph ph-dots-three"></i>
+            </button>
+            <div id="v5-header-dropdown" class="v5-dropdown-menu" style="display: none;">
+              <button onclick="exportV5Excel()">
+                <i class="ph ph-file-xls"></i>
+                Export Excel
+              </button>
+              <button onclick="printV5Preview()">
+                <i class="ph ph-printer"></i>
+                PDF Print Preview
+              </button>
+              <button onclick="undoLastAction()">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                <span id="v5-undo-menu-text">Undo (0)</span>
+              </button>
+              <hr>
+              <button onclick="showV5Appearance()">
+                <i class="ph ph-palette"></i>
+                Appearance
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       
-      <!-- Action Bar - Browse/Drop + Bulk Actions + Search -->
-      <div class="v5-action-bar">
-        <!-- Left: Selection Count -->
+      <!-- Action Bar - Only shown when grid has data -->
+      <div class="v5-action-bar" id="v5-action-bar" style="display: none;">
+        <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
-          <span id="v5-selection-count">1 selected</span>
+          <span id="v5-selection-count">0 selected</span>
         </div>
         
-        <!-- Center: Browse/Drop Zone + Bulk Actions -->
+        <!-- Center: Bulk Actions (only shown when rows selected) -->
         <div class="v5-actions-center">
-          <!-- Browse/Drop Button -->
-          <button class="btn-action-primary" onclick="document.getElementById('v5-file-input').click()">
-            <i class="ph ph-cloud-arrow-up"></i>
-            Browse / Drop Files
-          </button>
-          <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
-                 style="display: none;" onchange="handleV5FileSelect(event)">
-          
-          <!-- Bulk Action Buttons -->
-          <button class="btn-action" onclick="bulkCategorizeV5()" id="v5-bulk-categorize-btn" disabled>
+          <button class="btn-action" onclick="bulkCategorizeV5()" id="v5-bulk-categorize-btn" style="display: none;">
             <i class="ph ph-tag"></i>
             Bulk Categorize
           </button>
           
-          <button class="btn-action" onclick="bulkRenameV5()" id="v5-bulk-rename-btn" disabled>
+          <button class="btn-action" onclick="bulkRenameV5()" id="v5-bulk-rename-btn" style="display: none;">
             <i class="ph ph-pencil"></i>
             Bulk Rename
           </button>
@@ -404,22 +426,10 @@ window.renderTxnImportV5Page = function () {
             Clear
           </button>
           
-          <button class="btn-action-blue" onclick="autoCategorizeV5()">
+          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-auto-categorize-btn">
             <i class="ph ph-magic-wand"></i>
             Auto-Categorize
           </button>
-          
-          <button class="btn-action-secondary" onclick="reviewMatchesV5()">
-            <i class="ph ph-check-circle"></i>
-            Review Matches
-          </button>
-          
-          <!-- Ref Prefix Input (optional) -->
-          <input type="text" 
-                 class="v5-ref-prefix" 
-                 placeholder="[Ref Prefix]"
-                 id="v5-ref-prefix"
-                 style="display: none;">
         </div>
         
         <!-- Right: Search + Menu -->
@@ -432,9 +442,30 @@ window.renderTxnImportV5Page = function () {
                    oninput="filterV5Grid(this.value)">
           </div>
           
-          <button class="btn-icon" onclick="toggleV5ActionMenu()" title="More Actions">
-            <i class="ph ph-dots-three-vertical"></i>
-          </button>
+          <div class="v5-menu-wrapper">
+            <button class="btn-icon" onclick="toggleV5ActionMenu()" title="More Actions" id="v5-action-menu-btn">
+              <i class="ph ph-dots-three-vertical"></i>
+            </button>
+            <div id="v5-action-dropdown" class="v5-dropdown-menu" style="display: none;">
+              <button onclick="exportSelected()">
+                <i class="ph ph-export"></i>
+                Export Selected
+              </button>
+              <button onclick="deleteSelected()">
+                <i class="ph ph-trash"></i>
+                Delete Selected
+              </button>
+              <hr>
+              <button onclick="selectAllV5()">
+                <i class="ph ph-check-square"></i>
+                Select All
+              </button>
+              <button onclick="deselectAllV5()">
+                <i class="ph ph-square"></i>
+                Deselect All
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -443,13 +474,12 @@ window.renderTxnImportV5Page = function () {
         <div class="v5-history-content">
           <h3>Import History</h3>
           <div id="v5-history-list">
-            <!-- History items will be populated here -->
             <p style="color: var(--text-secondary); padding: 1rem;">No import history yet.</p>
           </div>
         </div>
       </div>
       
-      <!-- Drag & Drop Overlay (shown when dragging files) -->
+      <!-- Drag & Drop Overlay (shown when dragging files over entire page) -->
       <div id="v5-drop-overlay" class="v5-drop-overlay" style="display: none;"
            ondragover="handleV5DragOver(event)" 
            ondrop="handleV5Drop(event)"
@@ -472,7 +502,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- Empty State (shown when no data) -->
-      <div id="v5-empty-state" class="v5-empty-state" style="display: none;">
+      <div id="v5-empty-state" class="v5-empty-state">
         <div class="v5-empty-icon">
           <i class="ph ph-book-open-text" style="font-size: 8rem; color: var(--text-tertiary);"></i>
         </div>
@@ -485,47 +515,6 @@ window.renderTxnImportV5Page = function () {
       <!-- AG Grid -->
       <div id="v5-grid-container" class="v5-grid-container ag-theme-quartz" style="display: none;">
         <!-- Grid will be initialized here -->
-      </div>
-      
-      <!-- Dropdown Menus -->
-      <div id="v5-header-dropdown" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 60px;">
-        <button onclick="exportV5Excel()">
-          <i class="ph ph-file-xls"></i>
-          Export Excel
-        </button>
-        <button onclick="printV5Preview()">
-          <i class="ph ph-printer"></i>
-          PDF Print Preview
-        </button>
-        <button onclick="undoLastAction()">
-          <i class="ph ph-arrow-counter-clockwise"></i>
-          <span id="v5-undo-menu-text">Undo (0)</span>
-        </button>
-        <hr>
-        <button onclick="showV5Appearance()">
-          <i class="ph ph-palette"></i>
-          Appearance
-        </button>
-      </div>
-      
-      <div id="v5-action-dropdown" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 120px;">
-        <button onclick="exportSelected()">
-          <i class="ph ph-export"></i>
-          Export Selected
-        </button>
-        <button onclick="deleteSelected()">
-          <i class="ph ph-trash"></i>
-          Delete Selected
-        </button>
-        <hr>
-        <button onclick="selectAll()">
-          <i class="ph ph-check-square"></i>
-          Select All
-        </button>
-        <button onclick="deselectAll()">
-          <i class="ph ph-square"></i>
-          Deselect All
-        </button>
       </div>
       
     </div>
@@ -655,16 +644,25 @@ function updateV5SelectionUI() {
   if (selectedCount > 0) {
     selectionInfo.style.display = 'block';
     selectionCount.textContent = `${selectedCount} selected`;
-    bulkCategorizeBtn.disabled = false;
-    bulkRenameBtn.disabled = false;
+    bulkCategorizeBtn.style.display = 'flex';
+    bulkRenameBtn.style.display = 'flex';
     clearBtn.style.display = 'flex';
   } else {
     selectionInfo.style.display = 'none';
-    bulkCategorizeBtn.disabled = true;
-    bulkRenameBtn.disabled = true;
+    bulkCategorizeBtn.style.display = 'none';
+    bulkRenameBtn.style.display = 'none';
     clearBtn.style.display = 'none';
   }
 }
+
+// Grid selection helpers
+window.selectAllV5 = function () {
+  V5State.gridApi?.selectAll();
+};
+
+window.deselectAllV5 = function () {
+  V5State.gridApi?.deselectAll();
+};
 
 // ============================================
 // RECONCILIATION UPDATE (REVISED)
