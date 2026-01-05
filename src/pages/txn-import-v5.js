@@ -1151,10 +1151,11 @@ window.initV5Grid = function () {
     const gridInstance = agGrid.createGrid(container, gridOptions);
     console.log('✅ AG Grid created successfully:', gridInstance);
 
-    // FORCE container to be visible (something keeps hiding it!)
+    // FORCE container to be visible with explicit height!
     container.style.display = 'block';
-    container.style.height = '100%';
-    console.log('✅ Container forced to visible');
+    container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
+    container.style.minHeight = '500px'; // Minimum height
+    console.log('✅ Container forced to visible with height:', container.style.height);
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
   }
