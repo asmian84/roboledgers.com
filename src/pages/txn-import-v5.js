@@ -1549,26 +1549,102 @@ window.handleV5Search = function (event) {
 // ==================================================
 
 window.updateV5SelectionUI = function () {
-  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
-  const count = selectedRows.length;
-  const bulkBar = document.getElementById('v5-bulk-bar');
-  const bulkCount = document.getElementById('v5-bulk-count');
+  if (!V5State.gridApi) return;
+
+  const count = V5State.gridApi.getSelectedNodes().length;
+
+  // Show/hide inline bar bulk mode
+  const inlineBar = document.getElementById('v5-inline-bar');
+  const bulkMode = document.getElementById('bulk-mode-bar');
+  const startoverMode = document.getElementById('startover-mode-bar');
+  const oldBulkBar = document.getElementById('v5-bulk-bar');
 
   if (count > 0) {
-    // Show bulk bar
-    if (bulkBar) {
-      bulkBar.style.display = 'flex';
-      if (bulkCount) {
-        bulkCount.textContent = `${count} item${count > 1 ? 's' : ''} selected`;
-      }
+    if (inlineBar) inlineBar.style.display = 'flex';
+    if (bulkMode) {
+      bulkMode.style.display = 'flex';
+      document.getElementById('selection-count').textContent = `${count} selected`;
+      populateBulkCategoryDropdown();
     }
-    console.log(`📦 ${count} rows selected`);
+    if (startoverMode) startoverMode.style.display = 'none';
+    if (oldBulkBar) oldBulkBar.style.display = 'none';
   } else {
-    // Hide bulk bar
-    if (bulkBar) {
-      bulkBar.style.display = 'none';
-    }
+    if (inlineBar) inlineBar.style.display = 'none';
+    if (bulkMode) bulkMode.style.display = 'none';
+    if (oldBulkBar) oldBulkBar.style.display = 'none';
   }
+};
+
+// Helper: Populate bulk category dropdown
+window.populateBulkCategoryDropdown = function () {
+  const dropdown = document.getElementById('bulk-category-dropdown');
+  if (!dropdown) return;
+
+  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  const cats = {
+    'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
+    'Liabilities': coa.filter(a => a.code >= 2000 && a.code < 3000),
+    'Equity': coa.filter(a => a.code >= 3000 && a.code < 4000),
+    'Revenue': coa.filter(a => a.code >= 4000 && a.code < 5000),
+    'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
+  };
+
+  let opts = '<option value="">Select Account...</option>';
+  Object.keys(cats).forEach(cat => {
+    if (cats[cat].length > 0) {
+      opts += `<optgroup label="${cat}">`;
+      cats[cat].forEach(a => opts += `<option value="${a.code}">${a.code} - ${a.name}</option>`);
+      opts += '</optgroup>';
+    }
+  });
+  dropdown.innerHTML = opts;
+};
+
+// Apply bulk category from inline bar
+window.applyBulkCategoryInline = function () {
+  const code = document.getElementById('bulk-category-dropdown').value;
+  if (!code) return;
+
+  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  const acct = coa.find(a => a.code == code);
+  if (!acct) return;
+
+  const rows = V5State.gridApi.getSelectedRows();
+  rows.forEach(r => {
+    r.account = `${acct.code} - ${acct.name}`;
+    r.category = acct.name;
+  });
+
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  saveData();
+  console.log(`✅ Categorized ${rows.length} to ${acct.name}`);
+  cancelBulkSelection();
+};
+
+// Show start over confirmation in inline bar
+window.startOverV5 = function () {
+  const inlineBar = document.getElementById('v5-inline-bar');
+  const bulkMode = document.getElementById('bulk-mode-bar');
+  const startoverMode = document.getElementById('startover-mode-bar');
+
+  if (inlineBar) inlineBar.style.display = 'flex';
+  if (bulkMode) bulkMode.style.display = 'none';
+  if (startoverMode) startoverMode.style.display = 'flex';
+};
+
+// Confirm start over from inline bar
+window.confirmStartOverInline = async function () {
+  await confirmStartOver();
+  cancelStartOverInline();
+};
+
+// Cancel start over
+window.cancelStartOverInline = function () {
+  const inlineBar = document.getElementById('v5-inline-bar');
+  const startoverMode = document.getElementById('startover-mode-bar');
+
+  if (inlineBar) inlineBar.style.display = 'none';
+  if (startoverMode) startoverMode.style.display = 'none';
 };
 
 window.bulkCategorizeV5 = function () {
