@@ -1135,13 +1135,24 @@ window.initV5Grid = function () {
       updateV5SelectionUI();
     },
     onGridReady: (params) => {
+      console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
       params.api.sizeColumnsToFit();
+      console.log('✅ Grid API stored and columns sized');
     }
   };
 
   // Initialize grid
-  agGrid.createGrid(container, gridOptions);
+  console.log('🔧 Creating AG Grid instance...');
+  console.log('Container element:', container);
+  console.log('Grid options:', gridOptions);
+
+  try {
+    const gridInstance = agGrid.createGrid(container, gridOptions);
+    console.log('✅ AG Grid created successfully:', gridInstance);
+  } catch (error) {
+    console.error('❌ Failed to create AG Grid:', error);
+  }
 
   // Add keyboard shortcut listeners
   setupV5KeyboardShortcuts();
