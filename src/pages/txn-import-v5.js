@@ -322,7 +322,7 @@ window.renderTxnImportV5Page = function () {
                  style="display: none;" onchange="handleV5FileSelect(event)">
         </div>
         
-        <!-- Right: Icon Actions + Menu -->
+        <!-- Right: Icon Actions + Help + Menu -->
         <div class="v5-header-actions-basic">
           <button class="btn-icon" onclick="startOverV5()" title="Start Over">
             <i class="ph ph-arrows-counter-clockwise"></i>
@@ -332,6 +332,9 @@ window.renderTxnImportV5Page = function () {
           </button>
           <button class="btn-icon" onclick="popOutV5Grid()" title="Pop Out">
             <i class="ph ph-arrow-square-out"></i>
+          </button>
+          <button class="btn-icon" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts">
+            <i class="ph ph-question"></i>
           </button>
           <div class="v5-menu-wrapper">
             <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More" id="v5-header-menu-btn">
