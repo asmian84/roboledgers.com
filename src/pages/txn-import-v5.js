@@ -492,6 +492,25 @@ window.renderTxnImportV5Page = function () {
           height: 100% !important;
           min-height: 400px !important;
         }
+        
+        /* Responsive grid sizing */
+        #v5-grid-container {
+          height: calc(100vh - 280px) !important;
+          min-height: 500px;
+        }
+        
+        @media (max-width: 768px) {
+          #v5-grid-container {
+            height: calc(100vh - 250px) !important;
+            min-height: 400px;
+          }
+        }
+        
+        @media (min-width: 1400px) {
+          #v5-grid-container {
+            height: calc(100vh - 240px) !important;
+          }
+        }
       </style>
 
       <!-- Empty State (shown when no data) -->
@@ -506,7 +525,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- AG Grid -->
-      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px; background: white; margin-top: 20px;">
+      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine">
         <!-- Grid will be initialized here -->
       </div>
       
