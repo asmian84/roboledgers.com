@@ -1267,51 +1267,146 @@ window.startOverV5 = async function () {
 };
 
 window.popOutV5Grid = function () {
-  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1200,height=800');
+  // Hide in-page grid and show pop-in button
+  const gridContainer = document.getElementById('v5-grid-container');
+  gridContainer.style.display = 'none';
+
+  // Show pop-in button
+  let popInBtn = document.getElementById('v5-popin-btn');
+  if (!popInBtn) {
+    popInBtn = document.createElement('button');
+    popInBtn.id = 'v5-popin-btn';
+    popInBtn.className = 'btn-primary';
+    popInBtn.onclick = () => window.popInV5Grid();
+    popInBtn.style.cssText = 'margin: 2rem auto; display: block;';
+    popInBtn.innerHTML = '<i class="ph ph-arrow-square-in"></i> Pop In Grid';
+    document.getElementById('v5-grid-container').parentElement.appendChild(popInBtn);
+  }
+  popInBtn.style.display = 'block';
+
+  // Open popout window
+  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1400,height=900');
 
   if (!popOutWindow) {
     alert('Popup blocked! Please allow popups for this site.');
     return;
   }
 
+  // Store reference
+  V5State.popoutWindow = popOutWindow;
+
   popOutWindow.document.write(`
     <html>
       <head>
         <title>Transaction Grid - Pop Out</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-quartz.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
+        <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
         <style>
-          body { margin: 0; padding: 16px; background: #f8fafc; }
-          #popout-grid { width: 100%; height: calc(100vh - 32px); }
+          body { margin: 0; padding: 1rem; font-family: system-ui; background: #f9fafb; }
+          .popout-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+          .popout-actions { display: flex; gap: 0.5rem; }
+          .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer; }
+          .btn:hover { background: #f3f4f6; }
+          .btn-primary { background: #3b82f6; color: white; border-color: #3b82f6; }
+          .btn-primary:hover { background: #2563eb; }
+          #popout-grid { height: calc(100vh - 100px); }
         </style>
       </head>
       <body>
-        <div id="popout-grid" class="ag-theme-quartz"></div>
-        <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"><\/script>
+        <div class="popout-header">
+          <h2>📊 Transaction Grid</h2>
+          <div class="popout-actions">
+            <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
+            <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
+            <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
+            <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
+          </div>
+        </div>
+        <div id="popout-grid" class="ag-theme-alpine"></div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
         <script>
           const gridData = ${JSON.stringify(V5State.gridData)};
-          const columnDefs = [
-            { headerName: 'Date', field: 'date', width: 120 },
-            { headerName: 'Description', field: 'description', width: 250 },
-            { headerName: 'Merchant', field: 'merchant', width: 180 },
-            { headerName: 'Amount', field: 'amount', width: 120 },
-            { headerName: 'Category', field: 'category', width: 200 },
-            { headerName: 'Account', field: 'account', width: 250 },
-            { headerName: 'Notes', field: 'notes', width: 300 }
-          ];
+          let gridApi;
+          
+          // Same column defs as main grid
+          const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
           
           const gridOptions = {
             columnDefs,
             rowData: gridData,
-            defaultColDef: { sortable: true, filter: true, resizable: true }
+            defaultColDef: { sortable: true, filter: true, resizable: true },
+            rowSelection: 'multiple',
+            onCellValueChanged: (params) => {
+              // Sync back to parent window
+              window.opener.updateV5DataFromPopout(gridData);
+            }
           };
           
-          agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-        <\/script>
+          document.addEventListener('DOMContentLoaded', () => {
+            gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          });
+          
+          function selectAll() { gridApi.selectAll(); }
+          function deselectAll() { gridApi.deselectAll(); }
+          function bulkDelete() {
+            const selected = gridApi.getSelectedRows();
+            if (selected.length === 0) return;
+            if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
+            
+            const selectedIds = selected.map(r => r.id);
+            const newData = gridData.filter(r => !selectedIds.includes(r.id));
+            gridApi.setGridOption('rowData', newData);
+            window.opener.updateV5DataFromPopout(newData);
+          }
+          function closePopout() {
+            window.opener.popInV5Grid();
+            window.close();
+          }
+        </script>
       </body>
     </html>
   `);
 };
+
+window.popInV5Grid = function () {
+  // Close popout if open
+  if (V5State.popoutWindow && !V5State.popoutWindow.closed) {
+    V5State.popoutWindow.close();
+  }
+
+  // Show in-page grid
+  document.getElementById('v5-grid-container').style.display = 'block';
+
+  // Hide pop-in button
+  const popInBtn = document.getElementById('v5-popin-btn');
+  if (popInBtn) popInBtn.style.display = 'none';
+
+  // Refresh grid
+  if (V5State.gridApi) {
+    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  }
+};
+
+window.updateV5DataFromPopout = function (newData) {
+  V5State.gridData = newData;
+  recalculateAllBalances();
+  saveData();
+};
+
+function getV5ColumnDefs() {
+  // Return same column defs used in main grid (without cellRenderer for actions)
+  return [
+    { headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 50 },
+    { headerName: 'Date', field: 'date', width: 120, editable: true },
+    { headerName: 'Description', field: 'description', width: 300, editable: true },
+    { headerName: 'Debit', field: 'debit', width: 120, editable: true },
+    { headerName: 'Credit', field: 'credit', width: 120, editable: true },
+    { headerName: 'Balance', field: 'balance', width: 130, editable: false },
+    { headerName: 'Account', field: 'account', width: 280, editable: true }
+  ];
+}
 
 window.toggleV5Menu = function () {
   const menu = document.getElementById('v5-dropdown-menu');
