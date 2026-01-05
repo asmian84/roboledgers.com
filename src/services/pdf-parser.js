@@ -2463,6 +2463,37 @@
         window.pdfParser = new PDFParser();
         console.log('📄 PDF Parser Loaded (v1.1 - Generic Fallback Support)');
 
+        /**
+         * Global wrapper function for Processing Engine
+         * @param {File} file - PDF file to parse
+         * @param {Function} progressCallback - Progress callback
+         * @returns {Promise<Array>} - Array of transactions
+         */
+        window.parsePdfStatementAndActivate = async function (file, progressCallback) {
+            try {
+                progressCallback?.(0, 'Loading PDF...');
+
+                const result = await window.pdfParser.parsePDF(file);
+
+                progressCallback?.(100, 'Complete');
+
+                // Return transactions in expected format
+                return result.transactions.map(txn => ({
+                    date: txn.date,
+                    description: txn.description || '',
+                    merchant: txn.description || '',
+                    amount: txn.type === 'debit' ? -Math.abs(txn.amount) : Math.abs(txn.amount),
+                    category: 'Uncategorized',
+                    account: ''
+                }));
+            } catch (error) {
+                console.error('PDF parsing error:', error);
+                throw error;
+            }
+        };
+
+        console.log('✅ PDF Parser wrapper function registered');
+
     } catch (e) {
         console.error("🔥 CRITICAL PDF PARSER FAILURE:", e);
     }
