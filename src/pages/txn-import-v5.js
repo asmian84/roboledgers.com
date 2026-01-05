@@ -991,11 +991,17 @@ function updateV5Progress(current, total, message) {
 
 window.initV5Grid = function () {
   const container = document.getElementById('v5-grid-container');
-  if (!container) return;
+  if (!container) {
+    console.error('Grid container not found!');
+    return;
+  }
 
-  // Hide empty state, show grid
-  document.getElementById('v5-empty-state').style.display = 'none';
+  // IMPORTANT: Hide empty state, show grid
+  const emptyState = document.getElementById('v5-empty-state');
+  if (emptyState) emptyState.style.display = 'none';
   container.style.display = 'block';
+
+  console.log('✅ Initializing grid with', V5State.gridData.length, 'transactions');
 
   const columnDefs = [
     {
