@@ -6660,3 +6660,119 @@ button {
   color: var(--text-secondary);
   font-size: 0.875rem;
 }
+
+/* V5 Additional Styles - No Wrap & Dropdowns */
+
+/* Browse button styling */
+.btn-browse {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-browse:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.v5-browse-section {
+  flex-shrink: 0;
+}
+
+/* Menu wrapper for proper dropdown positioning */
+.v5-menu-wrapper {
+  position: relative;
+}
+
+.v5-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  min-width: 200px;
+  z-index: 1000;
+  padding: 0.5rem 0;
+}
+
+.v5-dropdown-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  font-size: 0.875rem;
+}
+
+.v5-dropdown-menu button:hover {
+  background: var(--bg-tertiary);
+}
+
+.v5-dropdown-menu hr {
+  margin: 0.5rem 0;
+  border: none;
+  border-top: 1px solid var(--border-color);
+}
+
+/* No wrapping - single line enforced */
+.v5-header-unified,
+.v5-action-bar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.v5-title-section,
+.v5-recon-inline,
+.v5-browse-section,
+.v5-header-actions-basic,
+.v5-selection-info,
+.v5-actions-center,
+.v5-actions-right {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Scrollbar styling for horizontal overflow */
+.v5-header-unified::-webkit-scrollbar,
+.v5-action-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.v5-header-unified::-webkit-scrollbar-track,
+.v5-action-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.v5-header-unified::-webkit-scrollbar-thumb,
+.v5-action-bar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Ensure buttons don't shrink */
+.btn-icon,
+.btn-browse,
+.btn-action,
+.btn-action-blue,
+.btn-action-secondary {
+  flex-shrink: 0;
+}
