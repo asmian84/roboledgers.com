@@ -487,7 +487,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- AG Grid -->
-      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px; background: white !important; border: 2px solid red !important; margin-top: 20px !important;">
+      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px; background: white; margin-top: 20px;">
         <!-- Grid will be initialized here -->
       </div>
       
@@ -1100,7 +1100,6 @@ window.initV5Grid = function () {
       headerName: 'Actions',
       field: 'actions',
       width: 120,
-      pinned: 'right',
       cellRenderer: params => {
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
@@ -1155,8 +1154,10 @@ window.initV5Grid = function () {
     onGridReady: (params) => {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
+
+      // Size columns to fit viewport
       params.api.sizeColumnsToFit();
-      console.log('✅ Grid API stored and columns sized');
+      console.log('✅ Grid API stored and columns auto-fitted');
 
       // Log grid state
       const rect = container.getBoundingClientRect();
