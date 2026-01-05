@@ -398,15 +398,13 @@ window.renderTxnImportV5Page = function () {
         color: #9ca3af;
       }
       
-      /* Balances Card - Blended with page theme */
+      /* Balances Card - Natural blend, no border */
       .v5-balances-card {
         display: flex;
         gap: 1.5rem;
         padding: 0.75rem 1.25rem;
-        background: #ffffff;
-        border: 1px solid #E5E7EB;
+        background: transparent;
         border-radius: 6px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         flex-shrink: 0;
       }
       
@@ -1657,6 +1655,13 @@ window.parseV5Files = async function () {
       V5State.gridApi.setGridOption('rowData', categorized);
     }
 
+    // Show control toolbar when data is loaded
+    const controlToolbar = document.querySelector('.v5-control-toolbar');
+    if (controlToolbar && categorized.length > 0) {
+      controlToolbar.classList.add('show-data');
+      console.log('✅ Control toolbar shown - data loaded');
+    }
+
     // Force reconciliation update
     updateReconciliationCard();
 
@@ -2131,6 +2136,13 @@ window.confirmStartOver = async function () {
   document.getElementById('v5-grid-container').style.display = 'none';
   document.getElementById('v5-empty-state').style.display = 'flex';
   document.getElementById('v5-recon-inline').style.display = 'none';
+
+  // Hide control toolbar when data is cleared
+  const controlToolbar = document.querySelector('.v5-control-toolbar');
+  if (controlToolbar) {
+    controlToolbar.classList.remove('show-data');
+    console.log('✅ Control toolbar hidden - data cleared');
+  }
 
   // Reset UI
   updateUndoButton();
