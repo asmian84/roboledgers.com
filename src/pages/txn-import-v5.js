@@ -718,7 +718,6 @@ function displayV5SelectedFiles() {
 
 window.clearV5Files = function () {
   V5State.selectedFiles = [];
-  document.getElementById('v5-files-list').style.display = 'none';
   document.getElementById('v5-file-input').value = '';
 };
 

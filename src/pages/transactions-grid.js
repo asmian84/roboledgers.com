@@ -8,7 +8,7 @@ console.log('%c🚀 AUTOBOOKKEEPING v4.0 ACTIVE', 'background: #2563eb; color: w
 
 // UNDO SYSTEM STATE
 window.txnUndoStack = [];
-const MAX_UNDO_STEPS = 10;
+const GRID_MAX_UNDO_STEPS = 10;
 
 function getGridCoANames() {
     const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
@@ -30,7 +30,7 @@ window.captureState = function () {
     const snapshot = JSON.parse(JSON.stringify(window.transactionData));
 
     window.txnUndoStack.push(snapshot);
-    if (window.txnUndoStack.length > MAX_UNDO_STEPS) {
+    if (window.txnUndoStack.length > GRID_MAX_UNDO_STEPS) {
         window.txnUndoStack.shift(); // Remove oldest
     }
 
