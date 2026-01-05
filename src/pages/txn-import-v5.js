@@ -1497,14 +1497,34 @@ window.bulkCategorizeV5 = function () {
 
 window.bulkRenameV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
-  if (selectedRows.length === 0) {
-    alert('No rows selected');
-    return;
-  }
+  if (selectedRows.length === 0) return;
 
-  console.log(`✏️ Bulk rename ${selectedRows.length} transactions`);
-  // TODO: Implement bulk rename modal
-  alert(`Bulk Rename feature coming soon!\n${selectedRows.length} transactions selected`);
+  const m = document.createElement('div');
+  m.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000';
+  m.innerHTML = `<div style="background:white;border-radius:8px;padding:2rem;width:500px;max-width:90vw">
+<h2 style="margin:0 0 1rem 0">Bulk Rename (Search & Replace)</h2>
+<p style="color:#6b7280;margin-bottom:1.5rem">${selectedRows.length} items selected</p>
+<div style="margin-bottom:1rem"><label style="display:block;font-weight:600;margin-bottom:0.5rem">Search:</label>
+<input id="bulk-search" type="text" placeholder="Text to find" style="width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:6px"></div>
+<div style="margin-bottom:1.5rem"><label style="display:block;font-weight:600;margin-bottom:0.5rem">Replace:</label>
+<input id="bulk-replace" type="text" placeholder="Text to replace with" style="width:100%;padding:0.5rem;border:1px solid #d1d5db;border-radius:6px"></div>
+<div style="display:flex;gap:0.5rem;justify-content:flex-end">
+<button onclick="this.closest('div[style*=fixed]').remove()" style="padding:0.5rem 1rem;border:1px solid #d1d5db;background:white;border-radius:6px;cursor:pointer">Cancel</button>
+<button onclick="window.applyBulkRename()" style="padding:0.5rem 1rem;border:none;background:#3b82f6;color:white;border-radius:6px;cursor:pointer">Apply</button>
+</div></div>`;
+  document.body.appendChild(m);
+};
+
+window.applyBulkRename = function () {
+  const search = document.getElementById('bulk-search').value;
+  const replace = document.getElementById('bulk-replace').value;
+  if (!search) return;
+  const rows = V5State.gridApi.getSelectedRows();
+  rows.forEach(r => { if (r.description) r.description = r.description.replace(new RegExp(search, 'g'), replace); });
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  saveData();
+  document.querySelector('div[style*="fixed"]').remove();
+  cancelBulkSelection();
 };
 
 window.cancelBulkSelection = function () {
