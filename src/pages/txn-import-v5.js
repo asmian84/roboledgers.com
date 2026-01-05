@@ -530,6 +530,62 @@ window.toggleV5ActionMenu = function () {
 };
 
 // ============================================
+// DEBIT/CREDIT/BALANCE HELPERS
+// ============================================
+
+function updateRowBalance(row) {
+  // Balance is computed from running total
+  // This should be recalculated for entire grid when any row changes
+  recalculateAllBalances();
+}
+
+function recalculateAllBalances() {
+  if (!V5State.gridData || V5State.gridData.length === 0) return;
+
+  let runningBalance = V5State.openingBalance || 0;
+
+  V5State.gridData.forEach(txn => {
+    const debit = parseFloat(txn.debit) || 0;
+    const credit = parseFloat(txn.credit) || 0;
+
+    runningBalance = runningBalance - debit + credit;
+    txn.balance = runningBalance;
+  });
+
+  // Refresh grid to show updated balances
+  if (V5State.gridApi) {
+    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  }
+
+  // Update reconciliation card
+  updateReconciliationCard();
+}
+
+window.swapDebitCredit = function (rowId) {
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (!row) return;
+
+  // Swap debit and credit
+  const temp = row.debit;
+  row.debit = row.credit;
+  row.credit = temp;
+
+  // Recalculate all balances
+  recalculateAllBalances();
+};
+
+window.deleteRow = function (rowId) {
+  const index = V5State.gridData.findIndex(r => r.id === rowId);
+  if (index === -1) return;
+
+  // Remove row
+  V5State.gridData.splice(index, 1);
+
+  // Recalculate all balances
+  recalculateAllBalances();
+};
+
+// ============================================
 // BULK ACTION FUNCTIONS
 // ============================================
 
@@ -750,11 +806,27 @@ window.parseV5Files = async function () {
     // Load into grid
     V5State.gridData = categorized;
 
-    // Generate IDs for transactions (required by cache)
+    // Generate IDs and convert Amount to Debit/Credit
+    let runningBalance = V5State.openingBalance || 0;
     categorized.forEach((txn, index) => {
       if (!txn.id) {
         txn.id = `txn_${Date.now()}_${index}`;
       }
+
+      // Convert amount to debit/credit
+      const amount = parseFloat(txn.amount) || 0;
+      if (amount > 0) {
+        txn.credit = amount;
+        txn.debit = 0;
+        runningBalance += amount;
+      } else {
+        txn.debit = Math.abs(amount);
+        txn.credit = 0;
+        runningBalance -= Math.abs(amount);
+      }
+
+      // Set balance
+      txn.balance = runningBalance;
     });
 
     // Initialize or update grid
@@ -863,44 +935,92 @@ window.initV5Grid = function () {
     {
       headerName: 'Description',
       field: 'description',
-      width: 250,
+      width: 300,
       editable: true
     },
     {
-      headerName: 'Merchant',
-      field: 'merchant',
-      width: 180,
-      editable: true
-    },
-    {
-      headerName: 'Amount',
-      field: 'amount',
+      headerName: 'Debit',
+      field: 'debit',
       width: 120,
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
-        return '$' + val.toFixed(2);
+        return val > 0 ? '$' + val.toFixed(2) : '';
+      },
+      valueSetter: params => {
+        const val = parseFloat(params.newValue) || 0;
+        params.data.debit = val;
+        params.data.credit = 0; // Clear credit when setting debit
+        // Recalculate balance
+        updateRowBalance(params.data);
+        return true;
       }
     },
     {
-      headerName: 'Category',
-      field: 'category',
-      width: 200,
-      editable: true
+      headerName: 'Credit',
+      field: 'credit',
+      width: 120,
+      editable: true,
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return val > 0 ? '$' + val.toFixed(2) : '';
+      },
+      valueSetter: params => {
+        const val = parseFloat(params.newValue) || 0;
+        params.data.credit = val;
+        params.data.debit = 0; // Clear debit when setting credit
+        // Recalculate balance
+        updateRowBalance(params.data);
+        return true;
+      }
+    },
+    {
+      headerName: 'Balance',
+      field: 'balance',
+      width: 130,
+      editable: false,
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      },
+      cellStyle: params => {
+        const val = parseFloat(params.value) || 0;
+        return val < 0 ? { color: '#ef4444' } : { color: '#10b981' };
+      }
     },
     {
       headerName: 'Account',
       field: 'account',
-      width: 250,
+      width: 280,
       editable: true,
       cellEditor: FiveTierAccountEditor,
       valueFormatter: params => resolveAccountName(params.value)
     },
     {
-      headerName: 'Notes',
-      field: 'notes',
-      width: 300,
-      editable: true
+      headerName: 'Actions',
+      field: 'actions',
+      width: 120,
+      pinned: 'right',
+      cellRenderer: params => {
+        return `
+          <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
+            <button 
+              onclick="swapDebitCredit('${params.data.id}')" 
+              style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: white; cursor: pointer;"
+              title="Swap Debit/Credit"
+            >
+              ⇄
+            </button>
+            <button 
+              onclick="deleteRow('${params.data.id}')" 
+              style="padding: 4px 8px; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; background: white; cursor: pointer;"
+              title="Delete"
+            >
+              ✕
+            </button>
+          </div>
+        `;
+      }
     }
   ];
 
