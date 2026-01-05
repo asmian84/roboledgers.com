@@ -462,6 +462,19 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
+      <style>
+        .v5-grid-container {
+          flex: 1;
+          overflow: auto;
+        }
+        
+        /* CRITICAL: Force AG Grid wrapper to fill container */
+        #v5-grid-container .ag-root-wrapper {
+          height: 100% !important;
+          min-height: 400px !important;
+        }
+      </style>
+
       <!-- Empty State (shown when no data) -->
       <div id="v5-empty-state" class="v5-empty-state">
         <div class="v5-empty-icon">
