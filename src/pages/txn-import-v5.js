@@ -474,7 +474,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- AG Grid -->
-      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px;">
+      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px; background: white !important; border: 2px solid red !important; margin-top: 20px !important;">
         <!-- Grid will be initialized here -->
       </div>
       
@@ -1588,3 +1588,5 @@ window.initTxnImportV5Grid = async function () {
 
 console.log('✅ Txn Import V5 loaded successfully');
 
+
+// EMERGENCY GRID VISIBILITY FIX - SCROLL TO LINE 480
