@@ -20,7 +20,7 @@ const V5State = {
   currentProgress: { current: 0, total: 0, message: '' }
 };
 
-const MAX_UNDO_STEPS = 10;
+const V5_MAX_UNDO_STEPS = 10;
 
 // ============================================
 // COA HELPERS (5-Tier Compressed)
@@ -72,7 +72,7 @@ function captureState() {
   };
 
   V5State.undoStack.push(state);
-  if (V5State.undoStack.length > MAX_UNDO_STEPS) {
+  if (V5State.undoStack.length > V5_MAX_UNDO_STEPS) {
     V5State.undoStack.shift();
   }
 
