@@ -542,13 +542,27 @@ function updateRowBalance(row) {
 function recalculateAllBalances() {
   if (!V5State.gridData || V5State.gridData.length === 0) return;
 
+  // Detect account type from first transaction or page title
+  // Credit cards are liabilities (codes 2xxx), Bank accounts are assets (1xxx)
+  const isCreditCard = V5State.accountType === 'CREDIT_CARD' ||
+    document.querySelector('.v5-account-type')?.textContent?.includes('CREDIT');
+
   let runningBalance = V5State.openingBalance || 0;
 
   V5State.gridData.forEach(txn => {
     const debit = parseFloat(txn.debit) || 0;
     const credit = parseFloat(txn.credit) || 0;
 
-    runningBalance = runningBalance - debit + credit;
+    if (isCreditCard) {
+      // Credit Card (Liability): Balance = Opening - Debit + Credit
+      // Payments (debit) reduce what you owe, Purchases (credit) increase what you owe
+      runningBalance = runningBalance - debit + credit;
+    } else {
+      // Bank Account (Asset): Balance = Opening + Debit - Credit
+      // Deposits (debit) increase balance, Withdrawals (credit) decrease balance
+      runningBalance = runningBalance + debit - credit;
+    }
+
     txn.balance = runningBalance;
   });
 
@@ -807,22 +821,40 @@ window.parseV5Files = async function () {
     V5State.gridData = categorized;
 
     // Generate IDs and convert Amount to Debit/Credit
+    const isCreditCard = V5State.accountType === 'CREDIT_CARD' ||
+      document.querySelector('.v5-account-type')?.textContent?.includes('CREDIT');
+
     let runningBalance = V5State.openingBalance || 0;
     categorized.forEach((txn, index) => {
       if (!txn.id) {
         txn.id = `txn_${Date.now()}_${index}`;
       }
 
-      // Convert amount to debit/credit
+      // Convert amount to debit/credit based on account type
       const amount = parseFloat(txn.amount) || 0;
-      if (amount > 0) {
-        txn.credit = amount;
-        txn.debit = 0;
-        runningBalance += amount;
+
+      if (isCreditCard) {
+        // Credit Card: Positive = Charge (Credit), Negative = Payment (Debit)
+        if (amount > 0) {
+          txn.credit = amount;  // Charges increase what you owe
+          txn.debit = 0;
+          runningBalance += amount;
+        } else {
+          txn.debit = Math.abs(amount);  // Payments reduce what you owe
+          txn.credit = 0;
+          runningBalance -= Math.abs(amount);
+        }
       } else {
-        txn.debit = Math.abs(amount);
-        txn.credit = 0;
-        runningBalance -= Math.abs(amount);
+        // Bank Account: Positive = Deposit (Debit), Negative = Withdrawal (Credit)
+        if (amount > 0) {
+          txn.debit = amount;  // Deposits increase balance
+          txn.credit = 0;
+          runningBalance += amount;
+        } else {
+          txn.credit = Math.abs(amount);  // Withdrawals decrease balance
+          txn.debit = 0;
+          runningBalance -= Math.abs(amount);
+        }
       }
 
       // Set balance
