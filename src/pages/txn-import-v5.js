@@ -474,7 +474,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- AG Grid -->
-      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="display: none;">
+      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="min-height: 500px;">
         <!-- Grid will be initialized here -->
       </div>
       
@@ -1153,8 +1153,12 @@ window.initV5Grid = function () {
 
     // FORCE container to be visible with explicit height!
     container.style.display = 'block';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+    container.style.position = 'relative';
     container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
     container.style.minHeight = '500px'; // Minimum height
+    container.style.zIndex = '1';
     console.log('✅ Container forced to visible with height:', container.style.height);
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
