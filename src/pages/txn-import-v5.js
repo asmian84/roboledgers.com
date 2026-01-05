@@ -18,7 +18,10 @@ const V5State = {
   undoStack: [],
   isProcessing: false,
   currentProgress: { current: 0, total: 0, message: '' },
-  openingBalance: 0.00
+  openingBalance: 0, // Changed from 0.00
+  recentImports: [], // New property
+  accountType: null, // New property
+  refPrefix: '' // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
 };
 
 const V5_MAX_UNDO_STEPS = 10;
@@ -2516,7 +2519,33 @@ window.updateV5DataFromPopout = function (newData) {
 function getV5ColumnDefs() {
   // Return same column defs used in main grid (without cellRenderer for actions)
   return [
-    { headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 50 },
+    // Checkbox column
+    { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
+
+    // Ref# column with auto-numbering and prefix support
+    {
+      headerName: 'Ref#',
+      field: 'refNumber',
+      width: 110,
+      pinned: 'left',
+      editable: true,
+      valueGetter: (params) => {
+        // Check if manually set
+        if (params.data.refNumber) return params.data.refNumber;
+
+        // Auto-generate
+        const prefix = V5State.refPrefix || '';
+        const num = String(params.node.rowIndex + 1).padStart(3, '0');
+        return prefix ? `${prefix}-${num}` : num;
+      },
+      valueSetter: (params) => {
+        params.data.refNumber = params.newValue;
+        return true;
+      },
+      cellStyle: { fontWeight: '600', color: '#64748b', fontFamily: 'monospace' }
+    },
+
+    // Date column
     { headerName: 'Date', field: 'date', width: 120, editable: true },
     { headerName: 'Description', field: 'description', width: 300, editable: true },
     { headerName: 'Debit', field: 'debit', width: 120, editable: true },
