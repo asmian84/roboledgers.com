@@ -102,48 +102,6 @@ function updateUndoButton() {
   }
 }
 
-// ============================================
-// RECONCILIATION CARD HELPERS
-// ============================================
-
-function updateReconciliationCard() {
-  if (V5State.gridData.length === 0) {
-    document.getElementById('v5-recon-card').style.display = 'none';
-    return;
-  }
-
-  // Show card
-  document.getElementById('v5-recon-card').style.display = 'flex';
-
-  // Calculate values
-  let totalIn = 0;
-  let totalOut = 0;
-  let debitCount = 0;
-  let creditCount = 0;
-
-  V5State.gridData.forEach(txn => {
-    const amount = parseFloat(txn.amount) || 0;
-    if (amount > 0) {
-      totalIn += amount;
-      debitCount++;
-    } else if (amount < 0) {
-      totalOut += Math.abs(amount);
-      creditCount++;
-    }
-  });
-
-  // Get opening balance from first transaction or metadata
-  const openingBal = V5State.openingBalance || 0.00;
-  const endingBal = openingBal + totalIn - totalOut;
-
-  // Update DOM
-  document.getElementById('v5-opening-bal').textContent = `$${openingBal.toFixed(2)}`;
-  document.getElementById('v5-total-in').textContent = `+${totalIn.toFixed(2)}`;
-  document.getElementById('v5-debit-count').textContent = debitCount;
-  document.getElementById('v5-total-out').textContent = `-${totalOut.toFixed(2)}`;
-  document.getElementById('v5-credit-count').textContent = creditCount;
-  document.getElementById('v5-ending-bal').textContent = `$${endingBal.toFixed(2)}`;
-}
 
 // ============================================
 // SEARCH/FILTER FUNCTION
@@ -772,7 +730,6 @@ window.parseV5Files = async function () {
   if (V5State.selectedFiles.length === 0) return;
 
   V5State.isProcessing = true;
-  document.getElementById('v5-parse-btn').disabled = true;
   document.getElementById('v5-progress-container').style.display = 'block';
 
   try {
@@ -825,7 +782,6 @@ window.parseV5Files = async function () {
     }
   } finally {
     V5State.isProcessing = false;
-    document.getElementById('v5-parse-btn').disabled = false;
     document.getElementById('v5-progress-container').style.display = 'none';
   }
 };
