@@ -294,8 +294,146 @@ window.renderTxnImportV5Page = function () {
   return `
     <div class="txn-import-v5-container">
       
-      <!-- Header - Icon + Title + Reconciliation Balances + Browse/Drop + Actions -->
-      <div class="v5-header-unified">
+      <!-- PHASE 1: FIXED MAIN HEADER (Always Visible) -->
+      <div class="v5-main-header">
+        <!-- Left: Icon + Title + Status -->
+        <div class="v5-title-section">
+          <div class="v5-page-icon">
+            <i class="ph ph-arrow-square-down"></i>
+          </div>
+          <div class="v5-title-text">
+            <h1>Imported Transactions (Grid)</h1>
+            <p class="v5-subtitle">
+              <span class="v5-account-type">CHECKING</span>
+              <span class="v5-dot">•</span>
+              <span class="v5-status">Ready for Review</span>
+            </p>
+          </div>
+        </div>
+        
+        <!-- Center: Browse/Drop Files (always visible) -->
+        <div class="v5-browse-section">
+          <button class="btn-browse" onclick="document.getElementById('v5-file-input').click()">
+            <i class="ph ph-cloud-arrow-up"></i>
+            Browse / Drop Files
+          </button>
+          <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
+                 style="display: none;" onchange="handleV5FileSelect(event)">
+        </div>
+        
+        <!-- Right: Action Icons -->
+        <div class="v5-header-actions">
+          <button class="btn-icon" onclick="startOverV5()" title="Start Over">
+            <i class="ph ph-arrows-counter-clockwise"></i>
+          </button>
+          <button class="btn-icon" onclick="toggleV5History()" title="Toggle History" id="v5-history-toggle-btn">
+            <i class="ph ph-clock-counter-clockwise"></i>
+          </button>
+          <button class="btn-icon" onclick="popOutV5Grid()" title="Pop Out">
+            <i class="ph ph-arrow-square-out"></i>
+          </button>
+          <button class="btn-icon" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts">
+            <i class="ph ph-question"></i>
+          </button>
+          <div class="v5-menu-wrapper">
+            <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More" id="v5-header-menu-btn">
+              <i class="ph ph-dots-three"></i>
+            </button>
+            <div id="v5-header-dropdown" class="v5-dropdown-menu" style="display: none;">
+              <button onclick="exportV5Excel()">
+                <i class="ph ph-file-xls"></i>
+                Export Excel
+              </button>
+              <button onclick="printV5Preview()">
+                <i class="ph ph-printer"></i>
+                PDF Print Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- PHASE 1: NEW CONTROL TOOLBAR -->
+      <div class="v5-control-toolbar" id="v5-control-toolbar">
+        <!-- Left: Ref# Input -->
+        <div class="v5-ref-input-wrapper">
+          <label for="v5-ref-input">Ref#</label>
+          <input type="text" 
+                 id="v5-ref-input" 
+                 class="v5-ref-input" 
+                 maxlength="4" 
+                 placeholder="####"
+                 title="Reference number (max 4 characters)">
+        </div>
+        
+        <!-- Center: Search Bar -->
+        <div class="v5-search-wrapper">
+          <i class="ph ph-magnifying-glass"></i>
+          <input type="text" 
+                 id="v5-search-input" 
+                 class="v5-search-input" 
+                 placeholder="Search transactions..."
+                 oninput="handleV5Search(event)">
+        </div>
+        
+        <!-- Right: Balances (Moved from header) -->
+        <div class="v5-balances-card" id="v5-balances-card">
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">OPENING</div>
+            <div class="v5-balance-value" id="v5-opening-bal">$0</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL IN</div>
+            <div class="v5-balance-value positive" id="v5-total-in">+$0.00</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL OUT</div>
+            <div class="v5-balance-value negative" id="v5-total-out">-$0.00</div>
+          </div>
+          <div class="v5-balance-item ending">
+            <div class="v5-balance-label">ENDING</div>
+            <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- PHASE 1: BULK OPERATIONS BAR (Conditional) -->
+      <div class="v5-bulk-bar" id="v5-bulk-bar" style="display: none;">
+        <div class="v5-bulk-info">
+          <i class="ph ph-check-square"></i>
+          <span id="v5-bulk-count">0 items selected</span>
+        </div>
+        <div class="v5-bulk-actions">
+          <button class="btn-bulk" onclick="bulkCategorizeV5()">
+            <i class="ph ph-tag"></i>
+            Bulk Categorize
+          </button>
+          <button class="btn-bulk" onclick="bulkRenameV5()">
+            <i class="ph ph-pencil"></i>
+            Bulk Rename
+          </button>
+          <button class="btn-bulk-cancel" onclick="cancelBulkSelection()">
+            <i class="ph ph-x"></i>
+            Cancel
+          </button>
+        </div>
+      </div>
+      
+      <!-- PHASE 1: HISTORY PANEL (Conditional) -->
+      <div class="v5-history-panel" id="v5-history-panel" style="display: none;">
+        <div class="v5-history-header">
+          <h3><i class="ph ph-clock-counter-clockwise"></i> Recent Imports</h3>
+          <button class="btn-icon" onclick="toggleV5History()" title="Close">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+        <div class="v5-history-content" id="v5-history-content">
+          <p class="v5-history-empty">No import history yet.</p>
+        </div>
+      </div>
+      
+      <!-- OLD HEADER REMOVED - Content continues below -->
+      <div class="OLD-v5-header-unified" style="display:none;">
         <!-- Left: Icon + Title -->
         <div class="v5-title-section">
           <div class="v5-page-icon">
@@ -311,8 +449,8 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
         
-        <!-- Center: Reconciliation Balances (shown when data loaded) -->
-        <div class="v5-recon-inline" id="v5-recon-inline" style="display: none;">
+        <!-- OLD RECON CARD - Now moved to control toolbar -->
+        <div class="v5-recon-inline" id="v5-recon-inline" style="display: none !important;">
           <div class="v5-recon-mini">
             <div class="v5-recon-mini-label">OPENING BAL</div>
             <div class="v5-recon-mini-value" id="v5-opening-bal-mini">$0</div>
@@ -1249,6 +1387,13 @@ window.initV5Grid = function () {
     container.style.minHeight = '500px'; // Minimum height
     container.style.zIndex = '1';
     console.log('✅ Container forced to visible with height:', container.style.height);
+
+    // CRITICAL: Hide empty state now that grid has data
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) {
+      emptyState.style.display = 'none';
+      console.log('✅ Empty state hidden');
+    }
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
   }
@@ -1354,7 +1499,7 @@ window.showKeyboardShortcuts = function () {
 
 window.toggleV5History = function () {
   // In the new layout, History button just shows/hides the collapsible history zone
-  const historyZone = document.querySelector('.v5-history-collapsible');
+  const historyZone = document.getElementById('v5-history-zone');
   if (!historyZone) {
     console.warn('History zone not found');
     return;
