@@ -79,6 +79,11 @@
           <span class="nav-badge blue" id="sidebar-badge-import" style="display:none;">0</span>
         </a>
 
+        <a href="#/transactions-import" class="nav-item" data-route="/transactions-import">
+          <i class="ph ph-arrow-down-left nav-icon"></i>
+          <span class="nav-label">Txn Import</span>
+        </a>
+
         <a href="#/transactions" class="nav-item" data-route="/transactions">
           <i class="ph ph-wallet nav-icon"></i>
           <span class="nav-label">Transactions</span>
@@ -270,6 +275,7 @@
   <!-- Page Modules -->
   <script src="src/pages/home.js"></script>
   <script src="src/pages/data-import.js?v=20251230_v17"></script>
+  <script src="src/pages/transactions-import.js"></script>
   <script src="src/pages/profile.js"></script>
   <!-- <script src="src/pages/transactions-fixed.js"></script> LEGACY -->
   <script src="src/pages/transactions-grid.js?v=20260101_v3"></script>
@@ -536,6 +542,16 @@
       router.register('/data-import', () => {
         window.breadcrumbManager.update('/data-import');
         window.renderDataImportPage();
+      });
+
+      // Transactions Import (Unified - Scenario #1)
+      router.register('/transactions-import', () => {
+        window.breadcrumbManager.update('/transactions-import');
+        const app = document.getElementById('app');
+        app.innerHTML = window.renderTransactionsImportPage();
+        setTimeout(() => {
+          if (window.initTxnImportGrid) window.initTxnImportGrid();
+        }, 50);
       });
 
       // User Profile
