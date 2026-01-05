@@ -317,7 +317,7 @@ window.renderTxnImportV5Page = function () {
   return `
     <div class="txn-import-v5-container">
       
-      <!-- Header - Single Line Design -->
+      <!-- Header - Icon + Title + Reconciliation Balances + Basic Actions -->
       <div class="v5-header-unified">
         <!-- Left: Icon + Title -->
         <div class="v5-title-section">
@@ -325,136 +325,148 @@ window.renderTxnImportV5Page = function () {
             <i class="ph ph-arrow-square-down"></i>
           </div>
           <div class="v5-title-text">
-            <h1>Transactions Import</h1>
-            <p>Unified Staging & Ledger</p>
+            <h1>Imported Transactions (Grid)</h1>
+            <p class="v5-subtitle">
+              <span class="v5-account-type">CHECKING</span>
+              <span class="v5-dot">•</span>
+              <span class="v5-status">Ready for Review</span>
+            </p>
           </div>
         </div>
         
-        <!-- Center: Search/Filter Box -->
-        <div class="v5-search-box">
-          <input type="text" 
-                 id="v5-search-input" 
-                 placeholder="Search transactions..." 
-                 oninput="filterV5Grid(this.value)">
+        <!-- Right: Reconciliation Balances -->
+        <div class="v5-recon-inline" id="v5-recon-inline" style="display: none;">
+          <div class="v5-recon-mini">
+            <div class="v5-recon-mini-label">OPENING BAL</div>
+            <div class="v5-recon-mini-value" id="v5-opening-bal-mini">$0</div>
+          </div>
+          <div class="v5-recon-mini">
+            <div class="v5-recon-mini-label">TOTAL IN</div>
+            <div class="v5-recon-mini-value positive" id="v5-total-in-mini">+77,337.67</div>
+          </div>
+          <div class="v5-recon-mini">
+            <div class="v5-recon-mini-label">TOTAL OUT</div>
+            <div class="v5-recon-mini-value negative" id="v5-total-out-mini">-1,967,049.00</div>
+          </div>
+          <div class="v5-recon-mini ending">
+            <div class="v5-recon-mini-label">ENDING BAL</div>
+            <div class="v5-recon-mini-value" id="v5-ending-bal-mini">$1,889,711.33</div>
+          </div>
         </div>
         
-        <!-- Right: Action Buttons -->
-        <div class="v5-header-actions-inline">
-          <button id="v5-start-over-btn" class="btn-secondary-sm" onclick="startOverV5()" title="Start Over">
+        <!-- Far Right: Basic Actions -->
+        <div class="v5-header-actions-basic">
+          <button class="btn-icon" onclick="startOverV5()" title="Start Over">
             <i class="ph ph-arrows-counter-clockwise"></i>
-            Start Over
           </button>
-          
-          <button id="v5-history-btn" class="btn-secondary-sm" onclick="toggleV5History()" title="Toggle History">
+          <button class="btn-icon" onclick="toggleV5History()" title="Toggle History" id="v5-history-toggle-btn">
             <i class="ph ph-clock-counter-clockwise"></i>
-            History
           </button>
-          
-          <button id="v5-popout-btn" class="btn-secondary-sm" onclick="popOutV5Grid()" title="Pop Out">
+          <button class="btn-icon" onclick="popOutV5Grid()" title="Pop Out">
             <i class="ph ph-arrow-square-out"></i>
-            Popout
+          </button>
+          <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More">
+            <i class="ph ph-dots-three"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Action Bar - Browse/Drop + Bulk Actions + Search -->
+      <div class="v5-action-bar">
+        <!-- Left: Selection Count -->
+        <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
+          <span id="v5-selection-count">1 selected</span>
+        </div>
+        
+        <!-- Center: Browse/Drop Zone + Bulk Actions -->
+        <div class="v5-actions-center">
+          <!-- Browse/Drop Button -->
+          <button class="btn-action-primary" onclick="document.getElementById('v5-file-input').click()">
+            <i class="ph ph-cloud-arrow-up"></i>
+            Browse / Drop Files
+          </button>
+          <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
+                 style="display: none;" onchange="handleV5FileSelect(event)">
+          
+          <!-- Bulk Action Buttons -->
+          <button class="btn-action" onclick="bulkCategorizeV5()" id="v5-bulk-categorize-btn" disabled>
+            <i class="ph ph-tag"></i>
+            Bulk Categorize
           </button>
           
-          <div class="dropdown">
-            <button class="btn-secondary-sm" onclick="toggleV5Menu()" title="More Options">
-              <i class="ph ph-dots-three"></i>
-            </button>
-            <div id="v5-dropdown-menu" class="dropdown-menu" style="display: none;">
-              <button onclick="exportV5Excel()">
-                <i class="ph ph-file-xls"></i>
-                Export Excel
-              </button>
-              <button onclick="printV5Preview()">
-                <i class="ph ph-printer"></i>
-                PDF Print Preview
-              </button>
-              <button onclick="undoLastAction()">
-                <i class="ph ph-arrow-counter-clockwise"></i>
-                <span id="v5-undo-menu-text">Undo (0)</span>
-              </button>
-              <hr>
-              <button onclick="showV5Appearance()">
-                <i class="ph ph-palette"></i>
-                Appearance
-              </button>
-            </div>
+          <button class="btn-action" onclick="bulkRenameV5()" id="v5-bulk-rename-btn" disabled>
+            <i class="ph ph-pencil"></i>
+            Bulk Rename
+          </button>
+          
+          <button class="btn-action-secondary" onclick="clearV5Selection()" id="v5-clear-btn" style="display: none;">
+            <i class="ph ph-x"></i>
+            Clear
+          </button>
+          
+          <button class="btn-action-blue" onclick="autoCategorizeV5()">
+            <i class="ph ph-magic-wand"></i>
+            Auto-Categorize
+          </button>
+          
+          <button class="btn-action-secondary" onclick="reviewMatchesV5()">
+            <i class="ph ph-check-circle"></i>
+            Review Matches
+          </button>
+          
+          <!-- Ref Prefix Input (optional) -->
+          <input type="text" 
+                 class="v5-ref-prefix" 
+                 placeholder="[Ref Prefix]"
+                 id="v5-ref-prefix"
+                 style="display: none;">
+        </div>
+        
+        <!-- Right: Search + Menu -->
+        <div class="v5-actions-right">
+          <div class="v5-search-compact">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" 
+                   id="v5-search-input" 
+                   placeholder="Search transactions..." 
+                   oninput="filterV5Grid(this.value)">
+          </div>
+          
+          <button class="btn-icon" onclick="toggleV5ActionMenu()" title="More Actions">
+            <i class="ph ph-dots-three-vertical"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Collapsible History Zone -->
+      <div id="v5-history-zone" class="v5-history-zone collapsed">
+        <div class="v5-history-content">
+          <h3>Import History</h3>
+          <div id="v5-history-list">
+            <!-- History items will be populated here -->
+            <p style="color: var(--text-secondary); padding: 1rem;">No import history yet.</p>
           </div>
         </div>
       </div>
       
-      <!-- Reconciliation Card -->
-      <div class="v5-reconciliation-card" id="v5-recon-card" style="display: none;">
-        <div class="v5-recon-item">
-          <div class="v5-recon-label">OPENING BAL</div>
-          <div class="v5-recon-value" id="v5-opening-bal">$0.00</div>
-        </div>
-        
-        <div class="v5-recon-divider"></div>
-        
-        <div class="v5-recon-item">
-          <div class="v5-recon-label">TOTAL IN</div>
-          <div class="v5-recon-value positive">
-            <span id="v5-total-in">+0.00</span>
-            <sup id="v5-debit-count" class="v5-count-badge">0</sup>
-          </div>
-        </div>
-        
-        <div class="v5-recon-divider"></div>
-        
-        <div class="v5-recon-item">
-          <div class="v5-recon-label">TOTAL OUT</div>
-          <div class="v5-recon-value negative">
-            <span id="v5-total-out">-0.00</span>
-            <sup id="v5-credit-count" class="v5-count-badge">0</sup>
-          </div>
-        </div>
-        
-        <div class="v5-recon-divider"></div>
-        
-        <div class="v5-recon-item">
-          <div class="v5-recon-label">ENDING BAL</div>
-          <div class="v5-recon-value ending" id="v5-ending-bal">$0.00</div>
+      <!-- Drag & Drop Overlay (shown when dragging files) -->
+      <div id="v5-drop-overlay" class="v5-drop-overlay" style="display: none;"
+           ondragover="handleV5DragOver(event)" 
+           ondrop="handleV5Drop(event)"
+           ondragleave="handleV5DragLeave(event)">
+        <div class="v5-drop-overlay-content">
+          <i class="ph ph-cloud-arrow-down" style="font-size: 4rem;"></i>
+          <h2>Drop files here to import</h2>
+          <p>PDF or CSV bank statements</p>
         </div>
       </div>
       
-      <!-- Inline Import Zone (Collapsible) -->
-      <div id="v5-import-zone" class="v5-import-zone collapsed">
-        <div id="v5-import-content">
-          <!-- Drag and Drop Area -->
-          <div id="v5-drop-zone" class="v5-drop-zone" 
-               ondragover="handleV5DragOver(event)" 
-               ondrop="handleV5Drop(event)"
-               ondragleave="handleV5DragLeave(event)">
-            <i class="ph ph-cloud-arrow-down" style="font-size: 3rem; color: var(--primary-color);"></i>
-            <h3>Drop PDF or CSV files here</h3>
-            <p style="color: var(--text-secondary); margin: 8px 0;">or click to browse</p>
-            <input type="file" id="v5-file-input" multiple 
-                   accept=".pdf,.csv" 
-                   style="display: none;" 
-                   onchange="handleV5FileSelect(event)">
-            <button class="btn-primary" onclick="document.getElementById('v5-file-input').click()">
-              Browse Files
-            </button>
-          </div>
-          
-          <!-- Selected Files List -->
-          <div id="v5-files-list" style="margin-top: 1rem; display: none;">
-            <h4>Selected Files:</h4>
-            <ul id="v5-files-ul" style="list-style: none; padding: 0;"></ul>
-            <button class="btn-primary" onclick="parseV5Files()" id="v5-parse-btn">
-              Parse Files
-            </button>
-            <button class="btn-secondary" onclick="clearV5Files()">
-              Clear
-            </button>
-          </div>
-          
-          <!-- Progress Bar -->
-          <div id="v5-progress-container" style="margin-top: 1rem; display: none;">
-            <p id="v5-progress-message">Processing...</p>
-            <div class="v5-progress-bar">
-              <div id="v5-progress-fill" class="v5-progress-fill" style="width: 0%;"></div>
-            </div>
+      <!-- Progress Indicator (shown during parsing) -->
+      <div id="v5-progress-container" class="v5-progress-container" style="display: none;">
+        <div class="v5-progress-content">
+          <p id="v5-progress-message">Processing files...</p>
+          <div class="v5-progress-bar">
+            <div id="v5-progress-fill" class="v5-progress-fill" style="width: 0%;"></div>
           </div>
         </div>
       </div>
@@ -475,9 +487,220 @@ window.renderTxnImportV5Page = function () {
         <!-- Grid will be initialized here -->
       </div>
       
+      <!-- Dropdown Menus -->
+      <div id="v5-header-dropdown" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 60px;">
+        <button onclick="exportV5Excel()">
+          <i class="ph ph-file-xls"></i>
+          Export Excel
+        </button>
+        <button onclick="printV5Preview()">
+          <i class="ph ph-printer"></i>
+          PDF Print Preview
+        </button>
+        <button onclick="undoLastAction()">
+          <i class="ph ph-arrow-counter-clockwise"></i>
+          <span id="v5-undo-menu-text">Undo (0)</span>
+        </button>
+        <hr>
+        <button onclick="showV5Appearance()">
+          <i class="ph ph-palette"></i>
+          Appearance
+        </button>
+      </div>
+      
+      <div id="v5-action-dropdown" class="dropdown-menu" style="display: none; position: absolute; right: 20px; top: 120px;">
+        <button onclick="exportSelected()">
+          <i class="ph ph-export"></i>
+          Export Selected
+        </button>
+        <button onclick="deleteSelected()">
+          <i class="ph ph-trash"></i>
+          Delete Selected
+        </button>
+        <hr>
+        <button onclick="selectAll()">
+          <i class="ph ph-check-square"></i>
+          Select All
+        </button>
+        <button onclick="deselectAll()">
+          <i class="ph ph-square"></i>
+          Deselect All
+        </button>
+      </div>
+      
     </div>
   `;
 };
+
+// ============================================
+// UI INTERACTION HANDLERS
+// ============================================
+
+window.toggleV5History = function () {
+  const zone = document.getElementById('v5-history-zone');
+  const btn = document.getElementById('v5-history-toggle-btn');
+
+  if (zone.classList.contains('collapsed')) {
+    zone.classList.remove('collapsed');
+    zone.classList.add('expanded');
+  } else {
+    zone.classList.remove('expanded');
+    zone.classList.add('collapsed');
+  }
+};
+
+window.toggleV5HeaderMenu = function () {
+  const menu = document.getElementById('v5-header-dropdown');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+  // Close on click outside
+  if (menu.style.display === 'block') {
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu(e) {
+        if (!menu.contains(e.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }, 100);
+  }
+};
+
+window.toggleV5ActionMenu = function () {
+  const menu = document.getElementById('v5-action-dropdown');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+  if (menu.style.display === 'block') {
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu(e) {
+        if (!menu.contains(e.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }, 100);
+  }
+};
+
+// ============================================
+// BULK ACTION FUNCTIONS
+// ============================================
+
+window.bulkCategorizeV5 = function () {
+  const selected = V5State.gridApi?.getSelectedRows() || [];
+  if (selected.length === 0) {
+    window.showToast?.('Please select at least one transaction', 'warning');
+    return;
+  }
+
+  window.showToast?.(`Bulk categorizing ${selected.length} transactions...`, 'info');
+  // TODO: Implement bulk categorization modal
+};
+
+window.bulkRenameV5 = function () {
+  const selected = V5State.gridApi?.getSelectedRows() || [];
+  if (selected.length === 0) {
+    window.showToast?.('Please select at least one transaction', 'warning');
+    return;
+  }
+
+  window.showToast?.(`Bulk renaming ${selected.length} merchants...`, 'info');
+  // TODO: Implement bulk rename modal
+};
+
+window.clearV5Selection = function () {
+  V5State.gridApi?.deselectAll();
+  updateV5SelectionUI();
+};
+
+window.autoCategorizeV5 = async function () {
+  if (V5State.gridData.length === 0) {
+    window.showToast?.('No transactions to categorize', 'warning');
+    return;
+  }
+
+  window.showToast?.('Auto-categorizing all transactions...', 'info');
+
+  const categorized = await window.ProcessingEngine.categorizeTransactions(
+    V5State.gridData,
+    (progress, message) => {
+      console.log(`Progress: ${progress}% - ${message}`);
+    }
+  );
+
+  V5State.gridData = categorized;
+  V5State.gridApi?.setRowData(categorized);
+  updateReconciliationCard();
+
+  window.showToast?.('Auto-categorization complete', 'success');
+};
+
+window.reviewMatchesV5 = function () {
+  // TODO: Show review UI for matched transactions
+  window.showToast?.('Review Matches feature coming soon', 'info');
+};
+
+// ============================================
+// SELECTION UI UPDATE
+// ============================================
+
+function updateV5SelectionUI() {
+  const selectedCount = V5State.gridApi?.getSelectedRows()?.length || 0;
+  const selectionInfo = document.getElementById('v5-selection-info');
+  const selectionCount = document.getElementById('v5-selection-count');
+  const bulkCategorizeBtn = document.getElementById('v5-bulk-categorize-btn');
+  const bulkRenameBtn = document.getElementById('v5-bulk-rename-btn');
+  const clearBtn = document.getElementById('v5-clear-btn');
+
+  if (selectedCount > 0) {
+    selectionInfo.style.display = 'block';
+    selectionCount.textContent = `${selectedCount} selected`;
+    bulkCategorizeBtn.disabled = false;
+    bulkRenameBtn.disabled = false;
+    clearBtn.style.display = 'flex';
+  } else {
+    selectionInfo.style.display = 'none';
+    bulkCategorizeBtn.disabled = true;
+    bulkRenameBtn.disabled = true;
+    clearBtn.style.display = 'none';
+  }
+}
+
+// ============================================
+// RECONCILIATION UPDATE (REVISED)
+// ============================================
+
+function updateReconciliationCard() {
+  if (V5State.gridData.length === 0) {
+    document.getElementById('v5-recon-inline').style.display = 'none';
+    return;
+  }
+
+  // Show inline recon
+  document.getElementById('v5-recon-inline').style.display = 'flex';
+
+  // Calculate values
+  let totalIn = 0;
+  let totalOut = 0;
+
+  V5State.gridData.forEach(txn => {
+    const amount = parseFloat(txn.amount) || 0;
+    if (amount > 0) {
+      totalIn += amount;
+    } else if (amount < 0) {
+      totalOut += Math.abs(amount);
+    }
+  });
+
+  const openingBal = V5State.openingBalance || 0.00;
+  const endingBal = openingBal + totalIn - totalOut;
+
+  // Update inline display
+  document.getElementById('v5-opening-bal-mini').textContent = `$${openingBal.toFixed(0)}`;
+  document.getElementById('v5-total-in-mini').textContent = `+${totalIn.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  document.getElementById('v5-total-out-mini').textContent = `-${totalOut.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  document.getElementById('v5-ending-bal-mini').textContent = `$${endingBal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+}
 
 // ============================================
 // FILE UPLOAD HANDLERS
@@ -706,7 +929,7 @@ window.initV5Grid = function () {
       }
     },
     onSelectionChanged: () => {
-      updateSelectionCount();
+      updateV5SelectionUI();
     },
     onGridReady: (params) => {
       V5State.gridApi = params.api;
