@@ -749,6 +749,14 @@ window.parseV5Files = async function () {
 
     // Load into grid
     V5State.gridData = categorized;
+
+    // Generate IDs for transactions (required by cache)
+    categorized.forEach((txn, index) => {
+      if (!txn.id) {
+        txn.id = `txn_${Date.now()}_${index}`;
+      }
+    });
+
     initV5Grid();
 
     // Save to cache
