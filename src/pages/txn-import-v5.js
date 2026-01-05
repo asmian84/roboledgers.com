@@ -474,7 +474,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- AG Grid -->
-      <div id="v5-grid-container" class="v5-grid-container ag-theme-quartz" style="display: none;">
+      <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine" style="display: none;">
         <!-- Grid will be initialized here -->
       </div>
       
@@ -1150,6 +1150,11 @@ window.initV5Grid = function () {
   try {
     const gridInstance = agGrid.createGrid(container, gridOptions);
     console.log('✅ AG Grid created successfully:', gridInstance);
+
+    // FORCE container to be visible (something keeps hiding it!)
+    container.style.display = 'block';
+    container.style.height = '100%';
+    console.log('✅ Container forced to visible');
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
   }
