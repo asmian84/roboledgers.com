@@ -317,39 +317,38 @@ window.renderTxnImportV5Page = function () {
         align-items: center;
       }
       
-      /* Control Toolbar - Deep UI Style */
+      /* Control Toolbar - Super Snug Zero-Gap */
       .v5-control-toolbar {
         display: flex;
         align-items: center;
         gap: 1rem;
         padding: 1rem 1.5rem;
         background: linear-gradient(to bottom, #ffffff, #f9fafb);
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        margin: 1rem 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 
-                    0 1px 3px rgba(0, 0, 0, 0.06);
+        border-bottom: 1px solid #E5E7EB;
+        margin: 0;
       }
       
-      /* Ref# Input - Super Snug */
+      /* Ref# Input - Top Label, Ultra Compact */
       .v5-ref-input-wrapper {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
         flex-shrink: 0;
       }
       
       .v5-ref-input-wrapper label {
-        font-size: 0.75rem;
-        font-weight: 600;
+        font-size: 0.625rem;
+        font-weight: 700;
         color: #6b7280;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        line-height: 1;
       }
       
       .v5-ref-input {
-        width: 60px;
-        padding: 0.5rem;
+        width: 48px;
+        padding: 0.375rem 0.5rem;
         border: 1px solid #d1d5db;
         border-radius: 4px;
         font-size: 0.875rem;
@@ -445,17 +444,15 @@ window.renderTxnImportV5Page = function () {
         color: #60a5fa;
       }
       
-      /* Bulk Operations Bar - Slide Down Animation */
+      /* Bulk Operations Bar - Super Snug, Increased Height */
       .v5-bulk-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.875rem 1.5rem;
+        padding: 1.25rem 1.5rem;
         background: linear-gradient(to right, #fef3c7, #fde68a);
-        border: 1px solid #fbbf24;
-        border-radius: 6px;
-        margin: 0 1.5rem 1rem 1.5rem;
-        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+        border-bottom: 1px solid #fbbf24;
+        margin: 0;
         animation: slideDown 0.3s ease-out;
       }
       
@@ -523,13 +520,12 @@ window.renderTxnImportV5Page = function () {
         background: #fee2e2;
       }
       
-      /* History Panel - Toggle UI */
+      /* History Panel - Super Snug with Border */
       .v5-history-panel {
-        margin: 0 1.5rem 1rem 1.5rem;
+        margin: 0;
         background: #ffffff;
         border: 1px solid #d1d5db;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-bottom: 1px solid #E5E7EB;
         animation: slideDown 0.3s ease-out;
       }
       
