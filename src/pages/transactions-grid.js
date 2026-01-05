@@ -164,7 +164,7 @@ function saveGridData() {
 
 // --- 2. CUSTOM EDITORS ---
 
-class GroupedAccountEditor {
+class GridGroupedAccountEditor {
     init(params) {
         this.params = params;
         this.value = params.value || 'Uncategorized';
@@ -595,7 +595,7 @@ window.initTransactionsGrid = function () {
             minWidth: 180,
             autoHeight: true,
             editable: true,
-            cellEditor: GroupedAccountEditor,
+            cellEditor: GridGroupedAccountEditor,
             cellRenderer: params => {
                 let displayVal = resolveAccountName(params.value);
 

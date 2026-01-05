@@ -763,11 +763,9 @@ window.parseV5Files = async function () {
     };
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
-    // Clear files and hide import zone
+
+    // Clear files
     clearV5Files();
-    document.getElementById('v5-import-zone').classList.remove('expanded');
-    document.getElementById('v5-import-zone').classList.add('collapsed');
-    V5State.importZoneExpanded = false;
 
     // Show success
     if (window.showToast) {
