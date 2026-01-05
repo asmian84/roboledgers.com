@@ -1816,24 +1816,39 @@ window.showKeyboardShortcuts = function () {
   document.body.appendChild(modal);
 };
 
+// ==================================================
+// PHASE 3: HISTORY PANEL TOGGLE
+// ==================================================
+
 window.toggleV5History = function () {
-  // In the new layout, History button just shows/hides the collapsible history zone
-  const historyZone = document.getElementById('v5-history-zone');
-  if (!historyZone) {
-    console.warn('History zone not found');
+  const historyPanel = document.getElementById('v5-history-panel');
+  const historyBtn = document.getElementById('v5-history-toggle-btn');
+
+  if (!historyPanel) {
+    console.warn('History panel not found');
     return;
   }
 
-  const isExpanded = historyZone.classList.contains('expanded');
+  const isVisible = historyPanel.style.display !== 'none';
 
-  if (isExpanded) {
-    historyZone.classList.remove('expanded');
-    historyZone.classList.add('collapsed');
+  if (isVisible) {
+    // Hide panel
+    historyPanel.style.display = 'none';
+    historyBtn?.classList.remove('active');
+    console.log('📜 History panel hidden');
   } else {
-    historyZone.classList.remove('collapsed');
-    historyZone.classList.add('expanded');
+    // Show panel and load history
+    historyPanel.style.display = 'block';
+    historyBtn?.classList.add('active');
+    loadImportHistory();
+    console.log('📜 History panel shown');
   }
 };
+
+// ============================================
+// START OVER
+// ============================================
+
 
 window.startOverV5 = async function () {
   // Create in-page confirmation banner instead of popup
@@ -1845,19 +1860,19 @@ window.startOverV5 = async function () {
   banner.style.cssText = `
     position: fixed;
     top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 50 %;
+    transform: translateX(-50 %);
     background: #fef3c7;
     border: 2px solid #f59e0b;
-    border-radius: 8px;
+    border - radius: 8px;
     padding: 1.5rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    z-index: 10000;
-    max-width: 500px;
-  `;
+    box - shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z - index: 10000;
+    max - width: 500px;
+    `;
 
   banner.innerHTML = `
-    <div style="font-weight: 700; margin-bottom: 0.5rem; color: #92400e;">⚠️ Clear All Data?</div>
+      < div style = "font-weight: 700; margin-bottom: 0.5rem; color: #92400e;" >⚠️ Clear All Data ?</div >
     <div style="margin-bottom: 1rem; color: #78350f;">This will clear all transactions and history. This action cannot be undone.</div>
     <div style="display: flex; gap: 0.75rem;">
       <button onclick="confirmStartOver()" style="flex: 1; padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
@@ -1867,7 +1882,7 @@ window.startOverV5 = async function () {
         Cancel
       </button>
     </div>
-  `;
+    `;
 
   document.body.appendChild(banner);
 };
@@ -1934,84 +1949,84 @@ window.popOutV5Grid = function () {
   V5State.popoutWindow = popOutWindow;
 
   popOutWindow.document.write(`
-    <html>
+      < html >
       <head>
         <title>Transaction Grid - Pop Out</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
-        <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
-        <style>
-          body { margin: 0; padding: 1rem; font-family: system-ui; background: #f9fafb; }
-          .popout-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-          .popout-actions { display: flex; gap: 0.5rem; }
-          .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer; }
-          .btn:hover { background: #f3f4f6; }
-          .btn-primary { background: #3b82f6; color: white; border-color: #3b82f6; }
-          .btn-primary:hover { background: #2563eb; }
-          #popout-grid { height: calc(100vh - 100px); }
-          
-          /* CRITICAL: Force AG Grid wrapper to fill container - FIX for blank popout */
-          #popout-grid .ag-root-wrapper {
-            height: 100% !important;
-            min-height: 600px !important;
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
+            <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+              <style>
+                body {margin: 0; padding: 1rem; font-family: system-ui; background: #f9fafb; }
+                .popout-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+                .popout-actions {display: flex; gap: 0.5rem; }
+                .btn {padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer; }
+                .btn:hover {background: #f3f4f6; }
+                .btn-primary {background: #3b82f6; color: white; border-color: #3b82f6; }
+                .btn-primary:hover {background: #2563eb; }
+                #popout-grid {height: calc(100vh - 100px); }
+
+                /* CRITICAL: Force AG Grid wrapper to fill container - FIX for blank popout */
+                #popout-grid .ag-root-wrapper {
+                  height: 100% !important;
+                min-height: 600px !important;
           }
-        </style>
-      </head>
-      <body>
-        <div class="popout-header">
-          <h2>📊 Transaction Grid</h2>
-          <div class="popout-actions">
-            <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
-            <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
-            <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
-            <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
-          </div>
-        </div>
-        <div id="popout-grid" class="ag-theme-alpine"></div>
-        
-        <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
-        <script>
-          const gridData = ${JSON.stringify(V5State.gridData)};
-          let gridApi;
-          
-          // Same column defs as main grid
-          const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
-          
-          const gridOptions = {
-            columnDefs,
-            rowData: gridData,
-            defaultColDef: { sortable: true, filter: true, resizable: true },
-            rowSelection: 'multiple',
+              </style>
+            </head>
+            <body>
+              <div class="popout-header">
+                <h2>📊 Transaction Grid</h2>
+                <div class="popout-actions">
+                  <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
+                  <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
+                  <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
+                  <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
+                </div>
+              </div>
+              <div id="popout-grid" class="ag-theme-alpine"></div>
+
+              <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+              <script>
+                const gridData = ${JSON.stringify(V5State.gridData)};
+                let gridApi;
+
+                // Same column defs as main grid
+                const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
+
+                const gridOptions = {
+                  columnDefs,
+                  rowData: gridData,
+                defaultColDef: {sortable: true, filter: true, resizable: true },
+                rowSelection: 'multiple',
             onCellValueChanged: (params) => {
-              // Sync back to parent window
-              window.opener.updateV5DataFromPopout(gridData);
+                  // Sync back to parent window
+                  window.opener.updateV5DataFromPopout(gridData);
             }
           };
           
           document.addEventListener('DOMContentLoaded', () => {
-            gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+                  gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           });
-          
-          function selectAll() { gridApi.selectAll(); }
-          function deselectAll() { gridApi.deselectAll(); }
-          function bulkDelete() {
+
+                function selectAll() {gridApi.selectAll(); }
+                function deselectAll() {gridApi.deselectAll(); }
+                function bulkDelete() {
             const selected = gridApi.getSelectedRows();
-            if (selected.length === 0) return;
-            if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
+                if (selected.length === 0) return;
+                if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
             
             const selectedIds = selected.map(r => r.id);
             const newData = gridData.filter(r => !selectedIds.includes(r.id));
-            gridApi.setGridOption('rowData', newData);
-            window.opener.updateV5DataFromPopout(newData);
+                gridApi.setGridOption('rowData', newData);
+                window.opener.updateV5DataFromPopout(newData);
           }
-          function closePopout() {
-            window.opener.popInV5Grid();
-            window.close();
+                function closePopout() {
+                  window.opener.popInV5Grid();
+                window.close();
           }
-        </script>
-      </body>
-    </html>
-  `);
+              </script>
+            </body>
+          </html>
+          `);
 };
 
 window.popInV5Grid = function () {
@@ -2240,16 +2255,16 @@ function loadImportHistory() {
     const sortedHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     historyList.innerHTML = sortedHistory.slice(0, 10).map(item => `
-      <div class="history-item" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
-           onmouseenter="this.style.background='var(--bg-secondary)'"
-           onmouseleave="this.style.background='transparent'"
-           onclick="loadHistorySession('${item.id || item.timestamp}')">
-        <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.accountName || 'Unknown Account'}</div>
-        <div style="font-size: 0.875rem; color: var(--text-secondary);">
-          ${new Date(item.timestamp).toLocaleString()} • ${item.transactionCount || 0} transactions
-        </div>
-      </div>
-    `).join('');
+          <div class="history-item" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
+            onmouseenter="this.style.background='var(--bg-secondary)'"
+            onmouseleave="this.style.background='transparent'"
+            onclick="loadHistorySession('${item.id || item.timestamp}')">
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.accountName || 'Unknown Account'}</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+              ${new Date(item.timestamp).toLocaleString()} • ${item.transactionCount || 0} transactions
+            </div>
+          </div>
+          `).join('');
 
     console.log('✅ Loaded', history.length, 'history items');
   } catch (e) {
