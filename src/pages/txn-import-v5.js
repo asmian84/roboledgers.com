@@ -782,8 +782,39 @@ window.parseV5Files = async function () {
 
   } catch (error) {
     console.error('Parse failed:', error);
-    if (window.showToast) {
-      window.showToast('error', 'Failed to parse files');
+
+    // Check if ALL files were duplicates
+    const isDuplicateError = error.message && error.message.includes('DUPLICATE_FILE');
+
+    if (isDuplicateError) {
+      // Friendly message with automatic fix option
+      if (confirm('These files have already been imported.\n\nWould you like to clear the import history and re-import them?')) {
+        try {
+          // Clear duplicate cache
+          await window.BrainStorage.clearAllFileHashes();
+
+          if (window.showToast) {
+            window.showToast('success', 'Import history cleared! Please upload your files again.');
+          }
+
+          // Clear file selection so they can re-select
+          clearV5Files();
+        } catch (clearError) {
+          console.error('Failed to clear cache:', clearError);
+          if (window.showToast) {
+            window.showToast('error', 'Failed to clear cache. Try: await window.BrainStorage.clearAllFileHashes()');
+          }
+        }
+      } else {
+        if (window.showToast) {
+          window.showToast('info', 'Import cancelled - files already imported');
+        }
+      }
+    } else {
+      // Other parsing errors
+      if (window.showToast) {
+        window.showToast('error', 'Failed to parse files');
+      }
     }
   } finally {
     V5State.isProcessing = false;
