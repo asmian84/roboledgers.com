@@ -536,22 +536,22 @@ window.toggleV5ActionMenu = function () {
 window.bulkCategorizeV5 = function () {
   const selected = V5State.gridApi?.getSelectedRows() || [];
   if (selected.length === 0) {
-    window.showToast?.('Please select at least one transaction', 'warning');
+    // Toast removed
     return;
   }
 
-  window.showToast?.(`Bulk categorizing ${selected.length} transactions...`, 'info');
+  // Toast removed
   // TODO: Implement bulk categorization modal
 };
 
 window.bulkRenameV5 = function () {
   const selected = V5State.gridApi?.getSelectedRows() || [];
   if (selected.length === 0) {
-    window.showToast?.('Please select at least one transaction', 'warning');
+    // Toast removed
     return;
   }
 
-  window.showToast?.(`Bulk renaming ${selected.length} merchants...`, 'info');
+  // Toast removed
   // TODO: Implement bulk rename modal
 };
 
@@ -562,11 +562,11 @@ window.clearV5Selection = function () {
 
 window.autoCategorizeV5 = async function () {
   if (V5State.gridData.length === 0) {
-    window.showToast?.('No transactions to categorize', 'warning');
+    // Toast removed
     return;
   }
 
-  window.showToast?.('Auto-categorizing all transactions...', 'info');
+  // Toast removed
 
   const categorized = await window.ProcessingEngine.categorizeTransactions(
     V5State.gridData,
@@ -579,12 +579,12 @@ window.autoCategorizeV5 = async function () {
   V5State.gridApi?.setRowData(categorized);
   updateReconciliationCard();
 
-  window.showToast?.('Auto-categorization complete', 'success');
+  // Toast removed
 };
 
 window.reviewMatchesV5 = function () {
   // TODO: Show review UI for matched transactions
-  window.showToast?.('Review Matches feature coming soon', 'info');
+  // Toast removed
 };
 
 // ============================================
@@ -775,10 +775,7 @@ window.parseV5Files = async function () {
     // Clear files
     clearV5Files();
 
-    // Show success
-    if (window.showToast) {
-      window.showToast('success', `Imported ${categorized.length} transactions`);
-    }
+    // Success - data loaded into grid
 
   } catch (error) {
     console.error('Parse failed:', error);
@@ -793,28 +790,20 @@ window.parseV5Files = async function () {
           // Clear duplicate cache
           await window.BrainStorage.clearAllFileHashes();
 
-          if (window.showToast) {
-            window.showToast('success', 'Import history cleared! Please upload your files again.');
-          }
+          console.log('Import history cleared');
 
           // Clear file selection so they can re-select
           clearV5Files();
         } catch (clearError) {
           console.error('Failed to clear cache:', clearError);
-          if (window.showToast) {
-            window.showToast('error', 'Failed to clear cache. Try: await window.BrainStorage.clearAllFileHashes()');
-          }
+          console.error('Failed to clear cache');
         }
       } else {
-        if (window.showToast) {
-          window.showToast('info', 'Import cancelled - files already imported');
-        }
+        console.log('Import cancelled - files already imported');
       }
     } else {
       // Other parsing errors
-      if (window.showToast) {
-        window.showToast('error', 'Failed to parse files');
-      }
+      console.error('Failed to parse files');
     }
   } finally {
     V5State.isProcessing = false;
@@ -1158,9 +1147,7 @@ window.restorePreviousImport = async function () {
   // Load cached data
   await loadData();
 
-  if (window.showToast) {
-    window.showToast('success', 'Previous import restored');
-  }
+  console.log('Previous import restored');
 };
 
 window.startFreshImport = async function () {
@@ -1177,9 +1164,7 @@ window.startFreshImport = async function () {
     V5State.gridApi.setGridOption('rowData', []);
   }
 
-  if (window.showToast) {
-    window.showToast('success', 'Ready for new import');
-  }
+  console.log('Ready for new import');
 };
 
 // ============================================
