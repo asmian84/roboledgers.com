@@ -757,7 +757,17 @@ window.parseV5Files = async function () {
       }
     });
 
-    initV5Grid();
+    // Initialize or update grid
+    if (!V5State.gridApi) {
+      // Grid not initialized yet, call init
+      initV5Grid();
+    } else {
+      // Grid exists, just update data
+      V5State.gridApi.setGridOption('rowData', categorized);
+    }
+
+    // Force reconciliation update
+    updateReconciliationCard();
 
     // Save to cache
     await window.CacheManager.saveTransactions(categorized);
