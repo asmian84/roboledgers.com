@@ -292,6 +292,320 @@ class FiveTierAccountEditor {
 
 window.renderTxnImportV5Page = function () {
   return `
+    <style>
+      /* ========================================
+         PHASE 2: NEW LAYOUT CSS - FINTECH STYLE
+         ======================================== */
+      
+      /* Fixed Main Header */
+      .v5-main-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        background: var(--bg-primary);
+        border-bottom: 2px solid var(--border-color);
+        gap: 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      
+      .v5-header-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      
+      /* Control Toolbar - Deep UI Style */
+      .v5-control-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(to bottom, #ffffff, #f9fafb);
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        margin: 1rem 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 
+                    0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      
+      /* Ref# Input - Super Snug */
+      .v5-ref-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+      
+      .v5-ref-input-wrapper label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .v5-ref-input {
+        width: 60px;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        transition: all 0.2s;
+      }
+      
+      .v5-ref-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      /* Search Bar - Flex Grow */
+      .v5-search-wrapper {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      
+      .v5-search-wrapper i {
+        position: absolute;
+        left: 0.75rem;
+        color: #9ca3af;
+        font-size: 1.125rem;
+      }
+      
+      .v5-search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+      }
+      
+      .v5-search-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      .v5-search-input::placeholder {
+        color: #9ca3af;
+      }
+      
+      /* Balances Card - Fintech Style */
+      .v5-balances-card {
+        display: flex;
+        gap: 1.5rem;
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        flex-shrink: 0;
+      }
+      
+      .v5-balance-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 80px;
+      }
+      
+      .v5-balance-label {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .v5-balance-value {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        font-family: 'Courier New', monospace;
+      }
+      
+      .v5-balance-value.positive {
+        color: #10b981;
+      }
+      
+      .v5-balance-value.negative {
+        color: #ef4444;
+      }
+      
+      .v5-balance-item.ending .v5-balance-value {
+        font-size: 1rem;
+        color: #60a5fa;
+      }
+      
+      /* Bulk Operations Bar - Slide Down Animation */
+      .v5-bulk-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.875rem 1.5rem;
+        background: linear-gradient(to right, #fef3c7, #fde68a);
+        border: 1px solid #fbbf24;
+        border-radius: 6px;
+        margin: 0 1.5rem 1rem 1.5rem;
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+        animation: slideDown 0.3s ease-out;
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .v5-bulk-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #92400e;
+      }
+      
+      .v5-bulk-info i {
+        font-size: 1.25rem;
+      }
+      
+      .v5-bulk-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+      
+      .btn-bulk {
+        padding: 0.5rem 1rem;
+        background: #ffffff;
+        border: 1px solid #d97706;
+        border-radius: 4px;
+        font-weight: 600;
+        color: #92400e;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .btn-bulk:hover {
+        background: #fed7aa;
+      }
+      
+      .btn-bulk-cancel {
+        padding: 0.5rem 1rem;
+        background: #ffffff;
+        border: 1px solid #dc2626;
+        border-radius: 4px;
+        font-weight: 600;
+        color: #dc2626;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .btn-bulk-cancel:hover {
+        background: #fee2e2;
+      }
+      
+      /* History Panel - Toggle UI */
+      .v5-history-panel {
+        margin: 0 1.5rem 1rem 1.5rem;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        animation: slideDown 0.3s ease-out;
+      }
+      
+      .v5-history-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .v5-history-header h3 {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .v5-history-content {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      
+      .v5-history-empty {
+        padding: 2rem;
+        text-align: center;
+        color: #9ca3af;
+        margin: 0;
+      }
+      
+      /* Responsive Breakpoints */
+      @media (max-width: 1200px) {
+        .v5-balances-card {
+          gap: 1rem;
+        }
+        
+        .v5-balance-item {
+          min-width: 70px;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .v5-control-toolbar {
+          flex-wrap: wrap;
+        }
+        
+        .v5-search-wrapper {
+          order: 3;
+          flex-basis: 100%;
+        }
+        
+        .v5-balances-card {
+          order: 2;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+        }
+        
+        .v5-bulk-bar {
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: stretch;
+        }
+        
+        .v5-bulk-actions {
+          justify-content: stretch;
+        }
+        
+        .btn-bulk, .btn-bulk-cancel {
+          flex: 1;
+        }
+      }
+    </style>
+
     <div class="txn-import-v5-container">
       
       <!-- PHASE 1: FIXED MAIN HEADER (Always Visible) -->
