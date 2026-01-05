@@ -1068,11 +1068,14 @@ window.renderTxnImportV5Page = function () {
           min-height: 400px !important;
         }
         
-        /* Responsive grid sizing */
-        #v5-grid-container {
-          height: calc(100vh - 280px) !important;
-          min-height: 500px;
-        }
+      /* Grid Container - FULL HEIGHT to 1px from bottom */
+      .v5-grid-container {
+        width: 100%;
+        height: calc(100vh - 200px - 1px) !important;
+        min-height: 400px;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
         
         @media (max-width: 768px) {
           #v5-grid-container {
