@@ -1415,11 +1415,22 @@ window.confirmStartOver = async function () {
   V5State.importHistory = [];
   V5State.undoStack = [];
 
+  // CRITICAL FIX: Clear file hashes to allow re-uploading same files
+  if (window.BrainStorage) {
+    await window.BrainStorage.clearAllFileHashes();
+    console.log('✅ File hashes cleared - can re-upload same PDFs');
+  }
+
+  // Clear localStorage
+  localStorage.removeItem('ab_import_session');
+  localStorage.removeItem('ab_import_history');
+
   await window.CacheManager.clearAll();
 
   // Hide grid, show empty state
   document.getElementById('v5-grid-container').style.display = 'none';
   document.getElementById('v5-empty-state').style.display = 'flex';
+  document.getElementById('v5-recon-inline').style.display = 'none';
 
   // Reset UI
   updateUndoButton();
