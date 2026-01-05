@@ -453,11 +453,74 @@ window.renderTxnImportV5Page = function () {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1.25rem 1.5rem;
-        background: linear-gradient(to right, #fef3c7, #fde68a);
-        border-bottom: 1px solid #fbbf24;
-        margin: 0;
+        min-height: 50px !important;
+        padding: 1.25rem 1.5rem !important;
+        background: #fef3c7 !important;
+        border-bottom: 1px solid #fbbf24 !important;
+        margin: 0 !important;
+        gap: 1rem;
         animation: slideDown 0.3s ease-out;
+      }
+      
+      /* DUAL-PURPOSE INLINE BAR */
+      .v5-inline-bar {
+        background: #fef3c7;
+        border-bottom: 1px solid #fbbf24;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 50px;
+      }
+      
+      .v5-inline-bar > div {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+      }
+      
+      .btn-inline-apply {
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      
+      .btn-inline-apply:hover {
+        background: #2563eb;
+      }
+      
+      .btn-inline-danger {
+        padding: 0.5rem 1rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      
+      .btn-inline-danger:hover {
+        background: #dc2626;
+      }
+      
+      .btn-inline-cancel {
+        padding: 0.5rem 1rem;
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      
+      .btn-inline-cancel:hover {
+        background: #f8fafc;
       }
       
       @keyframes slideDown {
@@ -1100,6 +1163,28 @@ window.renderTxnImportV5Page = function () {
         <p style="color: var(--text-secondary);">
           Import your bank statement or add your first entry manually to get started.
         </p>
+      </div>
+      
+      <!-- Dual-Purpose Inline Bar -->
+      <div id="v5-inline-bar" class="v5-inline-bar" style="display: none;">
+        
+        <!-- STATE 1: Bulk Operations -->
+        <div id="bulk-mode-bar" style="display: none;">
+          <span id="selection-count" style="font-weight: 600;">0 selected</span>
+          <select id="bulk-category-dropdown" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 250px;">
+            <option value="">Select Account...</option>
+          </select>
+          <button onclick="window.applyBulkCategoryInline()" class="btn-inline-apply">Apply Category</button>
+          <button onclick="window.cancelBulkSelection()" class="btn-inline-cancel">✕ Clear</button>
+        </div>
+        
+        <!-- STATE 2: Start Over Confirmation -->
+        <div id="startover-mode-bar" style="display: none;">
+          <span style="font-weight: 600;">⚠️ Clear all data and start fresh?</span>
+          <button onclick="window.confirmStartOverInline()" class="btn-inline-danger">Yes, Clear All</button>
+          <button onclick="window.cancelStartOverInline()" class="btn-inline-cancel">Cancel</button>
+        </div>
+        
       </div>
       
       <!-- AG Grid -->
