@@ -1148,6 +1148,10 @@ window.initV5Grid = function () {
       width: 280,
       editable: true,
       cellEditor: FiveTierAccountEditor,
+      valueGetter: params => {
+        // Support multiple field names from different parsers
+        return params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized';
+      },
       valueFormatter: params => resolveAccountName(params.value)
     },
     {
@@ -1656,5 +1660,85 @@ window.initTxnImportV5Grid = async function () {
 
 console.log('✅ Txn Import V5 loaded successfully');
 
+// ============================================
+// AUTO-LOAD SESSION ON PAGE READY
+// ============================================
 
-// EMERGENCY GRID VISIBILITY FIX - SCROLL TO LINE 480
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🔄 Checking for saved session...');
+
+  const sessionData = localStorage.getItem('ab_import_session');
+  if (sessionData) {
+    try {
+      const session = JSON.parse(sessionData);
+
+      if (session.parsedData && session.parsedData.data && session.parsedData.data.length > 0) {
+        console.log('✅ Auto-loading session:', session.parsedData.data.length, 'transactions');
+
+        // Restore state
+        V5State.gridData = session.parsedData.data;
+        V5State.accountType = session.forcedAccountType || 'BANK';
+        V5State.openingBalance = session.parsedData.openingBalance || 0;
+        V5State.accountName = session.accountName || 'CHECKING';
+
+        // Initialize grid with restored data
+        initV5Grid();
+        updateReconciliationCard();
+
+        console.log('✅ Session restored successfully');
+      } else {
+        console.log('ℹ️ Session exists but has no transactions');
+      }
+    } catch (e) {
+      console.error('❌ Failed to load session:', e);
+    }
+  } else {
+    console.log('ℹ️ No saved session found');
+  }
+
+  // Also load history
+  loadImportHistory();
+});
+
+// ============================================
+// LOAD IMPORT HISTORY
+// ============================================
+
+function loadImportHistory() {
+  const historyData = localStorage.getItem('ab_import_history');
+  const historyList = document.getElementById('v5-history-list');
+
+  if (!historyData || !historyList) return;
+
+  try {
+    const history = JSON.parse(historyData);
+
+    if (!Array.isArray(history) || history.length === 0) {
+      historyList.innerHTML = '<div style="padding: 1rem; color: var(--text-secondary);">No import history yet.</div>';
+      return;
+    }
+
+    historyList.innerHTML = history.slice(0, 10).map(item => `
+      <div class="history-item" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
+           onmouseenter="this.style.background='var(--bg-secondary)'"
+           onmouseleave="this.style.background='transparent'"
+           onclick="loadHistorySession('${item.id || item.timestamp}')">
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.accountName || 'Unknown Account'}</div>
+        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+          ${new Date(item.timestamp).toLocaleString()} • ${item.transactionCount || 0} transactions
+        </div>
+      </div>
+    `).join('');
+
+    console.log('✅ Loaded', history.length, 'history items');
+  } catch (e) {
+    console.error('Failed to load history:', e);
+    historyList.innerHTML = '<div style="padding: 1rem; color: var(--text-secondary);">Error loading history.</div>';
+  }
+}
+
+window.loadHistorySession = function (sessionId) {
+  console.log('Loading history session:', sessionId);
+  // TODO: Implement session loading from history
+};
+
