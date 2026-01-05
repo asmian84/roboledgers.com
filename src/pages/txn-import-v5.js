@@ -17,7 +17,8 @@ const V5State = {
   gridApi: null,
   undoStack: [],
   isProcessing: false,
-  currentProgress: { current: 0, total: 0, message: '' }
+  currentProgress: { current: 0, total: 0, message: '' },
+  openingBalance: 0.00
 };
 
 const V5_MAX_UNDO_STEPS = 10;
@@ -94,11 +95,64 @@ function undoLastAction() {
 }
 
 function updateUndoButton() {
-  const btn = document.getElementById('v5-undo-btn');
-  if (btn) {
-    btn.disabled = V5State.undoStack.length === 0;
-    btn.textContent = `Undo (${V5State.undoStack.length})`;
+  // Update menu text
+  const menuText = document.getElementById('v5-undo-menu-text');
+  if (menuText) {
+    menuText.textContent = `Undo (${V5State.undoStack.length})`;
   }
+}
+
+// ============================================
+// RECONCILIATION CARD HELPERS
+// ============================================
+
+function updateReconciliationCard() {
+  if (V5State.gridData.length === 0) {
+    document.getElementById('v5-recon-card').style.display = 'none';
+    return;
+  }
+
+  // Show card
+  document.getElementById('v5-recon-card').style.display = 'flex';
+
+  // Calculate values
+  let totalIn = 0;
+  let totalOut = 0;
+  let debitCount = 0;
+  let creditCount = 0;
+
+  V5State.gridData.forEach(txn => {
+    const amount = parseFloat(txn.amount) || 0;
+    if (amount > 0) {
+      totalIn += amount;
+      debitCount++;
+    } else if (amount < 0) {
+      totalOut += Math.abs(amount);
+      creditCount++;
+    }
+  });
+
+  // Get opening balance from first transaction or metadata
+  const openingBal = V5State.openingBalance || 0.00;
+  const endingBal = openingBal + totalIn - totalOut;
+
+  // Update DOM
+  document.getElementById('v5-opening-bal').textContent = `$${openingBal.toFixed(2)}`;
+  document.getElementById('v5-total-in').textContent = `+${totalIn.toFixed(2)}`;
+  document.getElementById('v5-debit-count').textContent = debitCount;
+  document.getElementById('v5-total-out').textContent = `-${totalOut.toFixed(2)}`;
+  document.getElementById('v5-credit-count').textContent = creditCount;
+  document.getElementById('v5-ending-bal').textContent = `$${endingBal.toFixed(2)}`;
+}
+
+// ============================================
+// SEARCH/FILTER FUNCTION
+// ============================================
+
+window.filterV5Grid = function (searchText) {
+  if (!V5State.gridApi) return;
+
+  V5State.gridApi.setQuickFilter(searchText);
 }
 
 // ============================================
@@ -263,34 +317,46 @@ window.renderTxnImportV5Page = function () {
   return `
     <div class="txn-import-v5-container">
       
-      <!-- Header Actions -->
-      <div class="v5-header">
-        <h1 class="page-title">Transaction Import V5</h1>
+      <!-- Header - Single Line Design -->
+      <div class="v5-header-unified">
+        <!-- Left: Icon + Title -->
+        <div class="v5-title-section">
+          <div class="v5-page-icon">
+            <i class="ph ph-arrow-square-down"></i>
+          </div>
+          <div class="v5-title-text">
+            <h1>Transactions Import</h1>
+            <p>Unified Staging & Ledger</p>
+          </div>
+        </div>
         
-        <div class="v5-header-actions">
-          <button id="v5-history-btn" class="btn-secondary" onclick="toggleV5History()">
-            <i class="ph ph-clock-counter-clockwise"></i>
-            History
-            <i id="v5-history-chevron" class="ph ph-caret-down"></i>
-          </button>
-          
-          <button id="v5-start-over-btn" class="btn-secondary" onclick="startOverV5()">
+        <!-- Center: Search/Filter Box -->
+        <div class="v5-search-box">
+          <input type="text" 
+                 id="v5-search-input" 
+                 placeholder="Search transactions..." 
+                 oninput="filterV5Grid(this.value)">
+        </div>
+        
+        <!-- Right: Action Buttons -->
+        <div class="v5-header-actions-inline">
+          <button id="v5-start-over-btn" class="btn-secondary-sm" onclick="startOverV5()" title="Start Over">
             <i class="ph ph-arrows-counter-clockwise"></i>
             Start Over
           </button>
           
-          <button id="v5-undo-btn" class="btn-secondary" onclick="undoLastAction()" disabled>
-            <i class="ph ph-arrow-counter-clockwise"></i>
-            Undo (0)
+          <button id="v5-history-btn" class="btn-secondary-sm" onclick="toggleV5History()" title="Toggle History">
+            <i class="ph ph-clock-counter-clockwise"></i>
+            History
           </button>
           
-          <button id="v5-popout-btn" class="btn-secondary" onclick="popOutV5Grid()">
+          <button id="v5-popout-btn" class="btn-secondary-sm" onclick="popOutV5Grid()" title="Pop Out">
             <i class="ph ph-arrow-square-out"></i>
-            Pop Out
+            Popout
           </button>
           
           <div class="dropdown">
-            <button class="btn-secondary" onclick="toggleV5Menu()">
+            <button class="btn-secondary-sm" onclick="toggleV5Menu()" title="More Options">
               <i class="ph ph-dots-three"></i>
             </button>
             <div id="v5-dropdown-menu" class="dropdown-menu" style="display: none;">
@@ -302,6 +368,11 @@ window.renderTxnImportV5Page = function () {
                 <i class="ph ph-printer"></i>
                 PDF Print Preview
               </button>
+              <button onclick="undoLastAction()">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                <span id="v5-undo-menu-text">Undo (0)</span>
+              </button>
+              <hr>
               <button onclick="showV5Appearance()">
                 <i class="ph ph-palette"></i>
                 Appearance
@@ -311,8 +382,43 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
+      <!-- Reconciliation Card -->
+      <div class="v5-reconciliation-card" id="v5-recon-card" style="display: none;">
+        <div class="v5-recon-item">
+          <div class="v5-recon-label">OPENING BAL</div>
+          <div class="v5-recon-value" id="v5-opening-bal">$0.00</div>
+        </div>
+        
+        <div class="v5-recon-divider"></div>
+        
+        <div class="v5-recon-item">
+          <div class="v5-recon-label">TOTAL IN</div>
+          <div class="v5-recon-value positive">
+            <span id="v5-total-in">+0.00</span>
+            <sup id="v5-debit-count" class="v5-count-badge">0</sup>
+          </div>
+        </div>
+        
+        <div class="v5-recon-divider"></div>
+        
+        <div class="v5-recon-item">
+          <div class="v5-recon-label">TOTAL OUT</div>
+          <div class="v5-recon-value negative">
+            <span id="v5-total-out">-0.00</span>
+            <sup id="v5-credit-count" class="v5-count-badge">0</sup>
+          </div>
+        </div>
+        
+        <div class="v5-recon-divider"></div>
+        
+        <div class="v5-recon-item">
+          <div class="v5-recon-label">ENDING BAL</div>
+          <div class="v5-recon-value ending" id="v5-ending-bal">$0.00</div>
+        </div>
+      </div>
+      
       <!-- Inline Import Zone (Collapsible) -->
-      <div id="v5-import-zone" class="v5-import-zone expanded">
+      <div id="v5-import-zone" class="v5-import-zone collapsed">
         <div id="v5-import-content">
           <!-- Drag and Drop Area -->
           <div id="v5-drop-zone" class="v5-drop-zone" 
@@ -613,6 +719,9 @@ window.initV5Grid = function () {
 
   // Add keyboard shortcut listeners
   setupV5KeyboardShortcuts();
+
+  // Update reconciliation card
+  updateReconciliationCard();
 };
 
 // ============================================

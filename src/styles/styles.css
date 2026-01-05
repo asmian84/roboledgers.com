@@ -6145,3 +6145,200 @@ button {
     height: 500px;
   }
 }
+
+/* ============================================
+   V5 Header - Unified Single Line Design
+   ============================================ */
+
+.v5-header-unified {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.v5-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 250px;
+}
+
+.v5-page-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.v5-title-text h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.v5-title-text p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.v5-search-box {
+  flex: 1;
+  min-width: 300px;
+  max-width: 600px;
+}
+
+.v5-search-box input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #4ade80;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.v5-search-box input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+}
+
+.v5-header-actions-inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-secondary-sm {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-secondary-sm:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+.btn-secondary-sm i {
+  font-size: 16px;
+}
+
+/* ============================================
+   V5 Reconciliation Card
+   ============================================ */
+
+.v5-reconciliation-card {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 2rem 1rem 2rem;
+  gap: 2rem;
+}
+
+.v5-recon-item {
+  flex: 1;
+  text-align: center;
+}
+
+.v5-recon-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.v5-recon-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.v5-recon-value.positive {
+  color: #16a34a;
+}
+
+.v5-recon-value.negative {
+  color: #dc2626;
+}
+
+.v5-recon-value.ending {
+  color: var(--primary-color);
+  font-size: 1.75rem;
+}
+
+.v5-count-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.v5-recon-divider {
+  width: 1px;
+  height: 50px;
+  background: var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .v5-header-unified {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .v5-search-box {
+    max-width: 100%;
+  }
+  
+  .v5-header-actions-inline {
+    justify-content: space-between;
+  }
+  
+  .v5-reconciliation-card {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .v5-recon-divider {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .v5-header-actions-inline {
+    flex-wrap: wrap;
+  }
+  
+  .btn-secondary-sm {
+    flex: 1;
+    justify-content: center;
+  }
+}
