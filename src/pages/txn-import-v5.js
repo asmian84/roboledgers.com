@@ -1972,13 +1972,12 @@ function handleV5KeyboardShortcut(e) {
     // PART 3: Silent operation - no toast
     console.log('💾 Data saved to cache');
   }
-}
 
-// Delete: Delete selected rows
-if (e.key === 'Delete' && !e.target.matches('input, textarea')) {
-  e.preventDefault();
-  deleteV5SelectedRows();
-}
+  // Delete: Delete selected rows
+  if (e.key === 'Delete' && !e.target.matches('input, textarea')) {
+    e.preventDefault();
+    deleteV5SelectedRows();
+  }
 }
 
 // ============================================
