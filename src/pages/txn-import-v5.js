@@ -947,21 +947,21 @@ function handleV5KeyboardShortcut(e) {
 // ============================================
 
 window.toggleV5History = function () {
-  const zone = document.getElementById('v5-import-zone');
-  const chevron = document.getElementById('v5-history-chevron');
+  // In the new layout, History button just shows/hides the collapsible history zone
+  const historyZone = document.querySelector('.v5-history-collapsible');
+  if (!historyZone) {
+    console.warn('History zone not found');
+    return;
+  }
 
-  V5State.importZoneExpanded = !V5State.importZoneExpanded;
+  const isExpanded = historyZone.classList.contains('expanded');
 
-  if (V5State.importZoneExpanded) {
-    zone.classList.remove('collapsed');
-    zone.classList.add('expanded');
-    chevron.classList.remove('ph-caret-down');
-    chevron.classList.add('ph-caret-up');
+  if (isExpanded) {
+    historyZone.classList.remove('expanded');
+    historyZone.classList.add('collapsed');
   } else {
-    zone.classList.remove('expanded');
-    zone.classList.add('collapsed');
-    chevron.classList.remove('ph-caret-up');
-    chevron.classList.add('ph-caret-down');
+    historyZone.classList.remove('collapsed');
+    historyZone.classList.add('expanded');
   }
 };
 
