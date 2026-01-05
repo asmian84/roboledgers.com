@@ -1223,6 +1223,16 @@ window.showKeyboardShortcuts = function () {
   `;
 
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+  // ESC key to close
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
   document.body.appendChild(modal);
 };
 
