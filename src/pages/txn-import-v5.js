@@ -1182,6 +1182,14 @@ window.startFreshImport = async function () {
 // ============================================
 
 window.initTxnImportV5Grid = async function () {
+  // Auto-clear duplicate file cache on page load
+  console.log('🔄 Auto-clearing duplicate file cache...');
+  try {
+    await window.BrainStorage.clearAllFileHashes();
+  } catch (e) {
+    console.warn('Could not clear file cache:', e);
+  }
+
   // Check if there are cached transactions
   const cachedTransactions = await window.CacheManager.getTransactions();
 
