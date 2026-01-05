@@ -1372,7 +1372,44 @@ window.toggleV5History = function () {
 };
 
 window.startOverV5 = async function () {
-  if (!confirm('This will clear all transactions and history. Are you sure?')) return;
+  // Create in-page confirmation banner instead of popup
+  const existingBanner = document.getElementById('v5-confirm-banner');
+  if (existingBanner) existingBanner.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'v5-confirm-banner';
+  banner.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    z-index: 10000;
+    max-width: 500px;
+  `;
+
+  banner.innerHTML = `
+    <div style="font-weight: 700; margin-bottom: 0.5rem; color: #92400e;">⚠️ Clear All Data?</div>
+    <div style="margin-bottom: 1rem; color: #78350f;">This will clear all transactions and history. This action cannot be undone.</div>
+    <div style="display: flex; gap: 0.75rem;">
+      <button onclick="confirmStartOver()" style="flex: 1; padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+        Yes, Clear All
+      </button>
+      <button onclick="document.getElementById('v5-confirm-banner').remove()" style="flex: 1; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+        Cancel
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(banner);
+};
+
+window.confirmStartOver = async function () {
+  document.getElementById('v5-confirm-banner')?.remove();
 
   V5State.gridData = [];
   V5State.importHistory = [];
@@ -1437,6 +1474,12 @@ window.popOutV5Grid = function () {
           .btn-primary { background: #3b82f6; color: white; border-color: #3b82f6; }
           .btn-primary:hover { background: #2563eb; }
           #popout-grid { height: calc(100vh - 100px); }
+          
+          /* CRITICAL: Force AG Grid wrapper to fill container - FIX for blank popout */
+          #popout-grid .ag-root-wrapper {
+            height: 100% !important;
+            min-height: 600px !important;
+          }
         </style>
       </head>
       <body>
@@ -1718,7 +1761,10 @@ function loadImportHistory() {
       return;
     }
 
-    historyList.innerHTML = history.slice(0, 10).map(item => `
+    // Sort by timestamp descending (newest first)
+    const sortedHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    historyList.innerHTML = sortedHistory.slice(0, 10).map(item => `
       <div class="history-item" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
            onmouseenter="this.style.background='var(--bg-secondary)'"
            onmouseleave="this.style.background='transparent'"
