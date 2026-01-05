@@ -1297,6 +1297,101 @@ function updateReconciliationCard() {
   console.log('✅ Balance card updated:', { openingBal, totalIn, totalOut, endingBal });
 }
 
+// ==================================================
+// PHASE 3: SEARCH BAR FILTERING
+// ==================================================
+
+window.handleV5Search = function (event) {
+  const searchTerm = event.target.value.toLowerCase().trim();
+
+  if (!V5State.gridApi) {
+    console.warn('Grid API not ready');
+    return;
+  }
+
+  if (!searchTerm) {
+    // Clear filter
+    V5State.gridApi.setFilterModel(null);
+    console.log('🔍 Search cleared - showing all rows');
+    return;
+  }
+
+  // Apply external filter
+  V5State.gridApi.setFilterModel({
+    // Filter across multiple columns
+    description: {
+      filterType: 'text',
+      type: 'contains',
+      filter: searchTerm
+    }
+  });
+
+  // Also use quick filter for multi-column search
+  V5State.gridApi.setGridOption('quickFilterText', searchTerm);
+
+  const rowCount = V5State.gridApi.getDisplayedRowCount();
+  console.log(`🔍 Searching for "${searchTerm}" - ${rowCount} results`);
+};
+
+// ==================================================
+// PHASE 3: BULK OPERATIONS
+// ==================================================
+
+window.updateV5SelectionUI = function () {
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  const count = selectedRows.length;
+  const bulkBar = document.getElementById('v5-bulk-bar');
+  const bulkCount = document.getElementById('v5-bulk-count');
+
+  if (count > 0) {
+    // Show bulk bar
+    if (bulkBar) {
+      bulkBar.style.display = 'flex';
+      if (bulkCount) {
+        bulkCount.textContent = `${count} item${count > 1 ? 's' : ''} selected`;
+      }
+    }
+    console.log(`📦 ${count} rows selected`);
+  } else {
+    // Hide bulk bar
+    if (bulkBar) {
+      bulkBar.style.display = 'none';
+    }
+  }
+};
+
+window.bulkCategorizeV5 = function () {
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  if (selectedRows.length === 0) {
+    alert('No rows selected');
+    return;
+  }
+
+  console.log(`🏷️ Bulk categorize ${selectedRows.length} transactions`);
+  // TODO: Implement bulk categorize modal
+  alert(`Bulk Categorize feature coming soon!\n${selectedRows.length} transactions selected`);
+};
+
+window.bulkRenameV5 = function () {
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  if (selectedRows.length === 0) {
+    alert('No rows selected');
+    return;
+  }
+
+  console.log(`✏️ Bulk rename ${selectedRows.length} transactions`);
+  // TODO: Implement bulk rename modal
+  alert(`Bulk Rename feature coming soon!\n${selectedRows.length} transactions selected`);
+};
+
+window.cancelBulkSelection = function () {
+  if (V5State.gridApi) {
+    V5State.gridApi.deselectAll();
+    updateV5SelectionUI();
+    console.log('❌ Bulk selection cancelled');
+  }
+};
+
 // ============================================
 // FILE UPLOAD HANDLERS
 // ============================================
@@ -2239,9 +2334,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadImportHistory() {
   const historyData = localStorage.getItem('ab_import_history');
-  const historyList = document.getElementById('v5-history-list');
+  const historyContent = document.getElementById('v5-history-content');
 
-  if (!historyData || !historyList) return;
+  if (!historyContent) {
+    console.warn('History content element not found');
+    return;
+  }
+
+  if (!historyData) {
+    historyContent.innerHTML = '<p class="v5-history-empty">No import history yet.</p>';
+    return;
+  }
 
   try {
     const history = JSON.parse(historyData);
