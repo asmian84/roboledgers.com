@@ -398,14 +398,15 @@ window.renderTxnImportV5Page = function () {
         color: #9ca3af;
       }
       
-      /* Balances Card - Fintech Style */
+      /* Balances Card - Blended with page theme */
       .v5-balances-card {
         display: flex;
         gap: 1.5rem;
         padding: 0.75rem 1.25rem;
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        background: #ffffff;
+        border: 1px solid #E5E7EB;
         border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         flex-shrink: 0;
       }
       
@@ -419,7 +420,7 @@ window.renderTxnImportV5Page = function () {
       .v5-balance-label {
         font-size: 0.625rem;
         font-weight: 700;
-        color: #94a3b8;
+        color: #6B7280;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
@@ -427,7 +428,7 @@ window.renderTxnImportV5Page = function () {
       .v5-balance-value {
         font-size: 0.875rem;
         font-weight: 700;
-        color: #f1f5f9;
+        color: #1F2937;
         font-family: 'Courier New', monospace;
       }
       
