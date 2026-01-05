@@ -600,6 +600,129 @@ window.renderTxnImportV5Page = function () {
           flex: 1;
         }
       }
+      
+      /* ========================================
+         PART 4: BANK STATEMENT PRINT VIEW
+         ======================================== */
+      
+      @media print {
+        /* Hide all web UI elements */
+        .sidebar,
+        nav,
+        .v5-main-header,
+        .v5-control-toolbar,
+        .v5-bulk-bar,
+        .v5-history-panel,
+        .v5-empty-state,
+        .btn-icon,
+        button,
+        .ag-header-cell-menu-button,
+        .ag-selection-checkbox,
+        [class*="action"],
+        input[type="checkbox"] {
+          display: none !important;
+        }
+        
+        /* Page setup */
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+        
+        body {
+          background: white;
+          margin: 0;
+          padding: 0;
+          font-family: 'Times New Roman', 'Georgia', serif;
+          font-size: 11pt;
+          color: #000;
+        }
+        
+        /* Statement header */
+        .print-statement-header {
+          display: block !important;
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #000;
+          padding-bottom: 20px;
+        }
+        
+        .print-statement-header h1 {
+          font-size: 24pt;
+          font-weight: bold;
+          margin: 0 0 10px 0;
+          letter-spacing: 2px;
+        }
+        
+        .print-statement-header h2 {
+          font-size: 14pt;
+          margin: 0 0 15px 0;
+          color: #333;
+        }
+        
+        .print-statement-header p {
+          margin: 5px 0;
+          font-size: 10pt;
+          color: #666;
+        }
+        
+        /* Grid styling for print */
+        .v5-grid-container,
+        #v5-grid-container {
+          display: block !important;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .ag-root-wrapper {
+          border: 1px solid #000 !important;
+        }
+        
+        .ag-header {
+          background: #f0f0f0 !important;
+          border-bottom: 2px solid #000 !important;
+          font-weight: bold;
+        }
+        
+        .ag-header-cell {
+          border-right: 1px solid #000 !important;
+          padding: 8px !important;
+        }
+        
+        .ag-cell {
+          border-right: 1px solid #ccc !important;
+          border-bottom: 1px solid #ccc !important;
+          padding: 6px !important;
+          font-size: 10pt;
+        }
+        
+        .ag-row {
+          page-break-inside: avoid;
+        }
+        
+        /* Number formatting */
+        .ag-cell[col-id="Debit"],
+        .ag-cell[col-id="Credit"],
+        .ag-cell[col-id="Balance"] {
+          text-align: right;
+          font-family: 'Courier New', monospace;
+        }
+        
+        /* Alternating row colors */
+        .ag-row-even {
+          background: #fafafa !important;
+        }
+        
+        .ag-row-odd {
+          background: white !important;
+        }
+        
+        /* Page breaks */
+        .print-page-break {
+          page-break-after: always;
+        }
+      }
     </style>
 
     <div class="txn-import-v5-container">
@@ -2189,8 +2312,40 @@ window.exportV5Excel = function () {
   console.log(`📊 Excel export: ${fileName}`);
 };
 
+// ==================================================
+// PART 4: BANK STATEMENT PRINT VIEW
+// ==================================================
+
 window.printV5Preview = function () {
+  // Inject statement header before printing
+  const header = document.createElement('div');
+  header.className = 'print-statement-header';
+  header.style.display = 'none'; // Hidden on screen, shown in print
+
+  const gridData = V5State.gridData || [];
+  const dates = gridData.map(t => new Date(t.Date || t.date)).filter(d => !isNaN(d));
+  const startDate = dates.length > 0 ? new Date(Math.min(...dates)).toLocaleDateString() : 'N/A';
+  const endDate = dates.length > 0 ? new Date(Math.max(...dates)).toLocaleDateString() : 'N/A';
+
+  header.innerHTML = `
+    <h1>STATEMENT OF ACCOUNTS</h1>
+    <h2>CHECKING ACCOUNT</h2>
+    <p>Period: ${startDate} - ${endDate}</p>
+    <p>Total Transactions: ${gridData.length}</p>
+    <p>Statement Generated: ${new Date().toLocaleDateString()}</p>
+  `;
+
+  document.body.prepend(header);
+
+  // Trigger print
   window.print();
+
+  // Clean up after print
+  setTimeout(() => {
+    header.remove();
+  }, 100);
+
+  console.log('🖨️ Bank statement print preview opened');
 };
 
 window.showV5Appearance = function () {
