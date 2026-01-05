@@ -317,15 +317,20 @@ window.renderTxnImportV5Page = function () {
         align-items: center;
       }
       
-      /* Control Toolbar - Super Snug Zero-Gap */
+      
+      /* Control Toolbar - Conditional display, clean styling */
       .v5-control-toolbar {
-        display: flex;
+        display: none;
         align-items: center;
         gap: 1rem;
         padding: 1rem 1.5rem;
-        background: linear-gradient(to bottom, #ffffff, #f9fafb);
+        background: #ffffff;
         border-bottom: 1px solid #E5E7EB;
         margin: 0;
+      }
+      
+      .v5-control-toolbar.show-data {
+        display: flex;
       }
       
       /* Ref# Input - Top Label, Ultra Compact */
