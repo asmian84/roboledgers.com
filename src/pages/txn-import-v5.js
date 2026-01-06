@@ -1826,6 +1826,18 @@ window.toggleV5History = function () {
   }
 };
 
+window.openSourceFile = function (fileId) {
+  const row = V5State.gridData.find(r => r.sourceFileId === fileId);
+  if (!row || !row.sourceFileBlob) {
+    console.warn('Source file not found for:', fileId);
+    return;
+  }
+
+  const url = URL.createObjectURL(row.sourceFileBlob);
+  window.open(url, '_blank');
+  console.log(`📂 Opened source file: ${row.sourceFileName}`);
+};
+
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
