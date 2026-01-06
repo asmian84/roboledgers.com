@@ -1241,23 +1241,23 @@ window.renderTxnImportV5Page = function () {
               <i class="ph ph-dots-three-vertical"></i>
             </button>
             <div id="v5-action-dropdown" class="v5-dropdown-menu" style="display: none;">
-              <button onclick="setGridTheme('default')">
+              <button onclick="setGridTheme('default'); toggleV5ActionMenu();">
                 <i class="ph ph-palette"></i>
                 Theme: Default
               </button>
-              <button onclick="setGridTheme('rainbow')">
+              <button onclick="setGridTheme('rainbow'); toggleV5ActionMenu();">
                 <i class="ph ph-rainbow"></i>
                 Theme: Rainbow
               </button>
-              <button onclick="setGridTheme('ledger')">
+              <button onclick="setGridTheme('ledger'); toggleV5ActionMenu();">
                 <i class="ph ph-notepad"></i>
                 Theme: Ledger Pad
               </button>
-              <button onclick="setGridTheme('postit')">
+              <button onclick="setGridTheme('postit'); toggleV5ActionMenu();">
                 <i class="ph ph-note"></i>
                 Theme: Post-it Note
               </button>
-              <button onclick="setGridTheme('classic')">
+              <button onclick="setGridTheme('classic'); toggleV5ActionMenu();">
                 <i class="ph ph-squares-four"></i>
                 Theme: Classic
               </button>
