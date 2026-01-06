@@ -1906,20 +1906,35 @@ window.loadSavedData = function () {
   }
 };
 
-const strip = document.getElementById('v5-history-strip');
-const scroll = document.getElementById('v5-history-scroll');
-if (!strip || !scroll) return;
+// ============================================
+// SYSTEM B: IMPORT HISTORY (FIXED)
+// ============================================
 
-const history = V5State.recentImports || [];
+window.loadImportHistory = function () {
+  console.log('📋 Loading import history...');
+  console.log('Rendering history items:', V5State.recentImports);
 
-if (history.length === 0) {
-  strip.classList.remove('show');
-  return;
-}
+  const strip = document.getElementById('v5-history-strip');
+  const scroll = document.getElementById('v5-history-scroll');
 
-strip.classList.add('show');
+  if (!strip || !scroll) {
+    console.warn('⚠️ History strip elements not found in DOM');
+    return;
+  }
 
-scroll.innerHTML = history.map(item => `
+  const history = V5State.recentImports || [];
+
+  if (history.length === 0) {
+    strip.classList.remove('show');
+    strip.style.display = 'none';
+    console.log('📋 No history to display');
+    return;
+  }
+
+  strip.classList.add('show');
+  strip.style.display = 'block';
+
+  scroll.innerHTML = history.map(item => `
     <div class="v5-history-chip">
       <span class="v5-history-chip-name" title="${item.filename}">${item.filename || 'Import'}</span>
       <span class="v5-history-chip-count">${item.count || 0} txns</span>
@@ -1931,6 +1946,8 @@ scroll.innerHTML = history.map(item => `
          title="Delete"></i>
     </div>
   `).join('');
+
+  console.log(`✅ Rendered ${history.length} history chips`);
 };
 
 window.deleteImportSource = function (fileId) {
