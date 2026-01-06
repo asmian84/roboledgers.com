@@ -3504,25 +3504,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Also load history
   loadImportHistory();
 });
-
-// ============================================
-// LOAD IMPORT HISTORY
-// ============================================
-
-              ${ new Date(item.timestamp).toLocaleString() } • ${ item.transactionCount || 0 } transactions
-            </div >
-          </div >
-  `).join('');
-
-    console.log('✅ Loaded', history.length, 'history items');
-  } catch (e) {
-    console.error('Failed to load history:', e);
-    historyList.innerHTML = '<div style="padding: 1rem; color: var(--text-secondary);">Error loading history.</div>';
-  }
-}
-
-window.loadHistorySession = function (sessionId) {
-  console.log('Loading history session:', sessionId);
-  // TODO: Implement session loading from history
-};
-
+```
