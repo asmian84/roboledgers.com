@@ -1432,8 +1432,8 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- Recent Imports Card (Collapsible with Horizontal Chips) -->
-      <div class="v5-recent-imports-card" id="v5-recent-imports-card" style="display: none;">
+      <!-- RED CARD - HIDDEN -->
+      <div class="v5-recent-imports-card" id="v5-recent-imports-card" style="display: none !important;">
         <div class="v5-card-header" onclick="toggleV5History()">
           <div class="v5-card-title">
             <i class="ph ph-clock-counter-clockwise"></i>
