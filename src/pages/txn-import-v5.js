@@ -2005,6 +2005,31 @@ window.parseV5Files = async function () {
       }
     );
 
+    // ============================================
+    // PHASE 3: ATTACH SOURCE METADATA TO EACH ROW
+    // ============================================
+    const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const file = V5State.selectedFiles[0]; // Get first file
+    const fileType = file.name.endsWith('.pdf') ? 'pdf' : 'csv';
+
+    categorized.forEach(row => {
+      row.sourceFileId = fileId;
+      row.sourceFileName = file.name;
+      row.sourceFileBlob = file;
+      row.sourceFileType = fileType;
+    });
+
+    // Add to import history
+    if (!V5State.recentImports) V5State.recentImports = [];
+    V5State.recentImports.unshift({
+      id: fileId,
+      filename: file.name,
+      date: new Date().toISOString(),
+      count: categorized.length,
+      status: 'Success'
+    });
+    localStorage.setItem('ab_import_history', JSON.stringify(V5State.recentImports));
+
     // Load into grid
     V5State.gridData = categorized;
 
