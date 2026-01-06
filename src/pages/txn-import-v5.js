@@ -1115,7 +1115,8 @@ window.renderTxnImportV5Page = function () {
         <div class="v5-browse-section">
           <button class="btn-browse" onclick="document.getElementById('v5-file-input').click()">
             <i class="ph ph-cloud-arrow-up"></i>
-            Browse / Drop Files
+            <span>Drag and drop files here</span>
+            <small style="display: block; font-size: 0.75rem; opacity: 0.8;">Limit 200MB per file • PDF, CSV, Excel</small>
           </button>
           <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
                  style="display: none;" onchange="handleV5FileSelect(event)">
@@ -1274,7 +1275,8 @@ window.renderTxnImportV5Page = function () {
         <div class="v5-browse-section">
           <button class="btn-browse" onclick="document.getElementById('v5-file-input').click()">
             <i class="ph ph-cloud-arrow-up"></i>
-            Browse / Drop Files
+            <span>Drag and drop files here</span>
+            <small style="display: block; font-size: 0.75rem; opacity: 0.8;">Limit 200MB per file • PDF, CSV, Excel</small>
           </button>
           <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
                  style="display: none;" onchange="handleV5FileSelect(event)">
