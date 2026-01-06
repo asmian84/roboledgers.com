@@ -2397,9 +2397,20 @@ window.initV5Grid = function () {
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
-      pinned: 'left'
+      width: 50
     },
     // Source column removed - icon moved to Actions column
+    {
+      headerName: 'Ref#',
+      field: 'refNumber',
+      width: 100,
+      valueGetter: (params) => {
+        if (!params.data.refNumber) return '';
+        const prefix = V5State.refPrefix || '';
+        return prefix + params.data.refNumber;
+      },
+      cellStyle: { fontWeight: '600', color: '#6B7280' }
+    },
     {
       headerName: 'Date',
       field: 'date',
@@ -2479,15 +2490,18 @@ window.initV5Grid = function () {
       headerName: 'Actions',
       field: 'actions',
       width: 150,
-      pinned: 'right',
       cellRenderer: (params) => {
-        // Source file icon
-        const sourceIcon = params.data.sourceFileType
-          ? `<i class="ph ph-file-${params.data.sourceFileType}" 
+        // Source file icon - dynamic based on type
+        let sourceIcon = '';
+        if (params.data.sourceFileType) {
+          const isPdf = params.data.sourceFileType === 'pdf' || params.data.sourceFileType.includes('pdf');
+          const icon = isPdf ? 'ph-file-pdf' : 'ph-file-csv';
+          const color = isPdf ? '#EF4444' : '#10B981';
+          sourceIcon = `<i class="ph ${icon}" 
                  onclick="openSourceFile('${params.data.sourceFileId}')" 
-                 style="cursor: pointer; color: ${params.data.sourceFileType === 'pdf' ? '#EF4444' : '#10B981'}; margin-right: 0.5rem;"
-                 title="Open ${params.data.sourceFileName}"></i>`
-          : '';
+                 style="cursor: pointer; color: ${color}; margin-right: 0.5rem; font-size: 1.125rem;"
+                 title="Open ${params.data.sourceFileName}"></i>`;
+        }
 
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
@@ -2568,8 +2582,20 @@ window.initV5Grid = function () {
   console.log('Grid options:', gridOptions);
 
   try {
-    const gridInstance = agGrid.createGrid(container, gridOptions);
-    console.log('✅ AG Grid created successfully:', gridInstance);
+    // Create grid
+    V5State.gridApi = agGrid.createGrid(container, gridOptions);
+
+    console.log('✅ AG Grid initialized successfully');
+    console.log('📊 Grid API:', V5State.gridApi);
+
+    // Populate COA dropdown in bulk actions bar
+    populateCOADropdown('v5-bulk-account-select');
+
+    // Populate COA dropdown in grid's Account cell editor (if exists)
+    const accountEditor = document.querySelector('.ag-cell-editor select');
+    if (accountEditor && accountEditor.id) {
+      populateCOADropdown(accountEditor.id);
+    }
 
     // FORCE container to be visible with explicit height!
     container.style.display = 'block';
