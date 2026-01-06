@@ -763,6 +763,62 @@ window.renderTxnImportV5Page = function () {
          SECTION 4: HORIZONTAL HISTORY STRIP
          ======================================== */
       
+      /* ===== COLLAPSIBLE RECENT IMPORTS CARD ===== */
+      .v5-recent-imports-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+
+      .v5-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .v5-card-header:hover {
+        background: #f1f5f9;
+      }
+
+      .v5-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #1e293b;
+      }
+
+      .v5-card-title i {
+        font-size: 1.125rem;
+        color: #3b82f6;
+      }
+
+      .v5-collapse-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #64748b;
+        padding: 4px;
+        transition: transform 0.2s;
+      }
+
+      .v5-collapse-btn.collapsed {
+        transform: rotate(-90deg);
+      }
+
+      .v5-card-content {
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+
       /* ===== HORIZONTAL HISTORY STRIP (from data-import.js) ===== */
       .v5-history-strip {
         display: flex;
@@ -1365,18 +1421,25 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- Collapsible History Zone with Horizontal Chips -->
-      <div id="v5-history-zone" class="v5-history-zone" style="display: block;">
-        <div class="v5-history-content">
-          
-          <!-- Horizontal History Strip (INSIDE collapsible) -->
+      <!-- Recent Imports Card (Collapsible with Horizontal Chips) -->
+      <div class="v5-recent-imports-card">
+        <div class="v5-card-header" onclick="toggleV5History()">
+          <div class="v5-card-title">
+            <i class="ph ph-clock-counter-clockwise"></i>
+            <span>Recent Imports</span>
+          </div>
+          <button class="v5-collapse-btn" id="v5-history-toggle-btn">
+            <i class="ph ph-caret-down"></i>
+          </button>
+        </div>
+        
+        <div class="v5-card-content" id="v5-history-content" style="display: block;">
+          <!-- Horizontal History Strip -->
           <div class="v5-history-strip" id="v5-history-strip" style="display: flex;">
             <div class="v5-history-scroll" id="v5-history-scroll">
               <!-- Chips rendered here by renderV5History() -->
             </div>
           </div>
-          
-          <h3>Import History</h3>
         </div>
       </div>
       
