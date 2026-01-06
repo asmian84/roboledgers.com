@@ -1284,8 +1284,8 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- Collapsible History Zone -->
-      <div id="v5-history-zone" class="v5-history-zone collapsed">
+      <!-- Old Vertical Drawer - HIDDEN (replaced by horizontal strip) -->
+      <div id="v5-history-zone" class="v5-history-zone collapsed" style="display: none !important;">
         <div class="v5-history-content">
           <h3>Import History</h3>
           <div id="v5-history-list">
@@ -1303,6 +1303,12 @@ window.renderTxnImportV5Page = function () {
           <i class="ph ph-cloud-arrow-down" style="font-size: 4rem;"></i>
           <h2>Drop files here to import</h2>
           <p>PDF or CSV bank statements</p>
+        </div>
+      </div>
+      
+      <!-- FIX 2: Horizontal History Strip -->
+      <div class="v5-history-strip" id="v5-history-strip" style="display: none;">
+        <div class="v5-history-scroll" id="v5-history-scroll">
         </div>
       </div>
       
