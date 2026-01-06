@@ -1432,28 +1432,6 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- RED CARD - HIDDEN -->
-      <div class="v5-recent-imports-card" id="v5-recent-imports-card" style="display: none !important;">
-        <div class="v5-card-header" onclick="toggleV5History()">
-          <div class="v5-card-title">
-            <i class="ph ph-clock-counter-clockwise"></i>
-            <span>Recent Imports</span>
-          </div>
-          <button class="v5-collapse-btn" id="v5-history-toggle-btn">
-            <i class="ph ph-caret-down"></i>
-          </button>
-        </div>
-        
-        <div class="v5-card-content" id="v5-history-content" style="display: block;">
-          <!-- Horizontal History Strip -->
-          <div class="v5-history-strip" id="v5-history-strip" style="display: flex;">
-            <div class="v5-history-scroll" id="v5-history-scroll">
-              <!-- Chips rendered here by renderV5History() -->
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <!-- Drag & Drop Overlay (shown when dragging files over entire page) -->
       <div id="v5-drop-overlay" class="v5-drop-overlay" style="display: none;"
            ondragover="handleV5DragOver(event)" 
