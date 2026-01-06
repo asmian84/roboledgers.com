@@ -2144,11 +2144,18 @@ window.renderV5History = function () {
   const history = getImportHistory();
   console.log(`Found ${history.length} history items`);
 
+  // Get the card element
+  const card = document.getElementById('v5-recent-imports-card');
+
   if (history.length === 0) {
+    // Hide everything if no history
+    if (card) card.style.display = 'none';
     strip.style.display = 'none';
     return;
   }
 
+  // Show card and strip
+  if (card) card.style.display = 'block';
   strip.style.display = 'flex';
 
   scroll.innerHTML = history.map(item => `
