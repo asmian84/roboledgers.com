@@ -2672,6 +2672,10 @@ window.initV5Grid = function () {
     onSelectionChanged: () => {
       updateV5SelectionUI();
     },
+    onFirstDataRendered: (params) => {
+      console.log('🎯 First data rendered - auto-sizing columns');
+      params.api.sizeColumnsToFit();
+    },
     onGridReady: (params) => {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
