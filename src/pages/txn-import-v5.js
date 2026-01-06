@@ -3016,7 +3016,12 @@ window.toggleV5History = function () {
     // Show panel and load history
     historyPanel.style.display = 'block';
     historyBtn?.classList.add('active');
-    loadImportHistory();
+
+    // Use new history function
+    if (typeof renderV5History === 'function') {
+      renderV5History();
+    }
+
     console.log('📜 History panel shown');
   }
 };
