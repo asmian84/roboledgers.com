@@ -727,12 +727,14 @@ window.renderTxnImportV5Page = function () {
       .btn-bulk-cancel:hover {
         background: #fee2e2;
       }
+      /* ========================================
+         SECTION 4: HORIZONTAL HISTORY STRIP
+         ======================================== */
       
-      /* History Panel - Super Snug with Border */
-      .v5-history-panel {
-        margin: 0;
-        background: #ffffff;
-        border: 1px solid #d1d5db;
+      .v5-history-strip {
+        display: none; /* Hidden by default */
+        padding: 0.75rem 1.5rem;
+        background: #F9FAFB;
         border-bottom: 1px solid #E5E7EB;
         animation: slideDown 0.3s ease-out;
       }
@@ -1805,25 +1807,29 @@ window.updateRefPrefix = function (value) {
 // ============================================
 
 window.loadImportHistory = function () {
-  const content = document.getElementById('v5-history-content');
-  if (!content) return;
+  const strip = document.getElementById('v5-history-strip');
+  const scroll = document.getElementById('v5-history-scroll');
+  if (!strip || !scroll) return;
 
   const history = V5State.recentImports || [];
 
   if (history.length === 0) {
-    content.innerHTML = '<div style="padding: 2rem; text-align: center; color: #9CA3AF;">No import history yet</div>';
+    strip.classList.remove('show');
     return;
   }
 
-  content.innerHTML = history.map(item => `
-    <div class="v5-history-item">
-      <div>
-        <div style="font-weight: 600; color: #111827; font-size: 14px;">${item.filename || 'Import'}</div>
-        <div style="font-size: 12px; color: #6B7280;">${item.count || 0} transactions</div>
-      </div>
-      <button class="v5-history-delete-btn" onclick="deleteImportSource('${item.id}')" title="Delete this import">
-        <i class="ph ph-trash"></i>
-      </button>
+  strip.classList.add('show');
+
+  scroll.innerHTML = history.map(item => `
+    <div class="v5-history-chip">
+      <span class="v5-history-chip-name" title="${item.filename}">${item.filename || 'Import'}</span>
+      <span class="v5-history-chip-count">${item.count || 0} txns</span>
+      <i class="ph ph-pencil v5-history-chip-icon" 
+         onclick="renameImportSource('${item.id}')" 
+         title="Rename"></i>
+      <i class="ph ph-trash v5-history-chip-icon v5-history-chip-delete" 
+         onclick="deleteImportSource('${item.id}')" 
+         title="Delete"></i>
     </div>
   `).join('');
 };
