@@ -2334,25 +2334,7 @@ window.initV5Grid = function () {
       headerCheckboxSelection: true,
       pinned: 'left'
     },
-    // ============================================
-    // PHASE 4: SOURCE COLUMN (File Icon)
-    // ============================================
-    {
-      headerName: '',
-      field: 'source',
-      width: 50,
-      pinned: 'left',
-      cellRenderer: (params) => {
-        if (!params.data.sourceFileType) return '';
-        const icon = params.data.sourceFileType === 'pdf' ? 'ph-file-pdf' : 'ph-file-csv';
-        const color = params.data.sourceFileType === 'pdf' ? '#EF4444' : '#10B981';
-        return `<i class="ph ${icon}" 
-                   onclick="openSourceFile('${params.data.sourceFileId}')" 
-                   style="cursor: pointer; color: ${color}; font-size: 1.25rem;"
-                   title="Open ${params.data.sourceFileName}"></i>`;
-      },
-      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
-    },
+    // Source column removed - icon moved to Actions column
     {
       headerName: 'Date',
       field: 'date',
@@ -2431,10 +2413,20 @@ window.initV5Grid = function () {
     {
       headerName: 'Actions',
       field: 'actions',
-      width: 120,
-      cellRenderer: params => {
+      width: 150,
+      pinned: 'right',
+      cellRenderer: (params) => {
+        // Source file icon
+        const sourceIcon = params.data.sourceFileType
+          ? `<i class="ph ph-file-${params.data.sourceFileType}" 
+                 onclick="openSourceFile('${params.data.sourceFileId}')" 
+                 style="cursor: pointer; color: ${params.data.sourceFileType === 'pdf' ? '#EF4444' : '#10B981'}; margin-right: 0.5rem;"
+                 title="Open ${params.data.sourceFileName}"></i>`
+          : '';
+
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
+            ${sourceIcon}
             <button 
               class="action-btn" 
               onclick="window.swapDebitCredit(${params.node.rowIndex})" 
