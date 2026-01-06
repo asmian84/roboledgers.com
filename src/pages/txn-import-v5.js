@@ -2690,7 +2690,8 @@ window.initV5Grid = function () {
     {
       headerName: 'Description',
       field: 'description',
-      width: 300,
+      flex: 2,
+      minWidth: 250,
       editable: true
     },
     {
@@ -2746,7 +2747,8 @@ window.initV5Grid = function () {
     {
       headerName: 'Account',
       field: 'account',
-      width: 280,
+      flex: 1,
+      minWidth: 200,
       editable: true,
       cellEditor: FiveTierAccountEditor,
       valueGetter: params => {
