@@ -1111,9 +1111,13 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
         
-        <!-- Center: Browse/Drop Files (always visible) -->
+        <!-- Center: Browse/Drop Files (Hybrid - Click OR Drag) -->
         <div class="v5-browse-section">
-          <button class="btn-browse" onclick="document.getElementById('v5-file-input').click()">
+          <button class="btn-browse" id="v5-hybrid-dropzone"
+                  onclick="document.getElementById('v5-file-input').click()"
+                  ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                  ondragleave="this.classList.remove('drag-over')"
+                  ondrop="handleV5DragDrop(event)">
             <i class="ph ph-cloud-arrow-up"></i>
             <span>Drag and drop files here</span>
             <small style="display: block; font-size: 0.75rem; opacity: 0.8;">Limit 200MB per file • PDF, CSV, Excel</small>
@@ -3628,4 +3632,20 @@ window.collapseAllV5 = function () {
     zone.classList.add('collapsed');
   }
   console.log('✅ Collapsed all collapsible sections');
+};
+
+// Hybrid Drag-Drop Handler (for blue button)
+window.handleV5DragDrop = function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const btn = event.currentTarget;
+  btn.classList.remove('drag-over');
+
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    // Create a fake event to reuse existing file handler
+    const fakeEvent = { target: { files: files } };
+    handleV5FileSelect(fakeEvent);
+  }
 };
