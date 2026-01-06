@@ -763,44 +763,113 @@ window.renderTxnImportV5Page = function () {
          SECTION 4: HORIZONTAL HISTORY STRIP
          ======================================== */
       
+      /* ===== HORIZONTAL HISTORY STRIP (from data-import.js) ===== */
       .v5-history-strip {
-        display: none; /* Hidden by default */
-        padding: 0.75rem 1.5rem;
-        background: #F9FAFB;
-        border-bottom: 1px solid #E5E7EB;
-        animation: slideDown 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 24px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
-      
-      .v5-history-header {
+
+      .v5-history-scroll {
+        display: flex;
+        gap: 12px;
+        flex: 1;
+      }
+
+      .v5-history-chip {
+        min-width: 220px;
+        max-width: 220px;
+        padding: 10px 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 8px;
+        cursor: pointer;
+        background: white;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+
+      .v5-history-chip:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      .v5-chip-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 4px;
+        position: relative;
+      }
+
+      .v5-chip-bank {
+        font-weight: 600;
+        color: #1e40af;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .v5-chip-date {
+        color: #94a3b8;
+        font-size: 0.7rem;
+        margin-right: 24px;
+      }
+
+      .v5-chip-delete {
+        position: absolute;
+        top: -2px;
+        right: 0;
+        background: none;
+        border: none;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 2px;
+      }
+
+      .v5-chip-delete:hover {
+        color: #ef4444;
+        background: #fee2e2;
+        border-radius: 4px;
+      }
+
+      .v5-chip-bot {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.8rem;
       }
-      
-      .v5-history-header h3 {
-        margin: 0;
-        font-size: 0.875rem;
+
+      .v5-chip-filename {
         font-weight: 600;
-        color: #374151;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        color: #0f172a;
+        font-size: 0.75rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+        margin-right: 8px;
       }
-      
-      .v5-history-content {
-        max-height: 300px;
-        overflow-y: auto;
+
+      .v5-chip-count {
+        color: #94a3b8;
+        font-size: 0.7rem;
+        background: #f1f5f9;
+        padding: 1px 5px;
+        border-radius: 4px;
+        white-space: nowrap;
       }
-      
-      .v5-history-empty {
-        padding: 2rem;
-        text-align: center;
-        color: #9ca3af;
-        margin: 0;
-      }
-      
+
+      /* Remove old history styles */
       /* Responsive Breakpoints */
       @media (max-width: 1200px) {
         .v5-balances-card {
