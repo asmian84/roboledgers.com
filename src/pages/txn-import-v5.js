@@ -1857,24 +1857,69 @@ window.updateRefPrefix = function (value) {
 };
 
 // ============================================
-// PHASE 2: HISTORY DRAWER FUNCTIONS
+// SYSTEM A: GRID DATA PERSISTENCE (FIXED)
 // ============================================
 
-window.loadImportHistory = function () {
-  const strip = document.getElementById('v5-history-strip');
-  const scroll = document.getElementById('v5-history-scroll');
-  if (!strip || !scroll) return;
+window.saveData = function () {
+  try {
+    // FIX 4: Strictly filter out file blobs before saving
+    const cleanData = V5State.gridData.map(({ sourceFileBlob, ...keep }) => keep);
 
-  const history = V5State.recentImports || [];
+    localStorage.setItem('ab_v5_grid_data', JSON.stringify(cleanData));
+    localStorage.setItem('ab_v5_last_save', new Date().toISOString());
 
-  if (history.length === 0) {
-    strip.classList.remove('show');
-    return;
+    console.log(`💾 Saved ${cleanData.length} transactions (blobs filtered)`);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to save data:', error);
+    return false;
   }
+};
 
-  strip.classList.add('show');
+window.loadSavedData = function () {
+  try {
+    const savedData = localStorage.getItem('ab_v5_grid_data');
+    if (!savedData) {
+      console.log('📂 No saved data found');
+      return false;
+    }
 
-  scroll.innerHTML = history.map(item => `
+    V5State.gridData = JSON.parse(savedData);
+    console.log(`📂 Loaded ${V5State.gridData.length} transactions from storage`);
+
+    // Initialize grid with loaded data
+    if (V5State.gridData.length > 0) {
+      initV5Grid();
+
+      // Show toolbar
+      const toolbar = document.getElementById('v5-control-toolbar');
+      if (toolbar) toolbar.style.display = 'flex';
+
+      // Update balances
+      updateBalanceSummary();
+    }
+
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to load saved data:', error);
+    return false;
+  }
+};
+
+const strip = document.getElementById('v5-history-strip');
+const scroll = document.getElementById('v5-history-scroll');
+if (!strip || !scroll) return;
+
+const history = V5State.recentImports || [];
+
+if (history.length === 0) {
+  strip.classList.remove('show');
+  return;
+}
+
+strip.classList.add('show');
+
+scroll.innerHTML = history.map(item => `
     <div class="v5-history-chip">
       <span class="v5-history-chip-name" title="${item.filename}">${item.filename || 'Import'}</span>
       <span class="v5-history-chip-count">${item.count || 0} txns</span>
@@ -2043,21 +2088,37 @@ window.populateCOADropdown = function (selectId) {
 // SECTION 5: GRID THEMING
 // ============================================
 
+// ============================================
+// SYSTEM C: GRID THEMING (FIXED)
+// ============================================
+
 window.setGridTheme = function (theme) {
-  V5State.gridTheme = theme;
+  console.log(`🎨 Setting theme to: ${theme}`);
+
+  // FIX 3: Target the grid container specifically
   const container = document.getElementById('v5-grid-container');
-  if (!container) return;
+  if (!container) {
+    console.error('❌ Grid container #v5-grid-container not found');
+    return;
+  }
 
   // Remove all theme classes
   container.classList.remove('ag-theme-rainbow', 'ag-theme-ledger', 'ag-theme-postit', 'ag-theme-classic');
 
-  // Add new theme (if not default)
+  // Add new theme class (if not default)
   if (theme && theme !== 'default') {
     container.classList.add(`ag-theme-${theme}`);
   }
 
+  // Update state
+  V5State.gridTheme = theme;
+
+  // Persist immediately
   localStorage.setItem('v5_grid_theme', theme);
-  console.log(`🎨 Grid theme set to: ${theme}`);
+
+  // Verify class was applied
+  console.log(`✅ Theme applied. Container classes:`, container.className);
+  console.log(`💾 Theme saved to localStorage: ${theme}`);
 };
 
 // Initialize theme on page load
