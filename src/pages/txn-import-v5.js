@@ -2191,8 +2191,26 @@ window.initV5Grid = function () {
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
-      width: 50,
       pinned: 'left'
+    },
+    // ============================================
+    // PHASE 4: SOURCE COLUMN (File Icon)
+    // ============================================
+    {
+      headerName: '',
+      field: 'source',
+      width: 50,
+      pinned: 'left',
+      cellRenderer: (params) => {
+        if (!params.data.sourceFileType) return '';
+        const icon = params.data.sourceFileType === 'pdf' ? 'ph-file-pdf' : 'ph-file-csv';
+        const color = params.data.sourceFileType === 'pdf' ? '#EF4444' : '#10B981';
+        return `<i class="ph ${icon}" 
+                   onclick="openSourceFile('${params.data.sourceFileId}')" 
+                   style="cursor: pointer; color: ${color}; font-size: 1.25rem;"
+                   title="Open ${params.data.sourceFileName}"></i>`;
+      },
+      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
     },
     {
       headerName: 'Date',
