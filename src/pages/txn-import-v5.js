@@ -1038,7 +1038,8 @@ window.renderTxnImportV5Page = function () {
                  class="v5-ref-input" 
                  maxlength="4" 
                  placeholder="####"
-                 title="Reference number (max 4 characters)">
+                 oninput="updateRefPrefix(this.value)"
+                 title="Reference number prefix (max 4 characters)">
         </div>
         
         <!-- Center: Search Bar -->
@@ -1240,6 +1241,27 @@ window.renderTxnImportV5Page = function () {
               <i class="ph ph-dots-three-vertical"></i>
             </button>
             <div id="v5-action-dropdown" class="v5-dropdown-menu" style="display: none;">
+              <button onclick="setGridTheme('default')">
+                <i class="ph ph-palette"></i>
+                Theme: Default
+              </button>
+              <button onclick="setGridTheme('rainbow')">
+                <i class="ph ph-rainbow"></i>
+                Theme: Rainbow
+              </button>
+              <button onclick="setGridTheme('ledger')">
+                <i class="ph ph-notepad"></i>
+                Theme: Ledger Pad
+              </button>
+              <button onclick="setGridTheme('postit')">
+                <i class="ph ph-note"></i>
+                Theme: Post-it Note
+              </button>
+              <button onclick="setGridTheme('classic')">
+                <i class="ph ph-squares-four"></i>
+                Theme: Classic
+              </button>
+              <hr>
               <button onclick="exportSelected()">
                 <i class="ph ph-export"></i>
                 Export Selected
