@@ -1225,16 +1225,21 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- PHASE 1: OLD HISTORY PANEL (HIDDEN - Replaced by card below) -->
-      <div class="v5-history-panel" id="v5-history-panel" style="display: none !important;">
+      <!-- BLUE BOX: Recent Imports Panel (Collapsible, Default Collapsed) -->
+      <div class="v5-history-panel" id="v5-history-panel" style="display: none;">
         <div class="v5-history-header">
           <h3><i class="ph ph-clock-counter-clockwise"></i> Recent Imports</h3>
           <button class="btn-icon" onclick="toggleV5History()" title="Close">
             <i class="ph ph-x"></i>
           </button>
         </div>
-        <div class="v5-history-content" id="v5-history-content">
-          <p class="v5-history-empty">No import history yet.</p>
+        <div class="v5-history-content">
+          <!-- Horizontal chips go here -->
+          <div class="v5-history-strip" id="v5-history-strip" style="display: flex;">
+            <div class="v5-history-scroll" id="v5-history-scroll">
+              <!-- Chips rendered by renderV5History() -->
+            </div>
+          </div>
         </div>
       </div>
       
@@ -2150,18 +2155,18 @@ window.renderV5History = function () {
   const history = getImportHistory();
   console.log(`Found ${history.length} history items`);
 
-  // Get the card element
-  const card = document.getElementById('v5-recent-imports-card');
+  // Get the blue panel element
+  const panel = document.getElementById('v5-history-panel');
 
   if (history.length === 0) {
-    // Hide everything if no history
-    if (card) card.style.display = 'none';
+    // Hide panel if no history
+    if (panel) panel.style.display = 'none';
     strip.style.display = 'none';
     return;
   }
 
-  // Show card and strip
-  if (card) card.style.display = 'block';
+  // Show panel and strip (but user can collapse it)
+  if (panel) panel.style.display = 'block';
   strip.style.display = 'flex';
 
   scroll.innerHTML = history.map(item => `
