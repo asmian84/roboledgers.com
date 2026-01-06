@@ -1918,46 +1918,109 @@ window.loadSavedData = function () {
   }
 };
 
-// ============================================
-// SYSTEM B: IMPORT HISTORY (FIXED)
-// ============================================
+// =================================================================
+// WORKING IMPORT HISTORY - Copied from data-import.js (Horizontal)
+// =================================================================
 
-window.loadImportHistory = function () {
-  console.log('📋 Loading import history...');
-  console.log('Rendering history items:', V5State.recentImports);
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
+function getImportHistory() {
+  try {
+    const history = localStorage.getItem('ab_import_history');
+    return history ? JSON.parse(history) : [];
+  } catch (e) {
+    console.error('Failed to load import history:', e);
+    return [];
+  }
+}
+
+window.saveImportToHistory = function (file, parsedData) {
+  const history = getImportHistory();
+  const isDuplicate = history.some(item => item.filename === file.name);
+  if (isDuplicate) {
+    const existing = history.find(item => item.filename === file.name);
+    return existing ? existing.id : null;
+  }
+
+  const newImport = {
+    id: generateId(),
+    filename: file.name,
+    date: new Date().toISOString(),
+    count: parsedData.length,
+    bank: parsedData[0]?._bank || 'Unknown',
+    data: parsedData
+  };
+
+  history.unshift(newImport);
+  if (history.length > 20) history.pop();
+
+  localStorage.setItem('ab_import_history', JSON.stringify(history));
+  renderV5History();
+  return newImport.id;
+};
+
+window.deleteV5Import = function (id, event) {
+  if (event) event.stopPropagation();
+
+  if (!confirm('Delete this import from history?')) return;
+
+  const history = getImportHistory();
+  const newHistory = history.filter(item => item.id !== id);
+  localStorage.setItem('ab_import_history', JSON.stringify(newHistory));
+  renderV5History();
+  window.showToast('Import removed from history', 'info');
+};
+
+window.loadV5FromHistory = function (id) {
+  const history = getImportHistory();
+  const item = history.find(i => i.id === id);
+  if (item && item.data) {
+    V5State.gridData = item.data;
+    if (V5State.gridApi) {
+      V5State.gridApi.setGridOption('rowData', item.data);
+    } else {
+      initV5Grid();
+    }
+    updateBalanceSummary();
+    window.showToast(`Loaded ${item.filename}`, 'success');
+  }
+};
+
+window.renderV5History = function () {
+  console.log('📋 Rendering V5 history...');
   const strip = document.getElementById('v5-history-strip');
   const scroll = document.getElementById('v5-history-scroll');
 
   if (!strip || !scroll) {
-    console.warn('⚠️ History strip elements not found in DOM');
+    console.warn('⚠️ History elements not found');
     return;
   }
 
-  const history = V5State.recentImports || [];
+  const history = getImportHistory();
+  console.log(`Found ${history.length} history items`);
 
   if (history.length === 0) {
-    strip.classList.remove('show');
     strip.style.display = 'none';
-    console.log('📋 No history to display');
     return;
   }
 
-  strip.classList.add('show');
-  strip.style.display = 'block';
+  strip.style.display = 'flex';
 
   scroll.innerHTML = history.map(item => `
-    <div class="v5-history-chip">
-      <span class="v5-history-chip-name" title="${item.filename}">${item.filename || 'Import'}</span>
-      <span class="v5-history-chip-count">${item.count || 0} txns</span>
-      <i class="ph ph-pencil v5-history-chip-icon" 
-         onclick="renameImportSource('${item.id}')" 
-         title="Rename"></i>
-      <i class="ph ph-trash v5-history-chip-icon v5-history-chip-delete" 
-         onclick="deleteImportSource('${item.id}')" 
-         title="Delete"></i>
-    </div>
-  `).join('');
+        <div class="v5-history-chip" onclick="loadV5FromHistory('${item.id}')">
+            <div class="v5-chip-top">
+                <span class="v5-chip-bank">${item.bank}</span>
+                <span class="v5-chip-date">${new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                <button class="v5-chip-delete" onclick="deleteV5Import('${item.id}', event)" title="Delete">✕</button>
+            </div>
+            <div class="v5-chip-bot">
+                <span class="v5-chip-filename" title="${item.filename}">${item.filename}</span>
+                <span class="v5-chip-count">${item.count} txns</span>
+            </div>
+        </div>
+    `).join('');
 
   console.log(`✅ Rendered ${history.length} history chips`);
 };
@@ -3314,18 +3377,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Load import history
-    const savedHistory = localStorage.getItem('ab_import_history');
-    if (savedHistory) {
-      try {
-        if (window.V5State) {
-          V5State.recentImports = JSON.parse(savedHistory);
-        }
-        if (typeof loadImportHistory === 'function') {
-          setTimeout(() => loadImportHistory(), 200);
-        }
-      } catch (e) {
-        console.error('History parse error:', e);
-      }
+    if (typeof renderV5History === 'function') {
+      setTimeout(() => renderV5History(), 200);
     }
 
     // 3. Load theme
