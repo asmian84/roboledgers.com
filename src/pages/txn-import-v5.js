@@ -1366,7 +1366,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- Collapsible History Zone with Horizontal Chips -->
-      <div id="v5-history-zone" class="v5-history-zone collapsed" style="display: none;">
+      <div id="v5-history-zone" class="v5-history-zone" style="display: block;">
         <div class="v5-history-content">
           <h3>Import History</h3>
           
