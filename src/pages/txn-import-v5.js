@@ -320,6 +320,109 @@ window.renderTxnImportV5Page = function () {
         align-items: center;
       }
       
+      /* ========================================
+         UNIFIED COMMAND SURFACE - CARD LAYOUT
+         ======================================== */
+      
+      .v5-unified-card {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 1.5rem;
+      }
+      
+      .v5-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: white;
+        border-bottom: 1px solid #E5E7EB;
+      }
+      
+      .v5-card-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+      }
+      
+      .v5-browse-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #EFF6FF;
+        color: #3B82F6;
+        border: 1px solid #BFDBFE;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      
+      .v5-browse-btn:hover {
+        background: #DBEAFE;
+      }
+      
+      .v5-browse-btn i {
+        font-size: 1.125rem;
+      }
+      
+      .v5-card-controls {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        padding: 1.5rem;
+        background: #F9FAFB;
+        border-bottom: 1px solid #E5E7EB;
+      }
+      
+      .v5-card-grid {
+        background: white;
+        padding: 0;
+      }
+      
+      /* History Drawer */
+      .v5-history-drawer {
+        background: white;
+        border-bottom: 1px solid #E5E7EB;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      
+      .v5-history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid #F3F4F6;
+        transition: background 0.2s;
+      }
+      
+      .v5-history-item:hover {
+        background: #F9FAFB;
+      }
+      
+      .v5-history-delete-btn {
+        padding: 0.5rem;
+        background: transparent;
+        border: none;
+        color: #EF4444;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      
+      .v5-history-delete-btn:hover {
+        background: #FEE2E2;
+      }
+      
+      .v5-history-delete-btn i {
+        font-size: 1.125rem;
+      }
+      
       
       /* Control Toolbar - Conditional display, clean styling */
       .v5-control-toolbar {
