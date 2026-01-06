@@ -2070,10 +2070,17 @@ function getImportHistory() {
 
 window.saveImportToHistory = function (file, parsedData) {
   const history = getImportHistory();
-  const isDuplicate = history.some(item => item.filename === file.name);
-  if (isDuplicate) {
-    const existing = history.find(item => item.filename === file.name);
-    return existing ? existing.id : null;
+
+  // Only check for exact duplicates within last 5 minutes (not by filename alone)
+  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+  const recentDuplicate = history.find(item =>
+    item.filename === file.name &&
+    new Date(item.date).getTime() > fiveMinutesAgo
+  );
+
+  if (recentDuplicate) {
+    console.log('⚠️ Same file uploaded within 5 minutes, skipping');
+    return recentDuplicate.id;
   }
 
   const newImport = {
@@ -2089,6 +2096,7 @@ window.saveImportToHistory = function (file, parsedData) {
   if (history.length > 20) history.pop();
 
   localStorage.setItem('ab_import_history', JSON.stringify(history));
+  console.log(`✅ Saved to history: ${file.name} (${parsedData.length} txns)`);
   renderV5History();
   return newImport.id;
 };
