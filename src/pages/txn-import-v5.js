@@ -3300,7 +3300,41 @@ window.initTxnImportV5Grid = async function () {
   document.getElementById('v5-empty-state').style.display = 'flex';
 };
 
-console.log('✅ Txn Import V5 loaded successfully');
+console.log('📄 Txn Import V5: Module ready');
+
+// FIX 4B: Initialize persistence systems on page load
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 V5 Persistence Init');
+
+  setTimeout(() => {
+    // 1. Load saved grid data
+    const savedData = localStorage.getItem('ab_v5_grid_data');
+    if (savedData && typeof loadSavedData === 'function') {
+      loadSavedData();
+    }
+
+    // 2. Load import history
+    const savedHistory = localStorage.getItem('ab_import_history');
+    if (savedHistory) {
+      try {
+        if (window.V5State) {
+          V5State.recentImports = JSON.parse(savedHistory);
+        }
+        if (typeof loadImportHistory === 'function') {
+          setTimeout(() => loadImportHistory(), 200);
+        }
+      } catch (e) {
+        console.error('History parse error:', e);
+      }
+    }
+
+    // 3. Load theme
+    const savedTheme = localStorage.getItem('v5_grid_theme');
+    if (savedTheme && savedTheme !== 'default' && typeof setGridTheme === 'function') {
+      setTimeout(() => setGridTheme(savedTheme), 400);
+    }
+  }, 600);
+});
 
 // ============================================
 // AUTO-LOAD SESSION ON PAGE READY
