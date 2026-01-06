@@ -1267,6 +1267,18 @@ window.renderTxnImportV5Page = function () {
       
       <!-- Action Bar - Only shown when grid has data -->
       <div class="v5-action-bar" id="v5-action-bar" style="display: none;">
+        <!-- Expand/Collapse All Buttons (Left) -->
+        <div class="v5-expand-collapse-btns" style="display: flex; gap: 8px;">
+          <button class="btn-action-secondary" onclick="expandAllV5()">
+            <i class="ph ph-caret-down"></i>
+            Expand All
+          </button>
+          <button class="btn-action-secondary" onclick="collapseAllV5()">
+            <i class="ph ph-caret-up"></i>
+            Collapse All
+          </button>
+        </div>
+        
         <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
           <span id="v5-selection-count">0 selected</span>
