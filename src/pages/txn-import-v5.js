@@ -384,7 +384,32 @@ window.renderTxnImportV5Page = function () {
         padding: 0;
       }
       
-      /* History Drawer */
+      /* ========================================
+         RESPONSIVE & OVERFLOW HANDLING
+         ======================================== */
+      
+      @media (max-width: 1024px) {
+        .v5-card-controls {
+          flex-wrap: wrap;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .v5-unified-card {
+          margin: 0.5rem;
+        }
+        
+        .v5-card-header {
+          flex-direction: column;
+          gap: 1rem;
+        }
+      }
+      
+      .v5-card-grid {
+        overflow-x: auto;
+      }
+      
+      /* Print Styles */
       .v5-history-drawer {
         background: white;
         border-bottom: 1px solid #E5E7EB;
