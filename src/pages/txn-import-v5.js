@@ -2609,46 +2609,44 @@ window.parseV5Files = async function () {
     } else {
       console.error('❌ renderV5History NOT found');
     }
-  }
-
 
     // Clear files
     clearV5Files();
 
-  // Success - data loaded into grid
+    // Success - data loaded into grid
 
-} catch (error) {
-  console.error('Parse failed:', error);
+  } catch (error) {
+    console.error('Parse failed:', error);
 
-  // Check if ALL files were duplicates
-  const isDuplicateError = error.message && error.message.includes('DUPLICATE_FILE');
+    // Check if ALL files were duplicates
+    const isDuplicateError = error.message && error.message.includes('DUPLICATE_FILE');
 
-  if (isDuplicateError) {
-    // Friendly message with automatic fix option
-    if (confirm('These files have already been imported.\n\nWould you like to clear the import history and re-import them?')) {
-      try {
-        // Clear duplicate cache
-        await window.BrainStorage.clearAllFileHashes();
+    if (isDuplicateError) {
+      // Friendly message with automatic fix option
+      if (confirm('These files have already been imported.\n\nWould you like to clear the import history and re-import them?')) {
+        try {
+          // Clear duplicate cache
+          await window.BrainStorage.clearAllFileHashes();
 
-        console.log('Import history cleared');
+          console.log('Import history cleared');
 
-        // Clear file selection so they can re-select
-        clearV5Files();
-      } catch (clearError) {
-        console.error('Failed to clear cache:', clearError);
-        console.error('Failed to clear cache');
+          // Clear file selection so they can re-select
+          clearV5Files();
+        } catch (clearError) {
+          console.error('Failed to clear cache:', clearError);
+          console.error('Failed to clear cache');
+        }
+      } else {
+        console.log('Import cancelled - files already imported');
       }
     } else {
-      console.log('Import cancelled - files already imported');
+      // Other parsing errors
+      console.error('Failed to parse files');
     }
-  } else {
-    // Other parsing errors
-    console.error('Failed to parse files');
+  } finally {
+    V5State.isProcessing = false;
+    document.getElementById('v5-progress-container').style.display = 'none';
   }
-} finally {
-  V5State.isProcessing = false;
-  document.getElementById('v5-progress-container').style.display = 'none';
-}
 };
 
 function updateV5Progress(current, total, message) {
