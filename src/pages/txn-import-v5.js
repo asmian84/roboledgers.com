@@ -3514,3 +3514,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => renderV5History(), 200);
   }
 });
+
+// Expand/Collapse All (based on SO example)
+window.expandAllV5 = function () {
+  // Show history zone
+  const zone = document.getElementById('v5-history-zone');
+  if (zone) {
+    zone.style.display = 'block';
+    zone.classList.remove('collapsed');
+  }
+  console.log('✅ Expanded all collapsible sections');
+};
+
+window.collapseAllV5 = function () {
+  // Hide history zone
+  const zone = document.getElementById('v5-history-zone');
+  if (zone) {
+    zone.style.display = 'none';
+    zone.classList.add('collapsed');
+  }
+  console.log('✅ Collapsed all collapsible sections');
+};
