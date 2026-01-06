@@ -1891,8 +1891,14 @@ window.loadImportHistory = function () {
 window.deleteImportSource = function (fileId) {
   if (!confirm('Delete all transactions from this import?')) return;
 
+  // Count rows before deletion
+  const beforeCount = V5State.gridData.length;
+
   // Remove all rows with this sourceFileId
   V5State.gridData = V5State.gridData.filter(r => r.sourceFileId !== fileId);
+
+  const afterCount = V5State.gridData.length;
+  const deletedCount = beforeCount - afterCount;
 
   // Update grid
   if (V5State.gridApi) {
@@ -1903,10 +1909,16 @@ window.deleteImportSource = function (fileId) {
   V5State.recentImports = V5State.recentImports.filter(h => h.id !== fileId);
   localStorage.setItem('ab_import_history', JSON.stringify(V5State.recentImports));
 
-  // Refresh drawer
+  // CRITICAL: Save updated grid data
+  saveData();
+
+  // CRITICAL: Recalculate balances
+  updateBalanceSummary();
+
+  // Refresh history display
   loadImportHistory();
 
-  console.log(`🗑️ Deleted all transactions from source: ${fileId}`);
+  console.log(`🗑️ Deleted ${deletedCount} transactions from source: ${fileId}`);
 };
 
 window.toggleV5History = function () {
