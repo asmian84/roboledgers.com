@@ -2252,6 +2252,9 @@ window.parseV5Files = async function () {
         txn.id = `txn_${Date.now()}_${index}`;
       }
 
+      // Assign sequential reference number (001, 002, 003...)
+      txn.refNumber = String(index + 1).padStart(3, '0');
+
       // Convert amount to debit/credit based on account type
       const amount = parseFloat(txn.amount) || 0;
 
