@@ -424,6 +424,16 @@ window.renderTxnImportV5Page = function () {
       }
       
       
+      /* Bulk Actions Inline Bar - COMPACT */
+      .v5-bulk-actions-bar {
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        padding: 0 1.5rem; /* Vertical padding removed */
+        background: #FEF3C7;
+        border-bottom: 1px solid #FDE68A;
+      }
+
       /* Control Toolbar - Conditional display, clean styling */
       .v5-control-toolbar {
         display: none;
