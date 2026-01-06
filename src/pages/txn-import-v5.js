@@ -1220,8 +1220,8 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- PHASE 1: HISTORY PANEL (Conditional) -->
-      <div class="v5-history-panel" id="v5-history-panel" style="display: none;">
+      <!-- PHASE 1: OLD HISTORY PANEL (HIDDEN - Replaced by card below) -->
+      <div class="v5-history-panel" id="v5-history-panel" style="display: none !important;">
         <div class="v5-history-header">
           <h3><i class="ph ph-clock-counter-clockwise"></i> Recent Imports</h3>
           <button class="btn-icon" onclick="toggleV5History()" title="Close">
