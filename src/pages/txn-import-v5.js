@@ -1921,6 +1921,52 @@ window.bulkSearchReplace = function () {
   console.log(`✅ Replaced "${searchValue}" with "${replaceValue}" in ${count} rows`);
 };
 
+// ============================================
+// SECTION 2: COA DROPDOWN TREE STRUCTURE
+// ============================================
+
+window.populateCOADropdown = function (selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const coa = get5TierCoAAccounts();
+
+  const roots = {
+    'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
+    'Liabilities': coa.filter(a => a.code >= 2000 && a.code < 3000),
+    'Equity': coa.filter(a => a.code >= 3000 && a.code < 4000),
+    'Revenue': coa.filter(a => a.code >= 4000 && a.code < 5000),
+    'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
+  };
+
+  select.innerHTML = '<option value="">Select Account...</option>';
+
+  Object.entries(roots).forEach(([category, accounts]) => {
+    if (accounts.length === 0) {
+      // Allow root selection if no sub-accounts
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      select.appendChild(option);
+    } else {
+      // Create optgroup for category
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = category;
+
+      accounts.forEach(acct => {
+        const option = document.createElement('option');
+        option.value = `${acct.code} - ${acct.name}`;
+        option.textContent = `${acct.code} - ${acct.name}`;
+        optgroup.appendChild(option);
+      });
+
+      select.appendChild(optgroup);
+    }
+  });
+
+  console.log(`📋 Populated COA dropdown with 5 categories`);
+};
+
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
