@@ -409,6 +409,38 @@ window.renderTxnImportV5Page = function () {
         overflow-x: auto;
       }
       
+      /* ========================================
+         SECTION 5: GRID THEMING
+         ======================================== */
+      
+      /* Rainbow Theme */
+      .ag-theme-rainbow .ag-row-even { background: #FEF3C7; }
+      .ag-theme-rainbow .ag-row-odd { background: #DBEAFE; }
+      .ag-theme-rainbow .ag-header { 
+        background: linear-gradient(90deg, #EF4444, #F59E0B, #10B981, #3B82F6, #8B5CF6); 
+        color: white;
+      }
+      
+      /* Ledger Pad Theme */
+      .ag-theme-ledger .ag-row { 
+        background: #F0FDF4; 
+        border-bottom: 1px solid #86EFAC;
+      }
+      .ag-theme-ledger .ag-header { background: #D1FAE5; color: #065F46; }
+      .ag-theme-ledger .ag-root-wrapper { border: 2px solid #10B981; }
+      
+      /* Post-it Note Theme */
+      .ag-theme-postit .ag-row { background: #FFF9C4; }
+      .ag-theme-postit .ag-header { background: #FFD54F; color: #5D4037; }
+      .ag-theme-postit .ag-cell { border-right: 1px dashed #FBC02D; }
+      .ag-theme-postit .ag-root-wrapper { 
+        border: 2px solid #FBC02D; 
+        box-shadow: 3px 3px 8px rgba(251, 192, 45, 0.3);
+      }
+      
+      /* Classic Theme - uses default AG Grid styles */
+      .ag-theme-classic { /* No custom styles */ }
+      
       /* Print Styles */
       .v5-history-drawer {
         background: white;
@@ -1972,6 +2004,33 @@ window.populateCOADropdown = function (selectId) {
 
   console.log(`📋 Populated COA dropdown with 5 categories`);
 };
+
+// ============================================
+// SECTION 5: GRID THEMING
+// ============================================
+
+window.setGridTheme = function (theme) {
+  V5State.gridTheme = theme;
+  const container = document.getElementById('v5-grid-container');
+  if (!container) return;
+
+  // Remove all theme classes
+  container.classList.remove('ag-theme-rainbow', 'ag-theme-ledger', 'ag-theme-postit', 'ag-theme-classic');
+
+  // Add new theme (if not default)
+  if (theme && theme !== 'default') {
+    container.classList.add(`ag-theme-${theme}`);
+  }
+
+  localStorage.setItem('v5_grid_theme', theme);
+  console.log(`🎨 Grid theme set to: ${theme}`);
+};
+
+// Initialize theme on page load
+const savedTheme = localStorage.getItem('v5_grid_theme') || 'default';
+if (savedTheme !== 'default') {
+  setTimeout(() => setGridTheme(savedTheme), 500);
+}
 
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
