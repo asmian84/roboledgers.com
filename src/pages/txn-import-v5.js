@@ -2061,7 +2061,9 @@ function generateId() {
 function getImportHistory() {
   try {
     const history = localStorage.getItem('ab_import_history');
-    return history ? JSON.parse(history) : [];
+    const parsed = history ? JSON.parse(history) : [];
+    console.log(`📦 getImportHistory returning ${parsed.length} items`);
+    return parsed;
   } catch (e) {
     console.error('Failed to load import history:', e);
     return [];
