@@ -2128,14 +2128,21 @@ window.deleteImportSource = function (fileId) {
 };
 
 window.toggleV5History = function () {
-  const drawer = document.getElementById('v5-history-drawer');
-  if (!drawer) return;
+  const panel = document.getElementById('v5-history-panel');
+  const strip = document.getElementById('v5-history-strip');
 
-  const isVisible = drawer.style.display !== 'none';
-  drawer.style.display = isVisible ? 'none' : 'block';
+  if (!panel && !strip) return;
 
-  if (!isVisible) {
-    loadImportHistory();
+  // Toggle the strip display
+  if (strip) {
+    const isHidden = strip.style.display === 'none';
+    strip.style.display = isHidden ? 'flex' : 'none';
+
+    if (isHidden && typeof renderV5History === 'function') {
+      renderV5History();
+    }
+
+    console.log(isHidden ? '📜 History shown' : '📜 History hidden');
   }
 };
 
@@ -3502,42 +3509,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // LOAD IMPORT HISTORY
 // ============================================
 
-function loadImportHistory() {
-  const historyData = localStorage.getItem('ab_import_history');
-  const historyContent = document.getElementById('v5-history-content');
-
-  if (!historyContent) {
-    console.warn('History content element not found');
-    return;
-  }
-
-  if (!historyData) {
-    historyContent.innerHTML = '<p class="v5-history-empty">No import history yet.</p>';
-    return;
-  }
-
-  try {
-    const history = JSON.parse(historyData);
-
-    if (!Array.isArray(history) || history.length === 0) {
-      historyList.innerHTML = '<div style="padding: 1rem; color: var(--text-secondary);">No import history yet.</div>';
-      return;
-    }
-
-    // Sort by timestamp descending (newest first)
-    const sortedHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    historyList.innerHTML = sortedHistory.slice(0, 10).map(item => `
-          <div class="history-item" style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;"
-            onmouseenter="this.style.background='var(--bg-secondary)'"
-            onmouseleave="this.style.background='transparent'"
-            onclick="loadHistorySession('${item.id || item.timestamp}')">
-            <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.accountName || 'Unknown Account'}</div>
-            <div style="font-size: 0.875rem; color: var(--text-secondary);">
-              ${new Date(item.timestamp).toLocaleString()} • ${item.transactionCount || 0} transactions
-            </div>
-          </div>
-          `).join('');
+              ${ new Date(item.timestamp).toLocaleString() } • ${ item.transactionCount || 0 } transactions
+            </div >
+          </div >
+  `).join('');
 
     console.log('✅ Loaded', history.length, 'history items');
   } catch (e) {
