@@ -2092,7 +2092,7 @@ window.saveImportToHistory = function (file, parsedData) {
     filename: file.name,
     date: new Date().toISOString(),
     count: parsedData.length,
-    bank: parsedData[0]?._bank || 'Unknown',
+    bank: V5State.accountType || parsedData[0]?._bank || 'Unknown Bank',
     data: parsedData
   };
 
