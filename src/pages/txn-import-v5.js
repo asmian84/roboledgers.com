@@ -2429,10 +2429,13 @@ window.initV5Grid = function () {
       headerName: 'Ref#',
       field: 'refNumber',
       width: 100,
+      minWidth: 80,
+      flex: 0,
       valueGetter: (params) => {
         if (!params.data.refNumber) return '';
         const prefix = V5State.refPrefix || '';
-        return prefix + params.data.refNumber;
+        // Add hyphen if prefix exists
+        return prefix ? `${prefix}-${params.data.refNumber}` : params.data.refNumber;
       },
       cellStyle: { fontWeight: '600', color: '#6B7280' }
     },
