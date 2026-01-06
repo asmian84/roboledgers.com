@@ -1848,6 +1848,54 @@ window.openSourceFile = function (fileId) {
   console.log(`📂 Opened source file: ${row.sourceFileName}`);
 };
 
+// ============================================
+// INLINE BULK ACTIONS
+// ============================================
+
+window.applyBulkAccount = function () {
+  const accountSelect = document.getElementById('v5-bulk-account-select');
+  const selectedAccount = accountSelect.value;
+
+  if (!selectedAccount) {
+    alert('Please select an account');
+    return;
+  }
+
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  if (selectedRows.length === 0) return;
+
+  selectedRows.forEach(row => {
+    row.account = selectedAccount;
+  });
+
+  V5State.gridApi.refreshCells({ columns: ['account'], force: true });
+  console.log(`✅ Applied account "${selectedAccount}" to ${selectedRows.length} rows`);
+};
+
+window.bulkSearchReplace = function () {
+  const searchValue = document.getElementById('v5-bulk-search').value;
+  const replaceValue = document.getElementById('v5-bulk-replace').value;
+
+  if (!searchValue) {
+    alert('Please enter a search term');
+    return;
+  }
+
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  if (selectedRows.length === 0) return;
+
+  let count = 0;
+  selectedRows.forEach(row => {
+    if (row.description && row.description.includes(searchValue)) {
+      row.description = row.description.replace(new RegExp(searchValue, 'g'), replaceValue);
+      count++;
+    }
+  });
+
+  V5State.gridApi.refreshCells({ columns: ['description'], force: true });
+  console.log(`✅ Replaced "${searchValue}" with "${replaceValue}" in ${count} rows`);
+};
+
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
