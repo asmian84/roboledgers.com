@@ -1765,6 +1765,67 @@ window.updateRefPrefix = function (value) {
   console.log(`✅ Ref# prefix updated: "${V5State.refPrefix}"`);
 };
 
+// ============================================
+// PHASE 2: HISTORY DRAWER FUNCTIONS
+// ============================================
+
+window.loadImportHistory = function () {
+  const content = document.getElementById('v5-history-content');
+  if (!content) return;
+
+  const history = V5State.recentImports || [];
+
+  if (history.length === 0) {
+    content.innerHTML = '<div style="padding: 2rem; text-align: center; color: #9CA3AF;">No import history yet</div>';
+    return;
+  }
+
+  content.innerHTML = history.map(item => `
+    <div class="v5-history-item">
+      <div>
+        <div style="font-weight: 600; color: #111827; font-size: 14px;">${item.filename || 'Import'}</div>
+        <div style="font-size: 12px; color: #6B7280;">${item.count || 0} transactions</div>
+      </div>
+      <button class="v5-history-delete-btn" onclick="deleteImportSource('${item.id}')" title="Delete this import">
+        <i class="ph ph-trash"></i>
+      </button>
+    </div>
+  `).join('');
+};
+
+window.deleteImportSource = function (fileId) {
+  if (!confirm('Delete all transactions from this import?')) return;
+
+  // Remove all rows with this sourceFileId
+  V5State.gridData = V5State.gridData.filter(r => r.sourceFileId !== fileId);
+
+  // Update grid
+  if (V5State.gridApi) {
+    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  }
+
+  // Remove from history
+  V5State.recentImports = V5State.recentImports.filter(h => h.id !== fileId);
+  localStorage.setItem('ab_import_history', JSON.stringify(V5State.recentImports));
+
+  // Refresh drawer
+  loadImportHistory();
+
+  console.log(`🗑️ Deleted all transactions from source: ${fileId}`);
+};
+
+window.toggleV5History = function () {
+  const drawer = document.getElementById('v5-history-drawer');
+  if (!drawer) return;
+
+  const isVisible = drawer.style.display !== 'none';
+  drawer.style.display = isVisible ? 'none' : 'block';
+
+  if (!isVisible) {
+    loadImportHistory();
+  }
+};
+
 window.bulkCategorizeV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
