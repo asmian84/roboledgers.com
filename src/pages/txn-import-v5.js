@@ -2580,11 +2580,14 @@ window.parseV5Files = async function () {
     };
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
-    // PART 2: Refresh history panel if visible
-    const historyPanel = document.getElementById('v5-history-panel');
-    if (historyPanel && historyPanel.style.display !== 'none') {
-      loadImportHistory();
-      console.log('📜 History panel refreshed after upload');
+    // Save to new history system
+    if (V5State.selectedFiles && V5State.selectedFiles.length > 0 && typeof saveImportToHistory === 'function') {
+      saveImportToHistory(V5State.selectedFiles[0], categorized);
+    }
+
+    // Render history strip
+    if (typeof renderV5History === 'function') {
+      setTimeout(() => renderV5History(), 200);
     }
 
 
