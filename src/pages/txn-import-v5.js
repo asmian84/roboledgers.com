@@ -1306,6 +1306,12 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
+      <!-- FIX 2: Horizontal History Strip -->
+      <div class="v5-history-strip" id="v5-history-strip" style="display: none;">
+        <div class="v5-history-scroll" id="v5-history-scroll">
+        </div>
+      </div>
+      
       <!-- Progress Indicator (shown during parsing) -->
       <div id="v5-progress-container" class="v5-progress-container" style="display: none;">
         <div class="v5-progress-content">
