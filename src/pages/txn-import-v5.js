@@ -3501,7 +3501,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('ℹ️ No saved session found');
   }
 
-  // Also load history
-  loadImportHistory();
+  // Load history using new function  
+  if (typeof renderV5History === 'function') {
+    setTimeout(() => renderV5History(), 200);
+  }
 });
 ```
