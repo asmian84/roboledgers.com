@@ -2660,18 +2660,20 @@ window.parseV5Files = async function () {
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
 
-    // Save to new history system - ONE chip per upload session
-    console.log('📋 About to save to history...', V5State.selectedFiles);
+    // Save to history - ONE CHIP PER FILE for individual deletion
+    console.log('📋 Saving individual files to history...', V5State.selectedFiles);
     if (V5State.selectedFiles && V5State.selectedFiles.length > 0 && typeof saveImportToHistory === 'function') {
-      // Create a single chip representing all uploaded files
-      const fileNames = V5State.selectedFiles.map(f => f.name).join(', ');
-      const pseudoFile = {
-        name: V5State.selectedFiles.length === 1
-          ? V5State.selectedFiles[0].name
-          : `${V5State.selectedFiles.length} files: ${fileNames}`
-      };
-      saveImportToHistory(pseudoFile, categorized);
-      console.log(`✅ saveImportToHistory CALLED for ${V5State.selectedFiles.length} file(s)`);
+      // Create a chip for EACH file, so user can delete individual files
+      V5State.selectedFiles.forEach((file, index) => {
+        const fileId = `file-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+        const pseudoFile = {
+          name: file.name,
+          _fileId: fileId  // Track unique file ID for deletion
+        };
+        saveImportToHistory(pseudoFile, categorized);
+        console.log(`✅ Chip created for: ${file.name} (ID: ${fileId})`);
+      });
+      console.log(`✅ Created ${V5State.selectedFiles.length} chips for ${V5State.selectedFiles.length} files`);
     } else {
       console.error('❌ saveImportToHistory NOT called:', {
         hasFiles: V5State.selectedFiles && V5State.selectedFiles.length > 0,
