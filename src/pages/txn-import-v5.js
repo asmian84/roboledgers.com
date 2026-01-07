@@ -3143,26 +3143,31 @@ window.startOverV5 = async function () {
   banner.id = 'v5-confirm-banner';
   banner.style.cssText = `
     position: fixed;
-    top: 20px;
-    left: 50 %;
-    transform: translateX(-50 %);
-    background: #fef3c7;
-    border: 2px solid #f59e0b;
-    border - radius: 8px;
-    padding: 1.5rem;
-    box - shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    z - index: 10000;
-    max - width: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #ef4444;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    max-width: 450px;
+    width: 90%;
     `;
 
   banner.innerHTML = `
-      < div style = "font-weight: 700; margin-bottom: 0.5rem; color: #92400e;" >⚠️ Clear All Data ?</div >
-    <div style="margin-bottom: 1rem; color: #78350f;">This will clear all transactions and history. This action cannot be undone.</div>
+    <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #dc2626;">
+      ⚠️ Clear All Data?
+    </div>
+    <div style="margin-bottom: 1.5rem; color: #6b7280; line-height: 1.5;">
+      This will permanently delete all transactions and import history. This action cannot be undone.
+    </div>
     <div style="display: flex; gap: 0.75rem;">
-      <button onclick="confirmStartOver()" style="flex: 1; padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+      <button onclick="confirmStartOver()" style="flex: 1; padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
         Yes, Clear All
       </button>
-      <button onclick="document.getElementById('v5-confirm-banner').remove()" style="flex: 1; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+      <button onclick="document.getElementById('v5-confirm-banner').remove()" style="flex: 1; padding: 0.75rem 1.5rem; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem;">
         Cancel
       </button>
     </div>
