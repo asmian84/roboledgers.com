@@ -2659,11 +2659,15 @@ window.parseV5Files = async function () {
     };
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
-    // Save to new history system
+
+    // Save to new history system - SAVE ALL FILES, not just first!
     console.log('📋 About to save to history...', V5State.selectedFiles);
     if (V5State.selectedFiles && V5State.selectedFiles.length > 0 && typeof saveImportToHistory === 'function') {
-      saveImportToHistory(V5State.selectedFiles[0], categorized);
-      console.log('✅ saveImportToHistory CALLED');
+      // Loop through ALL files and create a chip for each
+      V5State.selectedFiles.forEach((file, index) => {
+        saveImportToHistory(file, categorized);
+        console.log(`✅ saveImportToHistory CALLED for file ${index + 1}/${V5State.selectedFiles.length}: ${file.name}`);
+      });
     } else {
       console.error('❌ saveImportToHistory NOT called:', {
         hasFiles: V5State.selectedFiles && V5State.selectedFiles.length > 0,
