@@ -2088,7 +2088,12 @@ window.saveImportToHistory = function (file, parsedData) {
   history.unshift(newImport);
   if (history.length > 20) history.pop();
 
+  // Save to localStorage
   localStorage.setItem('ab_import_history', JSON.stringify(history));
+
+  // CRITICAL: Sync V5State.recentImports with localStorage
+  V5State.recentImports = history;
+
   console.log(`✅ Saved to history: ${file.name} (${parsedData.length} txns) - Total history: ${history.length} items`);
   renderV5History();
   return newImport.id;
@@ -2560,15 +2565,18 @@ window.parseV5Files = async function () {
     });
 
     // Add to import history
-    if (!V5State.recentImports) V5State.recentImports = [];
-    V5State.recentImports.unshift({
+    // Save to history using proper function
+    const currentHistory = getImportHistory();
+    currentHistory.unshift({
       id: fileId,
       filename: file.name,
       date: new Date().toISOString(),
       count: categorized.length,
       status: 'Success'
     });
-    localStorage.setItem('ab_import_history', JSON.stringify(V5State.recentImports));
+    if (currentHistory.length > 20) currentHistory.pop();
+    localStorage.setItem('ab_import_history', JSON.stringify(currentHistory));
+    V5State.recentImports = currentHistory; // Keep in sync
 
     // Load into grid
     V5State.gridData = categorized;
