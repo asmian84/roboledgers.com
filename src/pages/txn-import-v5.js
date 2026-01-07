@@ -2660,14 +2660,18 @@ window.parseV5Files = async function () {
     await window.CacheManager.saveImportHistoryEntry(historyEntry);
 
 
-    // Save to new history system - SAVE ALL FILES, not just first!
+    // Save to new history system - ONE chip per upload session
     console.log('📋 About to save to history...', V5State.selectedFiles);
     if (V5State.selectedFiles && V5State.selectedFiles.length > 0 && typeof saveImportToHistory === 'function') {
-      // Loop through ALL files and create a chip for each
-      V5State.selectedFiles.forEach((file, index) => {
-        saveImportToHistory(file, categorized);
-        console.log(`✅ saveImportToHistory CALLED for file ${index + 1}/${V5State.selectedFiles.length}: ${file.name}`);
-      });
+      // Create a single chip representing all uploaded files
+      const fileNames = V5State.selectedFiles.map(f => f.name).join(', ');
+      const pseudoFile = {
+        name: V5State.selectedFiles.length === 1
+          ? V5State.selectedFiles[0].name
+          : `${V5State.selectedFiles.length} files: ${fileNames}`
+      };
+      saveImportToHistory(pseudoFile, categorized);
+      console.log(`✅ saveImportToHistory CALLED for ${V5State.selectedFiles.length} file(s)`);
     } else {
       console.error('❌ saveImportToHistory NOT called:', {
         hasFiles: V5State.selectedFiles && V5State.selectedFiles.length > 0,
