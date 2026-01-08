@@ -2962,7 +2962,7 @@ window.initV5Grid = function () {
       flex: 1,
       minWidth: 200,
       editable: true,
-      cellEditor: FiveTierAccountEditor,
+      cellEditor: GroupedAccountEditor,  // Phase 2: 5-tier grouped dropdown
       valueGetter: params => {
         // Support multiple field names from different parsers
         return params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized';
