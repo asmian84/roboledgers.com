@@ -170,6 +170,134 @@ function getGroupedCoA() {
   return groups;
 }
 
+class GroupedAccountEditor {
+  init(params) {
+    this.params = params;
+    this.value = params.value || 'Uncategorized';
+    this.groupedData = getGroupedCoA();
+
+    this.container = document.createElement('div');
+    this.container.className = 'custom-coa-dropdown';
+    this.container.tabIndex = 0;
+
+    const searchBox = document.createElement('input');
+    searchBox.type = 'text';
+    searchBox.placeholder = 'Search accounts...';
+    searchBox.className = 'coa-search-box';
+    searchBox.value = '';
+    setTimeout(() => searchBox.focus(), 0);
+
+    searchBox.addEventListener('input', (e) => this.filterList(e.target.value));
+    this.container.appendChild(searchBox);
+
+    this.listContainer = document.createElement('div');
+    this.listContainer.className = 'coa-list-container';
+    this.container.appendChild(this.listContainer);
+
+    this.renderList();
+    this.addStyles();
+  }
+
+  getGui() { return this.container; }
+  getValue() { return this.value; }
+  isPopup() { return true; }
+
+  renderList(filterText = '') {
+    this.listContainer.innerHTML = '';
+    const lowerFilter = filterText.toLowerCase();
+
+    if ('uncategorized'.includes(lowerFilter)) {
+      this.createItem('Uncategorized', null);
+    }
+
+    Object.keys(this.groupedData).forEach(groupName => {
+      const items = this.groupedData[groupName];
+      const filteredItems = items.filter(item => item.toLowerCase().includes(lowerFilter));
+
+      if (filteredItems.length > 0) {
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'coa-group-header';
+
+        const icon = document.createElement('span');
+        icon.innerHTML = '▼';
+        icon.style.fontSize = '10px';
+        icon.style.marginRight = '6px';
+
+        groupHeader.appendChild(icon);
+        groupHeader.appendChild(document.createTextNode(groupName));
+
+        this.listContainer.appendChild(groupHeader);
+
+        const itemsDiv = document.createElement('div');
+        itemsDiv.className = 'coa-group-items';
+
+        groupHeader.onclick = () => {
+          const isClosed = itemsDiv.style.display === 'none';
+          itemsDiv.style.display = isClosed ? 'block' : 'none';
+          icon.innerHTML = isClosed ? '▼' : '▶';
+        };
+
+        filteredItems.forEach(item => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'coa-item';
+          itemDiv.innerText = item;
+          if (item === this.value) itemDiv.classList.add('selected');
+
+          itemDiv.onclick = () => {
+            this.value = item;
+            this.params.stopEditing();
+          };
+          itemsDiv.appendChild(itemDiv);
+        });
+
+        this.listContainer.appendChild(itemsDiv);
+      }
+    });
+  }
+
+  filterList(text) { this.renderList(text); }
+
+  createItem(text, parent) {
+    const div = document.createElement('div');
+    div.className = 'coa-item';
+    div.innerText = text;
+    div.onclick = () => {
+      this.value = text;
+      this.params.stopEditing();
+    };
+    (parent || this.listContainer).appendChild(div);
+  }
+
+  addStyles() {
+    if (document.getElementById('coa-editor-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'coa-editor-styles';
+    style.textContent = `
+      .custom-coa-dropdown {
+        background: white; border: 1px solid #cbd5e1; border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 280px;
+        display: flex; flex-direction: column; overflow: hidden;
+      }
+      .coa-search-box {
+        padding: 10px; border: none; border-bottom: 1px solid #e2e8f0;
+        outline: none; font-size: 13px;
+      }
+      .coa-list-container { max-height: 300px; overflow-y: auto; }
+      .coa-group-header {
+        padding: 8px 12px; background: #f8fafc; font-weight: 600; font-size: 11px;
+        color: #64748b; text-transform: uppercase; cursor: pointer; display: flex; align-items: center;
+      }
+      .coa-group-header:hover { background: #f1f5f9; }
+      .coa-item {
+        padding: 8px 16px; font-size: 13px; color: #334155; cursor: pointer;
+      }
+      .coa-item:hover { background: #eff6ff; color: #3b82f6; }
+      .coa-item.selected { background: #eff6ff; color: #2563eb; font-weight: 500; }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 
 // ====================================================================================
 // MAIN RENDER FUNCTION
