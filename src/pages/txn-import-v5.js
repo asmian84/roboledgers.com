@@ -3033,7 +3033,7 @@ window.initV5Grid = function () {
       const count = selectedNodes.length;
       const bulkBar = document.getElementById('v5-bulk-bar');
       const countSpan = document.getElementById('v5-bulk-count');
-      if (count > 0) {
+      if (count >= 2) {  // Only show for 2+ rows
         bulkBar.style.display = 'flex';
         countSpan.textContent = `${count} item${count > 1 ? 's' : ''} selected`;
       } else {
