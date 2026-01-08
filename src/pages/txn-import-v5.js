@@ -1266,6 +1266,31 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
+      <!-- THEME PICKER BAR (Multi-use) -->
+      <div class="v5-theme-picker-bar" id="v5-theme-picker-bar" style="display: none;">
+        <div class="v5-theme-info">
+          <i class="ph ph-palette"></i>
+          <span>Grid Appearance</span>
+        </div>
+        <div class="v5-theme-swatches">
+          <button class="theme-swatch" onclick="applyV5Theme('classic')"><div class="swatch-preview" style="background: linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);"></div><span>Classic</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('default')"><div class="swatch-preview" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);"></div><span>Default</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('ledger')"><div class="swatch-preview" style="background: #f5f5dc; border: 1px solid #8b7355;"></div><span>Ledger</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('postit')"><div class="swatch-preview" style="background: #ffff88;"></div><span>Post-it</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('rainbow')"><div class="swatch-preview" style="background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);"></div><span>Rainbow</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('social')"><div class="swatch-preview" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);"></div><span>Social</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('spectrum')"><div class="swatch-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);"></div><span>Spectrum</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('subliminal')"><div class="swatch-preview" style="background: #1f2937; border: 1px solid #374151;"></div><span>Dark</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('subtle')"><div class="swatch-preview" style="background: #f3f4f6;"></div><span>Subtle</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('tracker')"><div class="swatch-preview" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%);"></div><span>Tracker</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('vanilla')"><div class="swatch-preview" style="background: #fef3c7;"></div><span>Vanilla</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('vintage')"><div class="swatch-preview" style="background: #d4a574;"></div><span>Vintage</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('wave')"><div class="swatch-preview" style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);"></div><span>Wave</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('webapp')"><div class="swatch-preview" style="background: linear-gradient(135deg, #60a5fa 0%, #4b5563 100%);"></div><span>WebApp</span></button>
+        </div>
+        <button class="v5-theme-close" onclick="closeV5ThemePicker()"><i class="ph ph-x"></i></button>
+      </div>
+      
       
       <!-- OLD HEADER REMOVED - Content continues below -->
       <div class="OLD-v5-header-unified" style="display:none;">
