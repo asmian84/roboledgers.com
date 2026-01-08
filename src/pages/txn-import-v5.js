@@ -621,7 +621,8 @@ window.renderTxnImportV5Page = function () {
       
       /* Search Bar - Flex Grow */
       .v5-search-wrapper {
-        flex: 1;
+        flex: 0.8;
+        max-width: 400px;
         position: relative;
         display: flex;
         align-items: center;
