@@ -1225,23 +1225,6 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- BLUE BOX: Recent Imports Panel (Collapsible, Default Collapsed) -->
-      <div class="v5-history-panel" id="v5-history-panel" style="display: none;">
-        <div class="v5-history-header">
-          <h3><i class="ph ph-clock-counter-clockwise"></i> Recent Imports</h3>
-          <button class="btn-icon" onclick="toggleV5History()" title="Close">
-            <i class="ph ph-x"></i>
-          </button>
-        </div>
-        <div class="v5-history-content">
-          <!-- Horizontal chips go here -->
-          <div class="v5-history-strip" id="v5-history-strip" style="display: flex;">
-            <div class="v5-history-scroll" id="v5-history-scroll">
-              <!-- Chips rendered by renderV5History() -->
-            </div>
-          </div>
-        </div>
-      </div>
       
       <!-- OLD HEADER REMOVED - Content continues below -->
       <div class="OLD-v5-header-unified" style="display:none;">
