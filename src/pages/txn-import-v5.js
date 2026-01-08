@@ -2996,105 +2996,101 @@ window.initV5Grid = function () {
   });
 
   const gridOptions = {
-    columnDefs,
+    columnDefs: columnDefs,
     rowData: V5State.gridData,
     defaultColDef: {
       sortable: true,
       filter: true,
-      resizable: true
+      resizable: true,
+      flex: 1,
+      minWidth: 100
     },
     rowSelection: 'multiple',
-    onCellValueChanged: (params) => {
-      captureState();
-      saveData();
-
-      // Machine learning
-      if (params.colDef.field === 'category') {
-        window.ProcessingEngine.learnFromUserAction('category_change', {
-          description: params.data.description,
-          newCategory: params.newValue
-        });
-      }
-    },
-    onSelectionChanged: () => {
-      updateV5SelectionUI();
-    },
+    window.ProcessingEngine.learnFromUserAction('category_change', {
+      description: params.data.description,
+      newCategory: params.newValue
+    });
+  }
+},
+  onSelectionChanged: () => {
+    updateV5SelectionUI();
+  },
     onFirstDataRendered: (params) => {
       console.log('🎯 First data rendered - auto-sizing columns');
       params.api.sizeColumnsToFit();
     },
-    onFirstDataRendered: (params) => {
-      console.log('🎯 First data rendered - auto-sizing columns');
-      params.api.sizeColumnsToFit();
-    },
-    onGridReady: (params) => {
-      console.log('✅ AG Grid onGridReady fired');
-      V5State.gridApi = params.api;
+      onFirstDataRendered: (params) => {
+        console.log('🎯 First data rendered - auto-sizing columns');
+        params.api.sizeColumnsToFit();
+      },
+        onGridReady: (params) => {
+          console.log('✅ AG Grid onGridReady fired');
+          V5State.gridApi = params.api;
 
-      // Size columns to fit viewport
-      params.api.sizeColumnsToFit();
-      console.log('✅ Grid API stored and columns auto-fitted');
+          // Size columns to fit viewport
+          params.api.sizeColumnsToFit();
+          console.log('✅ Grid API stored and columns auto-fitted');
 
-      // Log grid state
-      const rect = container.getBoundingClientRect();
-      console.log('📐 Grid container dimensions:', {
-        width: rect.width,
-        height: rect.height,
-        top: rect.top,
-        left: rect.left,
-        visible: rect.height > 0 && rect.width > 0
-      });
-      console.log('🎯 Grid has', params.api.getDisplayedRowCount(), 'displayed rows');
-    }
+          // Log grid state
+          const rect = container.getBoundingClientRect();
+          console.log('📐 Grid container dimensions:', {
+            width: rect.width,
+            height: rect.height,
+            top: rect.top,
+            left: rect.left,
+            visible: rect.height > 0 && rect.width > 0
+          });
+          console.log('🎯 Grid has', params.api.getDisplayedRowCount(), 'displayed rows');
+        }
   };
 
-  // Initialize grid
-  console.log('🔧 Creating AG Grid instance...');
-  console.log('Container element:', container);
-  console.log('Container computed style:', window.getComputedStyle(container).display, window.getComputedStyle(container).height);
-  console.log('Grid options:', gridOptions);
+// Initialize grid
+console.log('🔧 Creating AG Grid instance...');
+console.log('Container element:', container);
+console.log('Container computed style:', window.getComputedStyle(container).display, window.getComputedStyle(container).height);
+console.log('Grid options:', gridOptions);
 
-  try {
-    // Create grid
-    V5State.gridApi = agGrid.createGrid(container, gridOptions);
+try {
+  // Create grid
+  V5State.gridApi = agGrid.createGrid(container, gridOptions);
 
-    console.log('✅ AG Grid initialized successfully');
-    console.log('📊 Grid API:', V5State.gridApi);
+  console.log('✅ AG Grid initialized successfully');
+  console.log('📊 Grid API:', V5State.gridApi);
 
-    // Populate COA dropdown in bulk actions bar
-    populateCOADropdown('v5-bulk-account-select');
+  // Populate COA dropdown in bulk actions bar
+  populateCOADropdown('v5-bulk-account-select');
 
-    // Populate COA dropdown in grid's Account cell editor (if exists)
-    const accountEditor = document.querySelector('.ag-cell-editor select');
-    if (accountEditor && accountEditor.id) {
-      populateCOADropdown(accountEditor.id);
-    }
-
-    // FORCE container to be visible with explicit height!
-    container.style.display = 'block';
-    container.style.visibility = 'visible';
-    container.style.opacity = '1';
-    container.style.position = 'relative';
-    container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
-    container.style.minHeight = '500px'; // Minimum height
-    container.style.zIndex = '1';
-    console.log('✅ Container forced to visible with height:', container.style.height);
-
-    // CRITICAL: Hide empty state now that grid has data
-    const emptyState = document.getElementById('v5-empty-state');
-    if (emptyState) {
-      emptyState.style.display = 'none';
-      console.log('✅ Empty state hidden');
-    }
-  } catch (error) {
-    console.error('❌ Failed to create AG Grid:', error);
+  // Populate COA dropdown in grid's Account cell editor (if exists)
+  const accountEditor = document.querySelector('.ag-cell-editor select');
+  if (accountEditor && accountEditor.id) {
+    populateCOADropdown(accountEditor.id);
   }
 
-  // Add keyboard shortcut listeners
-  setupV5KeyboardShortcuts();
+  // FORCE container to be visible with explicit height!
+  container.style.display = 'block';
+  container.style.visibility = 'visible';
+  container.style.opacity = '1';
+  container.style.position = 'relative';
+  container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
+  container.style.minHeight = '500px'; // Minimum height
+  container.style.zIndex = '1';
+  console.log('✅ Container forced to visible with height:', container.style.height);
 
-  // Update reconciliation card
-  updateReconciliationCard();
+  // CRITICAL: Hide empty state now that grid has data
+  const emptyState = document.getElementById('v5-empty-state');
+  if (emptyState) {
+    emptyState.style.display = 'none';
+    console.log('✅ Empty state hidden');
+  }
+} catch (error) {
+  console.error('❌ Failed to create AG Grid:', error);
+}
+
+// Add keyboard shortcut listeners
+setupV5KeyboardShortcuts();
+
+// Update reconciliation card
+updateReconciliationCard();
 };
 
 // ============================================
