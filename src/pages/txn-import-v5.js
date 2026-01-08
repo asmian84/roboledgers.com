@@ -3774,3 +3774,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// FIX 5: Dynamic statement badge
+window.updateStatementBadge = function() { const badge = document.getElementById('v5-statement-badge'); if (!badge || !V5State.gridData || V5State.gridData.length === 0) return; const firstRef = V5State.gridData[0]?.refNumber || ''; const prefix = V5State.refPrefix || ''; const fullRef = prefix || firstRef.split('-')[0]; if (fullRef.startsWith('CHQ')) { badge.textContent = 'CHECKING'; badge.style.background = '#ef4444'; } else if (fullRef.startsWith('CC')) { badge.textContent = 'CREDIT CARD'; badge.style.background = '#8b5cf6'; } else if (fullRef.startsWith('LOC')) { badge.textContent = 'LINE OF CREDIT'; badge.style.background = '#f59e0b'; } else { badge.textContent = 'BANK STATEMENT'; badge.style.background = '#3b82f6'; } };
