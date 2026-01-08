@@ -1205,36 +1205,34 @@ window.renderTxnImportV5Page = function () {
         
         <!-- Right: Action Icons -->
         <div class="v5-header-actions">
-          <button class="btn-icon" onclick="toggleV5ThemePicker()" title="Grid Appearance">
-            <i class="ph ph-palette"></i>
-          </button>
-          <button class="btn-icon" onclick="undoV5()" title="Undo">
-            <i class="ph ph-arrow-counter-clockwise"></i>
-          </button>
-          <button class="btn-icon" onclick="startOverV5()" title="Start Over">
-            <i class="ph ph-arrows-counter-clockwise"></i>
-          </button>
-          <button class="btn-icon" onclick="toggleV5History()" title="Toggle History" id="v5-history-toggle-btn">
-            <i class="ph ph-clock-counter-clockwise"></i>
-          </button>
-          <button class="btn-icon" onclick="popOutV5Grid()" title="Pop Out">
-            <i class="ph ph-arrow-square-out"></i>
-          </button>
-          <button class="btn-icon" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts">
-            <i class="ph ph-question"></i>
-          </button>
           <div class="v5-menu-wrapper">
-            <button class="btn-icon" onclick="toggleV5HeaderMenu()" title="More" id="v5-header-menu-btn">
-              <i class="ph ph-dots-three"></i>
+            <button class="btn-icon v5-menu-toggle" onclick="toggleV5Menu(event)">
+              <i class="ph ph-dots-three-vertical"></i>
             </button>
-            <div id="v5-header-dropdown" class="v5-dropdown-menu" style="display: none;">
-              <button onclick="exportV5Excel()">
-                <i class="ph ph-file-xls"></i>
-                Export Excel
+            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
+              <button class="menu-item" onclick="toggleV5ThemePicker(); toggleV5Menu(event);">
+                <i class="ph ph-palette"></i>
+                Grid Appearance
               </button>
-              <button onclick="printV5Preview()">
-                <i class="ph ph-printer"></i>
-                PDF Print Preview
+              <button class="menu-item" onclick="undoV5(); toggleV5Menu(event);">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                Undo
+              </button>
+              <button class="menu-item" onclick="startOverV5(); toggleV5Menu(event);">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                Start Over
+              </button>
+              <button class="menu-item" onclick="toggleV5History(); toggleV5Menu(event);">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                Toggle History
+              </button>
+              <button class="menu-item" onclick="popOutV5Grid(); toggleV5Menu(event);">
+                <i class="ph ph-arrow-square-out"></i>
+                Pop Out Grid
+              </button>
+              <button class="menu-item" onclick="showKeyboardShortcuts(); toggleV5Menu(event);">
+                <i class="ph ph-question"></i>
+                Keyboard Shortcuts
               </button>
             </div>
           </div>
