@@ -1205,6 +1205,12 @@ window.renderTxnImportV5Page = function () {
         
         <!-- Right: Action Icons -->
         <div class="v5-header-actions">
+          <button class="btn-icon" onclick="toggleV5ThemePicker()" title="Grid Appearance">
+            <i class="ph ph-palette"></i>
+          </button>
+          <button class="btn-icon" onclick="undoV5()" title="Undo">
+            <i class="ph ph-arrow-counter-clockwise"></i>
+          </button>
           <button class="btn-icon" onclick="startOverV5()" title="Start Over">
             <i class="ph ph-arrows-counter-clockwise"></i>
           </button>
@@ -3746,8 +3752,8 @@ window.handleV5DragDrop = function (event) {
 };
 
 // THEME PICKER FUNCTIONS
-window.toggleV5ThemePicker = function() { document.getElementById('v5-theme-picker-bar').style.display = document.getElementById('v5-theme-picker-bar').style.display === 'none' ? 'flex' : 'none'; document.getElementById('v5-bulk-bar').style.display = 'none'; };
-window.applyV5Theme = function(name) { const c = document.getElementById('v5-grid-container'); if (!c) return; ['ledger','postit','rainbow','social','spectrum','subliminal','subtle','tracker','vanilla','vintage','wave','webapp'].forEach(t => c.classList.remove('theme-'+t)); if (name !== 'classic' && name !== 'default') c.classList.add('theme-'+name); document.querySelectorAll('.theme-swatch').forEach(b => { b.classList.remove('active'); if (b.getAttribute('onclick').includes(name)) b.classList.add('active'); }); localStorage.setItem('v5_grid_theme', name); };
-window.closeV5ThemePicker = function() { document.getElementById('v5-theme-picker-bar').style.display = 'none'; };
-window.loadSavedV5Theme = function() { const s = localStorage.getItem('v5_grid_theme'); if (s) applyV5Theme(s); };
+window.toggleV5ThemePicker = function () { document.getElementById('v5-theme-picker-bar').style.display = document.getElementById('v5-theme-picker-bar').style.display === 'none' ? 'flex' : 'none'; document.getElementById('v5-bulk-bar').style.display = 'none'; };
+window.applyV5Theme = function (name) { const c = document.getElementById('v5-grid-container'); if (!c) return;['ledger', 'postit', 'rainbow', 'social', 'spectrum', 'subliminal', 'subtle', 'tracker', 'vanilla', 'vintage', 'wave', 'webapp'].forEach(t => c.classList.remove('theme-' + t)); if (name !== 'classic' && name !== 'default') c.classList.add('theme-' + name); document.querySelectorAll('.theme-swatch').forEach(b => { b.classList.remove('active'); if (b.getAttribute('onclick').includes(name)) b.classList.add('active'); }); localStorage.setItem('v5_grid_theme', name); };
+window.closeV5ThemePicker = function () { document.getElementById('v5-theme-picker-bar').style.display = 'none'; };
+window.loadSavedV5Theme = function () { const s = localStorage.getItem('v5_grid_theme'); if (s) applyV5Theme(s); };
 setTimeout(() => loadSavedV5Theme(), 500);
