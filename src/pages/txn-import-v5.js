@@ -2717,6 +2717,7 @@ window.initV5Grid = function () {
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,  // Only select filtered rows!
       width: 40,
       maxWidth: 40,
       suppressSizeToFit: true
@@ -3672,6 +3673,17 @@ window.updateStatementBadge = function () {
 
 // FIX 6: Clean description - strip leading dates
 function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
+
+// AUTO-UPPERCASE REF# INPUT
+document.addEventListener('DOMContentLoaded', () => {
+  const refInput = document.getElementById('v5-ref-input');
+  if (refInput) {
+    refInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+      V5State.refPrefix = e.target.value;
+    });
+  }
+});
 
 // ESC key to close bulk bar
 document.addEventListener('keydown', (e) => {
