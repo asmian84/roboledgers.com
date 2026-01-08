@@ -2863,9 +2863,9 @@ window.initV5Grid = function () {
     {
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 100,
-      minWidth: 80,
-      flex: 0,
+      flex: 1,
+      minWidth: 120,
+      maxWidth: 180,
       valueGetter: (params) => {
         if (!params.data.refNumber) return '';
         const prefix = V5State.refPrefix || '';
