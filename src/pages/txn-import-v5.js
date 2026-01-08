@@ -337,6 +337,42 @@ window.renderTxnImportV5Page = function () {
         }
       }
 
+      /* THEME PICKER BAR */
+      .v5-theme-picker-bar { display: flex; align-items: center; padding: 1rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fbbf24; gap: 1rem; }
+      .v5-theme-info { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #92400e; }
+      .v5-theme-swatches { display: flex; gap: 0.75rem; overflow-x: auto; flex: 1; }
+      .theme-swatch { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 0.5rem; cursor: pointer; min-width: 70px; }
+      .theme-swatch:hover { border-color: #3b82f6; transform: translateY(-2px); }
+      .theme-swatch.active { border-color: #3b82f6; border-width: 3px; }
+      .swatch-preview { width: 50px; height: 36px; border-radius: 6px; }
+      .theme-swatch span { font-size: 0.75rem; color: #64748b; }
+      .v5-theme-close { background: white; border: 1px solid #dc2626; border-radius: 4px; padding: 0.5rem; cursor: pointer; color: #dc2626; }
+
+      /* AG GRID THEMES */
+      .ag-theme-alpine.theme-ledger { background: #f5f5dc; }
+      .ag-theme-alpine.theme-ledger .ag-row { border-bottom: 1px solid #8b7355; }
+      .ag-theme-alpine.theme-ledger .ag-header { background: #d2b48c; }
+      
+      .ag-theme-alpine.theme-postit { background: #ffff88; }
+      .ag-theme-alpine.theme-postit .ag-row { border-bottom: 1px dashed #e6e600; }
+      
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+1) { background: #ff000015; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+2) { background: #ff7f0015; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+3) { background: #ffff0015; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+4) { background: #00ff0015; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+5) { background: #0000ff15; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+6) { background: #4b008215; }
+      .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+7) { background: #9400d315; }
+      
+      .ag-theme-alpine.theme-spectrum { background: linear-gradient(135deg, #667eea22 0%, #764ba222 50%, #f093fb22 100%); }
+      .ag-theme-alpine.theme-subliminal { background: #1f2937; color: #e5e7eb; }
+      .ag-theme-alpine.theme-subliminal .ag-header { background: #111827; color: white; }
+      .ag-theme-alpine.theme-tracker { background: #f0fdf4; }
+      .ag-theme-alpine.theme-tracker .ag-row-even { background: #dcfce7; }
+      .ag-theme-alpine.theme-vanilla { background: #fef3c7; }
+      .ag-theme-alpine.theme-vintage { background: #d4a574; filter: sepia(0.3); }
+      .ag-theme-alpine.theme-wave { background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%); }
+
       /* ========================================
          PHASE 2: NEW LAYOUT CSS - FINTECH STYLE
          ======================================== */
