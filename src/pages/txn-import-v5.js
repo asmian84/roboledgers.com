@@ -3756,3 +3756,13 @@ window.applyV5Theme = function (name) { const c = document.getElementById('v5-gr
 window.closeV5ThemePicker = function () { document.getElementById('v5-theme-picker-bar').style.display = 'none'; };
 window.loadSavedV5Theme = function () { const s = localStorage.getItem('v5_grid_theme'); if (s) applyV5Theme(s); };
 setTimeout(() => loadSavedV5Theme(), 500);
+
+// FIX 4: Ref# input uppercase
+document.addEventListener('DOMContentLoaded', () => {
+  const refInput = document.getElementById('v5-ref-input');
+  if (refInput) {
+    refInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  }
+});
