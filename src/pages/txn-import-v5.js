@@ -3796,3 +3796,10 @@ function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^
 
 // FIX 9: Prevent ref# reset on sort - ref# should only reset on upload/manual/start over
 // Grid automatically handles sort, no need for onSortChanged intervention
+
+// Main render function for router
+window.renderTxnImportV5Page = function() {
+  console.log('Rendering Txn Import V5 page...');
+  const container = document.getElementById('app-container');
+  if (container) container.innerHTML = getTxnImportV5HTML();
+};
