@@ -3841,3 +3841,26 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// ============================================
+// BULK CATEGORIZATION (Phase 2)
+// ============================================
+
+window.bulkV5Categorize = function () {
+  if (!V5State.gridApi) return;
+  const selectedNodes = V5State.gridApi.getSelectedNodes();
+  if (selectedNodes.length < 2) return;
+
+  const groupedData = getGroupedCoA();
+  const allAccounts = [];
+  Object.values(groupedData).forEach(arr => allAccounts.push(...arr));
+
+  const category = prompt(`Categorize ${selectedNodes.length} transactions to (enter account):`);
+  if (category) {
+    selectedNodes.forEach(node => {
+      node.data.account = category;
+    });
+    V5State.gridApi.refreshCells({ force: true });
+    if (window.showToast) window.showToast(`Categorized ${selectedNodes.length} items`, 'success');
+  }
+};
