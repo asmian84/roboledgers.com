@@ -306,7 +306,36 @@ window.renderTxnImportV5Page = function () {
       .mobile-only,  .tablet-up, .desktop-up { display: none; }
       @media (max-width: 767px) { .mobile-only { display: block !important; } }
       @media (min-width: 768px) { .tablet-up { display: block !important; } }
+      @media (min-width: 768px) { .tablet-up { display: block !important; } }
       @media (min-width: 1024px) { .desktop-up { display: block !important; } }
+
+      /* PHASE 2: Grid Touch-Friendly Mobile Styles */
+      @media (max-width: 767px) {
+        .ag-theme-alpine { font-size: 14px; }
+        .ag-theme-alpine .ag-row { min-height: 56px !important; }
+        .ag-theme-alpine .ag-cell { padding: 12px 8px !important; }
+        .v5-grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      }
+
+      /* PHASE 3: Upload Zone Mobile Adaptation */
+      @media (max-width: 767px) {
+        .v5-dropzone { 
+          min-height: 120px !important;
+          padding: 1rem !important;
+        }
+        .v5-dropzone-button {
+          min-height: 44px !important; /* Touch target */
+          font-size: 16px !important;
+        }
+      }
+
+      /* PHASE 4: Touch-Friendly Buttons */
+      @media (max-width: 767px) {
+        .btn-icon, .action-btn {
+          min-width: 44px !important;
+          min-height: 44px !important;
+        }
+      }
 
       /* ========================================
          PHASE 2: NEW LAYOUT CSS - FINTECH STYLE
