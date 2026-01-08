@@ -140,6 +140,36 @@ window.filterV5Grid = function (searchText) {
 // Phase 2 account editor will go here
 // ============================================
 
+function getGroupedCoA() {
+  const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+  let rawCustom = [];
+  try { rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]'); } catch (e) { }
+  const all = [...rawDefault, ...rawCustom];
+
+  const groups = {
+    'Assets': [],
+    'Liabilities': [],
+    'Equity': [],
+    'Revenue': [],
+    'Expenses': []
+  };
+
+  all.forEach(acc => {
+    if (!acc.name || acc.name.toString().toLowerCase().includes("invalid")) return;
+    const type = (acc.type || '').toLowerCase();
+    const cat = (acc.category || '').toLowerCase();
+    const displayName = acc.code ? `${acc.code} - ${acc.name}` : acc.name;
+
+    if (type.includes('asset') || cat.includes('asset')) groups['Assets'].push(displayName);
+    else if (type.includes('liabil') || cat.includes('liabil')) groups['Liabilities'].push(displayName);
+    else if (type.includes('equity') || cat.includes('equity')) groups['Equity'].push(displayName);
+    else if (type.includes('revenue') || type.includes('income') || cat.includes('revenue')) groups['Revenue'].push(displayName);
+    else if (type.includes('expense') || cat.includes('expense')) groups['Expenses'].push(displayName);
+  });
+
+  return groups;
+}
+
 
 // ====================================================================================
 // MAIN RENDER FUNCTION
