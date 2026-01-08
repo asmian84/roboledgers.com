@@ -1322,11 +1322,12 @@ window.renderTxnImportV5Page = function () {
           <button class="theme-swatch" onclick="applyV5Theme('social')"><div class="swatch-preview" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);"></div><span>Social</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('spectrum')"><div class="swatch-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);"></div><span>Spectrum</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('subliminal')"><div class="swatch-preview" style="background: #1f2937; border: 1px solid #374151;"></div><span>Dark</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('subtle')"><div class="swatch-preview" style="background: #f3f4f6;"></div><span>Subtle</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('neon')"><div class="swatch-preview" style="background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);"></div><span>Neon</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('tracker')"><div class="swatch-preview" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%);"></div><span>Tracker</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('vanilla')"><div class="swatch-preview" style="background: #fef3c7;"></div><span>Vanilla</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('ocean')"><div class="swatch-preview" style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);"></div><span>Ocean</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('vintage')"><div class="swatch-preview" style="background: #d4a574;"></div><span>Vintage</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('wave')"><div class="swatch-preview" style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);"></div><span>Wave</span></button>
+          <button class="theme-swatch" onclick="applyV5Theme('forest')"><div class="swatch-preview" style="background: linear-gradient(135deg, #166534 0%, #14532d 100%);"></div><span>Forest</span></button>
           <button class="theme-swatch" onclick="applyV5Theme('webapp')"><div class="swatch-preview" style="background: linear-gradient(135deg, #60a5fa 0%, #4b5563 100%);"></div><span>WebApp</span></button>
         </div>
         <button class="v5-theme-close" onclick="closeV5ThemePicker()"><i class="ph ph-x"></i></button>
@@ -3785,3 +3786,10 @@ window.updateStatementBadge = function () { const badge = document.getElementByI
 
 // FIX 6: Clean description - strip leading dates
 function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
+
+/* NEW STRONG THEMES */
+.ag-theme-alpine.theme-neon { background: #000; color: #fff; }
+.ag-theme-alpine.theme-neon .ag-row:nth-child(odd) { background: #ff00ff22; }
+.ag-theme-alpine.theme-neon .ag-row:nth-child(even) { background: #00ffff22; }
+.ag-theme-alpine.theme-ocean { background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); }
+.ag-theme-alpine.theme-forest { background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); }
