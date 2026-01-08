@@ -3793,3 +3793,6 @@ function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^
 .ag-theme-alpine.theme-neon .ag-row:nth-child(even) { background: #00ffff22; }
 .ag-theme-alpine.theme-ocean { background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); }
 .ag-theme-alpine.theme-forest { background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); }
+
+// FIX 9: Prevent ref# reset on sort - ref# should only reset on upload/manual/start over
+// Grid automatically handles sort, no need for onSortChanged intervention
