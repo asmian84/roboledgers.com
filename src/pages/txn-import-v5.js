@@ -296,6 +296,18 @@ class FiveTierAccountEditor {
 window.renderTxnImportV5Page = function () {
   return `
     <style>
+      /* RESPONSIVE FOUNDATION */
+      :root {
+        --mobile-max: 767px;
+        --tablet-min: 768px;
+        --tablet-max: 1023px;
+        --desktop-min: 1024px;
+      }
+      .mobile-only,  .tablet-up, .desktop-up { display: none; }
+      @media (max-width: 767px) { .mobile-only { display: block !important; } }
+      @media (min-width: 768px) { .tablet-up { display: block !important; } }
+      @media (min-width: 1024px) { .desktop-up { display: block !important; } }
+
       /* ========================================
          PHASE 2: NEW LAYOUT CSS - FINTECH STYLE
          ======================================== */
