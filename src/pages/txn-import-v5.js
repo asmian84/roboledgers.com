@@ -3786,10 +3786,3 @@ window.updateStatementBadge = function () { const badge = document.getElementByI
 
 // FIX 6: Clean description - strip leading dates
 function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
-
-/* NEW STRONG THEMES */
-.ag-theme-alpine.theme-neon { background: #000; color: #fff; }
-.ag-theme-alpine.theme-neon .ag-row:nth-child(odd) { background: #ff00ff22; }
-.ag-theme-alpine.theme-neon .ag-row:nth-child(even) { background: #00ffff22; }
-.ag-theme-alpine.theme-ocean { background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%); }
-.ag-theme-alpine.theme-forest { background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%); }
