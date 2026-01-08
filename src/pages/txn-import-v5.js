@@ -2078,7 +2078,7 @@ window.saveImportToHistory = function (file, parsedData) {
   V5State.recentImports = history;
 
   console.log(`✅ Saved to history: ${file.name} (${parsedData.length} txns) - Total history: ${history.length} items`);
-  renderV5History();
+  // renderV5History(); // DISABLED - rebuilding chips
   return newImport.id;
 };
 
@@ -2090,7 +2090,7 @@ window.deleteV5Import = function (id, event) {
   const history = getImportHistory();
   const newHistory = history.filter(item => item.id !== id);
   localStorage.setItem('ab_import_history', JSON.stringify(newHistory));
-  renderV5History();
+  // renderV5History(); // DISABLED - rebuilding chips
   window.showToast('Import removed from history', 'info');
 };
 
