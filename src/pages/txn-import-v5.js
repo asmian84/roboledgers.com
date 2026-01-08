@@ -3818,3 +3818,16 @@ window.updateStatementBadge = function () {
 
 // FIX 6: Clean description - strip leading dates
 function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
+
+// ESC key to close bulk bar
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const bulkBar = document.getElementById('v5-bulk-bar');
+    if (bulkBar && bulkBar.style.display !== 'none') {
+      bulkBar.style.display = 'none';
+      if (V5State.gridApi) {
+        V5State.gridApi.deselectAll();
+      }
+    }
+  }
+});
