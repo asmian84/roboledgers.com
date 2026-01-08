@@ -3864,3 +3864,5 @@ window.bulkV5Categorize = function () {
     if (window.showToast) window.showToast(`Categorized ${selectedNodes.length} items`, 'success');
   }
 };
+
+console.log(' txn-import-v5.js loaded successfully!');
