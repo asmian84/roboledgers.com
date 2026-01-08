@@ -2110,6 +2110,9 @@ window.loadV5FromHistory = function (id) {
 };
 
 window.renderV5History = function () {
+  // DISABLED: Return immediately - rebuilding from scratch
+  return;
+
   console.log('📋 Rendering V5 history...');
   const strip = document.getElementById('v5-history-strip');
   const scroll = document.getElementById('v5-history-scroll');
