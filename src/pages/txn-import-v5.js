@@ -3717,11 +3717,103 @@ window.handleV5DragDrop = function (event) {
 };
 
 // THEME PICKER FUNCTIONS
-window.toggleV5ThemePicker = function () { document.getElementById('v5-theme-picker-bar').style.display = document.getElementById('v5-theme-picker-bar').style.display === 'none' ? 'flex' : 'none'; document.getElementById('v5-bulk-bar').style.display = 'none'; };
-window.applyV5Theme = function (name) { const c = document.getElementById('v5-grid-container'); if (!c) return;['ledger', 'postit', 'rainbow', 'social', 'spectrum', 'subliminal', 'subtle', 'tracker', 'vanilla', 'vintage', 'wave', 'webapp'].forEach(t => c.classList.remove('theme-' + t)); if (name !== 'classic' && name !== 'default') c.classList.add('theme-' + name); document.querySelectorAll('.theme-swatch').forEach(b => { b.classList.remove('active'); if (b.getAttribute('onclick').includes(name)) b.classList.add('active'); }); localStorage.setItem('v5_grid_theme', name); };
-window.closeV5ThemePicker = function () { document.getElementById('v5-theme-picker-bar').style.display = 'none'; };
-window.loadSavedV5Theme = function () { const s = localStorage.getItem('v5_grid_theme'); if (s) applyV5Theme(s); };
-setTimeout(() => loadSavedV5Theme(), 500);
+// ============================================
+// APPEARANCE PANEL (Phase 3)
+// ============================================
+
+window.toggleV5Appearance = function () {
+  const panel = document.getElementById('v5-appearance-panel');
+  if (!panel) return;
+
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'flex' : 'none';
+
+  // Load current settings into dropdowns
+  if (isHidden) {
+    const saved = JSON.parse(localStorage.getItem('v5_appearance') || '{}');
+    if (saved.theme) document.getElementById('v5-theme-select').value = saved.theme;
+    if (saved.font) document.getElementById('v5-font-select').value = saved.font;
+    if (saved.size) document.getElementById('v5-size-select').value = saved.size;
+  }
+};
+
+window.applyV5Appearance = function () {
+  const theme = document.getElementById('v5-theme-select').value;
+  const font = document.getElementById('v5-font-select').value;
+  const size = document.getElementById('v5-size-select').value;
+
+  // Apply settings
+  applyTheme(theme);
+  applyFont(font);
+  applySize(size);
+
+  // Save to localStorage
+  localStorage.setItem('v5_appearance', JSON.stringify({ theme, font, size }));
+
+  // Close panel
+  closeV5Appearance();
+
+  if (window.showToast) window.showToast('Appearance saved!', 'success');
+};
+
+window.closeV5Appearance = function () {
+  const panel = document.getElementById('v5-appearance-panel');
+  if (panel) panel.style.display = 'none';
+};
+
+function applyTheme(theme) {
+  const container = document.querySelector('.ag-theme-alpine');
+  if (!container) return;
+
+  // Remove all theme classes
+  container.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow',
+    'theme-spectrum', 'theme-subliminal', 'theme-tracker', 'theme-vanilla',
+    'theme-vintage', 'theme-wave', 'theme-neon', 'theme-ocean', 'theme-forest');
+
+  // Apply new theme
+  if (theme) container.classList.add(`theme-${theme}`);
+}
+
+function applyFont(font) {
+  const container = document.querySelector('.ag-theme-alpine');
+  if (!container) return;
+
+  const fontMap = {
+    'inter': "'Inter', sans-serif",
+    'roboto-mono': "'Roboto Mono', monospace",
+    'georgia': "'Georgia', serif",
+    'arial': "'Arial', sans-serif"
+  };
+
+  container.style.fontFamily = fontMap[font] || '';
+}
+
+function applySize(size) {
+  const container = document.querySelector('.ag-theme-alpine');
+  if (!container) return;
+
+  const sizeMap = {
+    'xs': '11px',
+    's': '12px',
+    'm': '13px',
+    'l': '14px',
+    'xl': '16px'
+  };
+
+  container.style.fontSize = sizeMap[size] || '13px';
+}
+
+function loadV5Appearance() {
+  const saved = JSON.parse(localStorage.getItem('v5_appearance') || '{}');
+  if (saved.theme) applyTheme(saved.theme);
+  if (saved.font) applyFont(saved.font);
+  if (saved.size) applySize(saved.size);
+}
+
+// Auto-load saved appearance on page load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(loadV5Appearance, 500); // Wait for grid to render
+});
 
 // FIX 4: Ref# input uppercase
 document.addEventListener('DOMContentLoaded', () => {
