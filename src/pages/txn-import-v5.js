@@ -1708,50 +1708,6 @@ window.renderTxnImportV5Page = function () {
       </div>
       
     </div>
-    
-    <!-- GRID APPEARANCE MODAL -->
-    <div id="v5-appearance-modal" class="modal-overlay" style="display:none;">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>🎨 Grid Appearance</h3>
-          <button class="btn-icon-sm" onclick="window.closeAppearanceModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div style="display:flex; flex-direction:column; gap:16px;">
-            <div>
-              <label style="display:block; margin-bottom:8px; font-weight:600;">Theme</label>
-              <select id="v5-theme-dropdown" onchange="window.applyAppearance()" class="modal-select">
-                <option value="">Default</option>
-                <option value="ledger">Ledger</option>
-                <option value="postit">Post-it</option>
-                <option value="rainbow">Rainbow</option>
-              </select>
-            </div>
-            <div>
-              <label style="display:block; margin-bottom:8px; font-weight:600;">Font</label>
-              <select id="v5-font-dropdown" onchange="window.applyAppearance()" class="modal-select">
-                <option value="">Default</option>
-                <option value="inter">Inter</option>
-                <option value="roboto-mono">Roboto Mono</option>
-              </select>
-            </div>
-            <div>
-              <label style="display:block; margin-bottom:8px; font-weight:600;">Size</label>
-              <select id="v5-size-dropdown" onchange="window.applyAppearance()" class="modal-select">
-                <option value="xs">XS</option>
-                <option value="s">S</option>
-                <option value="m" selected>M</option>
-                <option value="l">L</option>
-                <option value="xl">XL</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn-secondary" onclick="window.closeAppearanceModal()">Close</button>
-        </div>
-      </div>
-    </div>
   `;
 };
 
