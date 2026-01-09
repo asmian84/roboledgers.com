@@ -287,6 +287,43 @@
   <script src="src/pages/data-import.js?v=20251230_v17"></script>
   <script src="src/pages/transactions-import.js"></script>
   <script src="src/pages/txn-import-v5-FIXED.js?v=NUCLEAR_2"></script>
+  <!-- CACHE OVERRIDE: Force correct Grid Appearance function -->
+  <script>
+    // Override cached function with correct ID
+    window.openAppearanceModal = function () {
+      console.log('🎨 OVERRIDE: openAppearanceModal called!');
+      const panel = document.getElementById('v5-appearance-panel');
+      const bulkBar = document.getElementById('v5-bulk-bar');
+
+      if (!panel) {
+        console.error('❌ Appearance panel not found!');
+        return;
+      }
+
+      console.log('✅ Panel found, showing...');
+      if (bulkBar) bulkBar.style.display = 'none';
+      panel.style.display = 'flex';
+
+      // Load saved settings
+      const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+      const themeDropdown = document.getElementById('v5-theme-dropdown');
+      const fontDropdown = document.getElementById('v5-font-dropdown');
+      const sizeDropdown = document.getElementById('v5-size-dropdown');
+
+      if (themeDropdown && saved.theme) themeDropdown.value = saved.theme || '';
+      if (fontDropdown && saved.font) fontDropdown.value = saved.font || '';
+      if (sizeDropdown && saved.size) sizeDropdown.value = saved.size || 'm';
+
+      // Apply current settings
+      if (window.applyAppearance) window.applyAppearance();
+    };
+
+    window.closeAppearanceModal = function () {
+      const panel = document.getElementById('v5-appearance-panel');
+      if (panel) panel.style.display = 'none';
+    };
+    console.log('✅ Grid Appearance functions OVERRIDDEN - cache bypassed!');
+  </script>
   <script src="src/pages/profile.js"></script>
   <!-- <script src="src/pages/transactions-fixed.js"></script> LEGACY -->
   <script src="src/pages/transactions-grid.js?v=20260101_v3"></script>
