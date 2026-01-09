@@ -191,82 +191,89 @@ window.renderTxnImportV5Page = function () {
         }
       }
 
-      /* APPEARANCE PANEL - Dropdown Style */
+      /* APPEARANCE DROPDOWN - Compact Live Preview */
       .v5-appearance-panel {
         display: none;
-        flex-direction: column;
-        padding: 1rem 1.5rem;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        gap: 1rem;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 0.5rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        padding: 1rem;
+        min-width: 600px;
+        z-index: 1000;
       }
       
       .v5-appearance-panel .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .v5-appearance-panel .panel-header h4 {
+        margin: 0;
+        font-size: 0.875rem;
         font-weight: 600;
         color: #1f2937;
-        font-size: 0.875rem;
+      }
+      
+      .v5-appearance-panel .btn-close-panel {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 0.25rem;
+        font-size: 1.25rem;
+        line-height: 1;
+      }
+      
+      .v5-appearance-panel .btn-close-panel:hover {
+        color: #1f2937;
       }
       
       .v5-appearance-panel .panel-controls {
         display: flex;
         gap: 1.5rem;
-        align-items: flex-end;
+        align-items: center;
       }
       
       .v5-appearance-panel .control-group {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        align-items: center;
+        gap: 0.5rem;
       }
       
       .v5-appearance-panel .control-group label {
         font-size: 0.75rem;
         font-weight: 600;
         color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        min-width: 70px;
       }
       
       .v5-appearance-panel select {
-        padding: 0.5rem;
+        padding: 0.375rem 0.75rem;
         border: 1px solid #d1d5db;
         border-radius: 4px;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         background: white;
-        min-width: 140px;
-      }
-      
-      .v5-appearance-panel .panel-actions {
-        display: flex;
-        gap: 0.5rem;
-      }
-      
-      .v5-appearance-panel .btn-apply {
-        padding: 0.5rem 1rem;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        font-weight: 600;
         cursor: pointer;
+        min-width: 120px;
       }
       
-      .v5-appearance-panel .btn-apply:hover {
-        background: #2563eb;
+      .v5-appearance-panel select:hover {
+        border-color: #3b82f6;
       }
       
-      .v5-appearance-panel .btn-cancel {
-        padding: 0.5rem 1rem;
-        background: white;
-        color: #6b7280;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      
-      .v5-appearance-panel .btn-cancel:hover {
-        background: #f9fafb;
+      .v5-appearance-panel select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
       }
 
       /* AG GRID THEMES */
@@ -1229,13 +1236,16 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
 
-      <!-- Appearance Panel (Phase 3) -->
+      <!-- Appearance Dropdown (Phase 3 - Redesigned) -->
       <div class="v5-appearance-panel" id="v5-appearance-panel" style="display: none;">
-        <div class="panel-header">🎨 Grid Appearance</div>
+        <div class="panel-header">
+          <h4>🎨 Grid Appearance</h4>
+          <button class="btn-close-panel" onclick="closeV5Appearance()">✕</button>
+        </div>
         <div class="panel-controls">
           <div class="control-group">
-            <label>Color Theme</label>
-            <select id="v5-theme-select">
+            <label>Theme:</label>
+            <select id="v5-theme-select" onchange="applyThemeInstant(this.value)">
               <option value="">Default</option>
               <option value="ledger">Ledger</option>
               <option value="postit">Post-it</option>
@@ -1252,8 +1262,8 @@ window.renderTxnImportV5Page = function () {
             </select>
           </div>
           <div class="control-group">
-            <label>Font Style</label>
-            <select id="v5-font-select">
+            <label>Font:</label>
+            <select id="v5-font-select" onchange="applyFontInstant(this.value)">
               <option value="">Default</option>
               <option value="inter">Inter</option>
               <option value="roboto-mono">Roboto Mono</option>
@@ -1262,8 +1272,8 @@ window.renderTxnImportV5Page = function () {
             </select>
           </div>
           <div class="control-group">
-            <label>Text Size</label>
-            <select id="v5-size-select">
+            <label>Size:</label>
+            <select id="v5-size-select" onchange="applySizeInstant(this.value)">
               <option value="xs">XS</option>
               <option value="s">S</option>
               <option value="m" selected>M</option>
@@ -1271,10 +1281,6 @@ window.renderTxnImportV5Page = function () {
               <option value="xl">XL</option>
             </select>
           </div>
-        </div>
-        <div class="panel-actions">
-          <button class="btn-apply" onclick="applyV5Appearance()">Apply</button>
-          <button class="btn-cancel" onclick="closeV5Appearance()">Cancel</button>
         </div>
       </div>
       
@@ -3710,34 +3716,15 @@ window.toggleV5Appearance = function () {
   if (!panel) return;
 
   const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'flex' : 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
 
-  // Load current settings into dropdowns
+  // Load current settings
   if (isHidden) {
     const saved = JSON.parse(localStorage.getItem('v5_appearance') || '{}');
-    if (saved.theme) document.getElementById('v5-theme-select').value = saved.theme;
-    if (saved.font) document.getElementById('v5-font-select').value = saved.font;
-    if (saved.size) document.getElementById('v5-size-select').value = saved.size;
+    if (saved.theme) document.getElementById('v5-theme-select').value = saved.theme || '';
+    if (saved.font) document.getElementById('v5-font-select').value = saved.font || '';
+    if (saved.size) document.getElementById('v5-size-select').value = saved.size || 'm';
   }
-};
-
-window.applyV5Appearance = function () {
-  const theme = document.getElementById('v5-theme-select').value;
-  const font = document.getElementById('v5-font-select').value;
-  const size = document.getElementById('v5-size-select').value;
-
-  // Apply settings
-  applyTheme(theme);
-  applyFont(font);
-  applySize(size);
-
-  // Save to localStorage
-  localStorage.setItem('v5_appearance', JSON.stringify({ theme, font, size }));
-
-  // Close panel
-  closeV5Appearance();
-
-  if (window.showToast) window.showToast('Appearance saved!', 'success');
 };
 
 window.closeV5Appearance = function () {
@@ -3745,16 +3732,37 @@ window.closeV5Appearance = function () {
   if (panel) panel.style.display = 'none';
 };
 
+// Instant apply functions (no Apply button needed)
+window.applyThemeInstant = function (theme) {
+  applyTheme(theme);
+  saveAppearance();
+};
+
+window.applyFontInstant = function (font) {
+  applyFont(font);
+  saveAppearance();
+};
+
+window.applySizeInstant = function (size) {
+  applySize(size);
+  saveAppearance();
+};
+
+function saveAppearance() {
+  const theme = document.getElementById('v5-theme-select').value;
+  const font = document.getElementById('v5-font-select').value;
+  const size = document.getElementById('v5-size-select').value;
+  localStorage.setItem('v5_appearance', JSON.stringify({ theme, font, size }));
+}
+
 function applyTheme(theme) {
   const container = document.querySelector('.ag-theme-alpine');
   if (!container) return;
 
-  // Remove all theme classes
   container.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow',
     'theme-spectrum', 'theme-subliminal', 'theme-tracker', 'theme-vanilla',
     'theme-vintage', 'theme-wave', 'theme-neon', 'theme-ocean', 'theme-forest');
 
-  // Apply new theme
   if (theme) container.classList.add(`theme-${theme}`);
 }
 
@@ -3794,9 +3802,8 @@ function loadV5Appearance() {
   if (saved.size) applySize(saved.size);
 }
 
-// Auto-load saved appearance on page load
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(loadV5Appearance, 500); // Wait for grid to render
+  setTimeout(loadV5Appearance, 500);
 });
 
 // FIX 4: Ref# input uppercase
