@@ -143,6 +143,72 @@ window.filterV5Grid = function (searchText) {
 // GroupedAccountEditor and getGroupedCoA already defined in transactions-import.js
 
 
+// ============================================
+// GRID APPEARANCE FUNCTIONS (Must be early for inline onclick)
+// ============================================
+
+window.openAppearanceModal = function () {
+  const modal = document.getElementById('v5-appearance-modal');
+  if (!modal) {
+    console.error('Modal not found!');
+    return;
+  }
+
+  modal.style.display = 'block';
+
+  // Load saved settings
+  const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+  const themeDropdown = document.getElementById('v5-theme-dropdown');
+  const fontDropdown = document.getElementById('v5-font-dropdown');
+  const sizeDropdown = document.getElementById('v5-size-dropdown');
+
+  if (themeDropdown && saved.theme) themeDropdown.value = saved.theme || '';
+  if (fontDropdown && saved.font) fontDropdown.value = saved.font || '';
+  if (sizeDropdown && saved.size) sizeDropdown.value = saved.size || 'm';
+
+  // Apply current settings
+  window.applyAppearance();
+};
+
+window.closeAppearanceModal = function () {
+  const modal = document.getElementById('v5-appearance-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.applyAppearance = function () {
+  const themeDropdown = document.getElementById('v5-theme-dropdown');
+  const fontDropdown = document.getElementById('v5-font-dropdown');
+  const sizeDropdown = document.getElementById('v5-size-dropdown');
+
+  const theme = themeDropdown ? themeDropdown.value : '';
+  const font = fontDropdown ? fontDropdown.value : '';
+  const size = sizeDropdown ? sizeDropdown.value : 'm';
+
+  const grid = document.querySelector('.ag-theme-alpine');
+  if (!grid) return;
+
+  // Apply theme
+  grid.classlist.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
+    'theme-tracker', 'theme-neon', 'theme-ocean', 'theme-forest');
+  if (theme) grid.classList.add('theme-' + theme);
+
+  // Apply font
+  const fonts = {
+    'inter': "'Inter', sans-serif",
+    'roboto-mono': "'Roboto Mono', monospace",
+    'georgia': "'Georgia', serif",
+    'arial': "'Arial', sans-serif"
+  };
+  grid.style.fontFamily = fonts[font] || '';
+
+  // Apply size
+  const sizes = { xs: '11px', s: '12px', m: '13px', l: '14px', xl: '16px' };
+  grid.style.fontSize = sizes[size] || '13px';
+
+  // Save to localStorage
+  localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
+};
+
 // ====================================================================================
 // MAIN RENDER FUNCTION
 // ============================================
