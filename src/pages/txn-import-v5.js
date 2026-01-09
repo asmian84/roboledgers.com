@@ -548,12 +548,17 @@ window.renderTxnImportV5Page = function () {
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
       }
       
-      /* MAIN CONTAINER - Prevent navbar overlap */
+      /* MAIN CONTAINER - Match Data Import positioning + 10% zoom reduction */
       .txn-import-v5-container {
-        padding-top: 90px;
+        padding: 2rem 2.5rem;
+        padding-top: 2rem;
+        transform: scale(0.9);
+        transform-origin: top center;
+        width: 111%;
+        margin-left: -5.5%;
       }
 
-      /* Page Container - Add top padding to prevent navbar overlap */
+      /* Page Container - removed, using above instead */
       .v5-page-container {
         padding: 1.5rem;
         padding-top: 90px; /* Prevent navbar overlap */
@@ -3072,8 +3077,8 @@ window.showKeyboardShortcuts = function () {
     </div>
 
     <!-- GRID APPEARANCE MODAL (Simple Working Version) -->
-    <div id="v5-appearance-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-      <div style="background:white; border-radius:12px; padding:2rem; min-width:500px; max-width:600px;">
+    <div id="v5-appearance-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; padding:2rem; min-width:500px; max-width:600px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
           <h3 style="margin:0; font-size:1.25rem;"> Grid Appearance</h3>
           <button onclick="closeAppearanceModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
