@@ -148,12 +148,16 @@ window.filterV5Grid = function (searchText) {
 // ============================================
 
 window.openAppearanceModal = function () {
+  console.log('🎨 openAppearanceModal called!');
   const modal = document.getElementById('v5-appearance-modal');
+  console.log('Modal element:', modal);
   if (!modal) {
-    console.error('Modal not found!');
+    console.error('❌ Modal not found!');
+    alert('Error: Grid Appearance modal not found in DOM. Modal HTML might not be loaded.');
     return;
   }
 
+  console.log('✅ Modal found, showing...');
   modal.style.display = 'flex';
 
   // Load saved settings
@@ -161,6 +165,8 @@ window.openAppearanceModal = function () {
   const themeDropdown = document.getElementById('v5-theme-dropdown');
   const fontDropdown = document.getElementById('v5-font-dropdown');
   const sizeDropdown = document.getElementById('v5-size-dropdown');
+
+  console.log('Dropdowns:', { themeDropdown, fontDropdown, sizeDropdown });
 
   if (themeDropdown && saved.theme) themeDropdown.value = saved.theme || '';
   if (fontDropdown && saved.font) fontDropdown.value = saved.font || '';
