@@ -3196,9 +3196,21 @@ window.showKeyboardShortcuts = function () {
             </select>
           </div>
         </div>
-        
-        <div style="margin-top:1.5rem; display:flex; justify-content:flex-end; gap:0.75rem;">
-          <button onclick="closeAppearanceModal()" style="padding:0.5rem 1rem; border:1px solid #ddd; background:white; border-radius:6px; cursor:pointer;">Close</button>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Size</label>
+            <select id="v5-size-dropdown" onchange="window.applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
+              <option value="xs">XS</option>
+              <option value="s">S</option>
+              <option value="m" selected>M</option>
+              <option value="l">L</option>
+              <option value="xl">XL</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem; text-align:right;">
+          <button onclick="window.closeAppearanceModal()" style="padding:0.5rem 1rem; border:1px solid #ddd; background:white; border-radius:6px; cursor:pointer;">Close</button>
         </div>
       </div>
     </div>
