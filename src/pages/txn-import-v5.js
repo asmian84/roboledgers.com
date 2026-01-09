@@ -194,17 +194,17 @@ window.renderTxnImportV5Page = function () {
       /* APPEARANCE DROPDOWN - Compact Live Preview */
       .v5-appearance-panel {
         display: none;
-        position: absolute;
-        right: 0;
-        top: 100%;
-        margin-top: 0.5rem;
+        position: fixed;
+        right: 20px;
+        top: 200px;
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         padding: 1rem;
         min-width: 600px;
-        z-index: 1000;
+        max-width: 90vw;
+        z-index: 10000;
       }
       
       .v5-appearance-panel .panel-header {
@@ -546,6 +546,14 @@ window.renderTxnImportV5Page = function () {
         outline: none;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      /* Page Container - Add top padding to prevent navbar overlap */
+      .v5-page-container {
+        padding: 1.5rem;
+        padding-top: 90px; /* Prevent navbar overlap */
+        max-width: 100%;
+        margin: 0 auto;
       }
       
       /* Search Bar - Flex Grow */
