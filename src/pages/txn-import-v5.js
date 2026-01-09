@@ -1155,7 +1155,7 @@ window.renderTxnImportV5Page = function () {
               <i class="ph ph-dots-three-vertical"></i>
             </button>
             <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
-              <div class="menu-item" onclick="toggleV5Appearance(); toggleV5Menu(event);">
+              <div class="menu-item" onclick="openAppearanceModal(); toggleV5Menu(event);">
                 <i class="ph ph-palette"></i>
                 Grid Appearance
               </div>
@@ -1398,46 +1398,6 @@ window.renderTxnImportV5Page = function () {
             <button class="btn-icon" onclick="toggleV5ActionMenu()" title="More Actions" id="v5-action-menu-btn">
               <i class="ph ph-dots-three-vertical"></i>
             </button>
-            <div id="v5-action-dropdown" class="v5-dropdown-menu" style="display: none;">
-              <button onclick="setGridTheme('default'); toggleV5ActionMenu();">
-                <i class="ph ph-palette"></i>
-                Theme: Default
-              </button>
-              <button onclick="setGridTheme('rainbow'); toggleV5ActionMenu();">
-                <i class="ph ph-rainbow"></i>
-                Theme: Rainbow
-              </button>
-              <button onclick="setGridTheme('ledger'); toggleV5ActionMenu();">
-                <i class="ph ph-notepad"></i>
-                Theme: Ledger Pad
-              </button>
-              <button onclick="setGridTheme('postit'); toggleV5ActionMenu();">
-                <i class="ph ph-note"></i>
-                Theme: Post-it Note
-              </button>
-              <button onclick="setGridTheme('classic'); toggleV5ActionMenu();">
-                <i class="ph ph-squares-four"></i>
-                Theme: Classic
-              </button>
-              <hr>
-              <button onclick="exportSelected()">
-                <i class="ph ph-export"></i>
-                Export Selected
-              </button>
-              <button onclick="deleteSelected()">
-                <i class="ph ph-trash"></i>
-                Delete Selected
-              </button>
-              <hr>
-              <button onclick="selectAllV5()">
-                <i class="ph ph-check-square"></i>
-                Select All
-              </button>
-              <button onclick="deselectAllV5()">
-                <i class="ph ph-square"></i>
-                Deselect All
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -3110,6 +3070,59 @@ window.showKeyboardShortcuts = function () {
         <strong>Actions:</strong><br>• Click <strong>⇄</strong> to swap Debit/Credit<br>• Click <strong>✕</strong> to delete row
       </div>
     </div>
+
+    <!-- GRID APPEARANCE MODAL (Simple Working Version) -->
+    <div id="v5-appearance-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:white; border-radius:12px; padding:2rem; min-width:500px; max-width:600px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <h3 style="margin:0; font-size:1.25rem;"> Grid Appearance</h3>
+          <button onclick="closeAppearanceModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Theme</label>
+            <select id="v5-theme-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
+              <option value="">Default</option>
+              <option value="ledger">Ledger</option>
+              <option value="postit">Post-it</option>
+              <option value="rainbow">Rainbow</option>
+              <option value="spectrum">Spectrum</option>
+              <option value="tracker">Tracker</option>
+              <option value="neon">Neon</option>
+              <option value="ocean">Ocean</option>
+              <option value="forest">Forest</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Font</label>
+            <select id="v5-font-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
+              <option value="">Default</option>
+              <option value="inter">Inter</option>
+              <option value="roboto-mono">Roboto Mono</option>
+              <option value="georgia">Georgia</option>
+              <option value="arial">Arial</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Text Size</label>
+            <select id="v5-size-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
+              <option value="xs">Extra Small</option>
+              <option value="s">Small</option>
+              <option value="m" selected>Medium</option>
+              <option value="l">Large</option>
+              <option value="xl">Extra Large</option>
+            </select>
+          </div>
+        </div>
+        
+        <div style="margin-top:1.5rem; display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button onclick="closeAppearanceModal()" style="padding:0.5rem 1rem; border:1px solid #ddd; background:white; border-radius:6px; cursor:pointer;">Close</button>
+        </div>
+      </div>
+    </div>
   `;
 
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
@@ -3679,103 +3692,73 @@ window.handleV5DragDrop = function (event) {
 
 // THEME PICKER FUNCTIONS
 // ============================================
-// APPEARANCE PANEL (Phase 3)
+// GRID APPEARANCE - SIMPLE WORKING VERSION
 // ============================================
 
-window.toggleV5Appearance = function () {
-  const panel = document.getElementById('v5-appearance-panel');
-  if (!panel) return;
+window.openAppearanceModal = function () {
+  const modal = document.getElementById('v5-appearance-modal');
+  if (!modal) return;
 
-  const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'block' : 'none';
+  modal.style.display = 'flex';
 
-  // Load current settings
-  if (isHidden) {
-    const saved = JSON.parse(localStorage.getItem('v5_appearance') || '{}');
-    if (saved.theme) document.getElementById('v5-theme-select').value = saved.theme || '';
-    if (saved.font) document.getElementById('v5-font-select').value = saved.font || '';
-    if (saved.size) document.getElementById('v5-size-select').value = saved.size || 'm';
-  }
+  // Load saved settings
+  const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+  if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme || '';
+  if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font || '';
+  if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size || 'm';
+
+  // Apply current settings
+  applyAppearance();
 };
 
-window.closeV5Appearance = function () {
-  const panel = document.getElementById('v5-appearance-panel');
-  if (panel) panel.style.display = 'none';
+window.closeAppearanceModal = function () {
+  const modal = document.getElementById('v5-appearance-modal');
+  if (modal) modal.style.display = 'none';
 };
 
-// Instant apply functions (no Apply button needed)
-window.applyThemeInstant = function (theme) {
-  applyTheme(theme);
-  saveAppearance();
-};
+window.applyAppearance = function () {
+  const theme = document.getElementById('v5-theme-dropdown').value;
+  const font = document.getElementById('v5-font-dropdown').value;
+  const size = document.getElementById('v5-size-dropdown').value;
 
-window.applyFontInstant = function (font) {
-  applyFont(font);
-  saveAppearance();
-};
+  const grid = document.querySelector('.ag-theme-alpine');
+  if (!grid) return;
 
-window.applySizeInstant = function (size) {
-  applySize(size);
-  saveAppearance();
-};
+  // Apply theme
+  grid.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
+    'theme-tracker', 'theme-neon', 'theme-ocean', 'theme-forest');
+  if (theme) grid.classList.add('theme-' + theme);
 
-function saveAppearance() {
-  const theme = document.getElementById('v5-theme-select').value;
-  const font = document.getElementById('v5-font-select').value;
-  const size = document.getElementById('v5-size-select').value;
-  localStorage.setItem('v5_appearance', JSON.stringify({ theme, font, size }));
-}
-
-function applyTheme(theme) {
-  const container = document.querySelector('.ag-theme-alpine');
-  if (!container) return;
-
-  container.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow',
-    'theme-spectrum', 'theme-subliminal', 'theme-tracker', 'theme-vanilla',
-    'theme-vintage', 'theme-wave', 'theme-neon', 'theme-ocean', 'theme-forest');
-
-  if (theme) container.classList.add(`theme-${theme}`);
-}
-
-function applyFont(font) {
-  const container = document.querySelector('.ag-theme-alpine');
-  if (!container) return;
-
-  const fontMap = {
+  // Apply font
+  const fonts = {
     'inter': "'Inter', sans-serif",
     'roboto-mono': "'Roboto Mono', monospace",
     'georgia': "'Georgia', serif",
     'arial': "'Arial', sans-serif"
   };
+  grid.style.fontFamily = fonts[font] || '';
 
-  container.style.fontFamily = fontMap[font] || '';
-}
+  // Apply size
+  const sizes = { xs: '11px', s: '12px', m: '13px', l: '14px', xl: '16px' };
+  grid.style.fontSize = sizes[size] || '13px';
 
-function applySize(size) {
-  const container = document.querySelector('.ag-theme-alpine');
-  if (!container) return;
+  // Save to localStorage
+  localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
+};
 
-  const sizeMap = {
-    'xs': '11px',
-    's': '12px',
-    'm': '13px',
-    'l': '14px',
-    'xl': '16px'
-  };
-
-  container.style.fontSize = sizeMap[size] || '13px';
-}
-
-function loadV5Appearance() {
-  const saved = JSON.parse(localStorage.getItem('v5_appearance') || '{}');
-  if (saved.theme) applyTheme(saved.theme);
-  if (saved.font) applyFont(saved.font);
-  if (saved.size) applySize(saved.size);
-}
-
+// Load on page init
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(loadV5Appearance, 500);
+  setTimeout(() => {
+    const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+    if (saved.theme || saved.font || saved.size) {
+      if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme;
+      if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font;
+      if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size;
+      applyAppearance();
+    }
+  }, 1000);
 });
+
 
 // FIX 4: Ref# input uppercase
 document.addEventListener('DOMContentLoaded', () => {
@@ -3869,4 +3852,5 @@ window.bulkV5Categorize = function () {
 };
 
 console.log(' txn-import-v5.js loaded successfully!');
+
 
