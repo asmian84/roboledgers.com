@@ -149,16 +149,17 @@ window.filterV5Grid = function (searchText) {
 
 window.openAppearanceModal = function () {
   console.log('🎨 openAppearanceModal called!');
-  const modal = document.getElementById('v5-appearance-modal');
-  console.log('Modal element:', modal);
-  if (!modal) {
-    console.error('❌ Modal not found!');
-    alert('Error: Grid Appearance modal not found in DOM. Modal HTML might not be loaded.');
+  const panel = document.getElementById('v5-appearance-panel');
+  const bulkBar = document.getElementById('v5-bulk-bar');
+
+  if (!panel) {
+    console.error('❌ Appearance panel not found!');
     return;
   }
 
-  console.log('✅ Modal found, showing...');
-  modal.style.display = 'flex';
+  // Hide bulk bar, show appearance panel
+  if (bulkBar) bulkBar.style.display = 'none';
+  panel.style.display = 'flex';
 
   // Load saved settings
   const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
@@ -166,14 +167,17 @@ window.openAppearanceModal = function () {
   const fontDropdown = document.getElementById('v5-font-dropdown');
   const sizeDropdown = document.getElementById('v5-size-dropdown');
 
-  console.log('Dropdowns:', { themeDropdown, fontDropdown, sizeDropdown });
-
   if (themeDropdown && saved.theme) themeDropdown.value = saved.theme || '';
   if (fontDropdown && saved.font) fontDropdown.value = saved.font || '';
   if (sizeDropdown && saved.size) sizeDropdown.value = saved.size || 'm';
 
   // Apply current settings
   window.applyAppearance();
+};
+
+window.closeAppearanceModal = function () {
+  const panel = document.getElementById('v5-appearance-panel');
+  if (panel) panel.style.display = 'none';
 };
 
 window.closeAppearanceModal = function () {
