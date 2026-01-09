@@ -1048,6 +1048,11 @@ window.renderTxnImportV5Page = function () {
           color: #666;
         }
         
+        /* CONTAINER - Add padding to prevent navbar overlap */
+      .txn-import-v5-container {
+        padding-top: 90px !important;
+      }
+        
         /* Grid styling for print */
         .v5-grid-container,
         #v5-grid-container {
