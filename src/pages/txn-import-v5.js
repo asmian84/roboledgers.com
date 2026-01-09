@@ -180,11 +180,6 @@ window.closeAppearanceModal = function () {
   if (panel) panel.style.display = 'none';
 };
 
-window.closeAppearanceModal = function () {
-  const modal = document.getElementById('v5-appearance-modal');
-  if (modal) modal.style.display = 'none';
-};
-
 window.applyAppearance = function () {
   const themeDropdown = document.getElementById('v5-theme-dropdown');
   const fontDropdown = document.getElementById('v5-font-dropdown');
