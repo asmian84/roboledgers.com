@@ -1236,53 +1236,6 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
 
-      <!-- Appearance Dropdown (Phase 3 - Redesigned) -->
-      <div class="v5-appearance-panel" id="v5-appearance-panel" style="display: none;">
-        <div class="panel-header">
-          <h4>🎨 Grid Appearance</h4>
-          <button class="btn-close-panel" onclick="closeV5Appearance()">✕</button>
-        </div>
-        <div class="panel-controls">
-          <div class="control-group">
-            <label>Theme:</label>
-            <select id="v5-theme-select" onchange="applyThemeInstant(this.value)">
-              <option value="">Default</option>
-              <option value="ledger">Ledger</option>
-              <option value="postit">Post-it</option>
-              <option value="rainbow">Rainbow</option>
-              <option value="spectrum">Spectrum</option>
-              <option value="subliminal">Subliminal</option>
-              <option value="tracker">Tracker</option>
-              <option value="vanilla">Vanilla</option>
-              <option value="vintage">Vintage</option>
-              <option value="wave">Wave</option>
-              <option value="neon">Neon</option>
-              <option value="ocean">Ocean</option>
-              <option value="forest">Forest</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label>Font:</label>
-            <select id="v5-font-select" onchange="applyFontInstant(this.value)">
-              <option value="">Default</option>
-              <option value="inter">Inter</option>
-              <option value="roboto-mono">Roboto Mono</option>
-              <option value="georgia">Georgia</option>
-              <option value="arial">Arial</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label>Size:</label>
-            <select id="v5-size-select" onchange="applySizeInstant(this.value)">
-              <option value="xs">XS</option>
-              <option value="s">S</option>
-              <option value="m" selected>M</option>
-              <option value="l">L</option>
-              <option value="xl">XL</option>
-            </select>
-          </div>
-        </div>
-      </div>
       
       
       <!-- OLD HEADER REMOVED - Content continues below -->
@@ -3283,6 +3236,9 @@ window.popOutV5Grid = function () {
 
   // Hide grid in main window
   gridContainer.style.display = 'none';
+
+  // Create popout window
+  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1400,height=900');
 
   if (!popOutWindow) {
     alert('Popup blocked! Please allow popups for this site.');
