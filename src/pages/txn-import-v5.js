@@ -581,34 +581,58 @@ window.renderTxnImportV5Page = function () {
       /* Classic Theme - uses default AG Grid styles */
       .ag-theme-classic { /* No custom styles */ }
       
-      /* MODAL SYSTEM (from data-import.js) */
+      /* MODAL SYSTEM - INLINE DROPDOWN (7% reduced) */
       .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-        z-index: 9999; display: flex; align-items: center; justify-content: center;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        z-index: 1000;
+        transform: scale(0.93);
+        transform-origin: top right;
       }
       .modal-card {
-        background: white; border-radius: 12px; max-width: 500px; width: 90%;
+        background: white;
+        border-radius: 12px;
+        width: 340px;
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        border: 1px solid #e2e8f0;
       }
       .modal-header {
-        padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0;
-        display: flex; justify-content: space-between; align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         background: #f8fafc;
       }
-      .modal-header h3 { margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 600; }
+      .modal-header h3 { margin: 0; font-size: 0.95rem; color: #1e293b; font-weight: 600; }
       .btn-icon-sm {
-        background: none; border: none; font-size: 1.5rem; color: #64748b;
-        cursor: pointer; padding: 0; line-height: 1;
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
       }
-      .modal-body { padding: 1.5rem; color: #334155; font-size: 0.95rem; }
+      .modal-body { padding: 1.25rem; color: #334155; font-size: 0.875rem; }
       .modal-actions {
-        padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0;
-        display: flex; justify-content: flex-end; gap: 12px;
+        padding: 0.85rem 1.25rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
       }
       .modal-select {
-        width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 6px;
-        font-size: 0.95rem; background: white; cursor: pointer;
+        width: 100%;
+        padding: 0.55rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+        cursor: pointer;
       }
       .modal-select:focus { outline: none; border-color: #3b82f6; }
 
@@ -1330,7 +1354,7 @@ window.renderTxnImportV5Page = function () {
         
         <!-- Right: Action Icons -->
         <div class="v5-header-actions">
-          <div class="v5-menu-wrapper">
+          <div class="v5-menu-wrapper" style="position:relative;">
             <button class="btn-icon v5-menu-toggle" onclick="toggleV5Menu(event)">
               <i class="ph ph-dots-three-vertical"></i>
             </button>
