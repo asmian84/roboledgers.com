@@ -1459,7 +1459,47 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
 
-      
+      <!-- GRID APPEARANCE PANEL (inline like bulk bar) -->
+      <div id="v5-appearance-panel" class="v5-bulk-bar" style="display:none; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-color: #3b82f6;">
+        <div class="v5-bulk-info">
+          <i class="ph ph-palette"></i>
+          <span style="color:#1e40af; font-weight:600;">🎨 Grid Appearance</span>
+        </div>
+        <div class="v5-bulk-actions" style="gap:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Theme:</label>
+            <select id="v5-theme-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:140px; padding:0.4rem;">
+              <option value="">Default</option>
+              <option value="ledger">Ledger</option>
+              <option value="postit">Post-it</option>
+              <option value="rainbow">Rainbow</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Font:</label>
+            <select id="v5-font-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:130px; padding:0.4rem;">
+              <option value="">Default</option>
+              <option value="inter">Inter</option>
+              <option value="roboto-mono">Roboto Mono</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Size:</label>
+            <select id="v5-size-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:80px; padding:0.4rem;">
+              <option value="xs">XS</option>
+              <option value="s">S</option>
+              <option value="m" selected>M</option>
+              <option value="l">L</option>
+              <option value="xl">XL</option>
+            </select>
+          </div>
+          <button class="btn-bulk-clear" onclick="window.closeAppearanceModal()" style="margin-left:8px;">
+            <i class="ph ph-x"></i>
+            Close
+          </button>
+        </div>
+      </div>
+
       
       <!-- OLD HEADER REMOVED - Content continues below -->
       <div class="OLD-v5-header-unified" style="display:none;">
