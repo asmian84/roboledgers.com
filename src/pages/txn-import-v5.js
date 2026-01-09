@@ -3272,25 +3272,11 @@ window.confirmStartOver = async function () {
 };
 
 window.popOutV5Grid = function () {
-  // Hide in-page grid and show pop-in button
   const gridContainer = document.getElementById('v5-grid-container');
+  if (!gridContainer) return;
+
+  // Hide grid in main window
   gridContainer.style.display = 'none';
-
-  // Show pop-in button
-  let popInBtn = document.getElementById('v5-popin-btn');
-  if (!popInBtn) {
-    popInBtn = document.createElement('button');
-    popInBtn.id = 'v5-popin-btn';
-    popInBtn.className = 'btn-primary';
-    popInBtn.onclick = () => window.popInV5Grid();
-    popInBtn.style.cssText = 'margin: 2rem auto; display: block;';
-    popInBtn.innerHTML = '<i class="ph ph-arrow-square-in"></i> Pop In Grid';
-    document.getElementById('v5-grid-container').parentElement.appendChild(popInBtn);
-  }
-  popInBtn.style.display = 'block';
-
-  // Open popout window
-  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1400,height=900');
 
   if (!popOutWindow) {
     alert('Popup blocked! Please allow popups for this site.');
