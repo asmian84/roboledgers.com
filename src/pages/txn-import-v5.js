@@ -447,6 +447,67 @@ window.renderTxnImportV5Page = function () {
         font-size: 1.125rem;
       }
       
+      /* UPLOAD ZONE - From data-import.js (responsive) */
+      .compact-upload-zone {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px;
+        background: white;
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .compact-upload-zone:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+      }
+      
+      .upload-icon {
+        flex-shrink: 0;
+        color: #3b82f6;
+      }
+      
+      .upload-text {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .upload-main {
+        display: block;
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 0.95rem;
+      }
+      
+      .upload-sub {
+        display: block;
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 2px;
+      }
+
+      .btn-browse {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 0.65rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      .btn-browse:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: translateY(-1px);
+      }
+      
       .v5-card-controls {
         display: flex;
         gap: 1.5rem;
@@ -1212,17 +1273,24 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
         
-        <!-- Center: Browse/Drop Files (Hybrid - Click OR Drag) -->
+        <!-- Center: Upload Zone (from data-import.js - responsive) -->
         <div class="v5-browse-section">
-          <button class="btn-browse" id="v5-hybrid-dropzone"
-                  onclick="document.getElementById('v5-file-input').click()"
-                  ondragover="event.preventDefault(); this.classList.add('drag-over')"
-                  ondragleave="this.classList.remove('drag-over')"
-                  ondrop="handleV5DragDrop(event)">
-            <i class="ph ph-cloud-arrow-up"></i>
-            <span>Drag and drop files here</span>
-            <small style="display: block; font-size: 0.75rem; opacity: 0.8;">Limit 200MB per file • PDF, CSV, Excel</small>
-          </button>
+          <div id="v5-upload-zone" class="compact-upload-zone" 
+               onclick="document.getElementById('v5-file-input').click()"
+               ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.background='#f8fafc';"
+               ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';"
+               ondrop="handleV5DragDrop(event); this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';">
+            <svg class="upload-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-main">Drag and drop files here</span>
+              <span class="upload-sub">Limit 200MB per file • PDF, CSV, Excel</span>
+            </div>
+            <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('v5-file-input').click()">Browse files</button>
+          </div>
           <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
                  style="display: none;" onchange="handleV5FileSelect(event)">
         </div>
