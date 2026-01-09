@@ -1688,9 +1688,9 @@ window.renderTxnImportV5Page = function () {
       /* Grid Container - FULL HEIGHT to 1px from bottom */
       .v5-grid-container {
         width: 100%;
-        height: calc(100vh - 200px - 1px) !important;
-        min-height: 400px;
-        margin: 0 !important;
+        height: calc(100vh - 200px);
+        min-height: 600px;
+        margin-top: 0.5rem;
         padding: 0 !important;
       }
         
