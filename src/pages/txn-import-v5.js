@@ -191,16 +191,83 @@ window.renderTxnImportV5Page = function () {
         }
       }
 
-      /* THEME PICKER BAR */
-      .v5-theme-picker-bar { display: flex; align-items: center; padding: 1rem 1.5rem; background: #fef3c7; border-bottom: 1px solid #fbbf24; gap: 1rem; }
-      .v5-theme-info { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #92400e; }
-      .v5-theme-swatches { display: flex; gap: 0.75rem; overflow-x: auto; flex: 1; }
-      .theme-swatch { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 0.5rem; cursor: pointer; min-width: 70px; }
-      .theme-swatch:hover { border-color: #3b82f6; transform: translateY(-2px); }
-      .theme-swatch.active { border-color: #3b82f6; border-width: 3px; }
-      .swatch-preview { width: 50px; height: 36px; border-radius: 6px; }
-      .theme-swatch span { font-size: 0.75rem; color: #64748b; }
-      .v5-theme-close { background: white; border: 1px solid #dc2626; border-radius: 4px; padding: 0.5rem; cursor: pointer; color: #dc2626; }
+      /* APPEARANCE PANEL - Dropdown Style */
+      .v5-appearance-panel {
+        display: none;
+        flex-direction: column;
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        gap: 1rem;
+      }
+      
+      .v5-appearance-panel .panel-header {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 0.875rem;
+      }
+      
+      .v5-appearance-panel .panel-controls {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-end;
+      }
+      
+      .v5-appearance-panel .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      
+      .v5-appearance-panel .control-group label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .v5-appearance-panel select {
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background: white;
+        min-width: 140px;
+      }
+      
+      .v5-appearance-panel .panel-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+      
+      .v5-appearance-panel .btn-apply {
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      
+      .v5-appearance-panel .btn-apply:hover {
+        background: #2563eb;
+      }
+      
+      .v5-appearance-panel .btn-cancel {
+        padding: 0.5rem 1rem;
+        background: white;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      
+      .v5-appearance-panel .btn-cancel:hover {
+        background: #f9fafb;
+      }
 
       /* AG GRID THEMES */
       .ag-theme-alpine.theme-ledger { background: #f5f5dc; }
@@ -1164,27 +1231,53 @@ window.renderTxnImportV5Page = function () {
       <!-- THEME PICKER BAR (Multi-use) -->
       <div class="v5-theme-picker-bar" id="v5-theme-picker-bar" style="display: none;">
         <div class="v5-theme-info">
-          <i class="ph ph-palette"></i>
-          <span>Grid Appearance</span>
+      <!-- Appearance Panel (Phase 3) -->
+      <div class="v5-appearance-panel" id="v5-appearance-panel" style="display: none;">
+        <div class="panel-header">🎨 Grid Appearance</div>
+        <div class="panel-controls">
+          <div class="control-group">
+            <label>Color Theme</label>
+            <select id="v5-theme-select">
+              <option value="">Default</option>
+              <option value="ledger">Ledger</option>
+              <option value="postit">Post-it</option>
+              <option value="rainbow">Rainbow</option>
+              <option value="spectrum">Spectrum</option>
+              <option value="subliminal">Subliminal</option>
+              <option value="tracker">Tracker</option>
+              <option value="vanilla">Vanilla</option>
+              <option value="vintage">Vintage</option>
+              <option value="wave">Wave</option>
+              <option value="neon">Neon</option>
+              <option value="ocean">Ocean</option>
+              <option value="forest">Forest</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Font Style</label>
+            <select id="v5-font-select">
+              <option value="">Default</option>
+              <option value="inter">Inter</option>
+              <option value="roboto-mono">Roboto Mono</option>
+              <option value="georgia">Georgia</option>
+              <option value="arial">Arial</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Text Size</label>
+            <select id="v5-size-select">
+              <option value="xs">XS</option>
+              <option value="s">S</option>
+              <option value="m" selected>M</option>
+              <option value="l">L</option>
+              <option value="xl">XL</option>
+            </select>
+          </div>
         </div>
-        <div class="v5-theme-swatches">
-          <button class="theme-swatch" onclick="applyV5Theme('classic')"><div class="swatch-preview" style="background: linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);"></div><span>Classic</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('default')"><div class="swatch-preview" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);"></div><span>Default</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('ledger')"><div class="swatch-preview" style="background: #f5f5dc; border: 1px solid #8b7355;"></div><span>Ledger</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('postit')"><div class="swatch-preview" style="background: #ffff88;"></div><span>Post-it</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('rainbow')"><div class="swatch-preview" style="background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);"></div><span>Rainbow</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('social')"><div class="swatch-preview" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);"></div><span>Social</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('spectrum')"><div class="swatch-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);"></div><span>Spectrum</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('subliminal')"><div class="swatch-preview" style="background: #1f2937; border: 1px solid #374151;"></div><span>Dark</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('neon')"><div class="swatch-preview" style="background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);"></div><span>Neon</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('tracker')"><div class="swatch-preview" style="background: linear-gradient(180deg, #10b981 0%, #059669 100%);"></div><span>Tracker</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('ocean')"><div class="swatch-preview" style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);"></div><span>Ocean</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('vintage')"><div class="swatch-preview" style="background: #d4a574;"></div><span>Vintage</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('wave')"><div class="swatch-preview" style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);"></div><span>Wave</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('forest')"><div class="swatch-preview" style="background: linear-gradient(135deg, #166534 0%, #14532d 100%);"></div><span>Forest</span></button>
-          <button class="theme-swatch" onclick="applyV5Theme('webapp')"><div class="swatch-preview" style="background: linear-gradient(135deg, #60a5fa 0%, #4b5563 100%);"></div><span>WebApp</span></button>
+        <div class="panel-actions">
+          <button class="btn-apply" onclick="applyV5Appearance()">Apply</button>
+          <button class="btn-cancel" onclick="closeV5Appearance()">Cancel</button>
         </div>
-        <button class="v5-theme-close" onclick="closeV5ThemePicker()"><i class="ph ph-x"></i></button>
       </div>
       
       
