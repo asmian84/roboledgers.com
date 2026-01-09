@@ -532,6 +532,7 @@ window.renderTxnImportV5Page = function () {
         text-align: center;
         font-family: 'Courier New', monospace;
         transition: all 0.2s;
+        text-transform: uppercase; /* Force uppercase display */
       }
       
       .v5-ref-input:focus {
