@@ -154,7 +154,7 @@ window.openAppearanceModal = function () {
     return;
   }
 
-  modal.style.display = 'block';
+  modal.style.display = 'flex';
 
   // Load saved settings
   const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
@@ -188,7 +188,7 @@ window.applyAppearance = function () {
   if (!grid) return;
 
   // Apply theme
-  grid.classlist.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
+  grid.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
     'theme-tracker', 'theme-neon', 'theme-ocean', 'theme-forest');
   if (theme) grid.classList.add('theme-' + theme);
 
@@ -1126,9 +1126,11 @@ window.renderTxnImportV5Page = function () {
         
         
         
-        /* Grid styling for print */
+        /* GRID CONTAINER - FLEX LAYOUT - Extended to bottom */
         .v5-grid-container,
         #v5-grid-container {
+          height: calc(100vh - 200px);
+          min-height: 500px;
           display: block !important;
           width: 100%;
           margin: 0;
