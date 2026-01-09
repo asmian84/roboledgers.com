@@ -1132,10 +1132,10 @@ window.renderTxnImportV5Page = function () {
               <i class="ph ph-dots-three-vertical"></i>
             </button>
             <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
-              <button class="menu-item" onclick="toggleV5ThemePicker(); toggleV5Menu(event);">
+              <div class="menu-item" onclick="toggleV5Appearance(); toggleV5Menu(event);">
                 <i class="ph ph-palette"></i>
                 Grid Appearance
-              </button>
+              </div>
               <button class="menu-item" onclick="undoV5(); toggleV5Menu(event);">
                 <i class="ph ph-arrow-counter-clockwise"></i>
                 Undo
@@ -1227,10 +1227,7 @@ window.renderTxnImportV5Page = function () {
           </button>
         </div>
       </div>
-      
-      <!-- THEME PICKER BAR (Multi-use) -->
-      <div class="v5-theme-picker-bar" id="v5-theme-picker-bar" style="display: none;">
-        <div class="v5-theme-info">
+
       <!-- Appearance Panel (Phase 3) -->
       <div class="v5-appearance-panel" id="v5-appearance-panel" style="display: none;">
         <div class="panel-header">🎨 Grid Appearance</div>
