@@ -447,12 +447,12 @@ window.renderTxnImportV5Page = function () {
         font-size: 1.125rem;
       }
       
-      /* UPLOAD ZONE - From data-import.js (responsive) */
+      /* UPLOAD ZONE - Sleeker (15% reduction) */
       .compact-upload-zone {
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 20px 24px;
+        gap: 12px;
+        padding: 14px 18px;
         background: white;
         border: 2px dashed #cbd5e1;
         border-radius: 8px;
@@ -468,6 +468,8 @@ window.renderTxnImportV5Page = function () {
       .upload-icon {
         flex-shrink: 0;
         color: #3b82f6;
+        width: 20px;
+        height: 20px;
       }
       
       .upload-text {
@@ -479,12 +481,12 @@ window.renderTxnImportV5Page = function () {
         display: block;
         font-weight: 600;
         color: #0f172a;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
       }
       
       .upload-sub {
         display: block;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         color: #64748b;
         margin-top: 2px;
       }
@@ -493,10 +495,10 @@ window.renderTxnImportV5Page = function () {
         background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
         border: none;
-        padding: 0.65rem 1.25rem;
-        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s;
         white-space: nowrap;
@@ -1280,7 +1282,7 @@ window.renderTxnImportV5Page = function () {
                ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.background='#f8fafc';"
                ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';"
                ondrop="handleV5DragDrop(event); this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';">
-            <svg class="upload-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="upload-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
