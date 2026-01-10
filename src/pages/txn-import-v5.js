@@ -1277,7 +1277,7 @@ window.renderTxnImportV5Page = function () {
         /* GRID CONTAINER - FLEX LAYOUT - Extended to bottom */
         .v5-grid-container,
         #v5-grid-container {
-          height: calc(100vh - 200px);
+          height: calc(100vh - 140px);
           min-height: 500px;
           display: block !important;
           width: 100%;
