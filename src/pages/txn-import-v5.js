@@ -3314,7 +3314,86 @@ window.initV5Grid = function () {
 
   // Update reconciliation card
   updateReconciliationCard();
+
+  // DEBUG: Initialize Grid Height Debugger
+  initGridDebugger();
 };
+
+/**
+ * DEBUG SYSTEM: Audit and monitor grid height issues
+ */
+function initGridDebugger() {
+  console.log('🔍 DEBUG: Initializing Grid Height Debugger...');
+
+  const targetId = 'v5-grid-container';
+  const grid = document.getElementById(targetId);
+
+  if (!grid) {
+    console.warn(`❌ DEBUG: Element #${targetId} not found!`);
+    return;
+  }
+
+  // 1. Audit Hierarchy
+  console.group('🏗️ Grid Hierarchy Audit');
+  let current = grid;
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current);
+    console.log(`Node: <${current.tagName.toLowerCase()} id="${current.id}" class="${current.className}">`, {
+      height: style.height,
+      minHeight: style.minHeight,
+      maxHeight: style.maxHeight,
+      display: style.display,
+      flex: style.flex,
+      overflow: style.overflow,
+      node: current
+    });
+    current = current.parentElement;
+  }
+  console.groupEnd();
+
+  // 2. Audit AG Grid Internals (if accessible)
+  const rootWrapper = grid.querySelector('.ag-root-wrapper');
+  if (rootWrapper) {
+    const style = window.getComputedStyle(rootWrapper);
+    console.log('📦 AG Grid Root Wrapper Styles:', {
+      height: style.height,
+      display: style.display,
+      flex: style.flex,
+      minHeight: style.minHeight
+    });
+  }
+
+  // 3. Monitor for Style Overrides (MutationObserver)
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+        const newStyle = grid.getAttribute('style');
+        console.warn('⚠️ DEBUG: Style attribute on grid was MODIFIED at runtime!', {
+          newStyle: newStyle,
+          stack: new Error().stack
+        });
+      }
+    });
+  });
+
+  observer.observe(grid, { attributes: true });
+  console.log('👀 DEBUG: MutationObserver active on grid style attribute.');
+
+  // 4. Check for fixed height collisions
+  const allStyles = Array.from(document.styleSheets)
+    .filter(sheet => {
+      try { return sheet.cssRules; } catch (e) { return false; }
+    })
+    .flatMap(sheet => Array.from(sheet.cssRules))
+    .filter(rule => rule.selectorText && rule.selectorText.includes(targetId));
+
+  if (allStyles.length > 0) {
+    console.log('📋 Existing CSS Rules for #' + targetId + ':', allStyles.map(r => ({
+      selector: r.selectorText,
+      css: r.style.cssText
+    })));
+  }
+}
 
 // ============================================
 // KEYBOARD SHORTCUTS
