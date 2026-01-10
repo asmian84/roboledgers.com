@@ -1293,6 +1293,22 @@ window.renderTxnImportV5Page = function () {
           display: flex !important;
           flex-direction: column !important;
           min-height: 0 !important;
+          height: 100% !important;
+        }
+        
+        /* Force AG Grid internal components to stretch */
+        #v5-grid-container .ag-root,
+        .v5-grid-container .ag-root {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+        }
+        
+        #v5-grid-container .ag-body-viewport,
+        .v5-grid-container .ag-body-viewport {
+          flex: 1 !important;
+          min-height: 0 !important;
         }
         
         .ag-header {
