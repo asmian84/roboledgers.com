@@ -1155,7 +1155,7 @@ window.renderTxnImportV5Page = function () {
       
       @media (max-width: 768px) {
         .v5-control-toolbar {
-          flex-wrap: wrap;
+          flex-wrap: wrap; /* Only affect flex when visible */
         }
         
         .v5-search-wrapper {
