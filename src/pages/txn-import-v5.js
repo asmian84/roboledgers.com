@@ -577,6 +577,31 @@ window.renderTxnImportV5Page = function () {
         box-shadow: 3px 3px 8px rgba(251, 192, 45, 0.3);
       }
       
+      /* NEW MODERN THEMES */
+      .ag-theme-ocean .ag-header,
+      .ag-theme-ocean .ag-header-cell {
+        background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%) !important;
+        color: white !important;
+      }
+      
+      .ag-theme-forest .ag-header,
+      .ag-theme-forest .ag-header-cell {
+        background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
+      }
+      
+      .ag-theme-sunset .ag-header,
+      .ag-theme-sunset .ag-header-cell {
+        background: linear-gradient(180deg, #f97316 0%, #ea580c 100%) !important;
+        color: white !important;
+      }
+      
+      .ag-theme-purple .ag-header,
+      .ag-theme-purple .ag-header-cell {
+        background: linear-gradient(180deg, #a855f7 0%, #9333ea 100%) !important;
+        color: white !important;
+      }
+      
       /* Classic Theme - uses default AG Grid styles */
       .ag-theme-classic { /* No custom styles */ }
       
