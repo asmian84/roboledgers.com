@@ -1311,6 +1311,16 @@ window.renderTxnImportV5Page = function () {
           min-height: 0 !important;
         }
         
+        /* CRITICAL: Main page wrapper must also use flex */
+        #app-content,
+        #main-content,
+        .page-content {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100vh !important;
+          overflow: hidden !important;
+        }
+        
         .ag-header {
           background: #f0f0f0 !important;
           border-bottom: 2px solid #000 !important;
