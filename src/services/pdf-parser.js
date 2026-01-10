@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    console.log("🚀 PDF Parser Script STARTING...");
+
     try {
 
         class PDFParser {
@@ -377,7 +377,7 @@
                     }
                 }
 
-                console.log(`🧠 Smart Credit Card Parser: Extracted ${transactions.length} transactions`);
+
                 return transactions;
             }
 
@@ -420,11 +420,15 @@
                     // Try MM/DD/YYYY format (Scotia/BMO Chequing)
                     // Format: MM/DD/YYYY Description [RefNumber] Withdrawal Deposit Balance
                     if (hasSlashDate) {
-                        // Match with optional reference numbers (e.g., TF 0000000022181093804, AP 0000000022233362595, NO.78783249)
-                        const match = trimmed.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2})$/);
+                        // Match with optional reference numbers
+                        // UPDATED: Support single digit month/day (1/2/2024) AND require dots for amounts
+                        const match = trimmed.match(/^(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2})$/);
                         if (match) {
                             const [, date, desc, withdrawal, deposit, balance] = match;
-                            const [month, day, fullYear] = date.split('/');
+                            const dateParts = date.split('/');
+                            const month = dateParts[0];
+                            const day = dateParts[1];
+                            const fullYear = dateParts[2];
 
                             // Clean description - remove transaction reference numbers
                             // Patterns: TF 0000000022181093804, AP 0000000022233362595, NO.78783249 001
@@ -447,7 +451,8 @@
 
                     // Try DD MMM format (RBC Chequing)
                     if (!transaction && hasDayMonth) {
-                        const match = trimmed.match(/^(\d{1,2})\s+([A-Z][a-z]{2})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)$/);
+                        // RBC/TD DD MMM format - Require literal dots for amounts
+                        const match = trimmed.match(/^(\d{1,2})\s+([A-Z][a-z]{2})\s+(.+?)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2}|-)$/);
                         if (match) {
                             const [, day, month, rawDesc, withdrawal, deposit, balance] = match;
                             const monthNum = months[month];
@@ -475,35 +480,50 @@
                     // Format: Dec 27   Online Transfer, TF 0005524890013997002   1,000.00   49.32
                     // Note: BMO has SINGLE amount column (not separate debit/credit) + balance
                     if (!transaction && hasMonthDay && /BMO|Bank of Montreal/i.test(text)) {
-                        // Match: Month Day   Description [with ref numbers]   Amount   Balance
-                        const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([\d,]+\.?\d{2})\s+([-]?[\d,]+\.?\d{2})$/);
+                        // Match: Month Day   Description [with ref numbers]   Amount.xx[-]   Balance.xx[-]
+                        // REFINED: Ensure Amount and Balance are strictly the last two numeric columns.
+                        // Added negative sign support (Leading OR Trailing) and stricter spacing.
+                        const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([-]?[\d,]+\.\d{2}[-]?)\s+([-]?[\d,]+\.\d{2}[-]?)$/);
                         if (match) {
-                            const [, month, day, rawDesc, amount, balance] = match;
+                            const [, month, day, rawDesc, amountStr, balanceStr] = match;
                             const monthNum = months[month];
                             if (monthNum !== undefined) {
                                 // Clean description - remove transaction reference numbers
+                                // Patterns: TF 0005524890013997002
                                 let cleanDesc = rawDesc
                                     .replace(/,?\s*(TF|AP|NO\.)\s*\d{10,}/g, '')  // Remove "TF 0005524890013997002"
-                                    .replace(/\s+\d{12,}/g, '')                     // Remove standalone long numbers
+                                    .replace(/\s+\d{10,}/g, '')                     // Remove any standalone long numbers
                                     .trim();
 
-                                const amt = parseFloat(amount.replace(/,/g, ''));
-                                const bal = parseFloat(balance.replace(/,/g, ''));
+                                // Parse amounts correctly handling leading OR trailing minus
+                                const parseBmoVal = (s) => {
+                                    let v = parseFloat(s.replace(/,/g, ''));
+                                    if (s.endsWith('-')) v = -Math.abs(v);
+                                    return v;
+                                };
+
+                                const amt = parseBmoVal(amountStr);
+                                const bal = parseBmoVal(balanceStr);
 
                                 // Determine if debit or credit by watching balance trend
                                 let type = 'debit';
                                 if (previousBalance !== null) {
-                                    // If balance increased, it's a credit (money in)
-                                    // If balance decreased, it's a debit (money out)
-                                    type = bal > previousBalance ? 'credit' : 'debit';
+                                    // Asset Account Logic:
+                                    // If balance increased, it's a DEBIT (money in)
+                                    // If balance decreased, it's a CREDIT (money out)
+                                    type = bal > previousBalance ? 'debit' : 'credit';
+                                } else {
+                                    // Fallback: If no previous balance, infer from amount sign
+                                    type = amt < 0 ? 'credit' : 'debit';
                                 }
                                 previousBalance = bal;
 
                                 transaction = {
                                     date: `${year}-${String(monthNum + 1).padStart(2, '0')}-${day.padStart(2, '0')}`,
                                     description: cleanDesc,
-                                    amount: amt,
-                                    type
+                                    amount: Math.abs(amt), // Keep positive for grid distribution
+                                    balance: bal,
+                                    type: type
                                 };
                             }
                         }
@@ -511,7 +531,8 @@
 
                     // Try MMM DD format (ATB, Servus, RBC)
                     if (!transaction && hasMonthDay) {
-                        const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([\d,]+\.?\d{2}|-)\s+(\$?[\d,]+\.?\d{2}|-)\s+\$?([\d,]+\.?\d{2})$/);
+                        // General MMM DD format - Require literal dots for amounts
+                        const match = trimmed.match(/^([A-Z][a-z]{2})\s+(\d{1,2})\s+(.+?)\s+([\d,]+\.\d{2}|-)\s+(\$?[\d,]+\.\d{2}|-)\s+\$?([\d,]+\.\d{2})$/);
                         if (match) {
                             const [, month, day, rawDesc, debit, credit, balance] = match;
                             const monthNum = months[month];
@@ -541,7 +562,7 @@
                     } else if (lastSeenDate) {
                         // TRY CARLESS FALLBACK: Pattern for lines WITH amounts but NO dates
                         // We look for [Description] [Withdrawal] [Deposit] [Balance]
-                        const fallbackMatch = trimmed.match(/^(.+?)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2}|-)\s+([\d,]+\.?\d{2})$/);
+                        const fallbackMatch = trimmed.match(/^(.+?)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2}|-)\s+([\d,]+\.\d{2})$/);
                         if (fallbackMatch) {
                             const [, desc, withdrawal, deposit, balance] = fallbackMatch;
                             // Ensure it's not a garbage header line that matched accidentally
@@ -560,7 +581,7 @@
                     }
                 }
 
-                console.log(`🧠 Smart Bank Account Parser: Extracted ${transactions.length} transactions`);
+
                 return transactions;
             }
 
@@ -572,7 +593,7 @@
              */
             async parsePDF(file, options = {}) {
                 try {
-                    console.log('📄 Starting PDF parsing...');
+
 
                     // Fallback for missing GlobalWorkerOptions (User fix)
                     if ((!window.pdfjsLib.GlobalWorkerOptions || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) && window.location.protocol !== 'file:') {
@@ -582,7 +603,7 @@
                     // 1. Load PDF
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    console.log(`📄 PDF loaded: ${pdf.numPages} pages`);
+
 
                     // 2. Extract text from all pages (PRESERVE LINE STRUCTURE)
                     let fullText = '';
@@ -620,7 +641,7 @@
                         fullText += '\n'; // Page break
                     }
 
-                    console.log(`📄 Extracted ${fullText.length} characters`);
+
 
                     // IMAGE CHECK (OCR Required)
                     if (fullText.trim().length < 100) {
@@ -631,21 +652,22 @@
                     const fileHash = this.hashContent(fullText);
 
                     // 2. DUPLICATE CHECK (Skip if requested by Data Junkie)
-                    if (!options.skipDuplicateCheck) {
-                        let isDup = false;
+                    // 2. DUPLICATE CHECK (Disabled by user request)
+                    // if (!options.skipDuplicateCheck) {
+                    //     let isDup = false;
 
-                        if (window.BrainStorage) {
-                            isDup = await window.BrainStorage.hasParsedFile(fileHash);
-                        } else {
-                            // Fallback to legacy
-                            isDup = this.isDuplicate(fileHash);
-                        }
+                    //     if (window.BrainStorage) {
+                    //         isDup = await window.BrainStorage.hasParsedFile(fileHash);
+                    //     } else {
+                    //         // Fallback to legacy
+                    //         isDup = this.isDuplicate(fileHash);
+                    //     }
 
-                        if (isDup) {
-                            console.warn(`🛑 Duplicate File Detected (Hash: ${fileHash}). Skipping.`);
-                            throw new Error('DUPLICATE_FILE: This document has already been processed.');
-                        }
-                    }
+                    //     if (isDup) {
+                    //         console.warn(`🛑 Duplicate File Detected (Hash: ${fileHash}). PROCEEDING anyway (Check Disabled).`);
+                    //         // throw new Error('DUPLICATE_FILE: This document has already been processed.');
+                    //     }
+                    // }
 
                     // 3. Identify bank
                     let bank = this.identifyBank(fullText);
@@ -686,7 +708,7 @@
                         };
                     }
 
-                    console.log(`🏦 Identified bank: ${bank.name} `);
+
 
                     // 4. Extract transactions & metadata
                     const result = this.extractTransactions(fullText, bank);
@@ -700,7 +722,7 @@
                         metadata = result.metadata;
                     }
 
-                    console.log(`✅ Extracted ${transactions.length} transactions`);
+
 
                     // 2. Extracted Validation (If generic failed to get anything)
                     if (transactions.length === 0) {
@@ -717,7 +739,7 @@
                         if (window.BrainStorage) {
                             try {
                                 await window.BrainStorage.markFileParsed(fileHash);
-                                console.log('🧠 File hash saved to Brain.');
+
                             } catch (e) {
                                 // Fallback
                                 this.saveHash(fileHash);
@@ -911,7 +933,6 @@
                 const yearMatch = text.match(/\b(20[2-3]\d)\b/);
                 if (yearMatch) {
                     year = parseInt(yearMatch[1]);
-                    console.log(`📅 Detected Year: ${year}`);
                 }
 
                 // 2. Extract Metadata
@@ -938,11 +959,9 @@
                 const newBalMatch = text.match(/NEW BALANCE[\s\S]*?\$?([\d,]+\.\d{2})/);
                 if (newBalMatch) metadata.newBalance = parseFloat(newBalMatch[1].replace(/,/g, ''));
 
-                console.log('📊 Extracted Metadata:', metadata);
-
                 // 3. Extract Transactions using matchAll
                 // Pattern: MMM DD MMM DD DESCRIPTION AMOUNT
-                const visaPattern = /([A-Z]{3})\s+(\d{1,2})\s+([A-Z]{3})\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})/g;
+                const visaPattern = /([A-Za-z]{3})\s+(\d{1,2})\s+([A-Za-z]{3})\s+(\d{1,2})\s+(.+?)\s+([-]?\$?[\d,]+\.?\d{2})/g;
 
                 const months = {
                     JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
@@ -988,7 +1007,6 @@
                     });
                 }
 
-                console.log(`🎯 RBC Visa Parser: Extracted ${transactions.length} transactions`);
                 return { transactions, metadata };
             }
 
@@ -998,11 +1016,6 @@
              */
             extractRBCTransactions(text) {
                 const transactions = [];
-
-                console.log(`🔍 RBC Parser: Starting extraction...`);
-                console.log(`📝 Text length: ${text.length} characters`);
-                console.log(`📄 First 500 chars: `, text.substring(0, 500));
-                console.log(`📄 Last 500 chars: `, text.substring(text.length - 500));
 
                 // 1. Better Year Detection
                 let startYear = new Date().getFullYear();
