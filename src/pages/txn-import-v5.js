@@ -1278,7 +1278,7 @@ window.renderTxnImportV5Page = function () {
         .v5-grid-container,
         #v5-grid-container {
           height: calc(100vh - 140px);
-          min-height: 600px;
+          min-height: 700px;
           display: flex !important;
           flex-direction: column;
           width: 100%;
@@ -3226,6 +3226,7 @@ window.initV5Grid = function () {
         bulkBar.style.display = 'none';
       }
     },
+    domLayout: 'normal',  // CRITICAL: Force grid to fill container, not auto-size to rows
     onGridReady: (params) => {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
