@@ -2028,10 +2028,17 @@ window.deselectAllV5 = function () {
 
 window.updateReconciliationCard = function () {
   const gridData = V5State.gridData || [];
+  const balanceCard = document.getElementById('v5-balances-card');
+
+  // Hide card if no data
   if (gridData.length === 0) {
-    console.log('⚠️ No grid data to update balance card');
+    if (balanceCard) balanceCard.style.display = 'none';
+    console.log('⚠️ No grid data - hiding balance card');
     return;
   }
+
+  // Show card when data exists
+  if (balanceCard) balanceCard.style.display = 'flex';
 
   // Calculate totals from Debit/Credit columns
   let totalIn = 0;  // Credits = money IN
