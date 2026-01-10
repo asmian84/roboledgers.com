@@ -689,7 +689,7 @@ window.renderTxnImportV5Page = function () {
 
       /* Control Toolbar - Conditional display, clean styling */
       .v5-control-toolbar {
-        display: none;
+        display: none; /* CONFIRMED: Already hidden by default */
         align-items: center;
         gap: 1rem;
         padding: 1rem 1.5rem;
