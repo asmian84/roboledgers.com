@@ -1716,10 +1716,10 @@ window.renderTxnImportV5Page = function () {
           min-height: 400px !important;
         }
         
-      /* Grid Container - FULL HEIGHT to 1px from bottom */
+      /* Grid Container - MAXIMIZED HEIGHT */
       .v5-grid-container {
         width: 100%;
-        height: calc(100vh - 200px);
+        height: calc(100vh - 140px);
         min-height: 600px;
         margin-top: 0.5rem;
         padding: 0 !important;
