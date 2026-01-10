@@ -2257,9 +2257,12 @@ window.loadSavedData = function () {
     if (V5State.gridData.length > 0) {
       initV5Grid();
 
-      // Show toolbar
+      // Show toolbar ONLY when data exists
       const toolbar = document.getElementById('v5-control-toolbar');
-      if (toolbar) toolbar.style.display = 'flex';
+      if (toolbar) {
+        toolbar.classList.add('show-data');
+        console.log('✅ Control toolbar shown - data loaded');
+      }
 
       // Update balances
       updateBalanceSummary();
