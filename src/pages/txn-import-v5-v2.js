@@ -348,6 +348,11 @@ window.renderTxnImportV5Page = function () {
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
       }
+      
+      /* AG Grid - Hide vertical lines between columns */
+      .ag-theme-alpine .ag-cell {
+        border-right-color: transparent !important;
+      }
 
       /* AG GRID THEMES */
       .ag-theme-alpine.theme-ledger { background: #f5f5dc; }
