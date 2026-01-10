@@ -1717,13 +1717,13 @@ window.renderTxnImportV5Page = function () {
         }
         
       /* Grid Container - MAXIMIZED HEIGHT */
-      .v5-grid-container {
-        width: 100%;
-        height: calc(100vh - 140px);
-        min-height: 600px;
-        margin-top: 0.5rem;
-        padding: 0 !important;
-      }
+        #v5-grid-container {
+          width: 100%;
+          height: calc(100vh - 140px);
+          min-height: 500px;
+          margin-top: 0.5rem;
+          padding: 0 !important;
+        }
         
         @media (max-width: 768px) {
           #v5-grid-container {
@@ -3247,7 +3247,7 @@ window.initV5Grid = function () {
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.position = 'relative';
-    container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
+    container.style.height = 'calc(100vh - 140px)'; // Fill viewport minus header/padding
     container.style.minHeight = '500px'; // Minimum height
     container.style.zIndex = '1';
     console.log('✅ Container forced to visible with height:', container.style.height);
