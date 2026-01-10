@@ -3946,11 +3946,29 @@ async function loadData() {
   const cached = await window.CacheManager.getTransactions();
 
   if (cached && cached.length > 0) {
+    console.log(`📦 Restored ${cached.length} transactions from cache`);
     V5State.gridData = cached;
+
+    // Auto-detect account type
+    V5State.accountType = detectAccountType(cached);
+
+    // Initialize grid with data
     initV5Grid();
+
+    // Update summary
+    updateReconciliationCard();
+
+    // Show toolbar
+    const toolbar = document.querySelector('.v5-control-toolbar');
+    if (toolbar) toolbar.classList.add('show-data');
+
+    // Hide empty state
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) emptyState.style.display = 'none';
   } else {
     // Show empty state
-    document.getElementById('v5-empty-state').style.display = 'flex';
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) emptyState.style.display = 'flex';
   }
 }
 
