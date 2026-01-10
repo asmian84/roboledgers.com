@@ -765,11 +765,14 @@ window.renderTxnImportV5Page = function () {
       /* MAIN CONTAINER - Match Data Import positioning + 10% zoom reduction */
       .txn-import-v5-container {
         padding: 2rem 2.5rem;
-        padding-top: 2rem;
+        padding-top: 1rem;
         transform: scale(0.9);
         transform-origin: top center;
         width: 111%;
         margin-left: -5.5%;
+        display: flex;
+        flex-direction: column;
+        min-height: 800px; /* Force minimum space for the scaled grid */
       }
 
       /* Page Container - removed, using above instead */
@@ -1208,6 +1211,58 @@ window.renderTxnImportV5Page = function () {
       }
       
       /* ========================================
+         PART 3.5: GRID HEIGHT FLEXIBILITY
+         ======================================== */
+        
+        /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
+        .v5-grid-container,
+        #v5-grid-container {
+          height: 800px !important;
+          min-height: 800px !important;
+          display: flex !important;
+          flex-direction: column;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          background: white; /* Ensure visibility */
+        }
+        
+        /* Force AG Grid to fill container */
+        #v5-grid-container .ag-root-wrapper,
+        .v5-grid-container .ag-root-wrapper {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0 !important;
+          height: 100% !important;
+        }
+        
+        /* Force AG Grid internal components to stretch */
+        #v5-grid-container .ag-root,
+        .v5-grid-container .ag-root {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+        }
+        
+        #v5-grid-container .ag-body-viewport,
+        .v5-grid-container .ag-body-viewport {
+          flex: 1 !important;
+          min-height: 0 !important;
+        }
+        
+        /* CRITICAL: Main page wrapper must also use flex */
+        #app-content,
+        #main-content,
+        .page-content {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100vh !important;
+          overflow: hidden !important;
+        }
+
+      /* ========================================
          PART 4: BANK STATEMENT PRINT VIEW
          ======================================== */
       
@@ -1270,55 +1325,6 @@ window.renderTxnImportV5Page = function () {
           margin: 5px 0;
           font-size: 10pt;
           color: #666;
-        }
-        
-        
-        
-        /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
-        .v5-grid-container,
-        #v5-grid-container {
-          height: 800px !important;
-          min-height: 800px !important;
-          display: flex !important;
-          flex-direction: column;
-          width: 100%;
-          margin: 0;
-          padding: 0;
-        }
-        
-        /* Force AG Grid to fill container */
-        #v5-grid-container .ag-root-wrapper,
-        .v5-grid-container .ag-root-wrapper {
-          flex: 1 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          min-height: 0 !important;
-          height: 100% !important;
-        }
-        
-        /* Force AG Grid internal components to stretch */
-        #v5-grid-container .ag-root,
-        .v5-grid-container .ag-root {
-          flex: 1 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          height: 100% !important;
-        }
-        
-        #v5-grid-container .ag-body-viewport,
-        .v5-grid-container .ag-body-viewport {
-          flex: 1 !important;
-          min-height: 0 !important;
-        }
-        
-        /* CRITICAL: Main page wrapper must also use flex */
-        #app-content,
-        #main-content,
-        .page-content {
-          display: flex !important;
-          flex-direction: column !important;
-          height: 100vh !important;
-          overflow: hidden !important;
         }
         
         .ag-header {
@@ -3337,7 +3343,9 @@ function initGridDebugger() {
   while (current && current !== document.body) {
     const style = window.getComputedStyle(current);
     console.log(`Node: <${current.tagName.toLowerCase()} id="${current.id}" class="${current.className}">`, {
-      height: style.height,
+      computedHeight: style.height,
+      offsetHeight: current.offsetHeight,
+      clientRect: current.getBoundingClientRect().height,
       minHeight: style.minHeight,
       maxHeight: style.maxHeight,
       display: style.display,
