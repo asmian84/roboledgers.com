@@ -3195,14 +3195,17 @@ window.initV5Grid = function () {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
       V5State.gridColumnApi = params.columnApi;
-      params.api.sizeColumnsToFit();
+      // Autofit columns to content (no truncation)
+      params.api.autoSizeAllColumns(false);
     },
     onGridSizeChanged: (params) => {
-      params.api.sizeColumnsToFit();
+      // Re-autofit on resize
+      params.api.autoSizeAllColumns(false);
     },
     onFirstDataRendered: (params) => {
       console.log('🎯 First data rendered - auto-sizing columns');
-      params.api.sizeColumnsToFit();
+      // Fit to content width (skipHeader = false includes header text)
+      params.api.autoSizeAllColumns(false);
 
       // Log grid state
       const rect = container.getBoundingClientRect();
