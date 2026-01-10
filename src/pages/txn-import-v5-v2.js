@@ -3105,6 +3105,7 @@ window.initV5Grid = function () {
       width: 130,
       minWidth: 130,
       suppressSizeToFit: true,
+      cellStyle: { paddingRight: '16px' }, // Breathing room at grid edge
       cellRenderer: (params) => {
         // Source file icon - dynamic based on type
         let sourceIcon = '';
