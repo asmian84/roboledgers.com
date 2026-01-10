@@ -354,7 +354,59 @@ window.renderTxnImportV5Page = function () {
         border-right-color: transparent !important;
       }
 
-      /* AG GRID THEMES */
+      /* AG GRID THEMES - Impactful & Industry-Standard */
+      
+      /* Dark Mode - True dark theme */
+      .ag-theme-alpine.theme-dark {
+        background: #1f2937;
+        color: #e5e7eb;
+      }
+      .ag-theme-alpine.theme-dark .ag-header {
+        background: #111827;
+        color: white;
+        border-bottom: 2px solid #374151;
+      }
+      .ag-theme-alpine.theme-dark .ag-row {
+        border-bottom: 1px solid #374151;
+      }
+      .ag-theme-alpine.theme-dark .ag-cell {
+        color: #e5e7eb;
+      }
+      
+      /* Mint Fresh - Soothing green theme */
+      .ag-theme-alpine.theme-mint {
+        background: #f0fdf4;
+      }
+      .ag-theme-alpine.theme-mint .ag-header {
+        background: #dcfce7;
+        border-bottom: 2px solid #86efac;
+      }
+      .ag-theme-alpine.theme-mint .ag-row {
+        border-bottom: 1px solid #d1fae5;
+      }
+      .ag-theme-alpine.theme-mint .ag-row-even {
+        background: #ecfdf5;
+      }
+      
+      /* High Contrast - Accessibility theme */
+      .ag-theme-alpine.theme-contrast {
+        background: white;
+      }
+      .ag-theme-alpine.theme-contrast .ag-header {
+        background: #000;
+        color: #fff;
+        font-weight: 700;
+        border-bottom: 3px solid #000;
+      }
+      .ag-theme-alpine.theme-contrast .ag-row {
+        border-bottom: 2px solid #000;
+      }
+      .ag-theme-alpine.theme-contrast .ag-cell {
+        font-weight: 600;
+        color: #000;
+      }
+      
+      /* Legacy themes kept for compatibility */
       .ag-theme-alpine.theme-ledger { background: #f5f5dc; }
       .ag-theme-alpine.theme-ledger .ag-row { border-bottom: 1px solid #8b7355; }
       .ag-theme-alpine.theme-ledger .ag-header { background: #d2b48c; }
