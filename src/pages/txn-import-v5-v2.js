@@ -689,7 +689,7 @@ window.renderTxnImportV5Page = function () {
 
       /* Control Toolbar - Conditional display, clean styling */
       .v5-control-toolbar {
-        display: none; /* CONFIRMED: Already hidden by default */
+        display: none !important; /* Force hide - override any external CSS */
         align-items: center;
         gap: 1rem;
         padding: 1rem 1.5rem;
@@ -699,7 +699,7 @@ window.renderTxnImportV5Page = function () {
       }
       
       .v5-control-toolbar.show-data {
-        display: flex;
+        display: flex !important; /* Override the forced hide */
       }
       
       /* Ref# Input - Top Label, Ultra Compact */
