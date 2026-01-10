@@ -3150,6 +3150,17 @@ window.initV5Grid = function () {
       flex: 1,
       minWidth: 100
     },
+    suppressRowHoverHighlight: false,
+    suppressCellFocus: false,
+    // Remove vertical grid lines for cleaner look
+    suppressColumnVirtualisation: false,
+    suppressHorizontalScroll: false,
+    // Default sort by Date (newest first)
+    initialState: {
+      sort: {
+        sortModel: [{ colId: 'date', sort: 'desc' }]
+      }
+    },
     rowSelection: 'multiple',
     animateRows: true,
     enableCellChangeFlash: true,
