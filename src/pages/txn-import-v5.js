@@ -1277,8 +1277,8 @@ window.renderTxnImportV5Page = function () {
         /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
         .v5-grid-container,
         #v5-grid-container {
-          height: calc(100vh - 140px);
-          min-height: 700px;
+          height: 800px !important;
+          min-height: 800px !important;
           display: flex !important;
           flex-direction: column;
           width: 100%;
