@@ -1465,6 +1465,10 @@ window.renderTxnImportV5Page = function () {
             <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Theme:</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:140px; padding:0.4rem;">
               <option value="">Default</option>
+              <option value="ocean">Ocean Blue</option>
+              <option value="forest">Forest Green</option>
+              <option value="sunset">Sunset Orange</option>
+              <option value="purple">Royal Purple</option>
               <option value="ledger">Ledger</option>
               <option value="postit">Post-it</option>
               <option value="rainbow">Rainbow</option>
@@ -1475,7 +1479,9 @@ window.renderTxnImportV5Page = function () {
             <select id="v5-font-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:130px; padding:0.4rem;">
               <option value="">Default</option>
               <option value="inter">Inter</option>
-              <option value="roboto-mono">Roboto Mono</option>
+              <option value="roboto">Roboto</option>
+              <option value="mono">Roboto Mono</option>
+              <option value="lato">Lato</option>
             </select>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
