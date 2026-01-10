@@ -3294,15 +3294,16 @@ window.initV5Grid = function () {
     if (gridContainer) {
       const resizeObserver = new ResizeObserver(() => {
         const newHeight = calculateGridHeight();
-        gridContainer.style.height = newHeight;
+        // DISABLED: This was overriding our CSS height: 800px !important
+        // gridContainer.style.height = newHeight;
         console.log('📐 Grid height recalculated:', newHeight);
       });
 
       // Observe viewport changes
       resizeObserver.observe(document.body);
 
-      // Initial calculation
-      gridContainer.style.height = calculateGridHeight();
+      // Initial calculation - DISABLED to let CSS take over
+      // gridContainer.style.height = calculateGridHeight();
     }
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
