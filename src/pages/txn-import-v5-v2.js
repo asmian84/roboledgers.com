@@ -842,6 +842,59 @@ window.renderTxnImportV5Page = function () {
         color: #60a5fa;
       }
       
+      /* Sleek Inline Appearance Bar */
+      .v5-appearance-bar {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 0.875rem 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+      }
+      
+      .v5-appearance-controls {
+        display: flex;
+        gap: 1.25rem;
+        align-items: center;
+        flex: 1;
+      }
+      
+      .v5-control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      
+      .v5-control-group label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .v5-control-group select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+      }
+      
+      .v5-control-group select:hover {
+        border-color: #3b82f6;
+      }
+      
+      .v5-control-group select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
       /* Bulk Operations Bar - Super Snug, Increased Height */
       .v5-bulk-bar {
         display: flex;
@@ -1461,33 +1514,31 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
 
-      <!-- GRID APPEARANCE PANEL (inline like bulk bar) -->
-      <div id="v5-appearance-panel" class="v5-bulk-bar" style="display:none; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-color: #3b82f6;">
-        <div class="v5-bulk-info">
-          <i class="ph ph-palette"></i>
-          <span style="color:#1e40af; font-weight:600;">🎨 Grid Appearance</span>
-        </div>
-        <div class="v5-bulk-actions" style="gap:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Theme:</label>
-            <select id="v5-theme-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:140px; padding:0.4rem;">
+
+      <!-- SLEEK INLINE APPEARANCE BAR -->
+      <div id="v5-appearance-panel" class="v5-appearance-bar" style="display:none;">
+        <i class="ph ph-palette" style="color:#3b82f6; font-size:1.25rem;" title="Grid Appearance"></i>
+        <div class="v5-appearance-controls">
+          <div class="v5-control-group">
+            <label>Theme</label>
+            <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
               <option value="">Default</option>
-              <option value="ledger">Ledger</option>
-              <option value="postit">Post-it</option>
-              <option value="rainbow">Rainbow</option>
+              <option value="dark">Dark Mode</option>
+              <option value="mint">Mint Fresh</option>
+              <option value="contrast">High Contrast</option>
             </select>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Font:</label>
-            <select id="v5-font-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:130px; padding:0.4rem;">
-              <option value="">Default</option>
+          <div class="v5-control-group">
+            <label>Font</label>
+            <select id="v5-font-dropdown" onchange="window.applyAppearance()">
+              <option value="">System</option>
               <option value="inter">Inter</option>
               <option value="roboto-mono">Roboto Mono</option>
             </select>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Size:</label>
-            <select id="v5-size-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:80px; padding:0.4rem;">
+          <div class="v5-control-group">
+            <label>Size</label>
+            <select id="v5-size-dropdown" onchange="window.applyAppearance()">
               <option value="xs">XS</option>
               <option value="s">S</option>
               <option value="m" selected>M</option>
@@ -1495,10 +1546,6 @@ window.renderTxnImportV5Page = function () {
               <option value="xl">XL</option>
             </select>
           </div>
-          <button class="btn-bulk-clear" onclick="window.closeAppearanceModal()" style="margin-left:8px;">
-            <i class="ph ph-x"></i>
-            Close
-          </button>
         </div>
       </div>
 
