@@ -1747,28 +1747,6 @@ window.renderTxnImportV5Page = function () {
           height: 100% !important;
           min-height: 400px !important;
         }
-        
-      /* Grid Container - MAXIMIZED HEIGHT */
-        #v5-grid-container {
-          width: 100%;
-          height: calc(100vh - 140px);
-          min-height: 500px;
-          margin-top: 0.5rem;
-          padding: 0 !important;
-        }
-        
-        @media (max-width: 768px) {
-          #v5-grid-container {
-            height: calc(100vh - 250px) !important;
-            min-height: 400px;
-          }
-        }
-        
-        @media (min-width: 1400px) {
-          #v5-grid-container {
-            height: calc(100vh - 240px) !important;
-          }
-        }
       </style>
 
       <!-- Empty State (shown when no data) -->
