@@ -3278,37 +3278,6 @@ window.initV5Grid = function () {
     // RESIZE OBSERVER - DYNAMIC HEIGHT CALCULATION FOR RESPONSIVE GRID
     // ===========================================================================
 
-    // Calculate dynamic grid height based on actual header elements
-    function calculateGridHeight() {
-      const header = document.querySelector('.v5-header');
-      const breadcrumbs = document.querySelector('.breadcrumb-nav');
-      const summaryBar = document.querySelector('.v5-summary-bar');
-
-      let headerHeight = 60; // Default fallback
-
-      if (header) headerHeight += header.offsetHeight;
-      if (breadcrumbs) headerHeight += breadcrumbs.offsetHeight;
-      if (summaryBar) headerHeight += summaryBar.offsetHeight;
-
-      return `calc(100vh - ${Math.max(headerHeight, 140)}px)`;
-    }
-
-    // Set up ResizeObserver for responsive grid height
-    const gridContainer = document.getElementById('v5-grid-container');
-    if (gridContainer) {
-      const resizeObserver = new ResizeObserver(() => {
-        const newHeight = calculateGridHeight();
-        // DISABLED: This was overriding our CSS height: 800px !important
-        // gridContainer.style.height = newHeight;
-        console.log('📐 Grid height recalculated:', newHeight);
-      });
-
-      // Observe viewport changes
-      resizeObserver.observe(document.body);
-
-      // Initial calculation - DISABLED to let CSS take over
-      // gridContainer.style.height = calculateGridHeight();
-    }
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
   }
@@ -3318,88 +3287,7 @@ window.initV5Grid = function () {
 
   // Update reconciliation card
   updateReconciliationCard();
-
-  // DEBUG: Initialize Grid Height Debugger
-  initGridDebugger();
 };
-
-/**
- * DEBUG SYSTEM: Audit and monitor grid height issues
- */
-function initGridDebugger() {
-  console.log('🔍 DEBUG: Initializing Grid Height Debugger...');
-
-  const targetId = 'v5-grid-container';
-  const grid = document.getElementById(targetId);
-
-  if (!grid) {
-    console.warn(`❌ DEBUG: Element #${targetId} not found!`);
-    return;
-  }
-
-  // 1. Audit Hierarchy
-  console.group('🏗️ Grid Hierarchy Audit');
-  let current = grid;
-  while (current && current !== document.body) {
-    const style = window.getComputedStyle(current);
-    console.log(`Node: <${current.tagName.toLowerCase()} id="${current.id}" class="${current.className}">`, {
-      computedHeight: style.height,
-      offsetHeight: current.offsetHeight,
-      clientRect: current.getBoundingClientRect().height,
-      minHeight: style.minHeight,
-      maxHeight: style.maxHeight,
-      display: style.display,
-      flex: style.flex,
-      overflow: style.overflow,
-      node: current
-    });
-    current = current.parentElement;
-  }
-  console.groupEnd();
-
-  // 2. Audit AG Grid Internals (if accessible)
-  const rootWrapper = grid.querySelector('.ag-root-wrapper');
-  if (rootWrapper) {
-    const style = window.getComputedStyle(rootWrapper);
-    console.log('📦 AG Grid Root Wrapper Styles:', {
-      height: style.height,
-      display: style.display,
-      flex: style.flex,
-      minHeight: style.minHeight
-    });
-  }
-
-  // 3. Monitor for Style Overrides (MutationObserver)
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-        const newStyle = grid.getAttribute('style');
-        console.warn('⚠️ DEBUG: Style attribute on grid was MODIFIED at runtime!', {
-          newStyle: newStyle,
-          stack: new Error().stack
-        });
-      }
-    });
-  });
-
-  observer.observe(grid, { attributes: true });
-  console.log('👀 DEBUG: MutationObserver active on grid style attribute.');
-
-  // 4. Check for fixed height collisions
-  const allStyles = Array.from(document.styleSheets)
-    .filter(sheet => {
-      try { return sheet.cssRules; } catch (e) { return false; }
-    })
-    .flatMap(sheet => Array.from(sheet.cssRules))
-    .filter(rule => rule.selectorText && rule.selectorText.includes(targetId));
-
-  if (allStyles.length > 0) {
-    console.log('📋 Existing CSS Rules for #' + targetId + ':', allStyles.map(r => ({
-      selector: r.selectorText,
-      css: r.style.cssText
-    })));
-  }
-}
 
 // ============================================
 // KEYBOARD SHORTCUTS
@@ -4008,14 +3896,10 @@ window.startFreshImport = async function () {
 // ============================================
 
 window.initTxnImportV5Grid = async function () {
-  // Auto-clear caches on page load for smooth UX
-  console.log('🔄 Auto-clearing caches...');
-  try {
-    await window.BrainStorage.clearAllFileHashes();
-    await window.CacheManager.clearAll();
-  } catch (e) {
-    console.warn('Could not clear caches:', e);
-  }
+  console.log('🔄 Initializing Txn Import V5...');
+
+  // 1. Try to load existing data
+  await loadData();
 
   // Show empty state - no cache restore
   document.getElementById('v5-empty-state').style.display = 'flex';
