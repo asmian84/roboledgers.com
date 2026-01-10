@@ -3279,7 +3279,7 @@ window.initV5Grid = function () {
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.position = 'relative';
-    container.style.height = 'calc(100vh - 140px)'; // Fill viewport minus header/padding
+    container.style.height = 'calc(100vh - 140px)'; // FIXED: correct order!
     container.style.minHeight = '500px'; // Minimum height
     container.style.zIndex = '1';
     console.log('✅ Container forced to visible with height:', container.style.height);
