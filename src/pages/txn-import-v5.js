@@ -3253,15 +3253,13 @@ window.initV5Grid = function () {
       populateCOADropdown(accountEditor.id);
     }
 
-    // FORCE container to be visible with explicit height!
+    // FORCE container to be visible - Height is handled by CSS (v5-grid-container)
     container.style.display = 'block';
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.position = 'relative';
-    container.style.height = 'calc(100vh - 140px)'; // FIXED: correct order!
-    container.style.minHeight = '500px'; // Minimum height
     container.style.zIndex = '1';
-    console.log('✅ Container forced to visible with height:', container.style.height);
+    console.log('✅ Container forced to visible. Height is now controlled by CSS.');
 
     // CRITICAL: Hide empty state now that grid has data
     const emptyState = document.getElementById('v5-empty-state');
