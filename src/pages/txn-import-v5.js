@@ -1274,19 +1274,25 @@ window.renderTxnImportV5Page = function () {
         
         
         
-        /* GRID CONTAINER - FLEX LAYOUT - Extended to bottom */
+        /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
         .v5-grid-container,
         #v5-grid-container {
           height: calc(100vh - 140px);
-          min-height: 500px;
-          display: block !important;
+          min-height: 600px;
+          display: flex !important;
+          flex-direction: column;
           width: 100%;
           margin: 0;
           padding: 0;
         }
         
-        .ag-root-wrapper {
-          border: 1px solid #000 !important;
+        /* Force AG Grid to fill container */
+        #v5-grid-container .ag-root-wrapper,
+        .v5-grid-container .ag-root-wrapper {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0 !important;
         }
         
         .ag-header {
