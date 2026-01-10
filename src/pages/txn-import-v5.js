@@ -3259,20 +3259,53 @@ window.initV5Grid = function () {
     console.log('✅ Container forced to visible with height:', container.style.height);
 
     // CRITICAL: Hide empty state now that grid has data
-    const emptyState = document.getElementById('v5-empty-state');
-    if (emptyState) {
-      emptyState.style.display = 'none';
-      console.log('✅ Empty state hidden');
-    }
-  } catch (error) {
-    console.error('❌ Failed to create AG Grid:', error);
+    emptyState.style.display = 'none';
+    console.log('✅ Empty state hidden');
   }
 
-  // Add keyboard shortcut listeners
-  setupV5KeyboardShortcuts();
+    // ===========================================================================
+    // RESIZE OBSERVER - DYNAMIC HEIGHT CALCULATION FOR RESPONSIVE GRID
+    // ===========================================================================
 
-  // Update reconciliation card
-  updateReconciliationCard();
+    // Calculate dynamic grid height based on actual header elements
+    function calculateGridHeight() {
+    const header = document.querySelector('.v5-header');
+    const breadcrumbs = document.querySelector('.breadcrumb-nav');
+    const summaryBar = document.querySelector('.v5-summary-bar');
+
+    let headerHeight = 60; // Default fallback
+
+    if (header) headerHeight += header.offsetHeight;
+    if (breadcrumbs) headerHeight += breadcrumbs.offsetHeight;
+    if (summaryBar) headerHeight += summaryBar.offsetHeight;
+
+    return `calc(100vh - ${Math.max(headerHeight, 140)}px)`;
+  }
+
+  // Set up ResizeObserver for responsive grid height
+  const gridContainer = document.getElementById('v5-grid-container');
+  if (gridContainer) {
+    const resizeObserver = new ResizeObserver(() => {
+      const newHeight = calculateGridHeight();
+      gridContainer.style.height = newHeight;
+      console.log('📐 Grid height recalculated:', newHeight);
+    });
+
+    // Observe viewport changes
+    resizeObserver.observe(document.body);
+
+    // Initial calculation
+    gridContainer.style.height = calculateGridHeight();
+  }
+} catch (error) {
+  console.error('❌ Failed to create AG Grid:', error);
+}
+
+// Add keyboard shortcut listeners
+setupV5KeyboardShortcuts();
+
+// Update reconciliation card
+updateReconciliationCard();
 };
 
 // ============================================
