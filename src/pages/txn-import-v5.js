@@ -1276,7 +1276,7 @@ window.renderTxnImportV5Page = function () {
         
         /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
         .v5-grid-container,
-        #sample-v5-grid-container {
+        #v5-grid-container {
           height: 800px !important;
           min-height: 800px !important;
           display: flex !important;
@@ -1287,7 +1287,7 @@ window.renderTxnImportV5Page = function () {
         }
         
         /* Force AG Grid to fill container */
-        #sample-v5-grid-container .ag-root-wrapper,
+        #v5-grid-container .ag-root-wrapper,
         .v5-grid-container .ag-root-wrapper {
           flex: 1 !important;
           display: flex !important;
@@ -1297,7 +1297,7 @@ window.renderTxnImportV5Page = function () {
         }
         
         /* Force AG Grid internal components to stretch */
-        #sample-v5-grid-container .ag-root,
+        #v5-grid-container .ag-root,
         .v5-grid-container .ag-root {
           flex: 1 !important;
           display: flex !important;
@@ -1305,7 +1305,7 @@ window.renderTxnImportV5Page = function () {
           height: 100% !important;
         }
         
-        #sample-v5-grid-container .ag-body-viewport,
+        #v5-grid-container .ag-body-viewport,
         .v5-grid-container .ag-body-viewport {
           flex: 1 !important;
           min-height: 0 !important;
