@@ -4409,7 +4409,9 @@ window.popOutV5Grid = function () {
         function closePopout() {
           opener.popInV5Grid();
           window.close();
-        } {
+        }
+
+        // ===== APPEARANCE FUNCTION (OLD - REMOVE THIS BLOCK) =====
           const theme = document.getElementById('popup-theme-dropdown').value;
           const font = document.getElementById('popup-font-dropdown').value;
           const size = document.getElementById('popup-size-dropdown').value;
