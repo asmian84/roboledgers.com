@@ -3274,11 +3274,11 @@ window.initV5Grid = function () {
     // Remove vertical grid lines for cleaner look
     suppressColumnVirtualisation: false,
     suppressHorizontalScroll: false,
-    // Default sort by Date (newest first)
+    // Default sort by Date (oldest first)
     initialState: {
-      sort: [
-        { colId: 'date', sort: 'asc' } // Ascending = oldest first
-      ]
+      sort: {
+        sortModel: [{ colId: 'date', sort: 'asc' }]
+      }
     },
     rowSelection: 'multiple',
     animateRows: true,
