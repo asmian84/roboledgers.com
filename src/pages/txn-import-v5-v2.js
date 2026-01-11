@@ -759,30 +759,33 @@ window.renderTxnImportV5Page = function () {
         display: flex !important; /* Override the forced hide */
       }
       
-      /* Ref# Input - Top Label, Ultra Compact */
+      /* Ref# Input - Horizontal alignment with Search */
       .v5-ref-input-wrapper {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+        flex-direction: row !important; /* Force horizontal */
+        align-items: center !important;
+        gap: 8px;
         flex-shrink: 0;
+        height: 36px;
       }
       
       .v5-ref-input-wrapper label {
-        font-size: 0.625rem;
-        font-weight: 700;
+        font-size: 0.75rem;
+        font-weight: 600;
         color: #6b7280;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
         line-height: 1;
+        margin: 0;
       }
       
       .v5-ref-input {
-        width: 48px;
-        padding: 0.375rem 0.5rem;
-        border: 1px solid #d1d5db;
+        width: 80px;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
         border-radius: 4px;
-        font-size: 0.875rem;
+        font-size: 14px;
+        height: 32px;
         font-weight: 600;
         text-align: center;
         font-family: 'Courier New', monospace;
