@@ -4061,7 +4061,7 @@ window.popOutV5Grid = function () {
 
 
 window.popInV5Grid = function () {
-  const gridContainer = document.getElementById('v5-grid-container');
+
   if (!gridContainer) {
     console.error('Grid container not found');
     return;
