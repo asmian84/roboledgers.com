@@ -1523,14 +1523,6 @@ window.renderTxnImportV5Page = function () {
                  oninput="window.handleV5Search(event)">
         </div>
         
-        <!-- Appearance Toggle Button (before balances) -->
-        <button class="v5-toolbar-btn" 
-                onclick="window.openAppearanceModal()" 
-                title="Grid Appearance"
-                style="padding: 0.5rem 0.75rem; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; margin-left: auto;">
-          <i class="ph ph-palette" style="font-size: 1.125rem; color: #3b82f6;"></i>
-        </button>
-        
         <!-- Right: Balances (Moved from header) -->
         <div class="v5-balances-card" id="v5-balances-card">
           <div class="v5-balance-item">
