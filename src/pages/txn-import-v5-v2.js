@@ -3953,8 +3953,32 @@ window.popOutV5Grid = function () {
 
   console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
 
-  // Hide grid in main window
+  // Hide in-page grid
   gridContainer.style.display = 'none';
+
+  // Show Pop-In overlay
+  const popInOverlay = document.createElement('div');
+  popInOverlay.id = 'v5-popin-overlay';
+  popInOverlay.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    margin: 2rem;
+    cursor: pointer;
+  `;
+  popInOverlay.innerHTML = `
+    <div style="text-align: center; color: white;">
+      <i class="ph ph-arrow-square-in" style="font-size: 64px; margin-bottom: 1rem;"></i>
+      <h2 style="margin: 0 0 0.5rem 0; font-size: 24px;">Grid Popped Out</h2>
+      <p style="margin: 0; opacity: 0.9; font-size: 14px;">Click here to bring it back</p>
+    </div>
+  `;
+  popInOverlay.onclick = () => window.popInV5Grid();
+  gridContainer.parentElement.insertBefore(popInOverlay, gridContainer);
 
   // Create popout window
   const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
@@ -4356,6 +4380,25 @@ window.popOutV5Grid = function () {
 
         // Column defs from main window
         const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
+        
+        // POPULATE DEBUG PANEL IMMEDIATELY (before DOMContentLoaded)
+        const debugInfo = {
+          'Grid Data Length': gridData.length,
+          'Column Defs Count': columnDefs.length,
+          'Opening Balance': openingBalance,
+          'Sample Data (first row)': gridData[0] ? JSON.stringify(gridData[0]).substring(0, 150) + '...' : 'EMPTY'
+        };
+        
+        let debugHtml = '';
+        for (const [key, value] of Object.entries(debugInfo)) {
+          debugHtml += '<div><strong>' + key + ':</strong> ' + value + '</div>';
+        }
+        
+        // Update immediately (runs before DOMContentLoaded)
+        setTimeout(() => {
+          const debugEl = document.getElementById('debug-content');
+          if (debugEl) debugEl.innerHTML = debugHtml;
+        }, 100);
 
         const gridOptions = {
           columnDefs,
@@ -4534,7 +4577,12 @@ window.popInV5Grid = function () {
   // Close popout if open
   if (V5State.popoutWindow && !V5State.popoutWindow.closed) {
     V5State.popoutWindow.close();
+    V5State.popoutWindow = null;
   }
+
+  // Remove Pop-In overlay
+  const overlay = document.getElementById('v5-popin-overlay');
+  if (overlay) overlay.remove();
 
   // Show in-page grid
   document.getElementById('v5-grid-container').style.display = 'block';
