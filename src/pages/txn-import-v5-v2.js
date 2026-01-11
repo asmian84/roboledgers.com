@@ -3110,9 +3110,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Ref#',
       field: 'refNumber',
-      flex: 1,
-      minWidth: 120,
-      maxWidth: 180,
+      width: 100,
       // Sort numerically (001, 002, 003) not alphabetically
       comparator: (valueA, valueB) => {
         const numA = parseInt(valueA) || 0;
@@ -3130,7 +3128,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Date',
       field: 'date',
-      width: 120,
+      width: 110,
       editable: true,
       valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
@@ -3138,15 +3136,13 @@ window.initV5Grid = function () {
       headerName: 'Description',
       field: 'description',
       editable: true,
-      flex: 2,
-      minWidth: 200,
-      maxWidth: 400, // Prevent excessive width
+      width: 280,
       cellEditor: 'agTextCellEditor'
     },
     {
       headerName: 'Debit',
       field: 'debit',
-      width: 120,
+      width: 100,
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3164,7 +3160,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Credit',
       field: 'credit',
-      width: 120,
+      width: 100,
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3182,7 +3178,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Balance',
       field: 'balance',
-      width: 130,
+      width: 110,
       editable: false,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
