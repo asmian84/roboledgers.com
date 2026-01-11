@@ -10,6 +10,7 @@ class BreadcrumbManager {
             '': 'Home',
             'home': 'Home',
             'data-import': 'Data Import',
+            'txn-import-v5': 'Transactions',
             'transactions': 'Transactions',
             'vendors': 'Vendors',
             'accounts': 'Accounts',
@@ -67,7 +68,7 @@ class BreadcrumbManager {
         const breadcrumbs = this._generateBreadcrumbs(path, params);
         this.container.innerHTML = this._renderBreadcrumbs(breadcrumbs);
 
-        console.log('🍞 Breadcrumbs updated:', breadcrumbs.map(b => b.label).join(' › '));
+
     }
 
     /**
@@ -200,4 +201,4 @@ class BreadcrumbManager {
 // Create global breadcrumb manager
 window.breadcrumbManager = new BreadcrumbManager();
 
-console.log('🍞 Breadcrumb system ready');
+
