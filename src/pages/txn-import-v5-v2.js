@@ -4440,8 +4440,17 @@ window.applyAppearance = function () {
     grid.style.fontFamily = font;
   }
 
-  // CRITICAL FIX: Font-size must be injected as CSS to affect ALL cells
+  // CRITICAL FIX: Map dropdown values to actual CSS pixel values
   if (size) {
+    const sizeMap = {
+      'xs': '11px',
+      's': '12px',
+      'm': '13px',
+      'l': '14px',
+      'xl': '16px'
+    };
+    const cssSize = sizeMap[size] || '13px'; // Default to medium if invalid
+
     // Remove old dynamic style if exists
     let styleEl = document.getElementById('v5-grid-size-override');
     if (styleEl) styleEl.remove();
@@ -4450,10 +4459,10 @@ window.applyAppearance = function () {
     styleEl = document.createElement('style');
     styleEl.id = 'v5-grid-size-override';
     styleEl.textContent = `
-            .ag-theme-alpine { --ag-font-size: ${size} !important; }
+            .ag-theme-alpine { --ag-font-size: ${cssSize} !important; }
             .ag-theme-alpine .ag-header-cell-text,
             .ag-theme-alpine .ag-cell { 
-              font-size: ${size} !important; 
+              font-size: ${cssSize} !important; 
             }
           `;
     document.head.appendChild(styleEl);
