@@ -829,17 +829,19 @@ window.renderTxnImportV5Page = function () {
       .v5-search-wrapper i {
         position: absolute;
         left: 0.75rem;
+        left: 12px;
         color: #9ca3af;
-        font-size: 1.125rem;
+        pointer-events: none;
+        font-size: 16px;
       }
       
       .v5-search-input {
-        width: 100%;
-        padding: 0.625rem 0.75rem 0.625rem 2.5rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        transition: all 0.2s;
+        flex: 1;
+        padding: 8px 12px 8px 36px; /* Extra left padding for icon */
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        height: 36px;
       }
       
       .v5-search-input:focus {
