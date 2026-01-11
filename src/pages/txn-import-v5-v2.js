@@ -3939,162 +3939,40 @@ window.confirmStartOver = async function () {
 };
 
 window.popOutV5Grid = function () {
-  // Validate grid has data
+  const gridContainer = document.getElementById('v5-grid-container');
+  if (!gridContainer) {
+    console.error('Grid container not found');
+    return;
+  }
+
+  // CRITICAL: Don't allow popup on empty grid
   if (!V5State.gridData || V5State.gridData.length === 0) {
-    console.warn('⚠️ Cannot pop out: grid is empty');
+    console.warn('⚠️ No grid to popout - Please load transaction data first');
     return;
   }
 
   console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
 
-  // Hide in-page grid
-  document.getElementById('v5-grid-container').style.display = 'none';
+  // Hide grid in main window
+  gridContainer.style.display = 'none';
 
-  // Open popup
-  const width = Math.min(window.screen.width * 0.9, 1600);
-  const height = Math.min(window.screen.height * 0.9, 900);
-  const left = (window.screen.width - width) / 2;
-  const top = (window.screen.height - height) / 2;
+  // Create popout window
+  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
 
-  V5State.popoutWindow = window.open(
-    '',
-    'V5GridPopout',
-    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-  );
-
-  if (!V5State.popoutWindow) {
-    console.error('❌ Popup blocked by browser');
-    document.getElementById('v5-grid-container').style.display = 'block';
+  if (!popOutWindow) {
+    alert('Popup blocked! Please allow popups for this site.');
     return;
   }
 
-  // Write popup HTML
-  V5State.popoutWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Transactions Grid - Popout</title>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.min.css"/>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.min.css"/>
-      <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css"/>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        #popout-header { position: sticky; top: 0; z-index: 100; background: white; }
-        #popout-grid { width: 100%; height: calc(100vh - 140px); }
-      </style>
-    </head>
-    <body>
-      <!-- Exact copy of main header -->
-      <div id="popout-header">${document.getElementById('v5-main-header').outerHTML}</div>
-      <div id="popout-toolbar">${document.getElementById('v5-control-toolbar').outerHTML}</div>
-      
-      <div id="popout-grid" class="ag-theme-alpine"></div>
+  // Store reference
+  V5State.popoutWindow = popOutWindow;
 
-      <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
-      <script>
-        const opener = window.opener;
-        let gridApi;
-        
-        const columnDefs = opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
-        const gridData = opener.V5State?.gridData || [];
-        
-        console.log('✅ Popup: Loaded', gridData.length, 'rows');
-        
-        const gridOptions = {
-          columnDefs,
-          rowData: gridData,
-          defaultColDef: { sortable: true, filter: true, resizable: true },
-          rowSelection: 'multiple',
-          onCellValueChanged: (params) => {
-            opener.updateV5DataFromPopout(gridData);
-            updateBalances();
-          }
-        };
-        
-        document.addEventListener('DOMContentLoaded', () => {
-          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-          
-         const mainGrid = opener.document.querySelector('.ag-theme-alpine');
-          const popupGrid = document.querySelector('.ag-theme-alpine');
-          if (mainGrid && popupGrid) {
-            const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
-            themeClasses.forEach(c => popupGrid.classList.add(c));
-          }
-          
-          updateBalances();
-          console.log('✅ Popup ready');
-        });
-        
-        window.onbeforeunload = () => {
-          if (opener && !opener.closed) opener.popInV5Grid();
-        };
-        
-        function updateBalances() {
-          const data = opener.V5State?.gridData || [];
-          const opening = opener.V5State?.openingBalance || 0;
-          
-          let debit = 0, credit = 0;
-          data.forEach(t => {
-            debit += parseFloat(t.Debit || t.debit) || 0;
-            credit += parseFloat(t.Credit || t.credit) || 0;
-          });
-          
-          const ending = opening - debit + credit;
-          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
-          
-          document.getElementById('popup-opening').textContent = fmt(opening);
-          document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
-          document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
-          document.getElementById('popup-ending').textContent = fmt(ending);
-        }
-        
-        function closePopout() {
-          opener.popInV5Grid();
-          window.close();
-        }
-      </script>
-    </body>
-    </html>
-  `);
-};
+  // Get current appearance settings from main window
+  const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
+  const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
+  const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
 
-
-window.popInV5Grid = function () {
-
-  // Close popout if open
-  console.error('Grid container not found');
-  return;
-}
-
-// CRITICAL: Don't allow popup on empty grid
-if (!V5State.gridData || V5State.gridData.length === 0) {
-  console.warn('⚠️ No grid to popout - Please load transaction data first');
-  return;
-}
-
-console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
-
-// Hide grid in main window
-gridContainer.style.display = 'none';
-
-// Create popout window
-const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
-
-if (!popOutWindow) {
-  alert('Popup blocked! Please allow popups for this site.');
-  return;
-}
-
-// Store reference
-V5State.popoutWindow = popOutWindow;
-
-// Get current appearance settings from main window
-const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
-const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
-const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
-
-popOutWindow.document.write(`
+  popOutWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
@@ -4464,170 +4342,89 @@ popOutWindow.document.write(`
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
-        // Use window.opener for all data and functions
-        const opener = window.opener;
+        const gridData = ${JSON.stringify(V5State.gridData)};
+        const openingBalance = ${V5State.openingBalance || 0};
         let gridApi;
-        
-        const columnDefs = opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
-        const gridData = opener.V5State?.gridData || [];
-        const openingBalance = opener.V5State?.openingBalance || 0;
-        
-        console.log('✅ Popup: Loaded', gridData.length, 'rows from main window');
-        
+
+        // Column defs from main window
+        const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
+
         const gridOptions = {
-      };
-
-
-window.popInV5Grid = function () {
+          columnDefs,
           rowData: gridData,
           defaultColDef: { sortable: true, filter: true, resizable: true },
           rowSelection: 'multiple',
           onCellValueChanged: (params) => {
-            opener.updateV5DataFromPopout(gridData);
+            // Sync to parent immediately
+            window.opener.updateV5DataFromPopout(gridData);
             updateBalances();
           }
         };
         
         document.addEventListener('DOMContentLoaded', () => {
+          console.log('Popup: DOMContentLoaded - gridData length:', gridData.length);
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           
-          // Copy theme from main window
-          const mainGrid = opener.document.querySelector('.ag-theme-alpine');
-          const popupGrid = document.querySelector('.ag-theme-alpine');
-          if (mainGrid && popupGrid) {
-            const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
-            themeClasses.forEach(c => popupGrid.classList.add(c));
-          }
+          // Set initial appearance from main window
+          const themeDropdown = document.getElementById('popup-theme-dropdown');
+          const fontDropdown = document.getElementById('popup-font-dropdown');
+          const sizeDropdown = document.getElementById('popup-size-dropdown');
           
+          if (themeDropdown) themeDropdown.value = '${currentTheme}';
+          if (fontDropdown) fontDropdown.value = '${currentFont}';
+          if (sizeDropdown) sizeDropdown.value = '${currentSize}';
+          
+          // CRITICAL: Apply appearance immediately after setting values
+          applyAppearance();
+          
+          // Initial balance calculation
           updateBalances();
-          console.log('✅ Popup ready with', gridData.length, 'rows');
+          
+          console.log('Popup: Grid initialized with', gridData.length, 'rows');
         });
         
-        // Auto pop-in on close
-        window.onbeforeunload = () => {
-          if (opener && !opener.closed) opener.popInV5Grid();
+        // CRITICAL: Auto pop-in when popup window closes
+        window.onbeforeunload = function() {
+          if (window.opener && !window.opener.closed) {
+            window.opener.popInV5Grid();
+          }
         };
-        
-        function updateBalances() {
-          const data = opener.V5State?.gridData || [];
-          const opening = opener.V5State?.openingBalance || 0;
+
+        // ===== APPEARANCE FUNCTION =====
+        function applyAppearance() {
+          const theme = document.getElementById('popup-theme-dropdown').value;
+          const font = document.getElementById('popup-font-dropdown').value;
+          const size = document.getElementById('popup-size-dropdown').value;
           
-          let debit = 0, credit = 0;
-          data.forEach(t => {
-            debit += parseFloat(t.Debit || t.debit) || 0;
-            credit += parseFloat(t.Credit || t.credit) || 0;
-          });
+          const grid = document.querySelector('.ag-theme-alpine');
+          if (!grid) return;
           
-          const ending = opening - debit + credit;
-          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+          // Remove all existing theme classes
+          const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
+          classesToRemove.forEach(cls => grid.classList.remove(cls));
           
-          document.getElementById('popup-opening').textContent = fmt(opening);
-          document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
-          document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
-          document.getElementById('popup-ending').textContent = fmt(ending);
-        }
-        
-        function closePopout() {
-          opener.popInV5Grid();
-          window.close();
-        }
-      </script>
-    </body>
-  </html>
-  `);
-
-
-};
-
-
-
-columnDefs,
-  rowData: gridData,
-    defaultColDef: { sortable: true, filter: true, resizable: true },
-rowSelection: 'multiple',
-  onCellValueChanged: (params) => {
-    // Sync to parent immediately
-    window.opener.updateV5DataFromPopout(gridData);
-    updateBalances();
-  }
-  };
-
-document.addEventListener('DOMContentLoaded', () => {
-  const data = getGridData();
-  console.log('✅ Popup: Loading', data.length, 'rows from window.opener');
-
-  gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-
-  // Apply theme from main window
-  const mainGrid = opener.document.querySelector('.ag-theme-alpine');
-  const popupGrid = document.querySelector('.ag-theme-alpine');
-  if (mainGrid && popupGrid) {
-    const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
-    themeClasses.forEach(c => popupGrid.classList.add(c));
-  }
-
-  updateBalances();
-  console.log('✅ Popup ready');
-});
-
-// CRITICAL: Auto pop-in on close
-window.onbeforeunload = () => {
-  if (opener && !opener.closed) opener.popInV5Grid();
-};
-
-// ===== EFFICIENT: Reuse main window's balance calculation =====
-function updateBalances() {
-  const data = getGridData();
-  const opening = opener.V5State?.openingBalance || 0;
-
-  let debit = 0, credit = 0;
-  data.forEach(t => {
-    debit += parseFloat(t.Debit || t.debit) || 0;
-    credit += parseFloat(t.Credit || t.credit) || 0;
-  });
-
-  const ending = opening - debit + credit;
-  const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  document.getElementById('popup-opening').textContent = fmt(opening);
-  document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
-  document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
-  document.getElementById('popup-ending').textContent = fmt(ending);
-}
-
-// ===== GRID ACTIONS (minimal wrappers) =====
-function closePopout() {
-  opener.popInV5Grid();
-  window.close();
-}
-
-// ===== BALANCE CALCULATION =====
-
-
-
-
-// Add new theme
-if (theme) {
-  grid.classList.add('theme-' + theme);
-}
-
-// Apply font
-if (font) {
-  grid.style.setProperty('--ag-font-family', font);
-  grid.style.fontFamily = font;
-}
-
-// Apply size with mapping
-if (size) {
-  const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
-  const cssSize = sizeMap[size] || '13px';
-
-  let styleEl = document.getElementById('popup-size-override');
-  if (styleEl) styleEl.remove();
-
-  styleEl = document.createElement('style');
-  styleEl.id = 'popup-size-override';
-  styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
+          // Add new theme
+          if (theme) {
+            grid.classList.add('theme-' + theme);
+          }
+          
+          // Apply font
+          if (font) {
+            grid.style.setProperty('--ag-font-family', font);
+            grid.style.fontFamily = font;
+          }
+          
+          // Apply size with mapping
+          if (size) {
+            const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
+            const cssSize = sizeMap[size] || '13px';
+            
+            let styleEl = document.getElementById('popup-size-override');
+            if (styleEl) styleEl.remove();
+            
+            styleEl = document.createElement('style');
+            styleEl.id = 'popup-size-override';
+            styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
               .ag-theme-alpine .ag-header-cell-text,
               .ag-theme-alpine .ag ag-cell { font-size: \${cssSize} !important; }\`;
             document.head.appendChild(styleEl);
