@@ -194,33 +194,62 @@ window.applyAppearance = function () {
   const grid = document.querySelector('.ag-theme-alpine');
   if (!grid) return;
 
-  // Apply industry-standard theme
-  grid.classList.remove('ag-theme-balham', 'ag-theme-material', 'ag-theme-dark',
-    'grid-theme-excel', 'grid-theme-tableau');
+  // Reset to base alpine class
+  grid.className = 'ag-theme-alpine';
 
-  if (theme === 'balham') {
-    grid.classList.replace('ag-theme-alpine', 'ag-theme-balham');
-  } else if (theme === 'material') {
-    grid.classList.replace('ag-theme-alpine', 'ag-theme-material');
+  // Apply industry-standard Material Design color themes
+  if (theme === 'material') {
+    // Google Material Design
+    grid.style.setProperty('--ag-background-color', '#ffffff');
+    grid.style.setProperty('--ag-foreground-color', '#212121');
+    grid.style.setProperty('--ag-header-background-color', '#f5f5f5');
+    grid.style.setProperty('--ag-header-foreground-color', '#424242');
+    grid.style.setProperty('--ag-border-color', '#e0e0e0');
   } else if (theme === 'dark') {
-    grid.classList.replace('ag-theme-alpine', 'ag-theme-alpine-dark');
-  } else if (theme === 'excel') {
-    grid.classList.add('grid-theme-excel');
-  } else if (theme === 'tableau') {
-    grid.classList.add('grid-theme-tableau');
+    // Material Dark
+    grid.style.setProperty('--ag-background-color', '#121212');
+    grid.style.setProperty('--ag-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-header-background-color', '#1e1e1e');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#1a1a1a');
+  } else if (theme === 'blue-gray') {
+    // Material Blue Gray
+    grid.style.setProperty('--ag-background-color', '#eceff1');
+    grid.style.setProperty('--ag-foreground-color', '#263238');
+    grid.style.setProperty('--ag-header-background-color', '#607d8b');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#cfd8dc');
+  } else if (theme === 'indigo') {
+    // Material Indigo
+    grid.style.setProperty('--ag-background-color', '#e8eaf6');
+    grid.style.setProperty('--ag-foreground-color', '#1a237e');
+    grid.style.setProperty('--ag-header-background-color', '#3f51b5');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#c5cae9');
+  } else if (theme === 'slate') {
+    // Tailwind Slate Professional
+    grid.style.setProperty('--ag-background-color', '#f8fafc');
+    grid.style.setProperty('--ag-foreground-color', '#0f172a');
+    grid.style.setProperty('--ag-header-background-color', '#334155');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#f1f5f9');
   } else {
-    // Reset to default alpine
-    grid.className = 'ag-theme-alpine';
+    // Default - remove all custom properties
+    grid.style.removeProperty('--ag-background-color');
+    grid.style.removeProperty('--ag-foreground-color');
+    grid.style.removeProperty('--ag-header-background-color');
+    grid.style.removeProperty('--ag-header-foreground-color');
+    grid.style.removeProperty('--ag-border-color');
+    grid.style.removeProperty('--ag-odd-row-background-color');
   }
 
-  // Apply professional fonts
+  // Apply professional web fonts  
   const fonts = {
-    'segoe': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+    'roboto': '"Roboto", -apple-system, BlinkMacSystemFont, sans-serif',
     'inter': '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    'roboto': '"Roboto", "Helvetica Neue", Arial, sans-serif',
-    'arial': 'Arial, Helvetica, sans-serif',
-    'helvetica': '"Helvetica Neue", Helvetica, Arial, sans-serif',
-    'monospace': '"Roboto Mono", "Courier New", Courier, monospace'
+    'sf-pro': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    'segoe': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+    'helvetica': '"Helvetica Neue", Helvetica, Arial, sans-serif'
   };
   grid.style.fontFamily = fonts[font] || '';
 
@@ -1736,36 +1765,30 @@ window.renderTxnImportV5Page = function () {
           <i class="ph ph-palette"></i>
           <span>Grid Appearance</span>
         </div>
-        <div class="v5-bulk-actions" style="gap: 1rem;">
-          <div class="v5-control-group">
+        <div class="v5-bulk-actions" style="display: flex; flex-direction: row; gap: 1rem; flex: 1; justify-content: flex-end;">
+          <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
               <option value="">Default Light</option>
-              <option value="dark">Dark Mode (Black)</option>
-              <option value="blue">Financial Blue</option>
-              <option value="green">Money Green</option>
-              <option value="contrast">High Contrast</option>
-              <option value="excel">Excel Gray</option>
-              <option value="purple">Royal Purple</option>
-              <option value="orange">Vibrant Orange</option>
-              <option value="teal">Ocean Teal</option>
+              <option value="material">Material Design</option>
+              <option value="dark">Dark Theme</option>
+              <option value="blue-gray">Blue Gray</option>
+              <option value="indigo">Indigo</option>
+              <option value="slate">Slate Professional</option>
             </select>
           </div>
-          <div class="v5-control-group">
+          <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Font</label>
             <select id="v5-font-dropdown" onchange="window.applyAppearance()">
               <option value="">System Default</option>
-              <option value="arial">Arial (Clean Sans)</option>
-              <option value="verdana">Verdana (Wide & Bold)</option>
-              <option value="georgia">Georgia (Elegant Serif)</option>
-              <option value="times">Times New Roman (Classic)</option>
-              <option value="courier">Courier New (Monospace)</option>
-              <option value="trebuchet">Trebuchet (Modern)</option>
-              <option value="impact">Impact (Bold)</option>
-              <option value="comic">Comic Sans (Casual)</option>
+              <option value="roboto">Roboto (Google)</option>
+              <option value="inter">Inter (Modern)</option>
+              <option value="sf-pro">SF Pro (Apple)</option>
+              <option value="segoe">Segoe UI (Microsoft)</option>
+              <option value="helvetica">Helvetica Neue</option>
             </select>
           </div>
-          <div class="v5-control-group">
+          <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Size</label>
             <select id="v5-size-dropdown" onchange="window.applyAppearance()">
               <option value="xs">XS (11px)</option>
