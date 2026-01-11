@@ -3211,7 +3211,8 @@ window.initV5Grid = function () {
       field: 'actions',
       width: 130,
       minWidth: 130,
-      suppressSizeToFit: true,
+      maxWidth: 140, // Hard wall - prevent spillover
+      suppressSizeToFit: false, // Allow some flex but respect maxWidth
       cellStyle: { paddingRight: '16px' }, // Breathing room at grid edge
       cellRenderer: (params) => {
         // Source file icon - dynamic based on type
