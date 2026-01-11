@@ -799,14 +799,11 @@ window.renderTxnImportV5Page = function () {
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
       }
       
-      /* MAIN CONTAINER - Match Data Import positioning + 10% zoom reduction */
+      /* MAIN CONTAINER - Standard positioning like Analytics */
       .txn-import-v5-container {
-        padding: 2rem 2.5rem;
-        padding-top: 2rem;
-        transform: scale(0.9);
-        transform-origin: top center;
-        width: 111%;
-        margin-left: -5.5%;
+        padding: 0;
+        width: 100%;
+        height: 100%;
       }
 
       /* Page Container - removed, using above instead */
@@ -1513,17 +1510,46 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
         
-        <!-- Right: Browse Files Button -->
-        <div>
-          <button class="btn btn-secondary" style="background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; color: #475569;" onclick="document.getElementById('v5-file-input').click()">
-            <i class="ph ph-upload-simple"></i> Browse Files
-          </button>
+        <!-- Center: Upload Zone (from data-import.js - responsive) -->
+        <div class="v5-browse-section">
+          <div id="v5-upload-zone" class="compact-upload-zone" 
+               onclick="document.getElementById('v5-file-input').click()"
+               ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.background='#f8fafc';"
+               ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';"
+               ondrop="handleV5DragDrop(event); this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';">
+            <svg class="upload-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-main">Drag and drop files here</span>
+              <span class="upload-sub">Limit 200MB per file • PDF, CSV, Excel</span>
+            </div>
+            <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('v5-file-input').click()">Browse files</button>
+          </div>
+          <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
+                 style="display: none;" onchange="handleV5FileSelect(event)">
         </div>
-      </div>
-
-      <!-- Hidden File Input -->
-      <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
-             style="display: none;" onchange="handleV5FileSelect(event)">
+        
+        <!-- Right: Action Icons -->
+        <div class="v5-header-actions">
+          <div class="v5-menu-wrapper" style="position:relative;">
+            <button class="btn-icon v5-menu-toggle" onclick="toggleV5Menu(event)">
+              <i class="ph ph-dots-three-vertical"></i>
+            </button>
+            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
+              <button class="menu-item" onclick="window.openAppearanceModal(); toggleV5Menu(event);">
+                <i class="ph ph-palette"></i>
+                Grid Appearance
+              </button>
+              <button class="menu-item" onclick="undoV5(); toggleV5Menu(event);">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                Undo
+              </button>
+              <button class="menu-item" onclick="startOverV5(); toggleV5Menu(event);">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                Start Over
               </button>
               <button class="menu-item" onclick="toggleV5History(); toggleV5Menu(event);">
                 <i class="ph ph-clock-counter-clockwise"></i>
