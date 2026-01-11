@@ -923,29 +923,51 @@ window.renderTxnImportV5Page = function () {
         display: flex;
         align-items: center;
         gap: 8px;
-        height: 36px;
+      /* Main Header - Match Analytics/Data Import Style */
+      .v5-main-header {
+        background: white;
+        padding: 16px 32px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
       }
       
-      .v5-ref-input-wrapper label {
-        font-weight: 500;
-        margin: 0;
-        line-height: 36px;
-      }
-      
-      .v5-ref-input-wrapper input {
-        padding: 6px 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        height: 32px;
-      }
-      
-      .v5-search-wrapper {
+      .v5-title-section {
         display: flex;
         align-items: center;
-        gap: 8px;
-        flex: 1;
-        height: 36px;
+        gap: 12px;
+      }
+      
+      .v5-page-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+      
+      .v5-title-text h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      
+      .v5-subtitle {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 2px 0 0 0;
+      }
       }
       
       .v5-search-wrapper input {
