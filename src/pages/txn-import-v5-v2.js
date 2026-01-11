@@ -4420,25 +4420,30 @@ window.applyAppearance = function () {
   const size = document.getElementById('v5-size-dropdown').value;
 
   const grid = document.querySelector('.ag-theme-alpine');
-  if (!grid) return;
+  if (!grid) {
+    console.error('Grid not found');
+    return;
+  }
 
-  // Apply theme
-  grid.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
-    'theme-tracker', 'theme-neon', 'theme-ocean', 'theme-forest');
-  if (theme) grid.classList.add('theme-' + theme);
+  // CRITICAL FIX: Remove ALL existing theme-* classes before adding new one
+  const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
+  classesToRemove.forEach(cls => grid.classList.remove(cls));
 
-  // Apply font
-  const fonts = {
-    'inter': "'Inter', sans-serif",
-    'roboto-mono': "'Roboto Mono', monospace",
-    'georgia': "'Georgia', serif",
-    'arial': "'Arial', sans-serif"
-  };
-  grid.style.fontFamily = fonts[font] || '';
+  // Add new theme class (if any)
+  if (theme) {
+    grid.classList.add(`theme-${theme}`);
+  }
 
-  // Apply size
-  const sizes = { xs: '11px', s: '12px', m: '13px', l: '14px', xl: '16px' };
-  grid.style.fontSize = sizes[size] || '13px';
+  // Apply font family and size to ENTIRE grid (not just headers)
+  if (font) {
+    grid.style.setProperty('--ag-font-family', font);
+    grid.style.fontFamily = font;
+  }
+
+  if (size) {
+    grid.style.setProperty('--ag-font-size', size);
+    grid.style.fontSize = size;
+  }
 
   // Save to localStorage
   localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
