@@ -509,13 +509,15 @@ window.renderTxnImportV5Page = function () {
       .compact-upload-zone {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 14px 18px;
-        background: white;
-        border: 2px dashed #cbd5e1;
-        border-radius: 8px;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 14px; /* Reduced by 15% from 7px 16px */
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
+        font-size: 12px; /* Reduced by 15% from 14px */
       }
       
       .compact-upload-zone:hover {
