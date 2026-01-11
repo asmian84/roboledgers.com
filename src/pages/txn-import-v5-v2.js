@@ -4342,33 +4342,31 @@ window.popOutV5Grid = function () {
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
-        // EFFICIENT: Use window.opener references directly - no data duplication!
+        // Use window.opener for all data and functions
         const opener = window.opener;
         let gridApi;
         
-        // Get live data/config from main window
-        const getGridData = () => opener.V5State?.gridData || [];
-        const getColumnDefs = () => opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
-
+        const columnDefs = opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
+        const gridData = opener.V5State?.gridData || [];
+        const openingBalance = opener.V5State?.openingBalance || 0;
+        
+        console.log('✅ Popup: Loaded', gridData.length, 'rows from main window');
+        
         const gridOptions = {
           columnDefs,
           rowData: gridData,
           defaultColDef: { sortable: true, filter: true, resizable: true },
           rowSelection: 'multiple',
           onCellValueChanged: (params) => {
-            // Sync to parent immediately
-            window.opener.updateV5DataFromPopout(gridData);
+            opener.updateV5DataFromPopout(gridData);
             updateBalances();
           }
         };
         
         document.addEventListener('DOMContentLoaded', () => {
-          const data = getGridData();
-          console.log('✅ Popup: Loading', data.length, 'rows from window.opener');
-          
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           
-          // Apply theme from main window
+          // Copy theme from main window
           const mainGrid = opener.document.querySelector('.ag-theme-alpine');
           const popupGrid = document.querySelector('.ag-theme-alpine');
           if (mainGrid && popupGrid) {
@@ -4377,17 +4375,16 @@ window.popOutV5Grid = function () {
           }
           
           updateBalances();
-          console.log('✅ Popup ready');
+          console.log('✅ Popup ready with', gridData.length, 'rows');
         });
         
-        // CRITICAL: Auto pop-in on close
+        // Auto pop-in on close
         window.onbeforeunload = () => {
           if (opener && !opener.closed) opener.popInV5Grid();
         };
-
-        // ===== EFFICIENT: Reuse main window's balance calculation =====
+        
         function updateBalances() {
-          const data = getGridData();
+          const data = opener.V5State?.gridData || [];
           const opening = opener.V5State?.openingBalance || 0;
           
           let debit = 0, credit = 0;
@@ -4397,47 +4394,118 @@ window.popOutV5Grid = function () {
           });
           
           const ending = opening - debit + credit;
-          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
           
           document.getElementById('popup-opening').textContent = fmt(opening);
           document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
           document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
           document.getElementById('popup-ending').textContent = fmt(ending);
         }
-
-        // ===== GRID ACTIONS (minimal wrappers) =====
+        
         function closePopout() {
           opener.popInV5Grid();
           window.close();
         }
+      </script>
+    </body>
+  </html>
+  `);
+  // EFFICIENT: Use window.opener references directly - no data duplication!
+  const opener = window.opener;
+  let gridApi;
 
-        // ===== BALANCE CALCULATION =====
+  // Get live data/config from main window
+  const getGridData = () => opener.V5State?.gridData || [];
+  const getColumnDefs = () => opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
+
+  const gridOptions = {
+    columnDefs,
+    rowData: gridData,
+    defaultColDef: { sortable: true, filter: true, resizable: true },
+    rowSelection: 'multiple',
+    onCellValueChanged: (params) => {
+      // Sync to parent immediately
+      window.opener.updateV5DataFromPopout(gridData);
+      updateBalances();
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const data = getGridData();
+    console.log('✅ Popup: Loading', data.length, 'rows from window.opener');
+
+    gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+
+    // Apply theme from main window
+    const mainGrid = opener.document.querySelector('.ag-theme-alpine');
+    const popupGrid = document.querySelector('.ag-theme-alpine');
+    if (mainGrid && popupGrid) {
+      const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
+      themeClasses.forEach(c => popupGrid.classList.add(c));
+    }
+
+    updateBalances();
+    console.log('✅ Popup ready');
+  });
+
+  // CRITICAL: Auto pop-in on close
+  window.onbeforeunload = () => {
+    if (opener && !opener.closed) opener.popInV5Grid();
+  };
+
+  // ===== EFFICIENT: Reuse main window's balance calculation =====
+  function updateBalances() {
+    const data = getGridData();
+    const opening = opener.V5State?.openingBalance || 0;
+
+    let debit = 0, credit = 0;
+    data.forEach(t => {
+      debit += parseFloat(t.Debit || t.debit) || 0;
+      credit += parseFloat(t.Credit || t.credit) || 0;
+    });
+
+    const ending = opening - debit + credit;
+    const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    document.getElementById('popup-opening').textContent = fmt(opening);
+    document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
+    document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
+    document.getElementById('popup-ending').textContent = fmt(ending);
+  }
+
+  // ===== GRID ACTIONS (minimal wrappers) =====
+  function closePopout() {
+    opener.popInV5Grid();
+    window.close();
+  }
+
+  // ===== BALANCE CALCULATION =====
 
 
 
-          
-          // Add new theme
-          if (theme) {
-            grid.classList.add('theme-' + theme);
-          }
-          
-          // Apply font
-          if (font) {
-            grid.style.setProperty('--ag-font-family', font);
-            grid.style.fontFamily = font;
-          }
-          
-          // Apply size with mapping
-          if (size) {
-            const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
-            const cssSize = sizeMap[size] || '13px';
-            
-            let styleEl = document.getElementById('popup-size-override');
-            if (styleEl) styleEl.remove();
-            
-            styleEl = document.createElement('style');
-            styleEl.id = 'popup-size-override';
-            styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
+
+  // Add new theme
+  if (theme) {
+    grid.classList.add('theme-' + theme);
+  }
+
+  // Apply font
+  if (font) {
+    grid.style.setProperty('--ag-font-family', font);
+    grid.style.fontFamily = font;
+  }
+
+  // Apply size with mapping
+  if (size) {
+    const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
+    const cssSize = sizeMap[size] || '13px';
+
+    let styleEl = document.getElementById('popup-size-override');
+    if (styleEl) styleEl.remove();
+
+    styleEl = document.createElement('style');
+    styleEl.id = 'popup-size-override';
+    styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
               .ag-theme-alpine .ag-header-cell-text,
               .ag-theme-alpine .ag ag-cell { font-size: \${cssSize} !important; }\`;
             document.head.appendChild(styleEl);
@@ -4503,130 +4571,130 @@ window.popOutV5Grid = function () {
     </body>
     </html>
   `);
-};
+  };
 
 
 
 
-window.popInV5Grid = function () {
-  // Close popout if open
-  if (V5State.popoutWindow && !V5State.popoutWindow.closed) {
-    V5State.popoutWindow.close();
-  }
+  window.popInV5Grid = function () {
+    // Close popout if open
+    if (V5State.popoutWindow && !V5State.popoutWindow.closed) {
+      V5State.popoutWindow.close();
+    }
 
-  // Show in-page grid
-  document.getElementById('v5-grid-container').style.display = 'block';
+    // Show in-page grid
+    document.getElementById('v5-grid-container').style.display = 'block';
 
-  // Hide pop-in button
-  const popInBtn = document.getElementById('v5-popin-btn');
-  if (popInBtn) popInBtn.style.display = 'none';
+    // Hide pop-in button
+    const popInBtn = document.getElementById('v5-popin-btn');
+    if (popInBtn) popInBtn.style.display = 'none';
 
-  // Refresh grid
-  if (V5State.gridApi) {
-    V5State.gridApi.setGridOption('rowData', V5State.gridData);
-  }
-};
+    // Refresh grid
+    if (V5State.gridApi) {
+      V5State.gridApi.setGridOption('rowData', V5State.gridData);
+    }
+  };
 
-window.updateV5DataFromPopout = function (newData) {
-  V5State.gridData = newData;
-  recalculateAllBalances();
-  saveData();
-};
+  window.updateV5DataFromPopout = function (newData) {
+    V5State.gridData = newData;
+    recalculateAllBalances();
+    saveData();
+  };
 
-// CRITICAL: Sync appearance settings FROM popup TO main window
-window.syncAppearanceFromPopup = function (theme, font, size) {
-  const mainTheme = document.getElementById('v5-theme-dropdown');
-  const mainFont = document.getElementById('v5-font-dropdown');
-  const mainSize = document.getElementById('v5-size-dropdown');
+  // CRITICAL: Sync appearance settings FROM popup TO main window
+  window.syncAppearanceFromPopup = function (theme, font, size) {
+    const mainTheme = document.getElementById('v5-theme-dropdown');
+    const mainFont = document.getElementById('v5-font-dropdown');
+    const mainSize = document.getElementById('v5-size-dropdown');
 
-  if (mainTheme) mainTheme.value = theme || '';
-  if (mainFont) mainFont.value = font || '';
-  if (mainSize) mainSize.value = size || 'm';
+    if (mainTheme) mainTheme.value = theme || '';
+    if (mainFont) mainFont.value = font || '';
+    if (mainSize) mainSize.value = size || 'm';
 
-  // Apply appearance to main window grid so both windows stay in sync
-  window.applyAppearance();
-};
+    // Apply appearance to main window grid so both windows stay in sync
+    window.applyAppearance();
+  };
 
-function getV5ColumnDefs() {
-  // Return same column defs used in main grid (without cellRenderer for actions)
-  return [
-    // Checkbox column
-    { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
+  function getV5ColumnDefs() {
+    // Return same column defs used in main grid (without cellRenderer for actions)
+    return [
+      // Checkbox column
+      { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
 
-    // Ref# column with auto-numbering and prefix support
-    {
-      headerName: 'Ref#',
-      field: 'refNumber',
-      width: 110,
-      pinned: 'left',
-      editable: true,
-      valueGetter: (params) => {
-        // Check if manually set
-        if (params.data.refNumber) return params.data.refNumber;
+      // Ref# column with auto-numbering and prefix support
+      {
+        headerName: 'Ref#',
+        field: 'refNumber',
+        width: 110,
+        pinned: 'left',
+        editable: true,
+        valueGetter: (params) => {
+          // Check if manually set
+          if (params.data.refNumber) return params.data.refNumber;
 
-        // Auto-generate
-        const prefix = V5State.refPrefix || '';
-        const num = String(params.node.rowIndex + 1).padStart(3, '0');
-        return prefix ? `${prefix}-${num}` : num;
+          // Auto-generate
+          const prefix = V5State.refPrefix || '';
+          const num = String(params.node.rowIndex + 1).padStart(3, '0');
+          return prefix ? `${prefix}-${num}` : num;
+        },
+        valueSetter: (params) => {
+          params.data.refNumber = params.newValue;
+          return true;
+        },
+        cellStyle: { fontWeight: '600', color: '#64748b', fontFamily: 'monospace' }
       },
-      valueSetter: (params) => {
-        params.data.refNumber = params.newValue;
-        return true;
-      },
-      cellStyle: { fontWeight: '600', color: '#64748b', fontFamily: 'monospace' }
-    },
 
-    // Date column
-    { headerName: 'Date', field: 'date', width: 120, editable: true },
-    { headerName: 'Description', field: 'description', width: 300, editable: true },
-    { headerName: 'Debit', field: 'debit', width: 120, editable: true },
-    { headerName: 'Credit', field: 'credit', width: 120, editable: true },
-    { headerName: 'Balance', field: 'balance', width: 130, editable: false },
-    { headerName: 'Account', field: 'account', width: 280, editable: true }
-  ];
-}
-
-window.toggleV5Menu = function () {
-  const menu = document.getElementById('v5-dropdown-menu');
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-};
-
-// ==================================================
-// EXCEL EXPORT - PART 2 FIX
-// ==================================================
-
-window.exportV5Excel = function () {
-  if (!V5State.gridApi) {
-    console.warn('Grid not initialized');
-    return;
+      // Date column
+      { headerName: 'Date', field: 'date', width: 120, editable: true },
+      { headerName: 'Description', field: 'description', width: 300, editable: true },
+      { headerName: 'Debit', field: 'debit', width: 120, editable: true },
+      { headerName: 'Credit', field: 'credit', width: 120, editable: true },
+      { headerName: 'Balance', field: 'balance', width: 130, editable: false },
+      { headerName: 'Account', field: 'account', width: 280, editable: true }
+    ];
   }
 
-  const fileName = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+  window.toggleV5Menu = function () {
+    const menu = document.getElementById('v5-dropdown-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  };
 
-  V5State.gridApi.exportDataAsCsv({
-    fileName: fileName,
-    columnKeys: ['Date', 'Description', 'Debit', 'Credit', 'Balance', 'Account']
-  });
+  // ==================================================
+  // EXCEL EXPORT - PART 2 FIX
+  // ==================================================
 
-  console.log(`📊 Excel export: ${fileName}`);
-};
+  window.exportV5Excel = function () {
+    if (!V5State.gridApi) {
+      console.warn('Grid not initialized');
+      return;
+    }
 
-// ==================================================
-// PART 4: BANK STATEMENT PRINT VIEW
-// ==================================================
+    const fileName = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
 
-window.printV5Preview = function () {
-  // Inject statement header before printing
-  const header = document.createElement('div');
-  header.className = 'print-statement-header';
-  header.style.display = 'none'; // Hidden on screen, shown in print
+    V5State.gridApi.exportDataAsCsv({
+      fileName: fileName,
+      columnKeys: ['Date', 'Description', 'Debit', 'Credit', 'Balance', 'Account']
+    });
 
-  const gridData = V5State.gridData || [];
-  const dates = gridData.map(t => new Date(t.Date || t.date)).filter(d => !isNaN(d));
-  const startDate = dates.length > 0 ? new Date(Math.min(...dates)).toLocaleDateString() : 'N/A';
-  const endDate = dates.length > 0 ? new Date(Math.max(...dates)).toLocaleDateString() : 'N/A';
+    console.log(`📊 Excel export: ${fileName}`);
+  };
 
-  header.innerHTML = `
+  // ==================================================
+  // PART 4: BANK STATEMENT PRINT VIEW
+  // ==================================================
+
+  window.printV5Preview = function () {
+    // Inject statement header before printing
+    const header = document.createElement('div');
+    header.className = 'print-statement-header';
+    header.style.display = 'none'; // Hidden on screen, shown in print
+
+    const gridData = V5State.gridData || [];
+    const dates = gridData.map(t => new Date(t.Date || t.date)).filter(d => !isNaN(d));
+    const startDate = dates.length > 0 ? new Date(Math.min(...dates)).toLocaleDateString() : 'N/A';
+    const endDate = dates.length > 0 ? new Date(Math.max(...dates)).toLocaleDateString() : 'N/A';
+
+    header.innerHTML = `
     <h1>STATEMENT OF ACCOUNTS</h1>
     <h2>CHECKING ACCOUNT</h2>
     <p>Period: ${startDate} - ${endDate}</p>
@@ -4634,466 +4702,466 @@ window.printV5Preview = function () {
     <p>Statement Generated: ${new Date().toLocaleDateString()}</p>
   `;
 
-  document.body.prepend(header);
+    document.body.prepend(header);
 
-  // Trigger print
-  window.print();
+    // Trigger print
+    window.print();
 
-  // Clean up after print
-  setTimeout(() => {
-    header.remove();
-  }, 100);
+    // Clean up after print
+    setTimeout(() => {
+      header.remove();
+    }, 100);
 
-  console.log('🖨️ Bank statement print preview opened');
-};
+    console.log('🖨️ Bank statement print preview opened');
+  };
 
-window.showV5Appearance = function () {
-  const panel = document.getElementById('v5-appearance-panel');
-  const menu = document.getElementById('v5-header-dropdown');
+  window.showV5Appearance = function () {
+    const panel = document.getElementById('v5-appearance-panel');
+    const menu = document.getElementById('v5-header-dropdown');
 
-  if (panel) {
-    panel.style.display = 'flex';
-    console.log('✅ Appearance panel shown');
-  }
-
-  if (menu) {
-    menu.style.display = 'none'; // Close dropdown menu
-  }
-};
-
-window.closeV5Appearance = function () {
-  const panel = document.getElementById('v5-appearance-panel');
-  if (panel) {
-    panel.style.display = 'none';
-    console.log('✅ Appearance panel hidden');
-  }
-};
-
-function deleteV5SelectedRows() {
-  if (!V5State.gridApi) return;
-
-  const selectedRows = V5State.gridApi.getSelectedRows();
-  if (selectedRows.length === 0) return;
-
-  if (!confirm(`Delete ${selectedRows.length} selected transaction(s)?`)) return;
-
-  captureState();
-
-  const selectedIds = selectedRows.map(r => r.id);
-  V5State.gridData = V5State.gridData.filter(r => !selectedIds.includes(r.id));
-
-  V5State.gridApi.setGridOption('rowData', V5State.gridData);
-  saveData();
-
-  // PART 3: Silent operation - no toast
-  console.log(`🗑️ Deleted ${selectedRows.length} transaction(s)`);
-}
-
-function updateSelectionCount() {
-  if (!V5State.gridApi) return;
-  const count = V5State.gridApi.getSelectedRows().length;
-}
-
-// ============================================
-// DATA PERSISTENCE
-// ============================================
-
-async function saveData() {
-  await window.CacheManager.saveTransactions(V5State.gridData);
-
-  // Background sync to Supabase
-  if (window.CacheManager.syncToSupabase) {
-    window.CacheManager.syncToSupabase(V5State.gridData);
-  }
-}
-
-async function loadData() {
-  const cached = await window.CacheManager.getTransactions();
-
-  if (cached && cached.length > 0) {
-    V5State.gridData = cached;
-    initV5Grid();
-  } else {
-    // Show empty state
-    document.getElementById('v5-empty-state').style.display = 'flex';
-  }
-}
-
-// ============================================
-// CACHE RESTORE HELPERS
-// ============================================
-
-window.restorePreviousImport = async function () {
-  // Remove banner
-  document.getElementById('v5-restore-banner')?.remove();
-
-  // Load cached data
-  await loadData();
-
-  console.log('Previous import restored');
-};
-
-window.startFreshImport = async function () {
-  // Remove banner
-  document.getElementById('v5-restore-banner')?.remove();
-
-  // Clear all caches
-  await window.CacheManager.clearAll();
-  await window.BrainStorage.clearAllFileHashes();
-
-  // Reset grid
-  V5State.gridData = [];
-  if (V5State.gridApi) {
-    V5State.gridApi.setGridOption('rowData', []);
-  }
-
-  console.log('Ready for new import');
-};
-
-// ============================================
-// AUTO-INITIALIZE
-// ============================================
-
-window.initTxnImportV5Grid = async function () {
-  // Auto-clear caches on page load for smooth UX
-  console.log('🔄 Auto-clearing caches...');
-  try {
-    await window.BrainStorage.clearAllFileHashes();
-    await window.CacheManager.clearAll();
-  } catch (e) {
-    console.warn('Could not clear caches:', e);
-  }
-
-  // Show empty state - no cache restore
-  document.getElementById('v5-empty-state').style.display = 'flex';
-};
-
-console.log('📄 Txn Import V5: Module ready');
-
-// FIX 4B: Initialize persistence systems on page load
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 V5 Persistence Init');
-
-  setTimeout(() => {
-    // 1. Load saved grid data
-    const savedData = localStorage.getItem('ab_v5_grid_data');
-    if (savedData && typeof loadSavedData === 'function') {
-      loadSavedData();
+    if (panel) {
+      panel.style.display = 'flex';
+      console.log('✅ Appearance panel shown');
     }
 
-    // 2. Load import history
+    if (menu) {
+      menu.style.display = 'none'; // Close dropdown menu
+    }
+  };
+
+  window.closeV5Appearance = function () {
+    const panel = document.getElementById('v5-appearance-panel');
+    if (panel) {
+      panel.style.display = 'none';
+      console.log('✅ Appearance panel hidden');
+    }
+  };
+
+  function deleteV5SelectedRows() {
+    if (!V5State.gridApi) return;
+
+    const selectedRows = V5State.gridApi.getSelectedRows();
+    if (selectedRows.length === 0) return;
+
+    if (!confirm(`Delete ${selectedRows.length} selected transaction(s)?`)) return;
+
+    captureState();
+
+    const selectedIds = selectedRows.map(r => r.id);
+    V5State.gridData = V5State.gridData.filter(r => !selectedIds.includes(r.id));
+
+    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+    saveData();
+
+    // PART 3: Silent operation - no toast
+    console.log(`🗑️ Deleted ${selectedRows.length} transaction(s)`);
+  }
+
+  function updateSelectionCount() {
+    if (!V5State.gridApi) return;
+    const count = V5State.gridApi.getSelectedRows().length;
+  }
+
+  // ============================================
+  // DATA PERSISTENCE
+  // ============================================
+
+  async function saveData() {
+    await window.CacheManager.saveTransactions(V5State.gridData);
+
+    // Background sync to Supabase
+    if (window.CacheManager.syncToSupabase) {
+      window.CacheManager.syncToSupabase(V5State.gridData);
+    }
+  }
+
+  async function loadData() {
+    const cached = await window.CacheManager.getTransactions();
+
+    if (cached && cached.length > 0) {
+      V5State.gridData = cached;
+      initV5Grid();
+    } else {
+      // Show empty state
+      document.getElementById('v5-empty-state').style.display = 'flex';
+    }
+  }
+
+  // ============================================
+  // CACHE RESTORE HELPERS
+  // ============================================
+
+  window.restorePreviousImport = async function () {
+    // Remove banner
+    document.getElementById('v5-restore-banner')?.remove();
+
+    // Load cached data
+    await loadData();
+
+    console.log('Previous import restored');
+  };
+
+  window.startFreshImport = async function () {
+    // Remove banner
+    document.getElementById('v5-restore-banner')?.remove();
+
+    // Clear all caches
+    await window.CacheManager.clearAll();
+    await window.BrainStorage.clearAllFileHashes();
+
+    // Reset grid
+    V5State.gridData = [];
+    if (V5State.gridApi) {
+      V5State.gridApi.setGridOption('rowData', []);
+    }
+
+    console.log('Ready for new import');
+  };
+
+  // ============================================
+  // AUTO-INITIALIZE
+  // ============================================
+
+  window.initTxnImportV5Grid = async function () {
+    // Auto-clear caches on page load for smooth UX
+    console.log('🔄 Auto-clearing caches...');
+    try {
+      await window.BrainStorage.clearAllFileHashes();
+      await window.CacheManager.clearAll();
+    } catch (e) {
+      console.warn('Could not clear caches:', e);
+    }
+
+    // Show empty state - no cache restore
+    document.getElementById('v5-empty-state').style.display = 'flex';
+  };
+
+  console.log('📄 Txn Import V5: Module ready');
+
+  // FIX 4B: Initialize persistence systems on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 V5 Persistence Init');
+
+    setTimeout(() => {
+      // 1. Load saved grid data
+      const savedData = localStorage.getItem('ab_v5_grid_data');
+      if (savedData && typeof loadSavedData === 'function') {
+        loadSavedData();
+      }
+
+      // 2. Load import history
+      if (typeof renderV5History === 'function') {
+        setTimeout(() => renderV5History(), 200);
+      }
+
+      // 3. Load theme
+      const savedTheme = localStorage.getItem('v5_grid_theme');
+      if (savedTheme && savedTheme !== 'default' && typeof setGridTheme === 'function') {
+        setTimeout(() => setGridTheme(savedTheme), 400);
+      }
+    }, 600);
+  });
+
+  // ============================================
+  // AUTO-LOAD SESSION ON PAGE READY
+  // ============================================
+
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔄 Checking for saved session...');
+
+    const sessionData = localStorage.getItem('ab_import_session');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+
+        if (session.parsedData && session.parsedData.data && session.parsedData.data.length > 0) {
+          console.log('✅ Auto-loading session:', session.parsedData.data.length, 'transactions');
+
+          // Restore state
+          V5State.gridData = session.parsedData.data;
+          V5State.accountType = session.forcedAccountType || 'BANK';
+          V5State.openingBalance = session.parsedData.openingBalance || 0;
+          V5State.accountName = session.accountName || 'CHECKING';
+
+          // Initialize grid with restored data
+          initV5Grid();
+          updateReconciliationCard();
+
+          console.log('✅ Session restored successfully');
+        } else {
+          console.log('ℹ️ Session exists but has no transactions');
+        }
+      } catch (e) {
+        console.error('❌ Failed to load session:', e);
+      }
+    } else {
+      console.log('ℹ️ No saved session found');
+    }
+
+    // Load history using new function  
     if (typeof renderV5History === 'function') {
       setTimeout(() => renderV5History(), 200);
     }
+  });
 
-    // 3. Load theme
-    const savedTheme = localStorage.getItem('v5_grid_theme');
-    if (savedTheme && savedTheme !== 'default' && typeof setGridTheme === 'function') {
-      setTimeout(() => setGridTheme(savedTheme), 400);
+  // Expand/Collapse All (based on SO example)
+  window.expandAllV5 = function () {
+    // Show history zone
+    const zone = document.getElementById('v5-history-zone');
+    if (zone) {
+      zone.style.display = 'block';
+      zone.classList.remove('collapsed');
     }
-  }, 600);
-});
+    console.log('✅ Expanded all collapsible sections');
+  };
 
-// ============================================
-// AUTO-LOAD SESSION ON PAGE READY
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🔄 Checking for saved session...');
-
-  const sessionData = localStorage.getItem('ab_import_session');
-  if (sessionData) {
-    try {
-      const session = JSON.parse(sessionData);
-
-      if (session.parsedData && session.parsedData.data && session.parsedData.data.length > 0) {
-        console.log('✅ Auto-loading session:', session.parsedData.data.length, 'transactions');
-
-        // Restore state
-        V5State.gridData = session.parsedData.data;
-        V5State.accountType = session.forcedAccountType || 'BANK';
-        V5State.openingBalance = session.parsedData.openingBalance || 0;
-        V5State.accountName = session.accountName || 'CHECKING';
-
-        // Initialize grid with restored data
-        initV5Grid();
-        updateReconciliationCard();
-
-        console.log('✅ Session restored successfully');
-      } else {
-        console.log('ℹ️ Session exists but has no transactions');
-      }
-    } catch (e) {
-      console.error('❌ Failed to load session:', e);
+  window.collapseAllV5 = function () {
+    // Hide history zone
+    const zone = document.getElementById('v5-history-zone');
+    if (zone) {
+      zone.style.display = 'none';
+      zone.classList.add('collapsed');
     }
-  } else {
-    console.log('ℹ️ No saved session found');
-  }
+    console.log('✅ Collapsed all collapsible sections');
+  };
 
-  // Load history using new function  
-  if (typeof renderV5History === 'function') {
-    setTimeout(() => renderV5History(), 200);
-  }
-});
+  // Hybrid Drag-Drop Handler (for blue button)
+  window.handleV5DragDrop = function (event) {
+    event.preventDefault();
+    event.stopPropagation();
 
-// Expand/Collapse All (based on SO example)
-window.expandAllV5 = function () {
-  // Show history zone
-  const zone = document.getElementById('v5-history-zone');
-  if (zone) {
-    zone.style.display = 'block';
-    zone.classList.remove('collapsed');
-  }
-  console.log('✅ Expanded all collapsible sections');
-};
+    const btn = event.currentTarget;
+    btn.classList.remove('drag-over');
 
-window.collapseAllV5 = function () {
-  // Hide history zone
-  const zone = document.getElementById('v5-history-zone');
-  if (zone) {
-    zone.style.display = 'none';
-    zone.classList.add('collapsed');
-  }
-  console.log('✅ Collapsed all collapsible sections');
-};
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      // Create a fake event to reuse existing file handler
+      const fakeEvent = { target: { files: files } };
+      handleV5FileSelect(fakeEvent);
+    }
+  };
 
-// Hybrid Drag-Drop Handler (for blue button)
-window.handleV5DragDrop = function (event) {
-  event.preventDefault();
-  event.stopPropagation();
+  // THEME PICKER FUNCTIONS
+  // ============================================
+  // GRID APPEARANCE - SIMPLE WORKING VERSION
+  // ============================================
 
-  const btn = event.currentTarget;
-  btn.classList.remove('drag-over');
+  window.openAppearanceModal = function () {
+    const modal = document.getElementById('v5-appearance-modal');
+    if (!modal) return;
 
-  const files = event.dataTransfer?.files;
-  if (files && files.length > 0) {
-    // Create a fake event to reuse existing file handler
-    const fakeEvent = { target: { files: files } };
-    handleV5FileSelect(fakeEvent);
-  }
-};
+    modal.style.display = 'flex';
 
-// THEME PICKER FUNCTIONS
-// ============================================
-// GRID APPEARANCE - SIMPLE WORKING VERSION
-// ============================================
+    // Load saved settings
+    const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+    if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme || '';
+    if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font || '';
+    if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size || 'm';
 
-window.openAppearanceModal = function () {
-  const modal = document.getElementById('v5-appearance-modal');
-  if (!modal) return;
+    // Apply current settings
+    applyAppearance();
+  };
 
-  modal.style.display = 'flex';
+  window.closeAppearanceModal = function () {
+    const modal = document.getElementById('v5-appearance-modal');
+    if (modal) modal.style.display = 'none';
+  };
 
-  // Load saved settings
-  const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
-  if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme || '';
-  if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font || '';
-  if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size || 'm';
+  window.applyAppearance = function () {
+    const theme = document.getElementById('v5-theme-dropdown').value;
+    const font = document.getElementById('v5-font-dropdown').value;
+    const size = document.getElementById('v5-size-dropdown').value;
 
-  // Apply current settings
-  applyAppearance();
-};
+    const grid = document.querySelector('.ag-theme-alpine');
+    if (!grid) {
+      console.error('Grid not found');
+      return;
+    }
 
-window.closeAppearanceModal = function () {
-  const modal = document.getElementById('v5-appearance-modal');
-  if (modal) modal.style.display = 'none';
-};
+    // CRITICAL FIX: Remove ALL existing theme-* classes before adding new one
+    const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
+    classesToRemove.forEach(cls => grid.classList.remove(cls));
 
-window.applyAppearance = function () {
-  const theme = document.getElementById('v5-theme-dropdown').value;
-  const font = document.getElementById('v5-font-dropdown').value;
-  const size = document.getElementById('v5-size-dropdown').value;
+    // Add new theme class (if any)
+    if (theme) {
+      grid.classList.add(`theme-${theme}`);
+    }
 
-  const grid = document.querySelector('.ag-theme-alpine');
-  if (!grid) {
-    console.error('Grid not found');
-    return;
-  }
+    // Apply font family to ENTIRE grid
+    if (font) {
+      grid.style.setProperty('--ag-font-family', font);
+      grid.style.fontFamily = font;
+    }
 
-  // CRITICAL FIX: Remove ALL existing theme-* classes before adding new one
-  const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
-  classesToRemove.forEach(cls => grid.classList.remove(cls));
+    // CRITICAL FIX: Map dropdown values to actual CSS pixel values
+    if (size) {
+      const sizeMap = {
+        'xs': '11px',
+        's': '12px',
+        'm': '13px',
+        'l': '14px',
+        'xl': '16px'
+      };
+      const cssSize = sizeMap[size] || '13px'; // Default to medium if invalid
 
-  // Add new theme class (if any)
-  if (theme) {
-    grid.classList.add(`theme-${theme}`);
-  }
+      // Remove old dynamic style if exists
+      let styleEl = document.getElementById('v5-grid-size-override');
+      if (styleEl) styleEl.remove();
 
-  // Apply font family to ENTIRE grid
-  if (font) {
-    grid.style.setProperty('--ag-font-family', font);
-    grid.style.fontFamily = font;
-  }
-
-  // CRITICAL FIX: Map dropdown values to actual CSS pixel values
-  if (size) {
-    const sizeMap = {
-      'xs': '11px',
-      's': '12px',
-      'm': '13px',
-      'l': '14px',
-      'xl': '16px'
-    };
-    const cssSize = sizeMap[size] || '13px'; // Default to medium if invalid
-
-    // Remove old dynamic style if exists
-    let styleEl = document.getElementById('v5-grid-size-override');
-    if (styleEl) styleEl.remove();
-
-    // Inject new style that forces font-size on ALL grid elements
-    styleEl = document.createElement('style');
-    styleEl.id = 'v5-grid-size-override';
-    styleEl.textContent = `
+      // Inject new style that forces font-size on ALL grid elements
+      styleEl = document.createElement('style');
+      styleEl.id = 'v5-grid-size-override';
+      styleEl.textContent = `
             .ag-theme-alpine { --ag-font-size: ${cssSize} !important; }
             .ag-theme-alpine .ag-header-cell-text,
             .ag-theme-alpine .ag-cell { 
               font-size: ${cssSize} !important; 
             }
           `;
-    document.head.appendChild(styleEl);
-  }
-
-  // Save to localStorage
-  localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
-};
-
-// Load on page init
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
-    if (saved.theme || saved.font || saved.size) {
-      if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme;
-      if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font;
-      if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size;
-      applyAppearance();
+      document.head.appendChild(styleEl);
     }
-  }, 1000);
-});
+
+    // Save to localStorage
+    localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
+  };
+
+  // Load on page init
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
+      if (saved.theme || saved.font || saved.size) {
+        if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme;
+        if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font;
+        if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size;
+        applyAppearance();
+      }
+    }, 1000);
+  });
 
 
-// FIX 4: Ref# input uppercase
-document.addEventListener('DOMContentLoaded', () => {
-  const refInput = document.getElementById('v5-ref-input');
-  if (refInput) {
-    refInput.addEventListener('input', (e) => {
-      e.target.value = e.target.value.toUpperCase();
-    });
-  }
-});
+  // FIX 4: Ref# input uppercase
+  document.addEventListener('DOMContentLoaded', () => {
+    const refInput = document.getElementById('v5-ref-input');
+    if (refInput) {
+      refInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase();
+      });
+    }
+  });
 
-// FIX 5: Dynamic statement badge
-window.updateStatementBadge = function () {
-  const badge = document.getElementById('v5-statement-badge');
-  if (!badge) return;
+  // FIX 5: Dynamic statement badge
+  window.updateStatementBadge = function () {
+    const badge = document.getElementById('v5-statement-badge');
+    if (!badge) return;
 
-  // Default to TBD if no data
-  if (!V5State.gridData || V5State.gridData.length === 0) {
-    badge.textContent = 'TBD';
-    badge.style.background = '#6b7280';
-    return;
-  }
+    // Default to TBD if no data
+    if (!V5State.gridData || V5State.gridData.length === 0) {
+      badge.textContent = 'TBD';
+      badge.style.background = '#6b7280';
+      return;
+    }
 
-  const firstRef = V5State.gridData[0]?.refNumber || '';
-  const prefix = V5State.refPrefix || '';
-  const fullRef = prefix || firstRef.split('-')[0];
+    const firstRef = V5State.gridData[0]?.refNumber || '';
+    const prefix = V5State.refPrefix || '';
+    const fullRef = prefix || firstRef.split('-')[0];
 
-  if (fullRef.startsWith('CHQ')) {
-    badge.textContent = 'CHECKING';
-    badge.style.background = '#ef4444';
-  } else if (fullRef.startsWith('CC')) {
-    badge.textContent = 'CREDIT CARD';
-    badge.style.background = '#8b5cf6';
-  } else if (fullRef.startsWith('LOC')) {
-    badge.textContent = 'LINE OF CREDIT';
-    badge.style.background = '#f59e0b';
-  } else {
-    badge.textContent = 'BANK STATEMENT';
-    badge.style.background = '#3b82f6';
-  }
-};
+    if (fullRef.startsWith('CHQ')) {
+      badge.textContent = 'CHECKING';
+      badge.style.background = '#ef4444';
+    } else if (fullRef.startsWith('CC')) {
+      badge.textContent = 'CREDIT CARD';
+      badge.style.background = '#8b5cf6';
+    } else if (fullRef.startsWith('LOC')) {
+      badge.textContent = 'LINE OF CREDIT';
+      badge.style.background = '#f59e0b';
+    } else {
+      badge.textContent = 'BANK STATEMENT';
+      badge.style.background = '#3b82f6';
+    }
+  };
 
-// FIX 6: Clean description - strip leading dates
-function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
+  // FIX 6: Clean description - strip leading dates
+  function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
 
-// AUTO-UPPERCASE REF# INPUT
-document.addEventListener('DOMContentLoaded', () => {
-  const refInput = document.getElementById('v5-ref-input');
-  if (refInput) {
-    refInput.addEventListener('input', (e) => {
-      e.target.value = e.target.value.toUpperCase();
-      V5State.refPrefix = e.target.value;
-    });
-  }
-});
+  // AUTO-UPPERCASE REF# INPUT
+  document.addEventListener('DOMContentLoaded', () => {
+    const refInput = document.getElementById('v5-ref-input');
+    if (refInput) {
+      refInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase();
+        V5State.refPrefix = e.target.value;
+      });
+    }
+  });
 
-// ESC key to close bulk bar
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const bulkBar = document.getElementById('v5-bulk-bar');
-    if (bulkBar && bulkBar.style.display !== 'none') {
-      bulkBar.style.display = 'none';
-      if (V5State.gridApi) {
-        V5State.gridApi.deselectAll();
+  // ESC key to close bulk bar
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const bulkBar = document.getElementById('v5-bulk-bar');
+      if (bulkBar && bulkBar.style.display !== 'none') {
+        bulkBar.style.display = 'none';
+        if (V5State.gridApi) {
+          V5State.gridApi.deselectAll();
+        }
       }
     }
-  }
-});
+  });
 
-// ============================================
-// BULK CATEGORIZATION (Phase 2)
-// ============================================
+  // ============================================
+  // BULK CATEGORIZATION (Phase 2)
+  // ============================================
 
-window.bulkV5Categorize = function () {
-  if (!V5State.gridApi) return;
-  const selectedNodes = V5State.gridApi.getSelectedNodes();
-  if (selectedNodes.length < 2) return;
+  window.bulkV5Categorize = function () {
+    if (!V5State.gridApi) return;
+    const selectedNodes = V5State.gridApi.getSelectedNodes();
+    if (selectedNodes.length < 2) return;
 
-  const groupedData = getGroupedCoA();
-  const allAccounts = [];
-  Object.values(groupedData).forEach(arr => allAccounts.push(...arr));
+    const groupedData = getGroupedCoA();
+    const allAccounts = [];
+    Object.values(groupedData).forEach(arr => allAccounts.push(...arr));
 
-  const category = prompt(`Categorize ${selectedNodes.length} transactions to (enter account):`);
-  if (category) {
-    selectedNodes.forEach(node => {
-      node.data.account = category;
-    });
-    V5State.gridApi.refreshCells({ force: true });
-    // Toast removed
-  }
-};
+    const category = prompt(`Categorize ${selectedNodes.length} transactions to (enter account):`);
+    if (category) {
+      selectedNodes.forEach(node => {
+        node.data.account = category;
+      });
+      V5State.gridApi.refreshCells({ force: true });
+      // Toast removed
+    }
+  };
 
-// Handle Opening Balance Change
-window.handleOpeningBalanceChange = function (input) {
-  // Remove currency formatting
-  let value = input.value.replace(/[$,]/g, '').trim();
+  // Handle Opening Balance Change
+  window.handleOpeningBalanceChange = function (input) {
+    // Remove currency formatting
+    let value = input.value.replace(/[$,]/g, '').trim();
 
-  // Parse as float
-  const numValue = parseFloat(value);
+    // Parse as float
+    const numValue = parseFloat(value);
 
-  if (isNaN(numValue)) {
-    // Invalid input - reset to current value
-    const currentBal = parseFloat(V5State.openingBalance) || 0;
-    input.value = '$' + currentBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return;
-  }
+    if (isNaN(numValue)) {
+      // Invalid input - reset to current value
+      const currentBal = parseFloat(V5State.openingBalance) || 0;
+      input.value = '$' + currentBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return;
+    }
 
-  // Update state
-  V5State.openingBalance = numValue;
+    // Update state
+    V5State.openingBalance = numValue;
 
-  // Format input value
-  input.value = '$' + numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Format input value
+    input.value = '$' + numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // Recalculate all balances with new opening balance
-  if (window.recalculateAllBalances) {
-    window.recalculateAllBalances();
-  }
+    // Recalculate all balances with new opening balance
+    if (window.recalculateAllBalances) {
+      window.recalculateAllBalances();
+    }
 
-  // Update reconciliation card
-  if (window.updateReconciliationCard) {
-    window.updateReconciliationCard();
-  }
+    // Update reconciliation card
+    if (window.updateReconciliationCard) {
+      window.updateReconciliationCard();
+    }
 
-  console.log('✅ Opening balance updated to:', numValue);
-};
+    console.log('✅ Opening balance updated to:', numValue);
+  };
 
-console.log('✅ txn-import-v5.js loaded successfully!');
+  console.log('✅ txn-import-v5.js loaded successfully!');
