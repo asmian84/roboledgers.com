@@ -3262,7 +3262,8 @@ window.initV5Grid = function () {
       filter: true,
       resizable: true,
       flex: 1,
-      minWidth: 100
+      minWidth: 100,
+      suppressMenu: true // Hide three-line menu icon in headers
     },
     suppressRowHoverHighlight: false,
     suppressCellFocus: false,
