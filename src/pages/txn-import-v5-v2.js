@@ -4411,12 +4411,7 @@ window.popOutV5Grid = function () {
   </html>
   `);
 
-  const opener = window.opener;
-  let gridApi;
 
-  // Get live data/config from main window
-  const getGridData = () => opener.V5State?.gridData || [];
-  const getColumnDefs = () => opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
 
   const gridOptions = {
     columnDefs,
