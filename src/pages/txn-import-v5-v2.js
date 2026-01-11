@@ -232,7 +232,7 @@ window.applyAppearance = function () {
 
 window.renderTxnImportV5Page = function () {
   return `
-    <style>
+    <style id="v5-theme-styles">
       /* RESPONSIVE FOUNDATION */
       :root {
         --mobile-max: 767px;
@@ -3980,397 +3980,559 @@ window.popOutV5Grid = function () {
   popInOverlay.onclick = () => window.popInV5Grid();
   gridContainer.parentElement.insertBefore(popInOverlay, gridContainer);
 
-  // Create popout window
-  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
-
-  if (!popOutWindow) {
-    alert('Popup blocked! Please allow popups for this site.');
-    return;
-  }
-
-  // Store reference
-  V5State.popoutWindow = popOutWindow;
-
   // Get current appearance settings from main window
   const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
   const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
   const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
 
-  popOutWindow.document.write(`
+  const htmlContent = `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
-      <title>Transaction Grid - Pop Out</title>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
-      <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+      <meta charset="UTF-8">
+      <title>V5 Transactions Popout</title>
+      <script src="https://unpkg.com/@phosphor-icons/web"></script>
       <style>
+        /* CRITICAL: Use Inter as primary font stack */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           margin: 0;
-          padding: 0.5rem;
-          font-family: system-ui, -apple-system, sans-serif;
-          background: #f9fafb;
+          padding: 20px;
+          background: #f8fafc;
+          overflow-x: hidden;
         }
-        
-        /* ===== ALL ACCOUNTING THEMES ===== */
-        .ag-theme-alpine.theme-vanilla {
-          --ag-background-color: #fffef8;
-          --ag-foreground-color: #333333;
-          --ag-header-background-color: #f5f0e8 !important;
-          --ag-header-foreground-color: #5a5a5a !important;
-          --ag-odd-row-background-color: #faf8f2;
-          --ag-border-color: #e0ddd5;
-        }
-        
-        .ag-theme-alpine.theme-classic {
-          --ag-background-color: #f8f9fa;
-          --ag-foreground-color: #212529;
-          --ag-header-background-color: #2c5aa0 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #e9ecef;
-          --ag-border-color: #d1d5db;
-        }
-        
-        .ag-theme-alpine.theme-default {
-          --ag-background-color: #f5f5f5;
-          --ag-foreground-color: #2c2c2c;
-          --ag-header-background-color: #e0e0e0 !important;
-          --ag-header-foreground-color: #424242 !important;
-          --ag-odd-row-background-color: #ebebeb;
-          --ag-border-color: #cccccc;
-        }
-        
-        .ag-theme-alpine.theme-ledger-pad {
-          --ag-background-color: #f0f8e8;
-          --ag-foreground-color: #1a3a1a;
-          --ag-header-background-color: #00a652 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #e6f2e0;
-          --ag-border-color: #c5d9c5;
-        }
-        
-        .ag-theme-alpine.theme-postit {
-          --ag-background-color: #fffbcc;
-          --ag-foreground-color: #5a4a00;
-          --ag-header-background-color: #ffd700 !important;
-          --ag-header-foreground-color: #5a4a00 !important;
-          --ag-odd-row-background-color: #fff8b3;
-          --ag-border-color: #e6d68a;
-        }
-        
-        .ag-theme-alpine.theme-rainbow {
-          --ag-background-color: #fef5ff;
-          --ag-foreground-color: #2d1b2e;
-          --ag-header-background-color: #9b59b6 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #f9ebff;
-          --ag-border-color: #d5a6e8;
-        }
-        
-        .ag-theme-alpine.theme-social {
-          --ag-background-color: #e8f4f8;
-          --ag-foreground-color: #0d3b66;
-          --ag-header-background-color: #1da1f2 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #d4e9f0;
-          --ag-border-color: #b8d8e5;
-        }
-        
-        .ag-theme-alpine.theme-spectrum {
-          --ag-background-color: #ffffff;
-          --ag-foreground-color: #333333;
-          --ag-header-background-color: #217346 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #f2f2f2;
-          --ag-border-color: #d0d0d0;
-        }
-        
-        .ag-theme-alpine.theme-wave {
-          --ag-background-color: #e6f2ff;
-          --ag-foreground-color: #003d66;
-          --ag-header-background-color: #0066cc !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #cce5ff;
-          --ag-border-color: #99ccff;
-        }
-        
-        .ag-theme-alpine.theme-vintage {
-          --ag-background-color: #1e1e1e;
-          --ag-foreground-color: #e0e0e0;
-          --ag-header-background-color: #2d4356 !important;
-          --ag-header-foreground-color: #ffffff !important;
-          --ag-odd-row-background-color: #252525;
-          --ag-border-color: #3a3a3a;
-        }
-        
-        /* ===== FREEZE PANE HEADER (Balance Cards) ===== */
-        .popup-freeze-header {
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          background: #f9fafb;
-          border-bottom: 2px solid #e5e7eb;
-          padding: 0.5rem 1rem;
+
+        .v5-popout-container {
+          max-width: 1400px;
+          margin: 0 auto;
           display: flex;
-          align-items: center;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ===== HEADER SECTION ===== */
+        .v5-main-header {
+          display: flex;
           justify-content: space-between;
-          gap: 1rem;
+          align-items: center;
+          margin-bottom: 24px;
         }
-        
-        .freeze-left {
+
+        .v5-title-group {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          min-width: 150px;
+          gap: 16px;
         }
-        
-        .freeze-ref {
-          font-size: 11px;
-          font-weight: 600;
-          color: #6b7280;
-          white-space: nowrap;
-        }
-        
-        .freeze-search {
-          flex: 1;
-          max-width: 400px;
-        }
-        
-        .freeze-search input {
-          width: 100%;
-          padding: 6px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 13px;
-        }
-        
-        .freeze-balances {
-          display: flex;
-          gap: 1.5rem;
-          align-items: center;
-        }
-        
-        .freeze-balance-item {
-          text-align: right;
-        }
-        
-        .freeze-balance-label {
-          font-size: 10px;
-          font-weight: 600;
-          color: #6b7280;
-          letter-spacing: 0.5px;
-          margin-bottom: 2px;
-        }
-        
-        .freeze-balance-value {
-          font-size: 16px;
-          font-weight: 700;
-          color: #1f2937;
-          white-space: nowrap;
-        }
-        
-        .freeze-balance-value.positive {
-          color: #059669;
-        }
-        
-        .freeze-balance-value.negative {
-          color: #dc2626;
-        }
-        
-        /* ===== APPEARANCE PANEL ===== */
-        .appearance-bar {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 0.75rem;
-          padding: 0.5rem 0.75rem;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-        }
-        
-        .control-group {
+
+        .v5-branded-icon {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+          border-radius: 12px;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
-        
-        .control-group label {
-          font-size: 12px;
-          font-weight: 600;
+
+        .v5-branded-icon i {
           color: white;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+          font-size: 24px;
         }
-        
-        .control-group select {
-          padding: 6px 10px;
-          border: 1px solid rgba(255,255,255,0.3);
-          background: rgba(255,255,255,0.95);
-          color: #1f2937;
+
+        .v5-title-section h1 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: -0.02em;
+        }
+
+        .v5-subtitle {
+          margin: 4px 0 0 0;
           font-size: 13px;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          gap: 6px;
           font-weight: 500;
-          border-radius: 6px;
+        }
+
+        .v5-subtitle .v5-account-type {
+          color: #3b82f6;
+          font-weight: 700;
+        }
+
+        .v5-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        /* Modal-like Menu Button */
+        .v5-more-actions-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
-          min-width: 140px;
+          color: #64748b;
           transition: all 0.2s;
         }
-        
-        .control-group select:hover {
+
+        .v5-more-actions-btn:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          color: #0f172a;
+        }
+
+        .v5-actions-dropdown {
+          position: absolute;
+          top: 60px;
+          right: 32px;
           background: white;
-          border-color: rgba(255,255,255,0.5);
-          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+          z-index: 10000;
+          min-width: 220px;
+          padding: 8px;
+          display: none;
         }
-        
-        /* ===== GRID CONTAINER ===== */
-        #popout-grid {
-          height: calc(100vh - 200px);
-          min-height: 600px;
+
+        .v5-actions-dropdown.show {
+          display: block;
+          animation: menuFadeIn 0.2s ease-out;
         }
-        
-        #popout-grid .ag-root-wrapper {
-          height: 100% !important;
-          min-height: 600px !important;
+
+        @keyframes menuFadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        
-        /* ===== HEADER ACTIONS ===== */
-        .popup-header {
+
+        .v5-menu-item {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 0.75rem;
-        }
-        
-        .popup-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-        
-        .btn {
-          padding: 8px 16px;
-          border-radius: 6px;
-          border: 1px solid #d1d5db;
-          background: white;
-          cursor: pointer;
+          gap: 12px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          color: #334155;
           font-size: 14px;
-          display: inline-flex;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .v5-menu-item i {
+          font-size: 18px;
+          color: #64748b;
+        }
+
+        .v5-menu-item:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+
+        .v5-menu-item:hover i {
+          color: #0f172a;
+        }
+
+        .appearance-bar {
+          display: flex;
+          gap: 8px;
+          /* align-items: center; */
+        }
+        /* ===== TOOLBAR SECTION ===== */
+        .v5-control-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          padding: 12px 24px;
+          border-bottom: 1px solid #e2e8f0;
+          margin-bottom: 0px; /* Flush with grid */
+        }
+
+        /* Hidden Appearance Settings Panel */
+        .v5-appearance-settings {
+          display: none; /* Toggled by menu */
+          background: #f8fafc;
+          padding: 12px 24px;
+          border-bottom: 1px solid #e2e8f0;
+          gap: 16px;
+          align-items: center;
+        }
+
+        .v5-appearance-settings.show {
+          display: flex;
+        }
+
+        .v5-ref-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          white-space: nowrap;
+        }
+
+        .v5-ref-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .v5-ref-box {
+          width: 60px;
+          padding: 8px;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          text-align: center;
+          font-family: monospace;
+          font-weight: 700;
+          color: #475569;
+          font-size: 14px;
+          background: #fdfdfd;
+        }
+
+        .v5-search-wrapper {
+          flex: 1;
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .v5-search-wrapper i {
+          position: absolute;
+          right: 12px;
+          color: #94a3b8;
+          font-size: 16px;
+        }
+
+        .v5-search-input {
+          width: 100%;
+          padding: 10px 40px 10px 16px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          font-size: 14px;
+          transition: all 0.2s;
+          color: #475569;
+        }
+
+        .v5-search-input::placeholder { color: #94a3b8; }
+
+        .v5-search-input:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+          outline: none;
+        }
+
+        .v5-balances-card {
+          display: flex;
+          gap: 1.5rem;
+          padding: 0.75rem 1.25rem;
+          background: transparent;
+          border-radius: 6px;
+          flex-shrink: 0;
+          margin-left: auto;
+        }
+
+        .v5-balance-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          min-width: 80px;
+        }
+
+        .v5-balance-label {
+          font-size: 0.625rem;
+          font-weight: 700;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .v5-balance-label sup {
+          font-size: 0.65em;
+          margin-left: 3px;
+          color: inherit;
+          opacity: 0.8;
+        }
+
+        .v5-balance-value {
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #1F2937;
+          font-family: 'Courier New', monospace;
+        }
+
+        .v5-balance-value.positive { color: #10b981; }
+        .v5-balance-value.negative { color: #ef4444; }
+
+        .v5-balance-item.ending .v5-balance-value {
+          font-size: 1rem;
+          color: #60a5fa;
+        }
+
+        /* Override specific ID colors for 1:1 parity */
+        #popup-total-in { color: #10b981; } 
+        #popup-total-out { color: #ef4444; }
+        #popup-ending-bal { color: #60a5fa; }
+
+        /* ===== BULK ACTIONS ===== */
+        .bulk-actions-bar {
+          position: fixed;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #1e293b;
+          color: white;
+          padding: 12px 24px;
+          border-radius: 99px;
+          display: none;
+          align-items: center;
+          gap: 20px;
+          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+          z-index: 1000;
+        }
+
+        .selection-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #94a3b8;
+        }
+
+        .btn-bulk {
+          padding: 8px 16px;
+          border-radius: 99px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          display: flex;
           align-items: center;
           gap: 6px;
           transition: all 0.2s;
         }
-        
-        .btn:hover {
-          background: #f3f4f6;
+
+        .btn-bulk-categorize { background: #3b82f6; color: white; }
+        .btn-bulk-delete { background: #ef4444; color: white; }
+        .btn-bulk-cancel { background: #475569; color: white; }
+
+        /* ===== GRID STYLING ===== */
+        #popout-grid {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+          height: calc(100vh - 280px) !important;
+          width: 100%;
+        }
+
+        /* ===== APPEARANCE PANEL OVERLAY ===== */
+        /* This section is now handled by .v5-appearance-settings */
+        .control-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .control-group select {
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #e2e8f0;
+          font-size: 13px;
+          background: white;
+          cursor: pointer;
+        }
+
+        .btn-icon {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+        }
+
+        /* ===== AG-GRID UI REFINEMENTS (BLUE HEADER) ===== */
+        .ag-theme-alpine {
+          --ag-font-family: 'Inter', sans-serif;
+          --ag-foreground-color: #334155;
+          --ag-background-color: #ffffff;
+          --ag-header-background-color: #0066cc !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #fcfcfc;
+          --ag-row-hover-background-color: #f0f9ff;
+          --ag-selected-row-background-color: #e0f2fe;
+          --ag-border-color: #e2e8f0;
+          --ag-row-border-color: #f1f5f9;
+          --ag-cell-horizontal-padding: 16px;
+          --ag-grid-size: 4px;
+          --ag-font-size: 14px;
         }
         
-        .btn-primary {
-          background: #3b82f6;
-          color: white;
-          border-color: #3b82f6;
+        /* Force White Header Icons */
+        .ag-header-cell-icon { color: white !important; }
+        .ag-header-cell-label { color: white !important; font-weight: 600 !important; }
+        
+        /* Header Vertical Separators */
+        .ag-header-cell {
+          border-right: 1px solid rgba(255,255,255,0.2) !important;
         }
         
-        .btn-primary:hover {
-          background: #2563eb;
+        /* Remove Pinned Border to blend Ref# */
+        .ag-pinned-left-header, 
+        .ag-horizontal-left-spacer, 
+        .ag-pinned-left-cols-container {
+          border-right: none !important;
+        }
+
+        /* Balance colors */
+        .balance-positive { color: #10b981 !important; font-weight: 700; }
+        .balance-negative { color: #ef4444 !important; font-weight: 700; }
+
+        /* Custom cell editor styling */
+        .ag-popup-editor {
+          z-index: 9999 !important;
         }
       </style>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
     </head>
     <body>
-      <!-- EXACT COPY: Main Header from in-page -->
-      <div class="v5-main-header">
-        <div class="v5-title-section">
-          <div class="v5-page-icon">
-            <i class="ph ph-arrow-square-down"></i>
-          </div>
-          <div class="v5-title-text">
-            <h1>Transactions</h1>
-            <p class="v5-subtitle">
-              <span class="v5-account-type">CHECKING</span>
-              <span class="v5-dot">•</span>
-              <span class="v5-status">Ready for Review</span>
-            </p>
-          </div>
-        </div>
+      <div class="v5-popout-container">
         
-        <div class="v5-browse-section">
-          <div id="v5-upload-zone" class="compact-upload-zone" 
-               onclick="document.getElementById('popup-file-input').click()"
-               ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.background='#f8fafc';"
-               ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';"
-               ondrop="event.preventDefault(); this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';">
-            <svg class="upload-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            <div class="upload-text">
-              <span class="upload-main">Drag and drop files here</span>
-              <span class="upload-sub">Limit 200MB per file • PDF, CSV, Excel</span>
+        <div class="v5-main-header">
+          <div class="v5-title-group">
+            <div class="v5-branded-icon">
+              <i class="ph ph-arrow-square-down"></i>
             </div>
-            <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('popup-file-input').click()">Browse files</button>
+            <div class="v5-title-section">
+              <h1>Transactions</h1>
+              <p class="v5-subtitle">
+                <span class="v5-account-type">CHECKING</span>
+                <span>•</span>
+                <span class="v5-status">Ready for Review</span>
+              </p>
+            </div>
           </div>
-          <input type="file" id="popup-file-input" multiple accept=".pdf,.csv" 
-                 style="display: none;">
-        </div>
-        
-        <div class="v5-header-actions">
-          <div class="v5-menu-wrapper" style="position:relative;">
-            <button class="btn-icon v5-menu-toggle" onclick="closePopout()">
-              <i class="ph ph-arrow-square-in"></i>
+          
+          <div class="v5-header-actions">
+            <button class="btn-icon" onclick="sendToParent('popInV5Grid')" title="Pop In">
+              <i class="ph-bold ph-arrow-square-in"></i>
             </button>
+
+            <div class="v5-more-actions-btn" id="menu-btn" title="More Actions">
+              <i class="ph-bold ph-dots-three-vertical"></i>
+            </div>
+
+            <div class="v5-actions-dropdown" id="actions-menu">
+              <div class="v5-menu-item" onclick="toggleAppearancePanel()">
+                <i class="ph ph-palette"></i>
+                <span>Grid Appearance</span>
+              </div>
+              <div class="v5-menu-item" onclick="alert('Undo')">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                <span>Undo</span>
+              </div>
+              <div class="v5-menu-item" onclick="alert('Keyboard Shortcuts')">
+                <i class="ph ph-keyboard"></i>
+                <span>Keyboard Shortcuts</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <!-- EXACT COPY: Freeze Pane from in-page -->
-      <div class="v5-control-toolbar" id="v5-control-toolbar">
-        <div class="v5-ref-input-wrapper">
-          <label for="popup-ref-input">REF#</label>
-          <input type="text" 
-                 id="popup-ref-input" 
-                 class="v5-ref-input" 
-                 maxlength="4" 
-                 placeholder="####"
-                 title="Reference number prefix (max 4 characters)">
+
+        <!-- Appearance Settings (Initially Hidden) -->
+        <div class="v5-appearance-settings" id="appearance-panel">
+          <div class="control-group">
+            <label class="v5-ref-label" style="margin-right:8px;">Theme</label>
+            <select id="popup-theme-dropdown-panel" onchange="applyAppearance()">
+              <option value="vanilla">Vanilla</option>
+              <option value="classic">Classic Blue</option>
+              <option value="ledger-pad">Ledger Pad</option>
+              <option value="postit">Post-It</option>
+              <option value="spectrum">Spectrum (Excel)</option>
+              <option value="vintage">Vintage Dark</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label class="v5-ref-label" style="margin-right:8px;">Size</label>
+            <select id="popup-size-dropdown-panel" onchange="applyAppearance()">
+              <option value="s">Small</option>
+              <option value="m" selected>Medium</option>
+              <option value="l">Large</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="v5-control-toolbar">
+          <div class="v5-ref-section">
+            <span class="v5-ref-label">REF#</span>
+            <input type="text" id="popup-ref-input" class="v5-ref-box" placeholder="####">
+          </div>
+
+          <div class="v5-search-wrapper">
+            <input type="text" id="popup-search-input" class="v5-search-input" placeholder="Search transactions...">
+            <i class="ph ph-magnifying-glass"></i>
+          </div>
+          
+          <div class="v5-balances-card">
+            <div class="v5-balance-item">
+              <div class="v5-balance-label">Opening</div>
+              <div class="v5-balance-value" id="popup-opening">$0.00</div>
+            </div>
+            <div class="v5-balance-item">
+              <div class="v5-balance-label val-in-label">Total In<sup id="popup-count-in">0</sup></div>
+              <div class="v5-balance-value" id="popup-total-in">$0.00</div>
+            </div>
+            <div class="v5-balance-item">
+              <div class="v5-balance-label val-out-label">Total Out<sup id="popup-count-out">0</sup></div>
+              <div class="v5-balance-value" id="popup-total-out">$0.00</div>
+            </div>
+            <div class="v5-balance-item">
+              <div class="v5-balance-label">Ending</div>
+              <div class="v5-balance-value" id="popup-ending-bal">$0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="popout-grid" class="ag-theme-alpine"></div>
+
+        <div class="bulk-actions-bar" id="popup-bulk-bar">
+          <span class="selection-label" id="popup-selection-count">0 selected</span>
+          <button class="btn-bulk btn-bulk-categorize" onclick="bulkCategorize()">
+            <i class="ph ph-sparkle"></i> Categorize
+          </button>
+          <button class="btn-bulk btn-bulk-delete" onclick="bulkDelete()">
+            <i class="ph ph-trash"></i> Delete
+          </button>
+          <button class="btn-bulk btn-bulk-cancel" onclick="clearSelection()">Cancel</button>
         </div>
         
-        <div class="v5-search-wrapper">
-          <i class="ph ph-magnifying-glass"></i>
-          <input type="text" 
-                 id="popup-search-input" 
-                 class="v5-search-input" 
-                 placeholder="Search transactions...">
-        </div>
-        
-        <div class="v5-balances-card" id="popup-balances-card">
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">OPENING</div>
-            <div class="v5-balance-value" id="popup-opening">$0.00</div>
-          </div>
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL IN <span class="superscript">++</span></div>
-            <div class="v5-balance-value positive" id="popup-credit">+$0.00</div>
-          </div>
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL OUT <span class="superscript">++</span></div>
-            <div class="v5-balance-value negative" id="popup-debit">-$0.00</div>
-          </div>
-          <div class="v5-balance-item ending">
-            <div class="v5-balance-label">ENDING</div>
-            <div class="v5-balance-value" id="popup-ending">$0.00</div>
-          </div>
-        </div>
-          </div>
-        </div>
+        <!-- DEBUG PANEL (Collapsible) -->
+        <details style="margin-top: 20px; background: white; border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0;">
+          <summary style="cursor: pointer; font-size: 12px; font-weight: 600; color: #64748b;">Debug Information</summary>
+          <div id="debug-content" style="font-family: monospace; font-size: 11px; color: #10b981; margin-top: 10px;"></div>
+        </details>
+
       </div>
-      
-      <!-- DEBUG PANEL -->
-      <div id="debug-panel" style="background: #1e293b; color: #10b981; padding: 1rem; font-family: monospace; font-size: 12px; border-bottom: 2px solid #10b981;">
-        <div style="font-weight: bold; margin-bottom: 0.5rem;">🔍 POPUP DEBUG INFO (Copy this for developer):</div>
-        <div id="debug-content">Loading...</div>
-      </div>
-      
-      <!-- Main Grid -->
-      <div id="popout-grid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 350px);"></div>
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
@@ -4378,229 +4540,389 @@ window.popOutV5Grid = function () {
         const openingBalance = ${V5State.openingBalance || 0};
         let gridApi;
 
-        // Column defs from main window
-        const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
-        
-        // POPULATE DEBUG PANEL IMMEDIATELY (before DOMContentLoaded)
-        const debugInfo = {
-          'Grid Data Length': gridData.length,
-          'Column Defs Count': columnDefs.length,
-          'Opening Balance': openingBalance,
-          'Sample Data (first row)': gridData[0] ? JSON.stringify(gridData[0]).substring(0, 150) + '...' : 'EMPTY'
-        };
-        
-        let debugHtml = '';
-        for (const [key, value] of Object.entries(debugInfo)) {
-          debugHtml += '<div><strong>' + key + ':</strong> ' + value + '</div>';
-        }
-        
-        // Update immediately (runs before DOMContentLoaded)
-        setTimeout(() => {
-          const debugEl = document.getElementById('debug-content');
-          if (debugEl) debugEl.innerHTML = debugHtml;
-        }, 100);
+        // ===== COA DATA & HELPERS =====
+        function getGroupedCoA() {
+          const rawDefault = window.opener.DEFAULT_CHART_OF_ACCOUNTS || [];
+          let rawCustom = [];
+          try { rawCustom = JSON.parse(window.opener.localStorage.getItem('ab3_custom_coa') || '[]'); } catch (e) { }
+          const all = [...rawDefault, ...rawCustom];
 
-        console.log('🔧 STEP 1: Creating gridOptions object');
-        console.log('   - columnDefs:', columnDefs);
-        console.log('   - rowData length:', gridData.length);
-        
+          const groups = {
+            'Assets': [], 'Liabilities': [], 'Equity': [], 'Revenue': [], 'Expenses': []
+          };
+
+          all.forEach(acc => {
+            if (!acc.name || acc.name.toString().toLowerCase().includes("invalid")) return;
+            const type = (acc.type || '').toLowerCase();
+            const cat = (acc.category || '').toLowerCase();
+            const displayName = acc.code ? acc.code + ' - ' + acc.name : acc.name;
+
+            if (type.includes('asset') || cat.includes('asset')) groups['Assets'].push(displayName);
+            else if (type.includes('liabil') || cat.includes('liabil')) groups['Liabilities'].push(displayName);
+            else if (type.includes('equity') || cat.includes('equity')) groups['Equity'].push(displayName);
+            else if (type.includes('revenue') || type.includes('income') || cat.includes('revenue')) groups['Revenue'].push(displayName);
+            else if (type.includes('expense') || cat.includes('expense')) groups['Expenses'].push(displayName);
+          });
+          return groups;
+        }
+
+        function resolveAccountName(val) {
+          if (!val) return 'Uncategorized';
+          val = val.toString().trim();
+          if (val.toLowerCase().includes("invalid")) return 'Uncategorized';
+
+          if (val.match(/^\\d{4}$/)) {
+            const rawDefault = window.opener.DEFAULT_CHART_OF_ACCOUNTS || [];
+            let rawCustom = [];
+            try { rawCustom = JSON.parse(window.opener.localStorage.getItem('ab3_custom_coa') || '[]'); } catch (e) { }
+            const match = [...rawDefault, ...rawCustom].find(a => a.code === val);
+            if (match && match.name) return match.name;
+          }
+          return val.replace(/^\\d{4}\\b\\s*/, '');
+        }
+
+        // ===== CUSTOM ACCOUNT EDITOR =====
+        class GroupedAccountEditor {
+          init(params) {
+            this.params = params;
+            this.value = params.value || 'Uncategorized';
+            this.groupedData = getGroupedCoA();
+            this.container = document.createElement('div');
+            this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; display:flex; flex-direction:column; overflow:hidden; z-index:9999;';
+            
+            const searchBox = document.createElement('input');
+            searchBox.type = 'text';
+            searchBox.placeholder = 'Search accounts...';
+            searchBox.style.cssText = 'padding:10px; border:none; border-bottom:1px solid #e2e8f0; outline:none; font-size:13px; width:100%;';
+            setTimeout(() => searchBox.focus(), 0);
+            searchBox.addEventListener('input', (e) => this.renderList(e.target.value));
+            this.container.appendChild(searchBox);
+
+            this.listContainer = document.createElement('div');
+            this.listContainer.style.cssText = 'max-height:300px; overflow-y:auto;';
+            this.container.appendChild(this.listContainer);
+            this.renderList();
+          }
+          getGui() { return this.container; }
+          getValue() { return this.value; }
+          isPopup() { return true; }
+          renderList(filter = '') {
+            this.listContainer.innerHTML = '';
+            const lowerFilter = filter.toLowerCase();
+            Object.keys(this.groupedData).forEach(groupName => {
+              const items = this.groupedData[groupName].filter(i => i.toLowerCase().includes(lowerFilter));
+              if (items.length > 0) {
+                const header = document.createElement('div');
+                header.style.cssText = 'padding:8px 12px; background:#f8fafc; font-weight:700; font-size:11px; color:#64748b; text-transform:uppercase;';
+                header.innerText = groupName;
+                this.listContainer.appendChild(header);
+                items.forEach(item => {
+                  const div = document.createElement('div');
+                  div.style.cssText = 'padding:8px 16px; font-size:13px; color:#334155; cursor:pointer;';
+                  div.innerText = item;
+                  div.onmouseover = () => div.style.background = '#f1f5f9';
+                  div.onmouseout = () => div.style.background = 'white';
+                  div.onclick = () => { this.value = item; this.params.stopEditing(); };
+                  this.listContainer.appendChild(div);
+                });
+              }
+            });
+          }
+        }
+
+        // ===== ACTIONS RENDERER =====
+        class ActionCellRenderer {
+          init(params) {
+            this.params = params;
+            this.eGui = document.createElement('div');
+            this.eGui.style.cssText = 'display:flex; gap:8px; align-items:center; height:100%;';
+            
+            const createBtn = (icon, color, bg, title, onClick) => {
+              const btn = document.createElement('button');
+              btn.innerHTML = '<i class="ph ph-' + icon + '"></i>';
+              btn.style.cssText = 'border:none; background:' + bg + '; color:' + color + '; border-radius:4px; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition: all 0.2s;';
+              btn.title = title;
+              btn.onclick = (e) => { e.stopPropagation(); onClick(); };
+              return btn;
+            };
+
+            const btnPdf = createBtn('file-pdf', '#ef4444', '#fee2e2', 'View PDF', () => alert('View PDF: ' + params.data.refNumber));
+            const btnSwap = createBtn('arrows-left-right', '#3b82f6', '#dbeafe', 'Re-allocate', () => alert('Re-allocate: ' + params.data.refNumber));
+            const btnDel = createBtn('trash', '#ef4444', '#fee2e2', 'Delete', () => {
+              if (confirm('Delete transaction ' + params.data.refNumber + '?')) {
+                // We'll update the grid rows by filtering the local gridData array
+                const idx = gridData.findIndex(r => r.id === params.data.id);
+                if (idx !== -1) {
+                  gridData.splice(idx, 1);
+                  gridApi.setGridOption('rowData', gridData);
+                  sendToParent('updateV5DataFromPopout', gridData);
+                  updateBalances();
+                }
+              }
+            });
+
+            this.eGui.appendChild(btnPdf);
+            this.eGui.appendChild(btnSwap);
+            this.eGui.appendChild(btnDel);
+          }
+          getGui() { return this.eGui; }
+        }
+
+        // ===== GRID CONFIG =====
+        const columnDefs = [
+          { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
+          { headerName: 'Ref#', field: 'refNumber', width: 90, cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' } },
+          { headerName: 'Date', field: 'date', width: 110, sort: 'asc' },
+          { headerName: 'Description', field: 'description', flex: 2, editable: true },
+          { headerName: 'Debit', field: 'debit', width: 100, editable: true, 
+             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+          },
+          { headerName: 'Credit', field: 'credit', width: 100, editable: true,
+             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+          },
+          { headerName: 'Balance', field: 'balance', width: 120, 
+             valueFormatter: params => '$' + (params.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+             cellClass: params => (params.value || 0) < 0 ? 'balance-negative' : 'balance-positive'
+          },
+          { headerName: 'Account', field: 'account', flex: 1.5, editable: true, cellEditor: GroupedAccountEditor,
+             valueFormatter: params => (typeof resolveAccountName === 'function') ? resolveAccountName(params.value) : params.value
+          },
+          { headerName: 'Actions', width: 130, cellRenderer: ActionCellRenderer, resizable: false, sortable: false }
+        ];
+
         const gridOptions = {
           columnDefs,
           rowData: gridData,
           defaultColDef: { sortable: true, filter: true, resizable: true },
           rowSelection: 'multiple',
+          rowHeight: 48,
+          onSelectionChanged: () => {
+            const count = gridApi.getSelectedNodes().length;
+            const bar = document.getElementById('popup-bulk-bar');
+            bar.style.display = count > 0 ? 'flex' : 'none';
+            document.getElementById('popup-selection-count').innerText = count + ' selected';
+          },
           onCellValueChanged: (params) => {
-            // Sync to parent immediately
-            window.opener.updateV5DataFromPopout(gridData);
+            sendToParent('updateV5DataFromPopout', gridData);
             updateBalances();
           }
         };
-        
-        console.log('🔧 STEP 2: Initializing grid via setTimeout...');
-        
-        // Use setTimeout to ensure scripts are loaded and layout is ready
-        setTimeout(() => {
-          console.log('✅✅✅ INITIALIZATION STARTING!');
-          console.log('📊 Grid data length:', gridData.length);
-          console.log('📋 Column defs count:', columnDefs.length);
-          
-          const gridElement = document.getElementById('popout-grid');
-          console.log('🎯 Grid element:', gridElement);
-          console.log('🎯 Grid element dimensions:', gridElement ? gridElement.getBoundingClientRect() : 'NULL');
-          
-          if (gridData.length === 0) {
-            console.warn('⚠️ WARNING: gridData is empty!');
-          }
-          
-          console.log('🔧 STEP 3: Calling agGrid.createGrid...');
-          console.log('   - Grid element:', document.getElementById('popout-grid'));
-          console.log('   - Grid options:', gridOptions);
-          
-          try {
-            gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-            console.log('✅✅✅ Grid API created:', gridApi);
-          } catch (err) {
-            console.error('❌ ERROR creating grid:', err);
-          }
-          
-          if (gridApi) {
-            console.log('   - Grid API getDisplayedRowCount:', gridApi.getDisplayedRowCount ? gridApi.getDisplayedRowCount() : 'N/A');
-          }
-          
-          // Populate debug panel
-          const debugInfo = {
-            'Grid Data Length': gridData.length,
-            'Column Defs Count': columnDefs.length,
-            'Opening Balance': openingBalance,
-            'Grid Element Found': document.getElementById('popout-grid') ? 'YES' : 'NO',
-            'Grid API Created': gridApi ? 'YES' : 'NO',
-            'Window Opener Exists': window.opener ? 'YES' : 'NO',
-            'Main Window Data Length': window.opener?.V5State?.gridData?.length || 'N/A',
-            'Sample Data (first row)': gridData[0] ? JSON.stringify(gridData[0]).substring(0, 100) + '...' : 'EMPTY'
-          };
-          
-          let debugHtml = '';
-          for (const [key, value] of Object.entries(debugInfo)) {
-            debugHtml += '<div><strong>' + key + ':</strong> ' + value + '</div>';
-          }
-          document.getElementById('debug-content').innerHTML = debugHtml;
-          
-          // Set initial appearance from main window
-          const themeDropdown = document.getElementById('popup-theme-dropdown');
-          const fontDropdown = document.getElementById('popup-font-dropdown');
-          const sizeDropdown = document.getElementById('popup-size-dropdown');
-          
-          if (themeDropdown) themeDropdown.value = '${currentTheme}';
-          if (fontDropdown) fontDropdown.value = '${currentFont}';
-          if (sizeDropdown) sizeDropdown.value = '${currentSize}';
-          
-          // CRITICAL: Apply appearance immediately
-          if (typeof applyAppearance === 'function') applyAppearance();
-          
-          // Update balances
-          if (typeof updateBalances === 'function') updateBalances();
-          
-          console.log('✅ Initialization complete');
-        }, 500);
 
-        
-        // CRITICAL: Auto pop-in when popup window closes
-        window.onbeforeunload = function() {
+        // ===== COMMUNICATION BRIDGE =====
+        function sendToParent(type, data = {}) {
           if (window.opener && !window.opener.closed) {
-            window.opener.popInV5Grid();
+            window.opener.postMessage({ type, data }, '*');
           }
+        }
+
+        // ===== GRID INIT =====
+        setTimeout(() => {
+          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          
+          // Search binding
+          document.getElementById('popup-search-input').onkeyup = (e) => {
+            gridApi.setGridOption('quickFilterText', e.target.value);
+          };
+
+          // Ref# binding
+          document.getElementById('popup-ref-input').onkeyup = (e) => {
+            const filterModel = gridApi.getFilterModel() || {};
+            if (e.target.value) {
+              filterModel.refNumber = { filterType: 'text', type: 'contains', filter: e.target.value };
+            } else {
+              delete filterModel.refNumber;
+            }
+            gridApi.setFilterModel(filterModel);
+          };
+
+          // Set initial appearance
+          document.getElementById('popup-theme-dropdown-panel').value = '${currentTheme}';
+          document.getElementById('popup-size-dropdown-panel').value = '${currentSize}';
+          applyAppearance();
+          updateBalances();
+          
+          // Debug output
+          document.getElementById('debug-content').innerText = 
+            'Rows: ' + gridData.length + ' | Columns: ' + columnDefs.length + ' | Opener: ' + (window.opener ? 'YES' : 'NO');
+        }, 300);
+
+        // ===== HEADER MENU =====
+        const menuBtn = document.getElementById('menu-btn');
+        const actionsMenu = document.getElementById('actions-menu');
+
+        menuBtn.onclick = (e) => {
+          e.stopPropagation();
+          actionsMenu.classList.toggle('show');
         };
 
-        // ===== APPEARANCE FUNCTION =====
-        function applyAppearance() {
-          const theme = document.getElementById('popup-theme-dropdown').value;
-          const font = document.getElementById('popup-font-dropdown').value;
-          const size = document.getElementById('popup-size-dropdown').value;
+        window.onclick = () => {
+          actionsMenu.classList.remove('show');
+        };
+
+        function toggleAppearancePanel() {
+          const panel = document.getElementById('appearance-panel');
+          panel.classList.toggle('show');
+          actionsMenu.classList.remove('show');
+        }
+
+        // ===== ACTIONS =====
+        function updateBalances() {
+          let tIn = 0, tOut = 0, cIn = 0, cOut = 0;
+          gridData.forEach(t => {
+            const credit = parseFloat(t.Credit || t.credit) || 0;
+            const debit = parseFloat(t.Debit || t.debit) || 0;
+            if (credit > 0) { tIn += credit; cIn++; }
+            if (debit > 0) { tOut += debit; cOut++; }
+          });
+          const end = (parseFloat(openingBalance) || 0) + tIn - tOut;
           
-          const grid = document.querySelector('.ag-theme-alpine');
+          const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          document.getElementById('popup-opening').innerText = '$' + fmt(openingBalance);
+          
+          // Match Main Page: In is Green/+, Out is Red/-
+          document.getElementById('popup-total-in').innerText = '+$' + fmt(tIn);
+          document.getElementById('popup-count-in').innerText = cIn;
+          
+          document.getElementById('popup-total-out').innerText = '-$' + fmt(tOut);
+          document.getElementById('popup-count-out').innerText = cOut;
+          
+          document.getElementById('popup-ending-bal').innerText = '$' + fmt(end);
+        }
+
+        function applyAppearance() {
+          const theme = document.getElementById('popup-theme-dropdown-panel').value;
+          const size = document.getElementById('popup-size-dropdown-panel').value;
+          const grid = document.getElementById('popout-grid');
           if (!grid) return;
           
-          // Remove all existing theme classes
-          const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
-          classesToRemove.forEach(cls => grid.classList.remove(cls));
+          // Remove old theme classes
+          Array.from(grid.classList).forEach(c => { if(c.startsWith('theme-')) grid.classList.remove(c); });
+          grid.classList.add('theme-' + theme);
           
-          // Add new theme
-          if (theme) {
-            grid.classList.add('theme-' + theme);
-          }
-          
-          // Apply font
-          if (font) {
-            grid.style.setProperty('--ag-font-family', font);
-            grid.style.fontFamily = font;
-          }
-          
-          // Apply size with mapping
-          if (size) {
-            const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
-            const cssSize = sizeMap[size] || '13px';
-            
-            let styleEl = document.getElementById('popup-size-override');
-            if (styleEl) styleEl.remove();
-            
-            styleEl = document.createElement('style');
-            styleEl.id = 'popup-size-override';
-            styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
-              .ag-theme-alpine .ag-header-cell-text,
-              .ag-theme-alpine .ag ag-cell { font-size: \${cssSize} !important; }\`;
-            document.head.appendChild(styleEl);
-          }
-          
-          // CRITICAL: Sync appearance back to main window!
-          if (window.opener && !window.opener.closed) {
-            window.opener.syncAppearanceFromPopup(theme, font, size);
-          }
+          // Apply size
+          const sizeMap = { 's': '12px', 'm': '14px', 'l': '16px' };
+          grid.style.fontSize = sizeMap[size] || '14px';
+
+          // Update parent to sync (using bridge)
+          sendToParent('syncV5Appearance', { theme, size });
         }
 
-        // ===== BALANCE CALCULATION =====
-        function updateBalances() {
-          let totalDebit = 0;
-          let totalCredit = 0;
-          
-          gridData.forEach(txn => {
-            const debit = parseFloat(txn.Debit || txn.debit) || 0;
-            const credit = parseFloat(txn.Credit || txn.credit) || 0;
-            totalDebit += debit;
-            totalCredit += credit;
-          });
-          
-          const endingBal = openingBalance - totalDebit + totalCredit;
-          
-          const fmt = (n) => {
-            const sign = n >= 0 ? '+' : '';
-            return sign + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
-          };
-          
-          document.getElementById('popup-opening').textContent = fmt(openingBalance);
-          document.getElementById('popup-debit').textContent = '-$' + totalDebit.toFixed(2);
-          document.getElementById('popup-credit').textContent = '+$' + totalCredit.toFixed(2);
-          document.getElementById('popup-ending').textContent = fmt(endingBal);
-          
-          // Sync balances to main window
-          if (window.opener && !window.opener.closed) {
-            window.opener.recalculateAllBalances();
-          }
-        }
-
-        // ===== GRID ACTIONS =====
         function selectAll() { gridApi.selectAll(); }
         function deselectAll() { gridApi.deselectAll(); }
         
         function bulkDelete() {
           const selected = gridApi.getSelectedRows();
           if (selected.length === 0) return;
-          if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
+          if (!confirm('Delete ' + selected.length + ' transaction(s)?')) return;
           
           const selectedIds = selected.map(r => r.id);
           const newData = gridData.filter(r => !selectedIds.includes(r.id));
-          gridApi.setGridOption('rowData', newData);
-          window.opener.updateV5DataFromPopout(newData);
+          gridData.length = 0;
+          newData.forEach(r => gridData.push(r));
+          gridApi.setGridOption('rowData', gridData);
+          sendToParent('updateV5DataFromPopout', gridData);
           updateBalances();
+        }
+
+        function bulkCategorize() {
+          const nodes = gridApi.getSelectedNodes();
+          if (nodes.length === 0) return;
+          const cat = prompt('Categorize ' + nodes.length + ' items to:');
+          if (cat) {
+            nodes.forEach(n => { n.data.account = cat; });
+            gridApi.refreshCells({ force: true });
+            sendToParent('updateV5DataFromPopout', gridData);
+            updateBalances();
+          }
+        }
+
+        function clearSelection() {
+          gridApi.deselectAll();
         }
         
         function closePopout() {
-          window.opener.popInV5Grid();
+          sendToParent('popInV5Grid');
           window.close();
         }
+
+        window.onbeforeunload = () => {
+          sendToParent('popInV5Grid');
+        };
+
+        // Extra insurance for immediate popin
+        window.addEventListener('pagehide', () => {
+          sendToParent('popInV5Grid');
+        });
       </script>
     </body>
     </html>
-  `);
+  `;
+
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  // Create popout window
+  const popOutWindow = window.open(url, 'V5GridPopOut', 'width=1600,height=1000');
+
+  if (!popOutWindow) {
+    alert('Popup blocked! Please allow popups for this site.');
+    return;
+  }
+
+  // Store reference and monitor closure
+  V5State.popoutWindow = popOutWindow;
+
+  // Backup monitor for immediate response
+  const monitor = setInterval(() => {
+    if (popOutWindow.closed) {
+      clearInterval(monitor);
+      window.popInV5Grid();
+    }
+  }, 300);
 };
 
 
 
 
+// ====================================================================================
+// POP-IN / POP-OUT ORCHESTRATION BRIDGE
+// ====================================================================================
+
+window.addEventListener('message', (event) => {
+  const { type, data } = event.data;
+  if (!type) return;
+
+  console.log('📬 Parent received message:', type, data);
+
+  switch (type) {
+    case 'syncV5Appearance':
+      window.syncV5Appearance(data.theme, data.size);
+      break;
+    case 'updateV5DataFromPopout':
+      window.updateV5DataFromPopout(data);
+      break;
+    case 'popInV5Grid':
+      window.popInV5Grid();
+      break;
+  }
+});
+
+window.syncV5Appearance = function (theme, size) {
+  const mainTheme = document.getElementById('v5-theme-dropdown');
+  const mainSize = document.getElementById('v5-size-dropdown');
+  if (mainTheme) mainTheme.value = theme;
+  if (mainSize) mainSize.value = size;
+  if (window.applyAppearance) window.applyAppearance();
+};
+
 window.popInV5Grid = function () {
-  // Close popout if open
-  if (V5State.popoutWindow && !V5State.popoutWindow.closed) {
-    V5State.popoutWindow.close();
-    V5State.popoutWindow = null;
+  // Clear reference immediately to avoid recursion
+  const win = V5State.popoutWindow;
+  V5State.popoutWindow = null;
+
+  // Close popout if it's still open
+  if (win && !win.closed) {
+    try { win.close(); } catch (e) { }
   }
 
   // Remove Pop-In overlay
