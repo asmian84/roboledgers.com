@@ -3276,30 +3276,31 @@ window.initV5Grid = function () {
     suppressHorizontalScroll: false,
     // Default sort by Date (newest first)
     initialState: {
-      sort: {
-        sortModel: [{ colId: 'date', sort: 'desc' }]
-      }
+      sort: [
+        { colId: 'date', sort: 'asc' } // Ascending = oldest first
+      ]
     },
     rowSelection: 'multiple',
     animateRows: true,
-    enableCellChangeFlash: true,
+    // Recalculate running balance whenever sort changes
     onSortChanged: (params) => {
-      // Auto-renumber Ref# based on current sort order
+      // Auto-renumber Ref# based on new sort order
       setTimeout(() => {
         const displayedRows = [];
         params.api.forEachNodeAfterFilterAndSort(node => displayedRows.push(node.data));
 
         displayedRows.forEach((row, index) => {
-          const newRefNum = String(index + 1).padStart(3, '0');
-          if (row.refNumber !== newRefNum) {
-            row.refNumber = newRefNum;
-          }
+          row.refNumber = String(index + 1).padStart(3, '0');
         });
 
         params.api.refreshCells({ force: true });
+
+        // Recalculate balances based on new display order
+        recalculateAllBalances();
+
         saveData();
-        console.log('✅ Ref# auto-renumbered after sort');
-      }, 100);
+        console.log('✅ Ref# auto-renumbered and balances recalculated after sort');
+      }, 200);
     },
     onCellValueChanged: (params) => {
       captureState();
