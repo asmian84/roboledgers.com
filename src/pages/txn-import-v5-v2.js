@@ -194,17 +194,33 @@ window.applyAppearance = function () {
   const grid = document.querySelector('.ag-theme-alpine');
   if (!grid) return;
 
-  // Apply theme
-  grid.classList.remove('theme-ledger', 'theme-postit', 'theme-rainbow', 'theme-spectrum',
-    'theme-tracker', 'theme-neon', 'theme-ocean', 'theme-forest');
-  if (theme) grid.classList.add('theme-' + theme);
+  // Apply industry-standard theme
+  grid.classList.remove('ag-theme-balham', 'ag-theme-material', 'ag-theme-dark',
+    'grid-theme-excel', 'grid-theme-tableau');
 
-  // Apply font
+  if (theme === 'balham') {
+    grid.classList.replace('ag-theme-alpine', 'ag-theme-balham');
+  } else if (theme === 'material') {
+    grid.classList.replace('ag-theme-alpine', 'ag-theme-material');
+  } else if (theme === 'dark') {
+    grid.classList.replace('ag-theme-alpine', 'ag-theme-alpine-dark');
+  } else if (theme === 'excel') {
+    grid.classList.add('grid-theme-excel');
+  } else if (theme === 'tableau') {
+    grid.classList.add('grid-theme-tableau');
+  } else {
+    // Reset to default alpine
+    grid.className = 'ag-theme-alpine';
+  }
+
+  // Apply professional fonts
   const fonts = {
-    'inter': "'Inter', sans-serif",
-    'roboto-mono': "'Roboto Mono', monospace",
-    'georgia': "'Georgia', serif",
-    'arial': "'Arial', sans-serif"
+    'segoe': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+    'inter': '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    'roboto': '"Roboto", "Helvetica Neue", Arial, sans-serif',
+    'arial': 'Arial, Helvetica, sans-serif',
+    'helvetica': '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    'monospace': '"Roboto Mono", "Courier New", Courier, monospace'
   };
   grid.style.fontFamily = fonts[font] || '';
 
@@ -214,6 +230,8 @@ window.applyAppearance = function () {
 
   // Save to localStorage
   localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
+
+  console.log('✅ Appearance applied:', { theme, font, size });
 };
 
 // ====================================================================================
@@ -1674,37 +1692,50 @@ window.renderTxnImportV5Page = function () {
       </div>
 
 
-      <!-- SLEEK INLINE APPEARANCE BAR -->
-      <div id="v5-appearance-panel" class="v5-appearance-bar" style="display:none;">
-        <i class="ph ph-palette" style="color:#3b82f6; font-size:1.25rem;" title="Grid Appearance"></i>
-        <div class="v5-appearance-controls">
+      <!-- SHARED INLINE MODULE BAR - Grid Appearance -->
+      <div id="v5-appearance-panel" class="v5-bulk-bar" style="display: none;">
+        <div class="v5-bulk-info">
+          <i class="ph ph-palette"></i>
+          <span>Grid Appearance</span>
+        </div>
+        <div class="v5-bulk-actions" style="gap: 1rem;">
           <div class="v5-control-group">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
-              <option value="">Default</option>
+              <option value="">Default (Alpine)</option>
+              <option value="balham">Balham (Professional)</option>
+              <option value="material">Material Design</option>
               <option value="dark">Dark Mode</option>
-              <option value="mint">Mint Fresh</option>
-              <option value="contrast">High Contrast</option>
+              <option value="excel">Excel Classic</option>
+              <option value="tableau">Tableau Style</option>
             </select>
           </div>
           <div class="v5-control-group">
             <label>Font</label>
             <select id="v5-font-dropdown" onchange="window.applyAppearance()">
-              <option value="">System</option>
-              <option value="inter">Inter</option>
-              <option value="roboto-mono">Roboto Mono</option>
+              <option value="">System Default</option>
+              <option value="segoe">Segoe UI (Microsoft)</option>
+              <option value="inter">Inter (Modern)</option>
+              <option value="roboto">Roboto (Google)</option>
+              <option value="arial">Arial (Classic)</option>
+              <option value="helvetica">Helvetica (Clean)</option>
+              <option value="monospace">Monospace (Code)</option>
             </select>
           </div>
           <div class="v5-control-group">
             <label>Size</label>
             <select id="v5-size-dropdown" onchange="window.applyAppearance()">
-              <option value="xs">XS</option>
-              <option value="s">S</option>
-              <option value="m" selected>M</option>
-              <option value="l">L</option>
-              <option value="xl">XL</option>
+              <option value="xs">XS (11px)</option>
+              <option value="s">S (12px)</option>
+              <option value="m" selected>M (13px)</option>
+              <option value="l">L (14px)</option>
+              <option value="xl">XL (16px)</option>
             </select>
           </div>
+          <button class="btn-bulk-cancel" onclick="window.closeV5Appearance()" style="margin-left: auto;">
+            <i class="ph ph-x"></i>
+            Close
+          </button>
         </div>
       </div>
 
