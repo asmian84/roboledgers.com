@@ -4411,6 +4411,8 @@ window.popOutV5Grid = function () {
           window.close();
         }
 
+        // ===== BALANCE CALCULATION =====
+
 
 
           
