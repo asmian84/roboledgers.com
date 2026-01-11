@@ -294,12 +294,12 @@ window.renderTxnImportV5Page = function () {
       }
       
       .ag-theme-alpine.theme-rainbow {
-        --ag-background-color: #ffffff;
-        --ag-foreground-color: #333333;
-        --ag-header-background-color: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1) !important;
+        --ag-background-color: #fef5ff;
+        --ag-foreground-color: #2d1b2e;
+        --ag-header-background-color: #9b59b6 !important;
         --ag-header-foreground-color: #ffffff !important;
-        --ag-odd-row-background-color: #f9f9f9;
-        --ag-border-color: #e0e0e0;
+        --ag-odd-row-background-color: #f9ebff;
+        --ag-border-color: #d5a6e8;
       }
       
       .ag-theme-alpine.theme-social {
@@ -4434,15 +4434,29 @@ window.applyAppearance = function () {
     grid.classList.add(`theme-${theme}`);
   }
 
-  // Apply font family and size to ENTIRE grid (not just headers)
+  // Apply font family to ENTIRE grid
   if (font) {
     grid.style.setProperty('--ag-font-family', font);
     grid.style.fontFamily = font;
   }
 
+  // CRITICAL FIX: Font-size must be injected as CSS to affect ALL cells
   if (size) {
-    grid.style.setProperty('--ag-font-size', size);
-    grid.style.fontSize = size;
+    // Remove old dynamic style if exists
+    let styleEl = document.getElementById('v5-grid-size-override');
+    if (styleEl) styleEl.remove();
+
+    // Inject new style that forces font-size on ALL grid elements
+    styleEl = document.createElement('style');
+    styleEl.id = 'v5-grid-size-override';
+    styleEl.textContent = `
+            .ag-theme-alpine { --ag-font-size: ${size} !important; }
+            .ag-theme-alpine .ag-header-cell-text,
+            .ag-theme-alpine .ag-cell { 
+              font-size: ${size} !important; 
+            }
+          `;
+    document.head.appendChild(styleEl);
   }
 
   // Save to localStorage
