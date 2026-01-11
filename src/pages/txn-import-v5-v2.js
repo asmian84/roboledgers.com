@@ -3209,7 +3209,6 @@ window.initV5Grid = function () {
       minWidth: 140,
       maxWidth: 140, // Fixed width wall
       resizable: false, // Prevent user resize
-      cellStyle: { paddingRight: '16px' }, // Breathing room
       cellRenderer: (params) => {
         // Source file icon - dynamic based on type
         let sourceIcon = '';
