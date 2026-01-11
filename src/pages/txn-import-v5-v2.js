@@ -3139,9 +3139,11 @@ window.initV5Grid = function () {
     {
       headerName: 'Description',
       field: 'description',
+      editable: true,
       flex: 2,
-      minWidth: 250,
-      editable: true
+      minWidth: 200,
+      maxWidth: 400, // Prevent excessive width
+      cellEditor: 'agTextCellEditor'
     },
     {
       headerName: 'Debit',
@@ -3303,17 +3305,20 @@ window.initV5Grid = function () {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
       V5State.gridColumnApi = params.columnApi;
-      // Autofit columns to content (no truncation)
-      params.api.autoSizeAllColumns(false);
+      // Autofit columns to content with smart constraints
+      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
+      params.api.autoSizeColumns(allColumnIds, false);
     },
     onGridSizeChanged: (params) => {
-      // Re-autofit on resize
-      params.api.autoSizeAllColumns(false);
+      // Re-autofit on resize with constraints
+      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
+      params.api.autoSizeColumns(allColumnIds, false);
     },
     onFirstDataRendered: (params) => {
       console.log('🎯 First data rendered - auto-sizing columns');
-      // Fit to content width (skipHeader = false includes header text)
-      params.api.autoSizeAllColumns(false);
+      // Fit to content with constraints
+      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
+      params.api.autoSizeColumns(allColumnIds, false);
 
       // Log grid state
       const rect = container.getBoundingClientRect();
