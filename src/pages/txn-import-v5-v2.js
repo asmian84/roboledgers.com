@@ -246,11 +246,8 @@ window.renderTxnImportV5Page = function () {
       @media (min-width: 768px) { .tablet-up { display: block !important; } }
       @media (min-width: 1024px) { .desktop-up { display: block !important; } }
 
-      /* PHASE 2: Grid Touch-Friendly Mobile Styles */
-      @media (max-width: 767px) {
-        .ag-theme-alpine { font-size: 14px; }
-      
-      /* Caseware-Inspired Color Schemes (Real Theme Names) */
+
+      /* Caseware-Inspired Color Schemes (Real Theme Names) - APPLIES TO ALL SCREEN SIZES */
       .ag-theme-alpine.theme-vanilla {
         --ag-background-color: #fffef8;
         --ag-foreground-color: #333333;
@@ -295,6 +292,10 @@ window.renderTxnImportV5Page = function () {
         --ag-odd-row-background-color: #252525;
         --ag-border-color: #3a3a3a;
       }
+
+      /* PHASE 2: Grid Touch-Friendly Mobile Styles */
+      @media (max-width: 767px) {
+        .ag-theme-alpine { font-size: 14px; }
         .ag-theme-alpine .ag-row { min-height: 56px !important; }
         .ag-theme-alpine .ag-cell { padding: 12px 8px !important; }
         .v5-grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
