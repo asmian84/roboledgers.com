@@ -1974,13 +1974,8 @@ window.recalculateAllBalances = function () {
     const debit = parseFloat(txn.Debit || txn.debit) || 0;
     const credit = parseFloat(txn.Credit || txn.credit) || 0;
 
-    if (isCreditCard) {
-      // Credit Card: Opening - Credit (outflow) + Debit (inflow) = Ending
-      runningBalance = runningBalance - credit + debit;
-    } else {
-      // Bank Account: Opening - Debit (outflow) + Credit (inflow) = Ending
-      runningBalance = runningBalance - debit + credit;
-    }
+    // Universal formula: Opening - Debit (outflow) + Credit (inflow) = Ending
+    runningBalance = runningBalance - debit + credit;
 
     txn.balance = parseFloat(runningBalance.toFixed(2)); // Round to avoid floating point errors
   });
