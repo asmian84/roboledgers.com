@@ -266,6 +266,15 @@ window.renderTxnImportV5Page = function () {
         --ag-border-color: #d1d5db;
       }
       
+      .ag-theme-alpine.theme-default {
+        --ag-background-color: #f5f5f5;
+        --ag-foreground-color: #2c2c2c;
+        --ag-header-background-color: #e0e0e0 !important;
+        --ag-header-foreground-color: #424242 !important;
+        --ag-odd-row-background-color: #ebebeb;
+        --ag-border-color: #cccccc;
+      }
+      
       .ag-theme-alpine.theme-ledger-pad {
         --ag-background-color: #f0f8e8;
         --ag-foreground-color: #1a3a1a;
@@ -275,6 +284,33 @@ window.renderTxnImportV5Page = function () {
         --ag-border-color: #c5d9c5;
       }
       
+      .ag-theme-alpine.theme-postit {
+        --ag-background-color: #fffbcc;
+        --ag-foreground-color: #5a4a00;
+        --ag-header-background-color: #ffd700 !important;
+        --ag-header-foreground-color: #5a4a00 !important;
+        --ag-odd-row-background-color: #fff8b3;
+        --ag-border-color: #e6d68a;
+      }
+      
+      .ag-theme-alpine.theme-rainbow {
+        --ag-background-color: #ffffff;
+        --ag-foreground-color: #333333;
+        --ag-header-background-color: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1) !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #f9f9f9;
+        --ag-border-color: #e0e0e0;
+      }
+      
+      .ag-theme-alpine.theme-social {
+        --ag-background-color: #e8f4f8;
+        --ag-foreground-color: #0d3b66;
+        --ag-header-background-color: #1da1f2 !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #d4e9f0;
+        --ag-border-color: #b8d8e5;
+      }
+      
       .ag-theme-alpine.theme-spectrum {
         --ag-background-color: #ffffff;
         --ag-foreground-color: #333333;
@@ -282,6 +318,15 @@ window.renderTxnImportV5Page = function () {
         --ag-header-foreground-color: #ffffff !important;
         --ag-odd-row-background-color: #f2f2f2;
         --ag-border-color: #d0d0d0;
+      }
+      
+      .ag-theme-alpine.theme-wave {
+        --ag-background-color: #e6f2ff;
+        --ag-foreground-color: #003d66;
+        --ag-header-background-color: #0066cc !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #cce5ff;
+        --ag-border-color: #99ccff;
       }
       
       .ag-theme-alpine.theme-vintage {
@@ -1775,11 +1820,16 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
-              <option value="">Default Light</option>
+              <option value="">Alpine (Default AG Grid)</option>
               <option value="vanilla">Vanilla</option>
               <option value="classic">Classic (Caseware Blue)</option>
+              <option value="default">Default (Gray)</option>
               <option value="ledger-pad">Ledger Pad (Green)</option>
+              <option value="postit">Post-it Note (Yellow)</option>
+              <option value="rainbow">Rainbow</option>
+              <option value="social">Social (Blue)</option>
               <option value="spectrum">Spectrum (Excel Gray)</option>
+              <option value="wave">Wave (Ocean Blue)</option>
               <option value="vintage">Vintage (Dark)</option>
             </select>
           </div>
