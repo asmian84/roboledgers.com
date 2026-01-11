@@ -1504,7 +1504,7 @@ window.renderTxnImportV5Page = function () {
             <i class="ph ph-arrow-square-down"></i>
           </div>
           <div class="v5-title-text">
-            <h1>Imported Transactions (Grid)</h1>
+            <h1>Transactions</h1>
             <p class="v5-subtitle">
               <span class="v5-account-type">CHECKING</span>
               <span class="v5-dot">•</span>
@@ -1682,7 +1682,7 @@ window.renderTxnImportV5Page = function () {
             <i class="ph ph-arrow-square-down"></i>
           </div>
           <div class="v5-title-text">
-            <h1>Imported Transactions (Grid)</h1>
+            <h1>Transactions</h1>
             <p class="v5-subtitle">
               <span class="v5-account-type">CHECKING</span>
               <span class="v5-dot">•</span>
