@@ -1626,18 +1626,6 @@ window.renderTxnImportV5Page = function () {
         <!-- Right: Balances (Moved from header) -->
         <div class="v5-balances-card" id="v5-balances-card">
           <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL IN</div>
-            <div class="v5-balance-value positive" id="v5-total-in">+$0.00</div>
-          </div>
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL OUT</div>
-            <div class="v5-balance-value negative" id="v5-total-out">-$0.00</div>
-          </div>
-          <div class="v5-balance-item ending">
-            <div class="v5-balance-label">ENDING</div>
-            <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
-          </div>
-          <div class="v5-balance-item">
             <div class="v5-balance-label">OPENING</div>
             <input 
               type="text" 
@@ -1647,6 +1635,18 @@ window.renderTxnImportV5Page = function () {
               onblur="window.handleOpeningBalanceChange(this)"
               onkeypress="if(event.key==='Enter'){this.blur();}"
             />
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL OUT</div>
+            <div class="v5-balance-value negative" id="v5-total-out">-$0.00</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL IN</div>
+            <div class="v5-balance-value positive" id="v5-total-in">+$0.00</div>
+          </div>
+          <div class="v5-balance-item ending">
+            <div class="v5-balance-label">ENDING</div>
+            <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
           </div>
         </div>
       </div>
