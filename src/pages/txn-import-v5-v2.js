@@ -1043,25 +1043,27 @@ window.renderTxnImportV5Page = function () {
       }
       
       .v5-control-group select {
-        padding: 4px 8px; /* Reduced padding */
-        border: 1px solid #cbd5e1;
-        border-radius: 4px;
+        padding: 6px 12px;
+        border: 2px solid #3b82f6;
+        border-radius: 6px;
         background: white;
-        font-size: 12px; /* Smaller font */
+        font-size: 13px;
         color: #1e293b;
         cursor: pointer;
-        min-width: 120px; /* Reduced min-width */
+        min-width: 130px;
         transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
       }
       
       .v5-control-group select:hover {
-        border-color: #94a3b8;
+        border-color: #2563eb;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
       }
       
       .v5-control-group select:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); /* Smaller shadow */
+        border-color: #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
       }
       
       /* Bulk Operations Bar - Super Snug, Increased Height */
@@ -1215,7 +1217,39 @@ window.renderTxnImportV5Page = function () {
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         margin-bottom: 16px;
-        overflow: hidden;
+      }
+      /* Bulk Operations Bar - Modern Clean Design */
+      .v5-bulk-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background: linear-gradient(to right, #ffffff, #f8fafc);
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        gap: 16px;
+      }
+      
+      .v5-bulk-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 13px;
+      }
+      
+      .v5-bulk-info i {
+        font-size: 18px;
+        color: #3b82f6;
+      }
+      
+      .v5-bulk-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        justify-content: flex-end;
       }
 
       .v5-card-header {
