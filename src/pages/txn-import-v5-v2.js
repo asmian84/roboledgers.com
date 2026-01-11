@@ -1030,36 +1030,38 @@ window.renderTxnImportV5Page = function () {
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 8px;
+        gap: 6px; /* Tighter gap */
       }
       
       .v5-control-group label {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #6b7280;
+        font-size: 10px; /* Smaller label */
+        font-weight: 600;
+        color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
       }
       
       .v5-control-group select {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+        padding: 4px 8px; /* Reduced padding */
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
         background: white;
-        font-size: 0.875rem;
+        font-size: 12px; /* Smaller font */
+        color: #1e293b;
         cursor: pointer;
-        transition: all 0.2s ease;
-        min-width: 120px;
+        min-width: 120px; /* Reduced min-width */
+        transition: all 0.2s;
       }
       
       .v5-control-group select:hover {
-        border-color: #3b82f6;
+        border-color: #94a3b8;
       }
       
       .v5-control-group select:focus {
         outline: none;
         border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); /* Smaller shadow */
       }
       
       /* Bulk Operations Bar - Super Snug, Increased Height */
