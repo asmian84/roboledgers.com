@@ -1371,7 +1371,6 @@ window.renderTxnImportV5Page = function () {
           width: 100%;
           margin: 0;
           padding: 0;
-          overflow-x: auto; /* Enable horizontal scroll for Actions column */
         }
         
         .ag-root-wrapper {
@@ -3192,8 +3191,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Account',
       field: 'account',
-      flex: 1,
-      minWidth: 200,
+      width: 120,
       editable: true,
       cellEditor: GroupedAccountEditor,  // Phase 2: 5-tier grouped dropdown
       valueGetter: params => {
