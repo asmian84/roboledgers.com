@@ -192,10 +192,16 @@ window.applyAppearance = function () {
   const size = sizeDropdown ? sizeDropdown.value : 'm';
 
   const grid = document.querySelector('.ag-theme-alpine');
-  if (!grid) return;
+  if (!grid) {
+    console.error('❌ Grid not found with selector .ag-theme-alpine');
+    return;
+  }
 
-  // Reset to base alpine class
-  grid.className = 'ag-theme-alpine';
+  // Remove ALL old theme classes first
+  grid.className = grid.className
+    .split(' ')
+    .filter(c => !c.startsWith('theme-'))
+    .join(' ');
 
   // Apply professional accounting software color themes
   if (theme === 'caseware') {
@@ -1766,10 +1772,6 @@ window.renderTxnImportV5Page = function () {
 
       <!-- SHARED INLINE MODULE BAR - Grid Appearance -->
       <div id="v5-appearance-panel" class="v5-bulk-bar" style="display: none;">
-        <div class="v5-bulk-info">
-          <i class="ph ph-palette"></i>
-          <span>Grid Appearance</span>
-        </div>
         <div class="v5-bulk-actions" style="display: flex; flex-direction: row; gap: 1rem; flex: 1; justify-content: flex-end;">
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Theme</label>
