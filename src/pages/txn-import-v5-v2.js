@@ -3113,6 +3113,12 @@ window.initV5Grid = function () {
       flex: 1,
       minWidth: 120,
       maxWidth: 180,
+      // Sort numerically (001, 002, 003) not alphabetically
+      comparator: (valueA, valueB) => {
+        const numA = parseInt(valueA) || 0;
+        const numB = parseInt(valueB) || 0;
+        return numA - numB;
+      },
       valueGetter: (params) => {
         if (!params.data.refNumber) return '';
         const prefix = V5State.refPrefix || '';
