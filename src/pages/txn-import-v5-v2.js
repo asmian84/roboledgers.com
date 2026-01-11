@@ -1826,7 +1826,7 @@ window.renderTxnImportV5Page = function () {
               <option value="default">Default (Gray)</option>
               <option value="ledger-pad">Ledger Pad (Green)</option>
               <option value="postit">Post-it Note (Yellow)</option>
-              <option value="rainbow">Rainbow</option>
+              <option value="rainbow" selected>Rainbow</option>
               <option value="social">Social (Blue)</option>
               <option value="spectrum">Spectrum (Excel Gray)</option>
               <option value="wave">Wave (Ocean Blue)</option>
@@ -3754,7 +3754,7 @@ window.showKeyboardShortcuts = function () {
               <option value="">Default</option>
               <option value="ledger">Ledger</option>
               <option value="postit">Post-it</option>
-              <option value="rainbow">Rainbow</option>
+              <option value="rainbow" selected>Rainbow</option>
               <option value="spectrum">Spectrum</option>
               <option value="tracker">Tracker</option>
               <option value="neon">Neon</option>
@@ -3981,7 +3981,7 @@ window.popOutV5Grid = function () {
   gridContainer.parentElement.insertBefore(popInOverlay, gridContainer);
 
   // Get current appearance settings from main window
-  const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
+  const currentTheme = document.getElementById('v5-theme-dropdown')?.value || 'rainbow';
   const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
   const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
 
@@ -4470,6 +4470,7 @@ window.popOutV5Grid = function () {
               <option value="postit">Post-It</option>
               <option value="spectrum">Spectrum (Excel)</option>
               <option value="vintage">Vintage Dark</option>
+              <option value="rainbow" selected>Rainbow</option>
             </select>
           </div>
           <div class="control-group">
@@ -5301,7 +5302,7 @@ window.openAppearanceModal = function () {
 
   // Load saved settings
   const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
-  if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme || '';
+  document.getElementById('v5-theme-dropdown').value = saved.theme || 'rainbow';
   if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font || '';
   if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size || 'm';
 
