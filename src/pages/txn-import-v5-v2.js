@@ -771,6 +771,32 @@ window.renderTxnImportV5Page = function () {
         height: 36px;
       }
       
+      /* Opening Balance Input */
+      .v5-opening-bal-input {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        border: 1px solid transparent;
+        background: transparent;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        width: 100%;
+        text-align: left;
+      }
+      
+      .v5-opening-bal-input:hover {
+        border-color: #e5e7eb;
+        background: #f8fafc;
+      }
+      
+      .v5-opening-bal-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
       .v5-ref-input-wrapper label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -1601,8 +1627,16 @@ window.renderTxnImportV5Page = function () {
         <!-- Right: Balances (Moved from header) -->
         <div class="v5-balances-card" id="v5-balances-card">
           <div class="v5-balance-item">
-            <div class="v5-balance-label">OPENING</div>
-            <div class="v5-balance-value" id="v5-opening-bal">$0</div>
+            <div class="v5-balance-label">Opening Balance</div>
+            <input 
+              type="text" 
+              id="v5-opening-bal" 
+              class="v5-opening-bal-input"
+              value="$0.00"
+              onblur="window.handleOpeningBalanceChange(this)"
+              onkeypress="if(event.key==='Enter'){this.blur();}"
+              style="text-align: left; padding-left: 8px;"
+            />
           </div>
           <div class="v5-balance-item">
             <div class="v5-balance-label">TOTAL IN</div>
@@ -2239,7 +2273,7 @@ window.updateReconciliationCard = function () {
 
   const fmt = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  if (openingEl) openingEl.textContent = fmt(openingBal);
+  if (openingEl) openingEl.value = fmt(openingBal); // Changed from textContent to value
   if (totalInEl) totalInEl.textContent = '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (totalOutEl) totalOutEl.textContent = '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (endingEl) endingEl.textContent = fmt(endingBal);
@@ -4365,6 +4399,38 @@ window.bulkV5Categorize = function () {
   }
 };
 
-console.log(' txn-import-v5.js loaded successfully!');
+// Handle Opening Balance Change
+window.handleOpeningBalanceChange = function (input) {
+  // Remove currency formatting
+  let value = input.value.replace(/[$,]/g, '').trim();
 
+  // Parse as float
+  const numValue = parseFloat(value);
 
+  if (isNaN(numValue)) {
+    // Invalid input - reset to current value
+    const currentBal = parseFloat(V5State.openingBalance) || 0;
+    input.value = '$' + currentBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return;
+  }
+
+  // Update state
+  V5State.openingBalance = numValue;
+
+  // Format input value
+  input.value = '$' + numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Recalculate all balances with new opening balance
+  if (window.recalculateAllBalances) {
+    window.recalculateAllBalances();
+  }
+
+  // Update reconciliation card
+  if (window.updateReconciliationCard) {
+    window.updateReconciliationCard();
+  }
+
+  console.log('✅ Opening balance updated to:', numValue);
+};
+
+console.log('✅ txn-import-v5.js loaded successfully!');
