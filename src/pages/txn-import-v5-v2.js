@@ -4062,39 +4062,39 @@ window.popOutV5Grid = function () {
 
 window.popInV5Grid = function () {
 
-  if (!gridContainer) {
-    console.error('Grid container not found');
-    return;
-  }
+  // Close popout if open
+  console.error('Grid container not found');
+  return;
+}
 
-  // CRITICAL: Don't allow popup on empty grid
-  if (!V5State.gridData || V5State.gridData.length === 0) {
-    console.warn('⚠️ No grid to popout - Please load transaction data first');
-    return;
-  }
+// CRITICAL: Don't allow popup on empty grid
+if (!V5State.gridData || V5State.gridData.length === 0) {
+  console.warn('⚠️ No grid to popout - Please load transaction data first');
+  return;
+}
 
-  console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
+console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
 
-  // Hide grid in main window
-  gridContainer.style.display = 'none';
+// Hide grid in main window
+gridContainer.style.display = 'none';
 
-  // Create popout window
-  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
+// Create popout window
+const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
 
-  if (!popOutWindow) {
-    alert('Popup blocked! Please allow popups for this site.');
-    return;
-  }
+if (!popOutWindow) {
+  alert('Popup blocked! Please allow popups for this site.');
+  return;
+}
 
-  // Store reference
-  V5State.popoutWindow = popOutWindow;
+// Store reference
+V5State.popoutWindow = popOutWindow;
 
-  // Get current appearance settings from main window
-  const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
-  const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
-  const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
+// Get current appearance settings from main window
+const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
+const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
+const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
 
-  popOutWindow.document.write(`
+popOutWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
