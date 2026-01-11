@@ -4416,10 +4416,11 @@ window.popOutV5Grid = function () {
           }
         };
         
-        console.log('🔧 STEP 2: Waiting for DOMContentLoaded...');
+        console.log('🔧 STEP 2: Initializing grid via setTimeout...');
         
-        document.addEventListener('DOMContentLoaded', () => {
-          console.log('✅✅✅ DOMContentLoaded FIRED!');
+        // Use setTimeout to ensure scripts are loaded and layout is ready
+        setTimeout(() => {
+          console.log('✅✅✅ INITIALIZATION STARTING!');
           console.log('📊 Grid data length:', gridData.length);
           console.log('📋 Column defs count:', columnDefs.length);
           
@@ -4435,11 +4436,16 @@ window.popOutV5Grid = function () {
           console.log('   - Grid element:', document.getElementById('popout-grid'));
           console.log('   - Grid options:', gridOptions);
           
-          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          try {
+            gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+            console.log('✅✅✅ Grid API created:', gridApi);
+          } catch (err) {
+            console.error('❌ ERROR creating grid:', err);
+          }
           
-          console.log('✅✅✅ Grid API created:', gridApi);
-          console.log('   - Grid API getDisplayedRowCount:', gridApi.getDisplayedRowCount ? gridApi.getDisplayedRowCount() : 'N/A');
-          console.log('   - Grid API getModel:', gridApi.getModel ? gridApi.getModel() : 'N/A');
+          if (gridApi) {
+            console.log('   - Grid API getDisplayedRowCount:', gridApi.getDisplayedRowCount ? gridApi.getDisplayedRowCount() : 'N/A');
+          }
           
           // Populate debug panel
           const debugInfo = {
@@ -4467,6 +4473,15 @@ window.popOutV5Grid = function () {
           if (themeDropdown) themeDropdown.value = '${currentTheme}';
           if (fontDropdown) fontDropdown.value = '${currentFont}';
           if (sizeDropdown) sizeDropdown.value = '${currentSize}';
+          
+          // CRITICAL: Apply appearance immediately
+          if (typeof applyAppearance === 'function') applyAppearance();
+          
+          // Update balances
+          if (typeof updateBalances === 'function') updateBalances();
+          
+          console.log('✅ Initialization complete');
+        }, 500);
           
           // CRITICAL: Apply appearance immediately after setting values
           applyAppearance();
