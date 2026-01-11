@@ -777,7 +777,7 @@ window.renderTxnImportV5Page = function () {
         background: transparent;
         cursor: pointer;
         transition: all 0.2s;
-        max-width: 96px; /* 20% smaller than 120px */
+        max-width: 86px; /* 10% smaller than 96px */
         padding: 2px 4px; /* Tighter padding */
       }
       
