@@ -4353,7 +4353,10 @@ window.popOutV5Grid = function () {
         console.log('✅ Popup: Loaded', gridData.length, 'rows from main window');
         
         const gridOptions = {
-          columnDefs,
+      };
+
+
+window.popInV5Grid = function () {
           rowData: gridData,
           defaultColDef: { sortable: true, filter: true, resizable: true },
           rowSelection: 'multiple',
