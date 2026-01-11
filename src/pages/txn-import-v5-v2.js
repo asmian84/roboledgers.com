@@ -828,7 +828,7 @@ window.renderTxnImportV5Page = function () {
       
       .v5-search-wrapper i {
         position: absolute;
-        left: 16px;
+        right: 16px; /* Icon on the right */
         color: #9ca3af;
         pointer-events: none;
         font-size: 18px;
@@ -836,7 +836,7 @@ window.renderTxnImportV5Page = function () {
       
       .v5-search-input {
         width: 100%;
-        padding: 10px 16px 10px 46px; /* Room for icon */
+        padding: 10px 16px 10px 50px; /* More space for icon - prevent overlap */
         border: 1px solid #e5e7eb;
         border-radius: 24px; /* Rounded corners like mockup */
         font-size: 14px;
