@@ -4335,10 +4335,18 @@ window.popOutV5Grid = function () {
             <div class="v5-balance-value" id="popup-ending">$0.00</div>
           </div>
         </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- DEBUG PANEL -->
+      <div id="debug-panel" style="background: #1e293b; color: #10b981; padding: 1rem; font-family: monospace; font-size: 12px; border-bottom: 2px solid #10b981;">
+        <div style="font-weight: bold; margin-bottom: 0.5rem;">🔍 POPUP DEBUG INFO (Copy this for developer):</div>
+        <div id="debug-content">Loading...</div>
       </div>
       
       <!-- Main Grid -->
-      <div id="popout-grid" class="ag-theme-alpine"></div>
+      <div id="popout-grid" class="ag-theme-alpine" style="width: 100%; height: calc(100vh - 350px);"></div>
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
@@ -4373,6 +4381,24 @@ window.popOutV5Grid = function () {
           
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           console.log('✅ Grid created:', gridApi);
+          
+          // Populate debug panel
+          const debugInfo = {
+            'Grid Data Length': gridData.length,
+            'Column Defs Count': columnDefs.length,
+            'Opening Balance': openingBalance,
+            'Grid Element Found': document.getElementById('popout-grid') ? 'YES' : 'NO',
+            'Grid API Created': gridApi ? 'YES' : 'NO',
+            'Window Opener Exists': window.opener ? 'YES' : 'NO',
+            'Main Window Data Length': window.opener?.V5State?.gridData?.length || 'N/A',
+            'Sample Data (first row)': gridData[0] ? JSON.stringify(gridData[0]).substring(0, 100) + '...' : 'EMPTY'
+          };
+          
+          let debugHtml = '';
+          for (const [key, value] of Object.entries(debugInfo)) {
+            debugHtml += `< div > <strong>${key}:</strong> ${ value }</div > `;
+          }
+          document.getElementById('debug-content').innerHTML = debugHtml;
           
           // Set initial appearance from main window
           const themeDropdown = document.getElementById('popup-theme-dropdown');
