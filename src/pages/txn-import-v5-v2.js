@@ -1588,7 +1588,7 @@ window.renderTxnImportV5Page = function () {
               <i class="ph ph-dots-three-vertical"></i>
             </button>
             <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
-              <button class="menu-item" onclick="window.openAppearanceModal(); toggleV5Menu(event);">
+              <button class="menu-item" onclick="window.showV5Appearance(); toggleV5Menu(event);">
                 <i class="ph ph-palette"></i>
                 Grid Appearance
               </button>
