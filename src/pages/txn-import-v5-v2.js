@@ -771,12 +771,14 @@ window.renderTxnImportV5Page = function () {
         height: 36px;
       }
       
-      /* Opening Balance Input - Invisible until hover */
+      /* Opening Balance Input - Invisible until hover, compact */
       .v5-opening-bal-input {
         border: 1px solid transparent;
         background: transparent;
         cursor: pointer;
         transition: all 0.2s;
+        max-width: 120px; /* Smaller input box */
+        padding: 2px 4px; /* Tighter padding */
       }
       
       .v5-opening-bal-input:hover {
@@ -1624,17 +1626,6 @@ window.renderTxnImportV5Page = function () {
         <!-- Right: Balances (Moved from header) -->
         <div class="v5-balances-card" id="v5-balances-card">
           <div class="v5-balance-item">
-            <div class="v5-balance-label">OPENING</div>
-            <input 
-              type="text" 
-              id="v5-opening-bal" 
-              class="v5-balance-value v5-opening-bal-input"
-              value="$0.00"
-              onblur="window.handleOpeningBalanceChange(this)"
-              onkeypress="if(event.key==='Enter'){this.blur();}"
-            />
-          </div>
-          <div class="v5-balance-item">
             <div class="v5-balance-label">TOTAL IN</div>
             <div class="v5-balance-value positive" id="v5-total-in">+$0.00</div>
           </div>
@@ -1645,6 +1636,17 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-balance-item ending">
             <div class="v5-balance-label">ENDING</div>
             <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">OPENING</div>
+            <input 
+              type="text" 
+              id="v5-opening-bal" 
+              class="v5-balance-value v5-opening-bal-input"
+              value="$0.00"
+              onblur="window.handleOpeningBalanceChange(this)"
+              onkeypress="if(event.key==='Enter'){this.blur();}"
+            />
           </div>
         </div>
       </div>
