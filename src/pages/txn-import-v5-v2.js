@@ -4307,17 +4307,33 @@ window.popOutV5Grid = function () {
         };
         
         document.addEventListener('DOMContentLoaded', () => {
+          console.log('Popup: DOMContentLoaded - gridData length:', gridData.length);
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           
           // Set initial appearance from main window
-          document.getElementById('popup-theme-dropdown').value = '${currentTheme}';
-          document.getElementById('popup-font-dropdown').value = '${currentFont}';
-          document.getElementById('popup-size-dropdown').value = '${currentSize}';
+          const themeDropdown = document.getElementById('popup-theme-dropdown');
+          const fontDropdown = document.getElementById('popup-font-dropdown');
+          const sizeDropdown = document.getElementById('popup-size-dropdown');
+          
+          if (themeDropdown) themeDropdown.value = '${currentTheme}';
+          if (fontDropdown) fontDropdown.value = '${currentFont}';
+          if (sizeDropdown) sizeDropdown.value = '${currentSize}';
+          
+          // CRITICAL: Apply appearance immediately after setting values
           applyAppearance();
           
           // Initial balance calculation
           updateBalances();
+          
+          console.log('Popup: Grid initialized with', gridData.length, 'rows');
         });
+        
+        // CRITICAL: Auto pop-in when popup window closes
+        window.onbeforeunload = function() {
+          if (window.opener && !window.opener.closed) {
+            window.opener.popInV5Grid();
+          }
+        };
 
         // ===== APPEARANCE FUNCTION =====
         function applyAppearance() {
