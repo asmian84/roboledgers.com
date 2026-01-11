@@ -4251,84 +4251,89 @@ window.popOutV5Grid = function () {
       </style>
     </head>
     <body>
-      <!-- Freeze Pane Header with Balance Cards -->
-      <div class="popup-freeze-header">
-        <div class="freeze-left">
-          <span class="freeze-ref">REF#</span>
-          <span class="freeze-ref">CBQ</span>
+      <!-- EXACT COPY: Main Header from in-page -->
+      <div class="v5-main-header">
+        <div class="v5-title-section">
+          <div class="v5-page-icon">
+            <i class="ph ph-arrow-square-down"></i>
+          </div>
+          <div class="v5-title-text">
+            <h1>Transactions</h1>
+            <p class="v5-subtitle">
+              <span class="v5-account-type">CHECKING</span>
+              <span class="v5-dot">•</span>
+              <span class="v5-status">Ready for Review</span>
+            </p>
+          </div>
         </div>
-        <div class="freeze-search">
-          <input type="text" placeholder="Search transactions..." />
+        
+        <div class="v5-browse-section">
+          <div id="v5-upload-zone" class="compact-upload-zone" 
+               onclick="document.getElementById('popup-file-input').click()"
+               ondragover="event.preventDefault(); this.style.borderColor='#3b82f6'; this.style.background='#f8fafc';"
+               ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';"
+               ondrop="event.preventDefault(); this.style.borderColor='#cbd5e1'; this.style.background='linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)';">
+            <svg class="upload-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-main">Drag and drop files here</span>
+              <span class="upload-sub">Limit 200MB per file • PDF, CSV, Excel</span>
+            </div>
+            <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('popup-file-input').click()">Browse files</button>
+          </div>
+          <input type="file" id="popup-file-input" multiple accept=".pdf,.csv" 
+                 style="display: none;">
         </div>
-        <div class="freeze-balances">
-          <div class="freeze-balance-item">
-            <div class="freeze-balance-label">OPENING</div>
-            <div class="freeze-balance-value" id="popup-opening">$0.00</div>
-          </div>
-          <div class="freeze-balance-item">
-            <div class="freeze-balance-label">TOTAL IN <span style="color:#059669">++</span></div>
-            <div class="freeze-balance-value positive" id="popup-credit">+$0.00</div>
-          </div>
-          <div class="freeze-balance-item">
-            <div class="freeze-balance-label">TOTAL OUT <span style="color:#dc2626">++</span></div>
-            <div class="freeze-balance-value negative" id="popup-debit">-$0.00</div>
-          </div>
-          <div class="freeze-balance-item">
-            <div class="freeze-balance-label">ENDING</div>
-            <div class="freeze-balance-value" id="popup-ending">$0.00</div>
+        
+        <div class="v5-header-actions">
+          <div class="v5-menu-wrapper" style="position:relative;">
+            <button class="btn-icon v5-menu-toggle" onclick="closePopout()">
+              <i class="ph ph-arrow-square-in"></i>
+            </button>
           </div>
         </div>
       </div>
       
-      <!-- Appearance Panel -->
-      <div class="appearance-bar">
-        <div class="control-group">
-          <label>Theme</label>
-          <select id="popup-theme-dropdown" onchange="applyAppearance()">
-            <option value="">Alpine (Default AG Grid)</option>
-            <option value="vanilla">Vanilla</option>
-            <option value="classic">Classic (Caseware Blue)</option>
-            <option value="default">Default (Gray)</option>
-            <option value="ledger-pad">Ledger Pad (Green)</option>
-            <option value="postit">Post-it Note (Yellow)</option>
-            <option value="rainbow">Rainbow</option>
-            <option value="social">Social (Blue)</option>
-            <option value="spectrum">Spectrum (Excel Gray)</option>
-            <option value="wave">Wave (Ocean Blue)</option>
-            <option value="vintage">Vintage (Dark)</option>
-          </select>
+      <!-- EXACT COPY: Freeze Pane from in-page -->
+      <div class="v5-control-toolbar" id="v5-control-toolbar">
+        <div class="v5-ref-input-wrapper">
+          <label for="popup-ref-input">REF#</label>
+          <input type="text" 
+                 id="popup-ref-input" 
+                 class="v5-ref-input" 
+                 maxlength="4" 
+                 placeholder="####"
+                 title="Reference number prefix (max 4 characters)">
         </div>
-        <div class="control-group">
-          <label>Font</label>
-          <select id="popup-font-dropdown" onchange="applyAppearance()">
-            <option value="">System Default</option>
-            <option value="roboto">Roboto (Google)</option>
-            <option value="inter">Inter (Modern)</option>
-            <option value="sf-pro">SF Pro (Apple)</option>
-            <option value="segoe">Segoe UI (Microsoft)</option>
-            <option value="helvetica">Helvetica Neue</option>
-          </select>
+        
+        <div class="v5-search-wrapper">
+          <i class="ph ph-magnifying-glass"></i>
+          <input type="text" 
+                 id="popup-search-input" 
+                 class="v5-search-input" 
+                 placeholder="Search transactions...">
         </div>
-        <div class="control-group">
-          <label>Size</label>
-          <select id="popup-size-dropdown" onchange="applyAppearance()">
-            <option value="xs">XS (11px)</option>
-            <option value="s">S (12px)</option>
-            <option value="m">M (13px)</option>
-            <option value="l">L (14px)</option>
-            <option value="xl">XL (16px)</option>
-          </select>
-        </div>
-      </div>
-      
-      <!-- Header with Actions -->
-      <div class="popup-header">
-        <h2 style="margin:0; font-size:20px; color:#1f2937;">📊 Transaction Grid</h2>
-        <div class="popup-actions">
-          <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
-          <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
-          <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
-          <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
+        
+        <div class="v5-balances-card" id="popup-balances-card">
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">OPENING</div>
+            <div class="v5-balance-value" id="popup-opening">$0.00</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL IN <span class="superscript">++</span></div>
+            <div class="v5-balance-value positive" id="popup-credit">+$0.00</div>
+          </div>
+          <div class="v5-balance-item">
+            <div class="v5-balance-label">TOTAL OUT <span class="superscript">++</span></div>
+            <div class="v5-balance-value negative" id="popup-debit">-$0.00</div>
+          </div>
+          <div class="v5-balance-item ending">
+            <div class="v5-balance-label">ENDING</div>
+            <div class="v5-balance-value" id="popup-ending">$0.00</div>
+          </div>
         </div>
       </div>
       
