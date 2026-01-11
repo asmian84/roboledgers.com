@@ -3209,11 +3209,11 @@ window.initV5Grid = function () {
     {
       headerName: 'Actions',
       field: 'actions',
-      width: 130,
-      minWidth: 130,
-      maxWidth: 140, // Hard wall - prevent spillover
-      suppressSizeToFit: false, // Allow some flex but respect maxWidth
-      cellStyle: { paddingRight: '16px' }, // Breathing room at grid edge
+      width: 140,
+      minWidth: 140,
+      maxWidth: 140, // Fixed width wall
+      resizable: false, // Prevent user resize
+      cellStyle: { paddingRight: '16px' }, // Breathing room
       cellRenderer: (params) => {
         // Source file icon - dynamic based on type
         let sourceIcon = '';
