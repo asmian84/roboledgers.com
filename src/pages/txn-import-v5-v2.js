@@ -3295,8 +3295,10 @@ window.initV5Grid = function () {
 
         params.api.refreshCells({ force: true });
 
-        // Recalculate balances based on new display order
-        recalculateAllBalances();
+        // Recalculate balances based on new display order (only if data exists)
+        if (V5State.gridData && V5State.gridData.length > 0) {
+          recalculateAllBalances();
+        }
 
         saveData();
         console.log('✅ Ref# auto-renumbered and balances recalculated after sort');
