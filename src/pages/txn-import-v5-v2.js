@@ -932,6 +932,8 @@ window.renderTxnImportV5Page = function () {
         top: 0;
         z-index: 100;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        height: 102px; /* Fixed height to match other pages */
+        min-height: 102px;
       }
       
       .v5-title-section {
