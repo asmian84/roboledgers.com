@@ -250,8 +250,17 @@ window.renderTxnImportV5Page = function () {
       @media (max-width: 767px) {
         .ag-theme-alpine { font-size: 14px; }
       
-      /* Caseware-Inspired Accounting Color Schemes */
-      .ag-theme-alpine.theme-caseware {
+      /* Caseware-Inspired Color Schemes (Real Theme Names) */
+      .ag-theme-alpine.theme-vanilla {
+        --ag-background-color: #fffef8;
+        --ag-foreground-color: #333333;
+        --ag-header-background-color: #f5f0e8 !important;
+        --ag-header-foreground-color: #5a5a5a !important;
+        --ag-odd-row-background-color: #faf8f2;
+        --ag-border-color: #e0ddd5;
+      }
+      
+      .ag-theme-alpine.theme-classic {
         --ag-background-color: #f8f9fa;
         --ag-foreground-color: #212529;
         --ag-header-background-color: #2c5aa0 !important;
@@ -260,25 +269,16 @@ window.renderTxnImportV5Page = function () {
         --ag-border-color: #d1d5db;
       }
       
-      .ag-theme-alpine.theme-sage {
-        --ag-background-color: #f5f8f5;
+      .ag-theme-alpine.theme-ledger-pad {
+        --ag-background-color: #f0f8e8;
         --ag-foreground-color: #1a3a1a;
         --ag-header-background-color: #00a652 !important;
         --ag-header-foreground-color: #ffffff !important;
-        --ag-odd-row-background-color: #e8f3e8;
+        --ag-odd-row-background-color: #e6f2e0;
         --ag-border-color: #c5d9c5;
       }
       
-      .ag-theme-alpine.theme-quickbooks {
-        --ag-background-color: #ffffff;
-        --ag-foreground-color: #393a3d;
-        --ag-header-background-color: #2ca01c !important;
-        --ag-header-foreground-color: #ffffff !important;
-        --ag-odd-row-background-color: #f7f7f7;
-        --ag-border-color: #d4d4d4;
-      }
-      
-      .ag-theme-alpine.theme-excel {
+      .ag-theme-alpine.theme-spectrum {
         --ag-background-color: #ffffff;
         --ag-foreground-color: #333333;
         --ag-header-background-color: #217346 !important;
@@ -287,7 +287,7 @@ window.renderTxnImportV5Page = function () {
         --ag-border-color: #d0d0d0;
       }
       
-      .ag-theme-alpine.theme-professional-dark {
+      .ag-theme-alpine.theme-vintage {
         --ag-background-color: #1e1e1e;
         --ag-foreground-color: #e0e0e0;
         --ag-header-background-color: #2d4356 !important;
@@ -1774,12 +1774,12 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
-              <option value="">Classic Light</option>
-              <option value="caseware">Caseware Blue</option>
-              <option value="sage">Sage Green</option>
-              <option value="quickbooks">QuickBooks Classic</option>
-              <option value="excel">Excel Gray</option>
-              <option value="professional-dark">Professional Dark</option>
+              <option value="">Default Light</option>
+              <option value="vanilla">Vanilla</option>
+              <option value="classic">Classic (Caseware Blue)</option>
+              <option value="ledger-pad">Ledger Pad (Green)</option>
+              <option value="spectrum">Spectrum (Excel Gray)</option>
+              <option value="vintage">Vintage (Dark)</option>
             </select>
           </div>
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
