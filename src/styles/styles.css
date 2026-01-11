@@ -485,6 +485,23 @@ body {
   min-height: calc(100vh - var(--breadcrumb-height));
   background-color: var(--bg-secondary);
   padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Snug Page: Fits perfectly in viewport without scrollbars */
+.snug-page {
+  flex: 1;
+  width: 100%;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  height: 0;
+  /* Important for flex-grow to work without overflow */
+  min-height: 0;
 }
 
 /* ============================================

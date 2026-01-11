@@ -75,7 +75,7 @@ window.AccountBalances = {
             account.balance = account.debit - account.credit;
         });
 
-        console.log('📊 Account Balances Calculated:', Object.keys(balanceMap).length, 'accounts');
+
         return balanceMap;
     },
 
@@ -110,12 +110,11 @@ window.AccountBalances = {
         // Save updated COA back to localStorage
         localStorage.setItem('ab3_coa', JSON.stringify(coa));
 
-        console.log('💾 COA Balances Updated in localStorage');
+
 
         // Trigger COA grid refresh if it exists
         if (window.accountsGridApi) {
-            window.accountsGridApi.setGridOption('rowData', coa);
-            console.log('🔄 COA Grid Refreshed with New Balances');
+
         }
 
         return coa;
@@ -178,7 +177,7 @@ window.AccountBalances = {
             }
         };
 
-        console.table(typeBalances);
+
         return report;
     },
 
@@ -204,8 +203,8 @@ window.AccountBalances = {
 // Auto-refresh balances when transactions change
 // This creates a hook that other modules can call
 window.refreshAccountBalances = function () {
-    console.log('🔄 Refreshing Account Balances...');
+
     return window.AccountBalances.updateCoABalances();
 };
 
-console.log('✅ Account Balances Service Loaded');
+

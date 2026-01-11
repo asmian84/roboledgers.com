@@ -190,9 +190,10 @@ class GroupedAccountEditor {
                 groupHeader.className = 'coa-group-header';
 
                 const icon = document.createElement('span');
-                icon.innerHTML = '▼';
+                icon.innerHTML = '▶';
                 icon.style.fontSize = '10px';
                 icon.style.marginRight = '6px';
+                icon.style.transition = 'transform 0.2s';
 
                 groupHeader.appendChild(icon);
                 groupHeader.appendChild(document.createTextNode(groupName));
@@ -201,6 +202,7 @@ class GroupedAccountEditor {
 
                 const itemsDiv = document.createElement('div');
                 itemsDiv.className = 'coa-group-items';
+                itemsDiv.style.display = 'none'; // HIDDEN BY DEFAULT
 
                 groupHeader.onclick = () => {
                     const isClosed = itemsDiv.style.display === 'none';

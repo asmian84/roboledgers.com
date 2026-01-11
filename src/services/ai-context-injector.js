@@ -13,7 +13,7 @@ class AIContextInjector {
     // ============================================
 
     async buildEnhancedPrompt(userQuestion) {
-        console.log('🔧 Building enhanced prompt with full AI context...');
+
 
         // Get all context
         const context = await this.memoryBridge.getContextForAI();
@@ -147,7 +147,7 @@ Your accuracy is currently ${context.performance.accuracy.toFixed(1)}%. Let's im
             await this.memoryBridge.updateKnowledgeRealTime(knowledge);
         }
 
-        console.log('✅ AI response saved and knowledge extracted');
+
     }
 
     extractKnowledgeFromInteraction(question, response) {
@@ -189,7 +189,7 @@ Your accuracy is currently ${context.performance.accuracy.toFixed(1)}%. Let's im
 
 class ConversationLoader {
     static async loadPreviousContext() {
-        console.log('📖 Loading previous conversation context...');
+
 
         if (!window.memoryBridge) {
             console.warn('⚠️ Memory Bridge not initialized');
@@ -200,23 +200,14 @@ class ConversationLoader {
         const memory = await window.memoryBridge.loadMemoryDocument();
 
         if (!memory) {
-            console.log('ℹ️ No previous memory found - starting fresh');
+
             return null;
         }
 
         // Display memory summary to user
         const stats = await window.memoryBridge.brain.getKnowledgeStats();
 
-        console.log(`
-🧠 AI MEMORY LOADED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 Knowledge Items: ${stats.knowledge_items}
-🎓 Corrections Learned: ${stats.corrections_learned}
-📊 Patterns Learned: ${stats.patterns_learned}
-🔍 Parsing Patterns: ${stats.parsing_patterns}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ I remember everything from our previous conversations!
-        `);
+
 
         return memory;
     }
@@ -272,7 +263,7 @@ if (typeof window !== 'undefined') {
             await ConversationLoader.loadPreviousContext();
             ConversationLoader.displayMemoryStatus();
 
-            console.log('✅ AI Context Injector ready!');
+
         }
     });
 }

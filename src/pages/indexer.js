@@ -481,7 +481,7 @@ window.popOutConsole = function () {
 
 window.renderIndexerPage = function () {
     return `
-    <div class="indexer-container">
+    <div class="page snug-page indexer-container">
         <!-- Hidden Input for Directory Selection (No Popups!) -->
         <input type="file" id="dir-input" webkitdirectory directory multiple style="display:none" onchange="handleDirectorySelect(this)">
 
@@ -510,9 +510,9 @@ window.renderIndexerPage = function () {
             </div>
         </div>
 
-        <div class="indexer-main-layout">
+        <div class="indexer-main-layout" style="flex: 1; display: flex; gap: 20px; min-height: 0;">
             <!-- Left: Controls -->
-            <div class="indexer-card control-panel">
+            <div class="indexer-card control-panel" style="width: 320px; flex-shrink: 0; overflow-y: auto;">
                 <h3><i class="ph ph-sliders-horizontal"></i> Scanner Controls</h3>
                 
                 <!-- File Type Filter -->
@@ -633,11 +633,11 @@ window.renderIndexerPage = function () {
             </div>
 
             <!-- Right: Grid & Terminal -->
-            <div class="indexer-right-panel">
+            <div class="indexer-right-panel" style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
                 
                 <!-- AG GRID for Learned Rules -->
-                <div class="indexer-card grid-panel">
-                    <div class="panel-header-small">
+                <div class="indexer-card grid-panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                    <div class="panel-header-small" style="flex-shrink: 0;">
                         <span><i class="ph ph-brain"></i> MARRIED DATA STREAM (Desc + Acct#)</span>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <span class="badge" id="grid-count">0 items</span>
@@ -648,12 +648,12 @@ window.renderIndexerPage = function () {
                 </div>
 
                 <!-- Terminal -->
-                <div class="indexer-card terminal-panel">
-                    <div class="terminal-header" style="display:flex; justify-content:space-between;">
+                <div class="indexer-card terminal-panel" style="height: 200px; flex-shrink: 0; display: flex; flex-direction: column;">
+                    <div class="terminal-header" style="display:flex; justify-content:space-between; flex-shrink: 0;">
                         <span><i class="ph ph-terminal-window"></i> SYSTEM_LOG</span>
                         <span id="terminal-stats" style="color: #22c55e; font-family: monospace; font-size: 0.8rem;">Ready</span>
                     </div>
-                    <div class="terminal-window" id="terminal-output">
+                    <div class="terminal-window" id="terminal-output" style="flex: 1; overflow-y: auto;">
                         <div class="log-line system">> System Ready.</div>
                         <div class="log-line system">> Waiting for input stream...</div>
                     </div>
@@ -1499,15 +1499,13 @@ async function processPDF(file, filename) {
             // 2. If No Category -> Learn Description Frequency (Medium Value)
 
             const category = txn.category || 'Uncategorized';
-            console.log(`📋 Transaction: "${txn.description}" - Category: ${category}`);
 
-            // 🤖 AI AUTO-CATEGORIZATION: If uncategorized, try AI classification
-            if (category === 'Uncategorized' && txn.description && window.CategorizationEngine) {
-                const aiSuggestion = window.CategorizationEngine.classify({ description: txn.description });
-                if (aiSuggestion && aiSuggestion.confidence > 0.6) {
-                    txn.category = aiSuggestion.category;
-                    txn.account = aiSuggestion.category; // Also set account field
-                    console.log(`🤖 AI Auto-Cat: "${txn.description}" → ${aiSuggestion.category} (${aiSuggestion.method}, ${Math.round(aiSuggestion.confidence * 100)}%)`);
+            // 🤖 UNIFIED AI AUTO-CATEGORIZATION: Use ProcessingEngine for consistent results
+            if ((category === 'Uncategorized' || !category) && txn.description && window.ProcessingEngine) {
+                const categorizedTxn = await window.ProcessingEngine._applyCategorization(txn);
+                if (categorizedTxn && categorizedTxn.category && categorizedTxn.category !== 'Uncategorized') {
+                    txn.category = categorizedTxn.category;
+                    txn.account = categorizedTxn.category;
                     aiCategorized++;
                 } else {
                     txn.category = category;

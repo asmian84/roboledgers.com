@@ -45,7 +45,7 @@ class WikiService {
                 return result;
             }
         } catch (error) {
-            console.error('🌐 WikiService: Search failed', error);
+
         }
 
         return null;
@@ -87,7 +87,7 @@ class WikiService {
                 return info;
             }
         } catch (error) {
-            console.error('🌐 WikiService: Info fetch failed', error);
+
         }
 
         return null;
@@ -129,4 +129,4 @@ class WikiService {
 
 // Global Singleton
 window.wikiService = new WikiService();
-console.log('🌐 Wiki Service Loaded');
+

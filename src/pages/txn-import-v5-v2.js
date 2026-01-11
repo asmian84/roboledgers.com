@@ -3946,7 +3946,7 @@ window.popOutV5Grid = function () {
   gridContainer.style.display = 'none';
 
   // Create popout window
-  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1400,height=900');
+  const popOutWindow = window.open('', 'V5GridPopOut', 'width=1600,height=1000');
 
   if (!popOutWindow) {
     alert('Popup blocked! Please allow popups for this site.');
@@ -3956,86 +3956,473 @@ window.popOutV5Grid = function () {
   // Store reference
   V5State.popoutWindow = popOutWindow;
 
+  // Get current appearance settings from main window
+  const currentTheme = document.getElementById('v5-theme-dropdown')?.value || '';
+  const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
+  const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
+
   popOutWindow.document.write(`
-      < html >
-      <head>
-        <title>Transaction Grid - Pop Out</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
-            <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
-              <style>
-                body {margin: 0; padding: 1rem; font-family: system-ui; background: #f9fafb; }
-                .popout-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-                .popout-actions {display: flex; gap: 0.5rem; }
-                .btn {padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer; }
-                .btn:hover {background: #f3f4f6; }
-                .btn-primary {background: #3b82f6; color: white; border-color: #3b82f6; }
-                .btn-primary:hover {background: #2563eb; }
-                #popout-grid {height: calc(100vh - 100px); }
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Transaction Grid - Pop Out</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
+      <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+      <style>
+        body {
+          margin: 0;
+          padding: 0.5rem;
+          font-family: system-ui, -apple-system, sans-serif;
+          background: #f9fafb;
+        }
+        
+        /* ===== ALL ACCOUNTING THEMES ===== */
+        .ag-theme-alpine.theme-vanilla {
+          --ag-background-color: #fffef8;
+          --ag-foreground-color: #333333;
+          --ag-header-background-color: #f5f0e8 !important;
+          --ag-header-foreground-color: #5a5a5a !important;
+          --ag-odd-row-background-color: #faf8f2;
+          --ag-border-color: #e0ddd5;
+        }
+        
+        .ag-theme-alpine.theme-classic {
+          --ag-background-color: #f8f9fa;
+          --ag-foreground-color: #212529;
+          --ag-header-background-color: #2c5aa0 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #e9ecef;
+          --ag-border-color: #d1d5db;
+        }
+        
+        .ag-theme-alpine.theme-default {
+          --ag-background-color: #f5f5f5;
+          --ag-foreground-color: #2c2c2c;
+          --ag-header-background-color: #e0e0e0 !important;
+          --ag-header-foreground-color: #424242 !important;
+          --ag-odd-row-background-color: #ebebeb;
+          --ag-border-color: #cccccc;
+        }
+        
+        .ag-theme-alpine.theme-ledger-pad {
+          --ag-background-color: #f0f8e8;
+          --ag-foreground-color: #1a3a1a;
+          --ag-header-background-color: #00a652 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #e6f2e0;
+          --ag-border-color: #c5d9c5;
+        }
+        
+        .ag-theme-alpine.theme-postit {
+          --ag-background-color: #fffbcc;
+          --ag-foreground-color: #5a4a00;
+          --ag-header-background-color: #ffd700 !important;
+          --ag-header-foreground-color: #5a4a00 !important;
+          --ag-odd-row-background-color: #fff8b3;
+          --ag-border-color: #e6d68a;
+        }
+        
+        .ag-theme-alpine.theme-rainbow {
+          --ag-background-color: #fef5ff;
+          --ag-foreground-color: #2d1b2e;
+          --ag-header-background-color: #9b59b6 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #f9ebff;
+          --ag-border-color: #d5a6e8;
+        }
+        
+        .ag-theme-alpine.theme-social {
+          --ag-background-color: #e8f4f8;
+          --ag-foreground-color: #0d3b66;
+          --ag-header-background-color: #1da1f2 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #d4e9f0;
+          --ag-border-color: #b8d8e5;
+        }
+        
+        .ag-theme-alpine.theme-spectrum {
+          --ag-background-color: #ffffff;
+          --ag-foreground-color: #333333;
+          --ag-header-background-color: #217346 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #f2f2f2;
+          --ag-border-color: #d0d0d0;
+        }
+        
+        .ag-theme-alpine.theme-wave {
+          --ag-background-color: #e6f2ff;
+          --ag-foreground-color: #003d66;
+          --ag-header-background-color: #0066cc !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #cce5ff;
+          --ag-border-color: #99ccff;
+        }
+        
+        .ag-theme-alpine.theme-vintage {
+          --ag-background-color: #1e1e1e;
+          --ag-foreground-color: #e0e0e0;
+          --ag-header-background-color: #2d4356 !important;
+          --ag-header-foreground-color: #ffffff !important;
+          --ag-odd-row-background-color: #252525;
+          --ag-border-color: #3a3a3a;
+        }
+        
+        /* ===== BALANCE CARDS ===== */
+        .popup-balances {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 0.75rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .balance-item {
+          flex: 1;
+          text-align: center;
+          padding: 0.5rem;
+          border-right: 1px solid #e5e7eb;
+        }
+        
+        .balance-item:last-child {
+          border-right: none;
+        }
+        
+        .balance-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: #6b7280;
+          letter-spacing: 0.5px;
+          margin-bottom: 4px;
+        }
+        
+        .balance-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1f2937;
+        }
+        
+        .balance-value.positive {
+          color: #059669;
+        }
+        
+        .balance-value.negative {
+          color: #dc2626;
+        }
+        
+        /* ===== APPEARANCE PANEL ===== */
+        .appearance-bar {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 0.75rem;
+          padding: 0.5rem 0.75rem;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .control-group {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .control-group label {
+          font-size: 12px;
+          font-weight: 600;
+          color: white;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .control-group select {
+          padding: 6px 10px;
+          border: 1px solid rgba(255,255,255,0.3);
+          background: rgba(255,255,255,0.95);
+          color: #1f2937;
+          font-size: 13px;
+          font-weight: 500;
+          border-radius: 6px;
+          cursor: pointer;
+          min-width: 140px;
+          transition: all 0.2s;
+        }
+        
+        .control-group select:hover {
+          background: white;
+          border-color: rgba(255,255,255,0.5);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        
+        /* ===== GRID CONTAINER ===== */
+        #popout-grid {
+          height: calc(100vh - 200px);
+          min-height: 600px;
+        }
+        
+        #popout-grid .ag-root-wrapper {
+          height: 100% !important;
+          min-height: 600px !important;
+        }
+        
+        /* ===== HEADER ACTIONS ===== */
+        .popup-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        }
+        
+        .popup-actions {
+          display: flex;
+          gap: 0.5rem;
+        }
+        
+        .btn {
+          padding: 8px 16px;
+          border-radius: 6px;
+          border: 1px solid #d1d5db;
+          background: white;
+          cursor: pointer;
+          font-size: 14px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.2s;
+        }
+        
+        .btn:hover {
+          background: #f3f4f6;
+        }
+        
+        .btn-primary {
+          background: #3b82f6;
+          color: white;
+          border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover {
+          background: #2563eb;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- Balance Cards -->
+      <div class="popup-balances">
+        <div class="balance-item">
+          <div class="balance-label">OPENING</div>
+          <div class="balance-value" id="popup-opening">$0.00</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-label">TOTAL OUT</div>
+          <div class="balance-value negative" id="popup-debit">-$0.00</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-label">TOTAL IN</div>
+          <div class="balance-value positive" id="popup-credit">+$0.00</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-label">ENDING</div>
+          <div class="balance-value" id="popup-ending">$0.00</div>
+        </div>
+      </div>
+      
+      <!-- Appearance Panel -->
+      <div class="appearance-bar">
+        <div class="control-group">
+          <label>Theme</label>
+          <select id="popup-theme-dropdown" onchange="applyAppearance()">
+            <option value="">Alpine (Default AG Grid)</option>
+            <option value="vanilla">Vanilla</option>
+            <option value="classic">Classic (Caseware Blue)</option>
+            <option value="default">Default (Gray)</option>
+            <option value="ledger-pad">Ledger Pad (Green)</option>
+            <option value="postit">Post-it Note (Yellow)</option>
+            <option value="rainbow">Rainbow</option>
+            <option value="social">Social (Blue)</option>
+            <option value="spectrum">Spectrum (Excel Gray)</option>
+            <option value="wave">Wave (Ocean Blue)</option>
+            <option value="vintage">Vintage (Dark)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Font</label>
+          <select id="popup-font-dropdown" onchange="applyAppearance()">
+            <option value="">System Default</option>
+            <option value="roboto">Roboto (Google)</option>
+            <option value="inter">Inter (Modern)</option>
+            <option value="sf-pro">SF Pro (Apple)</option>
+            <option value="segoe">Segoe UI (Microsoft)</option>
+            <option value="helvetica">Helvetica Neue</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Size</label>
+          <select id="popup-size-dropdown" onchange="applyAppearance()">
+            <option value="xs">XS (11px)</option>
+            <option value="s">S (12px)</option>
+            <option value="m">M (13px)</option>
+            <option value="l">L (14px)</option>
+            <option value="xl">XL (16px)</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Header with Actions -->
+      <div class="popup-header">
+        <h2 style="margin:0; font-size:20px; color:#1f2937;">📊 Transaction Grid</h2>
+        <div class="popup-actions">
+          <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
+          <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
+          <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
+          <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
+        </div>
+      </div>
+      
+      <!-- Main Grid -->
+      <div id="popout-grid" class="ag-theme-alpine"></div>
 
-                /* CRITICAL: Force AG Grid wrapper to fill container - FIX for blank popout */
-                #popout-grid .ag-root-wrapper {
-                  height: 100% !important;
-                min-height: 600px !important;
+      <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+      <script>
+        const gridData = ${JSON.stringify(V5State.gridData)};
+        const openingBalance = ${V5State.openingBalance || 0};
+        let gridApi;
+
+        // Column defs from main window
+        const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
+
+        const gridOptions = {
+          columnDefs,
+          rowData: gridData,
+          defaultColDef: { sortable: true, filter: true, resizable: true },
+          rowSelection: 'multiple',
+          onCellValueChanged: (params) => {
+            // Sync to parent immediately
+            window.opener.updateV5DataFromPopout(gridData);
+            updateBalances();
           }
-              </style>
-            </head>
-            <body>
-              <div class="popout-header">
-                <h2>📊 Transaction Grid</h2>
-                <div class="popout-actions">
-                  <button class="btn" onclick="selectAll()"><i class="ph ph-check-square"></i> Select All</button>
-                  <button class="btn" onclick="deselectAll()"><i class="ph ph-square"></i> Deselect All</button>
-                  <button class="btn" onclick="bulkDelete()"><i class="ph ph-trash"></i> Delete Selected</button>
-                  <button class="btn-primary" onclick="closePopout()"><i class="ph ph-arrow-square-in"></i> Pop In</button>
-                </div>
-              </div>
-              <div id="popout-grid" class="ag-theme-alpine"></div>
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          
+          // Set initial appearance from main window
+          document.getElementById('popup-theme-dropdown').value = '${currentTheme}';
+          document.getElementById('popup-font-dropdown').value = '${currentFont}';
+          document.getElementById('popup-size-dropdown').value = '${currentSize}';
+          applyAppearance();
+          
+          // Initial balance calculation
+          updateBalances();
+        });
 
-              <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
-              <script>
-                const gridData = ${JSON.stringify(V5State.gridData)};
-                let gridApi;
+        // ===== APPEARANCE FUNCTION =====
+        function applyAppearance() {
+          const theme = document.getElementById('popup-theme-dropdown').value;
+          const font = document.getElementById('popup-font-dropdown').value;
+          const size = document.getElementById('popup-size-dropdown').value;
+          
+          const grid = document.querySelector('.ag-theme-alpine');
+          if (!grid) return;
+          
+          // Remove all existing theme classes
+          const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
+          classesToRemove.forEach(cls => grid.classList.remove(cls));
+          
+          // Add new theme
+          if (theme) {
+            grid.classList.add('theme-' + theme);
+          }
+          
+          // Apply font
+          if (font) {
+            grid.style.setProperty('--ag-font-family', font);
+            grid.style.fontFamily = font;
+          }
+          
+          // Apply size with mapping
+          if (size) {
+            const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
+            const cssSize = sizeMap[size] || '13px';
+            
+            let styleEl = document.getElementById('popup-size-override');
+            if (styleEl) styleEl.remove();
+            
+            styleEl = document.createElement('style');
+            styleEl.id = 'popup-size-override';
+            styleEl.textContent = \`.ag-theme-alpine { --ag-font-size: \${cssSize} !important; }
+              .ag-theme-alpine .ag-header-cell-text,
+              .ag-theme-alpine .ag ag-cell { font-size: \${cssSize} !important; }\`;
+            document.head.appendChild(styleEl);
+          }
+          
+          // CRITICAL: Sync appearance back to main window!
+          if (window.opener && !window.opener.closed) {
+            window.opener.syncAppearanceFromPopup(theme, font, size);
+          }
+        }
 
-                // Same column defs as main grid
-                const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
-
-                const gridOptions = {
-                  columnDefs,
-                  rowData: gridData,
-                defaultColDef: {sortable: true, filter: true, resizable: true },
-                rowSelection: 'multiple',
-            onCellValueChanged: (params) => {
-                  // Sync back to parent window
-                  window.opener.updateV5DataFromPopout(gridData);
-            }
+        // ===== BALANCE CALCULATION =====
+        function updateBalances() {
+          let totalDebit = 0;
+          let totalCredit = 0;
+          
+          gridData.forEach(txn => {
+            const debit = parseFloat(txn.Debit || txn.debit) || 0;
+            const credit = parseFloat(txn.Credit || txn.credit) || 0;
+            totalDebit += debit;
+            totalCredit += credit;
+          });
+          
+          const endingBal = openingBalance - totalDebit + totalCredit;
+          
+          const fmt = (n) => {
+            const sign = n >= 0 ? '+' : '';
+            return sign + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
           };
           
-          document.addEventListener('DOMContentLoaded', () => {
-                  gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-          });
+          document.getElementById('popup-opening').textContent = fmt(openingBalance);
+          document.getElementById('popup-debit').textContent = '-$' + totalDebit.toFixed(2);
+          document.getElementById('popup-credit').textContent = '+$' + totalCredit.toFixed(2);
+          document.getElementById('popup-ending').textContent = fmt(endingBal);
+          
+          // Sync balances to main window
+          if (window.opener && !window.opener.closed) {
+            window.opener.recalculateAllBalances();
+          }
+        }
 
-                function selectAll() {gridApi.selectAll(); }
-                function deselectAll() {gridApi.deselectAll(); }
-                function bulkDelete() {
-            const selected = gridApi.getSelectedRows();
-                if (selected.length === 0) return;
-                if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
-            
-            const selectedIds = selected.map(r => r.id);
-            const newData = gridData.filter(r => !selectedIds.includes(r.id));
-                gridApi.setGridOption('rowData', newData);
-                window.opener.updateV5DataFromPopout(newData);
-          }
-                function closePopout() {
-                  window.opener.popInV5Grid();
-                window.close();
-          }
-              </script>
-            </body>
-          </html>
-          `);
+        // ===== GRID ACTIONS =====
+        function selectAll() { gridApi.selectAll(); }
+        function deselectAll() { gridApi.deselectAll(); }
+        
+        function bulkDelete() {
+          const selected = gridApi.getSelectedRows();
+          if (selected.length === 0) return;
+          if (!confirm(\`Delete \${selected.length} transaction(s)?\`)) return;
+          
+          const selectedIds = selected.map(r => r.id);
+          const newData = gridData.filter(r => !selectedIds.includes(r.id));
+          gridApi.setGridOption('rowData', newData);
+          window.opener.updateV5DataFromPopout(newData);
+          updateBalances();
+        }
+        
+        function closePopout() {
+          window.opener.popInV5Grid();
+          window.close();
+        }
+      </script>
+    </body>
+    </html>
+  `);
 };
+
+
+
 
 window.popInV5Grid = function () {
   // Close popout if open

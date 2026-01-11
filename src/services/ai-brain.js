@@ -15,7 +15,7 @@ class AIBrain {
     // ============================================
 
     async startConversation(title = null) {
-        console.log('🧠 Starting new AI conversation session...');
+
 
         const conversation = {
             user_id: this.userId,
@@ -38,7 +38,7 @@ class AIBrain {
         this.currentSession = conversation;
         this.conversationId = conversation.id;
 
-        console.log('✅ Conversation started:', conversation.id);
+
         return conversation;
     }
 
@@ -71,7 +71,7 @@ class AIBrain {
             localStorage.setItem('ai_conversations', JSON.stringify(conversations));
         }
 
-        console.log(`💬 Saved ${role} message:`, message.id);
+
         return message;
     }
 
@@ -101,7 +101,7 @@ class AIBrain {
             const messages = this.getMessages()
                 .filter(m => m.conversation_id === conversationId);
 
-            console.log(`🔄 Resumed conversation: ${conv.title} (${messages.length} messages)`);
+
             return { conversation: conv, messages };
         }
 
@@ -124,7 +124,7 @@ class AIBrain {
         contexts.push(context);
         localStorage.setItem('ai_contexts', JSON.stringify(contexts));
 
-        console.log(`📝 Saved context: ${contextType} - ${key}`);
+
         return context;
     }
 
@@ -162,7 +162,7 @@ class AIBrain {
         corrections.push(record);
         localStorage.setItem('ai_corrections', JSON.stringify(corrections));
 
-        console.log(`🎓 Learned from correction: ${correction.type}`);
+
         return record;
     }
 
@@ -213,7 +213,7 @@ class AIBrain {
             patterns[index] = existing;
             localStorage.setItem('ai_learned_patterns', JSON.stringify(patterns));
 
-            console.log(`✨ Reinforced pattern: ${pattern.type} (confidence: ${existing.confidence})`);
+
         } else {
             // Create new pattern
             const newPattern = {
@@ -234,7 +234,7 @@ class AIBrain {
             patterns.push(newPattern);
             localStorage.setItem('ai_learned_patterns', JSON.stringify(patterns));
 
-            console.log(`🆕 Created new pattern: ${pattern.type}`);
+
         }
     }
 
@@ -278,7 +278,7 @@ class AIBrain {
         patterns.push(pattern);
         localStorage.setItem('user_parsing_patterns', JSON.stringify(patterns));
 
-        console.log(`📊 Saved parsing pattern: ${result.metadata.bank} ${result.metadata.type}`);
+
         return pattern;
     }
 
@@ -306,7 +306,7 @@ class AIBrain {
 
             localStorage.setItem('user_parsing_patterns', JSON.stringify(patterns));
 
-            console.log(`📈 Updated pattern success: ${pattern.success_rate.toFixed(2)} (${pattern.times_successful}/${pattern.times_used})`);
+
         }
     }
 
@@ -332,7 +332,7 @@ class AIBrain {
         kb.push(record);
         localStorage.setItem('ai_knowledge_base', JSON.stringify(kb));
 
-        console.log(`📚 Added knowledge: ${knowledge.type} - ${knowledge.key}`);
+
         return record;
     }
 
@@ -428,5 +428,5 @@ window.AIBrain = AIBrain;
 // Auto-start for current user
 if (typeof window !== 'undefined') {
     window.aiBrain = new AIBrain('current_user');
-    console.log('🧠 AI Brain initialized - I am now a Learning Machine!');
+
 }

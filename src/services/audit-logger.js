@@ -28,7 +28,7 @@ class AuditLogger {
             request.onsuccess = () => {
                 this.db = request.result;
                 this.isInitialized = true;
-                console.log('✅ Audit Log initialized');
+
                 resolve();
             };
 
@@ -128,7 +128,7 @@ class AuditLogger {
             batch.forEach(item => store.add(item));
 
             transaction.oncomplete = () => {
-                console.log(`✅ Audit batch written: ${batch.length} events`);
+
                 resolve();
             };
             transaction.onerror = () => reject(transaction.error);
@@ -302,7 +302,7 @@ class AuditLogger {
             };
 
             transaction.oncomplete = () => {
-                console.log(`✅ Deleted ${deletedCount} old audit logs`);
+
                 resolve(deletedCount);
             };
             transaction.onerror = () => reject(transaction.error);

@@ -340,10 +340,15 @@ window.renderTransactions = function () {
     const fmt = (n) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n));
 
     return `
-    <div class="transaction-page">
+    <div class="page snug-page transaction-page">
        <style>
+         .transaction-page { background: #f8fafc; }
          .ag-theme-alpine { --ag-font-family: 'Inter', sans-serif; --ag-font-size: 13px; }
          .ag-header-cell-label { font-weight: 600; color: #64748b; }
+         
+         .fixed-top-section { flex-shrink: 0; }
+         .txn-grid-container { flex: 1; padding: 0; background: #f1f5f9; min-height: 0; }
+         
          /* DROPDOWN SYSTEM for Toolbar */
          .dropdown-container { position: relative; }
          .btn-icon-menu { 
@@ -506,7 +511,7 @@ window.renderTransactions = function () {
            </div>
        </div>
 
-       <div style="padding: 0; background: #f1f5f9; height: calc(100vh - 180px);">
+       <div class="txn-grid-container">
           <div id="txnGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
        </div>
     </div>

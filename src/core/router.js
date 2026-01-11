@@ -23,7 +23,7 @@ class Router {
    */
   register(path, handler) {
     this.routes.set(path, handler);
-    console.log(`🧭 Registered route: ${path}`);
+
   }
 
   /**
@@ -90,7 +90,7 @@ class Router {
 
     // Deduplication: don't reload same route
     if (this.currentPath === pathPart) {
-      console.log(`🧭 Route unchanged: ${pathPart}`);
+
       return;
     }
 
@@ -104,10 +104,7 @@ class Router {
       this.currentPath = pathPart;
       this.params = match.params;
 
-      console.log(`🧭 Route changed to: ${pathPart}`, {
-        params: this.params,
-        query: this.query
-      });
+
 
       // Check if route requires authentication
       if (this._requiresAuth(pathPart)) {
@@ -271,4 +268,4 @@ class Router {
 // Create global router instance
 window.router = new Router();
 
-console.log('🧭 Router initialized and ready');
+

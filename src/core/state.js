@@ -16,7 +16,7 @@ class Store {
             this._loadFromStorage();
         }
 
-        console.log('📦 Store initialized:', this.state);
+
     }
 
     /**
@@ -45,7 +45,7 @@ class Store {
         // Merge updates
         this.state = this._deepMerge(this.state, updates);
 
-        console.log('📦 State updated:', updates);
+
 
         // Persist to localStorage
         if (this.persist) {
@@ -63,14 +63,14 @@ class Store {
      */
     subscribe(callback) {
         this.subscribers.push(callback);
-        console.log(`📦 Subscriber added (total: ${this.subscribers.length})`);
+
 
         // Return unsubscribe function
         return () => {
             const index = this.subscribers.indexOf(callback);
             if (index > -1) {
                 this.subscribers.splice(index, 1);
-                console.log(`📦 Subscriber removed (total: ${this.subscribers.length})`);
+
             }
         };
     }
@@ -83,7 +83,7 @@ class Store {
         const oldState = { ...this.state };
         this.state = { ...newState };
 
-        console.log('📦 State reset:', this.state);
+
 
         if (this.persist) {
             this._saveToStorage();
@@ -138,7 +138,7 @@ class Store {
             if (stored) {
                 const parsed = JSON.parse(stored);
                 this.state = this._deepMerge(this.state, parsed);
-                console.log('📦 State loaded from localStorage');
+
             }
         } catch (error) {
             console.error('📦 Failed to load from localStorage:', error);
@@ -200,4 +200,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { createStore, Store };
 }
 
-console.log('📦 State management ready');
+

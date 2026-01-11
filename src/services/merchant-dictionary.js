@@ -12,9 +12,10 @@ class MerchantDictionary {
         this.db = null;
         this.isInitialized = false;
         this.isInitialized = false;
-        this.tableName = 'merchants'; // Default, updated by discovery
         this.cloudSchema = null; // Dynamically detected keys
         this.cloudBlocklist = new Set(); // Auto-learned bad columns
+        this.isBulkMode = false;
+        this.pendingUploads = new Set(); // Set of merchant IDs to sync
     }
 
     // ============================================
@@ -23,10 +24,10 @@ class MerchantDictionary {
 
     async init() {
         if (this.isInitialized) return;
-        console.log('🏁 Dictionary: Init called...');
+
 
         return new Promise((resolve, reject) => {
-            console.log('🏁 Dictionary: Opening IndexedDB...');
+
             // Bump version to 2 for 'backups' store
             const request = indexedDB.open('MerchantDictionaryDB', 2);
 
@@ -62,12 +63,12 @@ class MerchantDictionary {
             };
 
             request.onsuccess = () => {
-                console.log('✅ Dictionary: IDB Opened. Loading memory...');
+
                 this.db = request.result;
                 this.loadMerchantsIntoMemory().then(() => {
                     // ✅ Local data loaded - UNBLOCK UI IMMEDIATELY
                     this.isInitialized = true;
-                    console.log(`✅ Dictionary: Memory Loaded (Size: ${this.merchants.size})`);
+
                     resolve();
 
                     // ☁️ CLOUD SYNC: Run in background (fire & forget)
@@ -110,10 +111,10 @@ class MerchantDictionary {
     }
 
     async loadMerchantsIntoMemory() {
-        console.log('🔄 Dictionary: starting loadMerchantsIntoMemory...');
+
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readonly');
-            console.log('🔄 Dictionary: Transaction started...');
+
 
             const merchantStore = transaction.objectStore('merchants');
             const cacheStore = transaction.objectStore('pattern_cache');
@@ -124,7 +125,7 @@ class MerchantDictionary {
             transaction.oncomplete = () => {
                 const merchants = merchantRequest.result;
                 const patterns = cacheRequest.result;
-                console.log(`DETAILS: Read ${merchants.length} merchants and ${patterns.length} patterns from IDB.`);
+
 
                 // Load merchants
                 merchants.forEach(merchant => {
@@ -149,7 +150,7 @@ class MerchantDictionary {
 
     async syncWithCloud() {
         try {
-            console.log('☁️ Dictionary: Starting background sync...');
+
             // Smart discovery of table name
             const candidates = ['vendors', 'vendor', 'merchants', 'merchant', 'Vendors', 'Merchants'];
             const table = await window.supabaseService.discoverTable(candidates, 'merchants');
@@ -159,7 +160,7 @@ class MerchantDictionary {
             if (!error && data && data.length > 0) {
                 // DETECT SCHEMA: Capture keys from the first record
                 this.cloudSchema = Object.keys(data[0]);
-                console.log(`☁️ Dictionary: Synced ${data.length} merchants from cloud ("${table}"). Schema detected:`, this.cloudSchema);
+
 
                 // Update IndexedDB & Memory
                 const count = await this.importBackup(data);
@@ -167,7 +168,7 @@ class MerchantDictionary {
                 // Optional: Notify UI if significantly different?
                 // For now just log it. If user is on grid, they might need a refresh to see new cloud items,
                 // but this prevents the "Hang".
-                console.log('✅ Dictionary: Background sync complete');
+
 
                 // If on Vendors page, refresh grid gently? 
                 // We'll leave that for now to avoid jumpiness.
@@ -776,6 +777,11 @@ class MerchantDictionary {
 
         // 2. Cloud Persistence with AUTO-HEALING
         // Retries if schema mismatch is detected
+        if (this.isBulkMode) {
+            this.pendingUploads.add(merchant.id);
+            return;
+        }
+
         if (window.supabaseService && window.supabaseService.isOnline) {
             let attempt = 0;
             const maxAttempts = 10;
@@ -783,7 +789,6 @@ class MerchantDictionary {
             while (attempt < maxAttempts) {
                 try {
                     const cloudSafe = this.sanitizeForCloud(merchant);
-                    console.log('☁️ Uploading Merchant Payload:', JSON.stringify(cloudSafe));
                     const { error } = await window.supabaseService.from(this.tableName).upsert(cloudSafe);
 
                     if (error) {
@@ -823,6 +828,10 @@ class MerchantDictionary {
     }
 
     async savePatternCache(pattern) {
+        if (!pattern || !pattern.pattern) {
+            console.warn('⚠️ Dictionary: Skipping invalid pattern cache entry', pattern);
+            return;
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['pattern_cache'], 'readwrite');
             const request = transaction.objectStore('pattern_cache').put(pattern);
@@ -951,12 +960,30 @@ class MerchantDictionary {
         let imported = 0;
 
         for (const m of merchants) {
+            // NORMALIZATION: Handle legacy schema variations
+            if (m.description_patterns && Array.isArray(m.description_patterns)) {
+                m.description_patterns = m.description_patterns.map(p => {
+                    if (typeof p === 'string') {
+                        return {
+                            pattern: p,
+                            normalized_pattern: this.normalize(p),
+                            match_count: 1,
+                            last_seen: new Date().toISOString(),
+                            raw_examples: []
+                        };
+                    }
+                    return p;
+                });
+            }
+
             this.merchants.set(m.id, m);
             await this.saveMerchant(m);
 
             // Rebuild pattern indexes
-            if (m.description_patterns) {
+            if (m.description_patterns && Array.isArray(m.description_patterns)) {
                 for (const p of m.description_patterns) {
+                    if (!p || !p.pattern) continue;
+
                     this.patternIndex.set(p.pattern, m.id);
                     this.normalizedIndex.set(p.normalized_pattern, m.id);
                     await this.savePatternCache({
@@ -1032,6 +1059,41 @@ class MerchantDictionary {
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         });
+    }
+
+    /**
+     * Batch Flush: Pushes all pending uploads to the cloud in chunks
+     */
+    async flushPendingSyncs() {
+        if (!window.supabaseService || !window.supabaseService.isOnline) return;
+        if (this.pendingUploads.size === 0) return;
+
+        console.log(`☁️ Dictionary: Flushing ${this.pendingUploads.size} pending uploads...`);
+        const ids = Array.from(this.pendingUploads);
+        this.pendingUploads.clear();
+
+        const chunks = [];
+        for (let i = 0; i < ids.length; i += 50) {
+            chunks.push(ids.slice(i, i + 50));
+        }
+
+        for (const chunk of chunks) {
+            const merchantsToSync = chunk.map(id => this.merchants.get(id)).filter(m => !!m);
+            const cloudSafeList = merchantsToSync.map(m => this.sanitizeForCloud(m));
+
+            try {
+                const { error } = await window.supabaseService.from(this.tableName).upsert(cloudSafeList);
+                if (error) console.error('☁️ Dictionary: Batch flush failed:', error);
+            } catch (e) {
+                console.warn('☁️ Dictionary: Supabase error during batch flush', e);
+            }
+        }
+        console.log('✅ Dictionary: Batch flush complete');
+    }
+
+    setBulkMode(enabled) {
+        this.isBulkMode = enabled;
+        if (!enabled) this.pendingUploads.clear();
     }
 }
 

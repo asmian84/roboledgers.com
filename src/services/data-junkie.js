@@ -24,7 +24,7 @@ class DataJunkie {
             'contract', 'agreement', 'client data'
         ];
 
-        console.log('🔍 Data Junkie initialized - Smart scanner ready!');
+
     }
 
     /**
@@ -39,7 +39,7 @@ class DataJunkie {
             // Check for exclusion keywords first
             for (const keyword of this.exclusionKeywords) {
                 if (lowerText.includes(keyword)) {
-                    console.log(`❌ Skipping ${file.name}: Contains "${keyword}"`);
+
                     return false;
                 }
             }
@@ -55,16 +55,12 @@ class DataJunkie {
             // Need at least 3 statement keywords
             const isStatement = keywordCount >= 3;
 
-            if (isStatement) {
-                console.log(`✅ Bank statement detected: ${file.name} (${keywordCount} indicators)`);
-            } else {
-                console.log(`❌ Not a bank statement: ${file.name} (only ${keywordCount} indicators)`);
-            }
+
 
             return isStatement;
 
         } catch (error) {
-            console.error(`Failed to scan ${file.name}:`, error);
+
             return false;
         }
     }
@@ -157,7 +153,7 @@ class DataJunkie {
      * STEP 4: Detect duplicates using smart hashing
      */
     async detectDuplicates(transactions) {
-        console.log('🔍 Data Junkie: Scanning for duplicates...');
+
 
         const existingTxns = JSON.parse(localStorage.getItem('ab3_transactions') || '[]');
         const existingHashes = new Set(existingTxns.map(t =>
@@ -176,7 +172,7 @@ class DataJunkie {
 
             if (existingHashes.has(hash)) {
                 duplicateCount++;
-                console.log(`🛑 Duplicate: ${t.Description.substring(0, 50)}...`);
+
 
                 // LEARN FROM DUPLICATE (it's a confirmed pattern!)
                 this.learnFromDuplicate(t);
@@ -190,12 +186,7 @@ class DataJunkie {
             return true;
         });
 
-        if (duplicateCount > 0) {
-            console.log(`🛑 Filtered ${duplicateCount} duplicates`);
-            console.log(`🧠 Learned from ${learnedCount} duplicate patterns`);
-        } else {
-            console.log(`✅ All ${unique.length} transactions are unique`);
-        }
+
 
         return unique;
     }
@@ -213,9 +204,9 @@ class DataJunkie {
                 source: 'Data Junkie - Duplicate'
             });
 
-            console.log(`🧠 Data Junkie: Reinforced pattern from duplicate using v4 dictionary`);
+
         } catch (error) {
-            console.warn('Failed to learn from duplicate:', error);
+
         }
     }
 
@@ -302,11 +293,11 @@ class DataJunkie {
             if (!exists) {
                 negativePatterns.push(entry);
                 localStorage.setItem('ab3_negative_patterns', JSON.stringify(negativePatterns));
-                console.log(`📚 Negative pattern learned: "${pattern}"`);
+
             }
 
         } catch (error) {
-            console.error('Failed to learn negative pattern:', error);
+
         }
     }
 
@@ -361,5 +352,5 @@ class DataJunkie {
 // Initialize global instance
 if (typeof window !== 'undefined') {
     window.dataJunkie = new DataJunkie();
-    console.log('🔍 Data Junkie ready - Smart scanner + Dictionary builder!');
+
 }

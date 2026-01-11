@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoboLedgers 4.0</title>
+  <link rel="stylesheet" href="src/styles/styles.css">
+  <link rel="stylesheet" href="src/styles/import-summary.css">
+  <link rel="stylesheet" href="src/styles/roadmap.css">
+  <link rel="stylesheet" href="src/styles/ai-spider.css">
+  <link rel="stylesheet" href="src/styles/ai-chat.css">
+
+  <link rel="stylesheet" href="src/styles/pdf-prescanner.css">
+
+  <!-- AG Grid Community -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.css">
+  <link rel="stylesheet" href="src/styles/ag-grid-fixes.css">
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+  <!-- Grid Appearance Fail-safe -->
+  <style id="v5-failsafe-styles">
+    .v5-control-toolbar {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 1.5rem !important;
+      padding: 1rem 1.5rem !important;
+      background: #ffffff !important;
+      border-bottom: 1px solid #E5E7EB !important;
+      flex-wrap: nowrap !important;
+    }
+
+    .v5-ref-input-wrapper {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+  </style>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- SheetJS for Excel Import -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <!-- PDF.js for PDF Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    // Initialize PDF.js - disable worker for file:// protocol to avoid cross-origin issues
+    if (window.location.protocol === 'file:') {
+      // Disable worker for local file access
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+      console.log('📄 PDF.js: Worker disabled for file:// protocol');
+    } else {
+      // Use worker for http/https
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      console.log('📄 PDF.js: Worker enabled');
+    }
+  </script>
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Toast Notifications CSS -->
+  <link rel="stylesheet" href="src/features/notifications/toast.css">
+</head>
+
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="sidebar">
+
+    <!-- Branding / Logo -->
+    <div class="sidebar-brand">
+      <img src="src/assets/logo.png" alt="RoboLedgers" class="brand-logo">
+    </div>
+
+    <nav class="sidebar-nav-content">
+
+      <!-- GROUP: DAILY (Header Hidden) -->
+      <div class="nav-group">
+        <!-- DAILY Header Removed -->
+
+        <a href="#/" class="nav-item" data-route="/">
+          <i class="ph ph-house nav-icon"></i>
+          <span class="nav-label">Home</span>
+        </a>
+
+        <!-- ARCHIVED NAVIGATION (Kept in code for easy restoration)
+        <a href="#/data-import" class="nav-item" data-route="/data-import">
+          <i class="ph ph-download-simple nav-icon"></i>
+          <span class="nav-label">Data Import</span>
+          <span class="nav-badge blue" id="sidebar-badge-import" style="display:none;">0</span>
+        </a>
+
+        <a href="#/transactions-import" class="nav-item" data-route="/transactions-import">
+          <i class="ph ph-arrow-down-left nav-icon"></i>
+          <span class="nav-label">Txn Import</span>
+        </a>
+        -->
+
+        <a href="#/txn-import-v5" class="nav-item" data-route="/txn-import-v5">
+          <i class="ph ph-sparkle nav-icon"></i>
+          <span class="nav-label">Txn Import V5</span>
+        </a>
+
+        <!-- ARCHIVED NAVIGATION
+        <a href="#/transactions" class="nav-item" data-route="/transactions">
+          <i class="ph ph-wallet nav-icon"></i>
+          <span class="nav-label">Transactions</span>
+          <span class="nav-badge orange" id="sidebar-badge-txn" style="display:none;">0</span>
+        </a>
+        -->
+
+        <a href="#/vendors" class="nav-item" data-route="/vendors">
+          <i class="ph ph-storefront nav-icon"></i>
+          <span class="nav-label">Vendors</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-header">ANALYSIS</div>
+
+        <a href="#/analytics" class="nav-item" data-route="/analytics">
+          <i class="ph ph-chart-pie-slice nav-icon"></i>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <a href="#/reports" class="nav-item" data-route="/reports">
+          <i class="ph ph-chart-line-up nav-icon"></i>
+          <span class="nav-label">Reports</span>
+        </a>
+
+        <a href="#/accounts" class="nav-item" data-route="/accounts">
+          <i class="ph ph-piggy-bank nav-icon"></i>
+          <span class="nav-label">Chart of Accounts</span>
+        </a>
+
+      </div>
+
+      <!-- GROUP: SYSTEM -->
+      <div class="nav-group">
+        <div class="nav-group-header">SYSTEM</div>
+
+
+
+        <a href="#/settings" class="nav-item" data-route="/settings">
+          <i class="ph ph-gear nav-icon"></i>
+          <span class="nav-label">Settings</span>
+        </a>
+
+        <a href="#/team" class="nav-item" data-route="/team">
+          <i class="ph ph-users nav-icon"></i>
+          <span class="nav-label">Team</span>
+        </a>
+
+        <a href="#/roadmap" class="nav-item" data-route="/roadmap">
+          <i class="ph ph-map-trifold nav-icon"></i>
+          <span class="nav-label">Roadmap</span>
+        </a>
+
+      </div>
+
+    </nav>
+
+    <!-- User Profile Footer -->
+    <div class="sidebar-footer">
+      <div class="user-profile-card">
+        <div class="user-avatar-premium">
+          <img src="https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff" alt="User">
+        </div>
+        <div class="user-info-text">
+          <div class="user-name">Alex Johnson</div>
+          <div class="user-role">Premium Plan</div>
+        </div>
+        <button class="user-menu-btn">
+          <i class="ph-bold ph-dots-three"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Hamburger -->
+  <button id="hamburger" class="hamburger" aria-label="Open menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+
+    <!-- Breadcrumb Bar -->
+    <div id="breadcrumb" class="breadcrumb">
+      <a href="#/" class="breadcrumb-item">Home</a>
+    </div>
+
+    <!-- Page Content (Router injects here) -->
+    <div id="app" class="app-container">
+      <!-- Route content will be injected here -->
+      <div class="page loading">
+        <p>Loading...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Auth Modal (only modal allowed) -->
+  <!-- Content rendered by auth-modal.js -->
+  <div id="auth-modal" class="auth-modal" style="display: none;"></div>
+
+
+  <!-- Scripts -->
+  <script src="src/core/state.js"></script>
+  <script src="src/core/router.js"></script>
+  <script src="src/core/breadcrumb.js"></script>
+  <script src="src/core/session.js"></script>
+  <script src="src/components/auth-modal.js"></script>
+  <script src="src/components/csv-import-modal.js"></script>
+  <script src="src/components/add-transaction-modal.js"></script>
+
+  <!-- Search Feature -->
+  <script src="src/features/search/search-engine.js"></script>
+  <script src="src/features/search/search-modal.js"></script>
+  <script src="src/features/search/search-bar.js"></script>
+
+  <!-- Keyboard Shortcuts -->
+  <script src="src/features/shortcuts/keyboard-manager.js"></script>
+  <script src="src/features/shortcuts/shortcuts-modal.js"></script>
+
+  <!-- Notifications -->
+  <script src="src/features/notifications/toast-manager.js"></script>
+
+  <!-- Data Layer (MUST LOAD FIRST) -->
+  <script src="src/core/system-log.js"></script> <!-- Load early for logging support -->
+  <script src="src/data/utils.js"></script>
+  <script src="src/data/models.js"></script>
+  <script src="src/data/storage.js?v=20260101_v5"></script>
+  <script src="src/utils/data-integrity.js?v=20251230_v14"></script>
+  <script src="src/data/default-coa.js"></script>
+  <!-- Supabase Service -->
+  <script src="src/services/supabase-service.js?v=20260101_v6"></script>
+
+  <!-- NEW: Enhanced Import Services -->
+  <script src="src/services/bank-registry.js?v=20251230_v1"></script>
+  <script src="src/services/pdf-debug.js"></script>
+  <script src="src/services/pdf-parser.js?v=20251230_v19"></script>
+  <script src="src/services/bayesian-matcher.js"></script>
+  <script src="src/services/merchant-categorizer.js?v=20251231_v5"></script>
+  <script src="src/utils/nuclear-cleanup.js"></script>
+  <script src="src/utils/bulk-delete-vendors.js"></script>
+  <script src="src/utils/bulk-operations.js"></script>
+  <script src="src/utils/loading-overlay.js"></script>
+  <script src="src/services/upload-history.js"></script>
+
+  <!-- Global Modal Service -->
+  <script src="src/components/ui/modal-service.js"></script>
+  <script src="src/components/batch-upload-modal.js"></script>
+  <script src="src/services/smart-csv-parser.js"></script>
+  <script src="src/services/popout-service.js"></script>
+  <script src="src/services/brain-storage.js"></script>
+  <script src="src/services/ai-brain.js"></script>
+  <script src="src/services/ai-spider.js"></script>
+  <script src="src/services/ai-memory-bridge.js"></script>
+  <script src="src/services/ai-context-injector.js"></script>
+  <script src="src/services/audit-logger.js"></script>
+  <script src="src/services/merchant-dictionary.js?v=20260102_v1"></script>
+  <script src="src/services/account-balances.js"></script>
+  <script src="src/services/pattern-detector.js"></script>
+  <script src="src/services/transaction-matcher.js"></script>
+  <script src="src/services/data-junkie.js"></script>
+  <script src="src/services/pdf-pre-scanner.js"></script>
+  <script src="src/services/wiki-service.js"></script>
+  <script src="src/services/outsource-service.js"></script>
+
+  <!-- AI Knowledge Layer -->
+  <script src="src/data/global_vendor_db.js"></script>
+  <script src="src/data/keyword_clusters.js"></script>
+  <script src="src/services/categorization-engine.js"></script>
+
+  <script src="src/utils/smart-csv-parser.js"></script>
+  <script src="src/services/transfer-agent.js"></script>
+  <script src="src/utils/smart-matcher.js"></script>
+  <script src="src/utils/vendor-engine.js"></script>
+  <script src="src/utils/ai-test-suite.js"></script>
+  <script src="src/services/csv-parser.js?v=20251221rb"></script>
+  <script src="src/utils/legacy-importer.js"></script>
+
+  <!-- Account Manager (Multi-Account Support) -->
+  <script src="src/features/accounts/account-manager.js"></script>
+  <script src="src/features/accounts/account-switcher.js"></script>
+  <script src="src/features/accounts/report-data-manager.js"></script>
+
+  <!-- COA Balance Verification Utility (Dev Tool) -->
+  <script src="src/utils/verify-coa-balances.js"></script>
+
+  <!-- V5: Background Processing Services -->
+  <script src="src/services/processing-engine.js"></script>
+  <script src="src/services/cache-manager.js"></script>
+  <script src="src/services/google-ai-categorizer.js"></script>
+
+  <!-- Page Modules -->
+  <script src="src/pages/home.js"></script>
+  <script src="src/pages/data-import.js?v=20251230_v17"></script>
+  <script src="src/pages/transactions-import.js"></script>
+  <!-- TRANSACTION IMPORT V5 (Full Restoration) -->
+  <script src="src/pages/txn-import-v5-v2.js"></script>
+  <script src="src/pages/profile.js"></script>
+  <!-- <script src="src/pages/transactions-fixed.js"></script> LEGACY -->
+  <script src="src/pages/transactions-grid.js?v=20260101_v3"></script>
+  <script src="src/pages/vendors.js?v=20260101_v3"></script>
+  <script src="src/pages/vendorDetail.js"></script>
+  <script src="src/pages/accounts.js?v=20251230_v13"></script>
+  <script src="src/pages/accountDetail.js"></script>
+  <script src="src/pages/reports.js"></script>
+  <script src="src/pages/reconciliation.js"></script>
+  <script src="src/pages/settings.js"></script>
+  <script src="src/pages/analytics.js?v=20251223v1"></script>
+  <script src="src/pages/roadmap.js"></script>
+  <parameter name="ai-chat.js">
+    </script>
+    <script src="src/pages/single-file-test.js"></script>
+
+    <script src="src/pages/training.js"></script>
+
+
+    <!-- Vendor Pages -->
+    <script src="src/utils/vendorMatcher.js"></script>
+    <script src="src/pages/vendorNew.js"></script>
+    <!-- Features -->
+    <script src="src/features/uploads/pdf-import-service.js"></script>
+    <script src="src/components/parser-settings-modal.js"></script>
+    <script src="src/features/vendors/vendor-analysis.js"></script>
+    <script src="src/components/vendor-analysis-modal.js"></script>
+    <script src="src/pages/vendor-analysis-page.js"></script>
+    <script src="src/data/seed-data.js"></script>
+
+
+    <script>
+      // Apply saved theme and appearance settings immediately
+      (function () {
+        const theme = localStorage.getItem('preferred_theme') || 'daylight';
+        const fontSize = localStorage.getItem('ab_font_size') || 'medium';
+        const compactMode = localStorage.getItem('ab_compact_mode') === 'true';
+
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-font-size', fontSize);
+        if (compactMode) document.documentElement.classList.add('ultra-compact');
+      })();
+
+      // Initialize application state
+      const appState = createStore({
+        currentUser: null,
+        theme: 'light',
+        sidebarOpen: false
+      }, {
+        storageKey: 'autobook_v3_state',
+        persist: true
+      });
+
+      // ====================================
+      // DATA LAYER INITIALIZATION
+      // ====================================
+
+      async function initializeDataLayer() {
+
+
+        try {
+          // Check if database needs seeding
+          const transactions = await window.storage.getTransactions();
+
+          if (transactions.length === 0) {
+
+          } else {
+            console.log(`✅ Data loaded: ${transactions.length} transactions`);
+          }
+
+          // Load settings
+          const settings = await window.storage.getSettings();
+
+
+          // Apply theme from settings
+          if (settings.theme) {
+            document.documentElement.setAttribute('data-theme', settings.theme);
+            appState.setState({ theme: settings.theme });
+          }
+
+          // Update state with loaded data counts
+          const vendors = await window.storage.getVendors();
+          const accounts = await window.storage.getAccounts();
+
+
+
+          // ✅ REFRESH ACCOUNT BALANCES ON APP LOAD
+          if (window.refreshAccountBalances) {
+
+          }
+
+        } catch (error) {
+          console.error('❌ Failed to initialize data layer:', error);
+        }
+      }
+
+      // CLEANUP: Remove old localStorage keys and corrupted entries
+      function cleanupOldStorage() {
+        // 1. Target specifically corrupted "undefined" strings
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          const val = localStorage.getItem(key);
+          if (val === 'undefined' || val === 'null' || !val) {
+            console.warn(`🧹 Purging corrupted/empty localStorage key: ${key}`);
+            localStorage.removeItem(key);
+            i--;
+          }
+        }
+        // 2. Remove old legacy keys
+        if (localStorage.getItem('transactions')) {
+          localStorage.removeItem('transactions');
+        }
+      }
+
+      cleanupOldStorage();
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeDataLayer);
+      } else {
+        setTimeout(initializeDataLayer, 0);
+      }
+
+      function updateActiveNav(path) {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+          const route = item.getAttribute('data-route');
+          if (!route) return;
+          if (route === path || (path !== '/' && path.startsWith(route) && route !== '/')) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      router.onChange((route) => {
+        if (window.breadcrumbManager) {
+          window.breadcrumbManager.update(route.path, route.params);
+        }
+        updateActiveNav(route.path);
+      });
+
+      // Mobile sidebar toggle
+      const hamburger = document.getElementById('hamburger');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarClose = document.getElementById('sidebar-close');
+      const mainContent = document.querySelector('.main-content');
+
+      hamburger?.addEventListener('click', () => {
+        sidebar?.classList.add('open');
+      });
+
+      sidebarClose?.addEventListener('click', () => {
+        sidebar?.classList.remove('open');
+      });
+
+      mainContent?.addEventListener('click', () => {
+        if (window.innerWidth < 768 && sidebar?.classList.contains('open')) {
+          sidebar?.classList.remove('open');
+        }
+      });
+
+      // ====================================
+      // ROUTE REGISTRATION
+      // ====================================
+      // Home page renders inline for simplicity if not using external file
+      function renderHomePage() {
+        return `
+          <div class="page">
+            <div class="page-header">
+              <h1 class="page-title">Welcome to RoboLedgers 4.0</h1>
+              <p class="page-subtitle">Your intelligent bookkeeping assistant</p>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="card stat-card">
+                <div class="stat-icon">💰</div>
+                <h3>Total Transactions</h3>
+                <p class="stat-value" id="dash-transactions">-</p>
+                <a href="#/transactions" class="stat-link">View all →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">🏢</div>
+                <h3>Vendors</h3>
+                <p class="stat-value" id="dash-vendors">-</p>
+                <a href="#/vendors" class="stat-link">Manage →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">📊</div>
+                <h3>Chart of Accounts</h3>
+                <p class="stat-value" id="dash-accounts">-</p>
+                <a href="#/accounts" class="stat-link">View chart →</a>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-icon">📈</div>
+                <h3>Reports</h3>
+                <p class="stat-value">Ready</p>
+                <a href="#/reports" class="stat-link">Generate →</a>
+              </div>
+            </div>
+
+            <div class="card quick-actions">
+              <h2>Quick Actions</h2>
+              <div class="action-buttons">
+                <button class="btn-primary" onclick="window.router.navigate('/data-import')">📥 Import Transactions</button>
+                <button class="btn-secondary" onclick="window.router.navigate('/vendors/new')">➕ Add Vendor</button>
+                <button class="btn-secondary" onclick="window.router.navigate('/settings')">⚙️ Settings</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Root Route
+      router.register('/', async () => {
+        const app = document.getElementById('app');
+        app.innerHTML = '<div class="page"><p>Loading Command Center...</p></div>';
+        try {
+          if (window.renderHome) {
+            app.innerHTML = await window.renderHome();
+          } else {
+            app.innerHTML = renderHomePage();
+          }
+        } catch (e) {
+          console.error('Dashboard render error:', e);
+          app.innerHTML = '<div class="page"><p>Failed to load dashboard.</p></div>';
+        }
+      });
+
+      // Register Routes (Lazy-ish loading pattern)
+      // Analytics Dashboard
+      router.register('/analytics', async () => {
+        const app = document.getElementById('app');
+        if (!window.renderAnalyticsPage) {
+          console.warn('Analytics module loading...');
+          // Wait for script if needed (not implemented here, assuming sync load)
+        }
+        if (window.renderAnalyticsPage) await window.renderAnalyticsPage(app);
+      });
+
+      // Brain Training Module
+      router.register('/training', async () => {
+        const app = document.getElementById('app');
+        if (!window.renderTrainingPage) {
+          console.warn('Training module loading...');
+        }
+        if (window.renderTrainingPage) await window.renderTrainingPage(app);
+      });
+
+      router.register('/home', async () => {
+        window.breadcrumb.update([{ label: 'Home', path: '/' }]);
+        // Redirect logic or duplicate render
+        const app = document.getElementById('app');
+        app.innerHTML = await window.renderHome();
+      });
+
+      router.register('/data-import', () => {
+        window.breadcrumbManager.update('/data-import');
+        window.renderDataImportPage();
+      });
+
+      // Transactions Import (Unified - Scenario #1)
+      router.register('/transactions-import', () => {
+        window.breadcrumbManager.update('/transactions-import');
+        const app = document.getElementById('app');
+        app.innerHTML = window.renderTransactionsImportPage();
+        setTimeout(() => {
+          if (window.initTxnImportGrid) window.initTxnImportGrid();
+        }, 50);
+      });
+
+      // Transactions Import V5 (Unified with 7 methods, keyboard shortcuts, caching)
+      router.register('/txn-import-v5', () => {
+        window.breadcrumbManager.update('/txn-import-v5');
+        const app = document.getElementById('app');
+        app.innerHTML = window.renderTxnImportV5Page();
+        setTimeout(() => {
+          if (window.initTxnImportV5Grid) window.initTxnImportV5Grid();
+        }, 50);
+      });
+
+      // User Profile
+      router.register('/profile', () => {
+        document.getElementById('app').innerHTML = renderProfile();
+      });
+
+      // Transactions
+      router.register('/transactions', () => {
+        document.getElementById('app').innerHTML = renderTransactions();
+        setTimeout(() => {
+          if (typeof window.initTransactionsGrid === 'function') {
+            window.initTransactionsGrid();
+          }
+        }, 50);
+      });
+
+      // Vendors List
+      router.register('/vendors', () => {
+        document.getElementById('app').innerHTML = renderVendors();
+        setTimeout(() => {
+          if (typeof initVendorsGrid === 'function') {
+            initVendorsGrid();
+          }
+        }, 50);
+      });
+
+      // New Vendor
+      router.register('/vendors/new', () => {
+        document.getElementById('app').innerHTML = renderVendorNew();
+      });
+
+      // Vendor Detail - Transactions Tab (default)
+      router.register('/vendors/:vendorId', (route) => {
+        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+      });
+
+      // Vendor Detail - Transactions Tab
+      router.register('/vendors/:vendorId/transactions', (route) => {
+        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'transactions' });
+      });
+
+      // Vendor Detail - Analytics Tab
+      router.register('/vendors/:vendorId/analytics', (route) => {
+        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'analytics' });
+      });
+
+      // Vendor Detail - Settings Tab
+      router.register('/vendors/:vendorId/settings', (route) => {
+        document.getElementById('app').innerHTML = renderVendorDetail({ ...route.params, tab: 'settings' });
+      });
+
+      // Accounts (Chart of Accounts)
+      router.register('/accounts', () => {
+        document.getElementById('app').innerHTML = renderAccounts();
+        // Manually trigger the 5-card layout render
+        setTimeout(() => {
+          if (window.renderCoALists) window.renderCoALists();
+        }, 50);
+      });
+
+      // Account Detail
+      router.register('/accounts/:accountId', (route) => {
+        document.getElementById('app').innerHTML = renderAccountDetail(route.params);
+      });
+
+      // Audit Log
+      router.register('/audit', () => {
+        if (window.AuditLogPage) {
+          document.getElementById('app').innerHTML = window.AuditLogPage.render();
+        }
+      });
+
+      // --- NEW: Vendor Analysis Module (RoboLedger Style) ---
+      router.register('/vendor-analysis', () => {
+        if (window.VendorAnalysisPage) {
+          document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
+        }
+      });
+
+      // Handle sub-route for drill down (though simpler hash logic in component handles it too)
+      // We register it to ensure the router doesn't 404
+      router.register('/vendor-analysis/:vendorName', () => {
+        if (window.VendorAnalysisPage) {
+          document.getElementById('app').innerHTML = window.VendorAnalysisPage.render();
+        }
+      });
+      // -----------------------------------------------------
+
+      // Reports - Dashboard
+      router.register('/reports', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'dashboard' });
+      });
+
+      // Reports - Profit & Loss
+      router.register('/reports/profit-loss', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'profit-loss' });
+      });
+
+      // Reports - Balance Sheet
+      router.register('/reports/balance-sheet', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'balance-sheet' });
+      });
+
+      // Reports - Cash Flow
+      router.register('/reports/cash-flow', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'cash-flow' });
+      });
+
+      // Reports - Vendor Analysis
+      router.register('/reports/vendor-analysis', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'vendor-analysis' });
+      });
+
+      // Reports - Account Summary
+      router.register('/reports/account-summary', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'account-summary' });
+      });
+
+      // Reports - Custom Builder
+      router.register('/reports/custom', () => {
+        document.getElementById('app').innerHTML = renderReports({ report: 'custom' });
+      });
+
+      // Bank Reconciliation
+      router.register('/reconciliation', () => {
+        document.getElementById('app').innerHTML = renderReconciliation();
+      });
+
+      // Upload History
+      router.register('/uploads', () => {
+        document.getElementById('app').innerHTML = renderUploads();
+      });
+
+      // Settings routes
+      router.register('/settings', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'general' });
+      });
+
+      router.register('/settings/accounts', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'accounts' });
+      });
+
+      router.register('/settings/appearance', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'appearance' });
+      });
+
+      router.register('/settings/data', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'data' });
+      });
+
+      router.register('/settings/integrations', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'integrations' });
+      });
+
+      router.register('/settings/subscription', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'subscription' });
+      });
+
+      router.register('/settings/about', () => {
+        document.getElementById('app').innerHTML = renderSettings({ panel: 'about' });
+      });
+
+      // Admin routes
+      router.register('/team', () => {
+        document.getElementById('app').innerHTML = `
+        <div class="page">
+          <div class="page-header">
+            <h1 class="page-title">Team Management</h1>
+          </div>
+          <div class="card">
+            <p>Team management features coming soon</p>
+          </div>
+        </div>
+        `;
+      });
+
+      // Roadmap
+      router.register('/roadmap', () => {
+        document.getElementById('app').innerHTML = renderRoadmap();
+        setTimeout(() => {
+          if (window.initRoadmap) window.initRoadmap();
+        }, 50);
+      });
+
+      // AI Chat
+      router.register('/ai-chat', () => {
+        document.getElementById('app').innerHTML = renderAIChatPage();
+        setTimeout(() => {
+          if (window.loadAIChat) window.loadAIChat();
+        }, 100);
+      });
+
+      router.register('/subscription', () => {
+        document.getElementById('app').innerHTML = renderSettings({ tab: 'subscription' });
+      });
+
+      router.register('/audit', () => {
+        document.getElementById('app').innerHTML = `
+        <div class="page">
+          <div class="page-header">
+            <h1 class="page-title">Audit Log</h1>
+          </div>
+          <div class="card">
+            <div class="grid-placeholder">
+              <div class="placeholder-icon">📋</div>
+              <p><strong>Audit log will be here</strong></p>
+              <p>Track all user actions and system events</p>
+            </div>
+          </div>
+        </div>
+        `;
+      });
+
+      router.register('/indexer', () => {
+        document.getElementById('app').innerHTML = renderIndexerPage();
+        // Initialize Grid explicitly after DOM injection
+        if (window.initIndexerGrid) {
+          setTimeout(window.initIndexerGrid, 50);
+        }
+      });
+
+      console.log('✅ AutoBookkeeping v3.0 Navigation System initialized');
+    </script>
+
+    <!-- VENDOR DRILL DOWN MODAL -->
+    <div id="vendor-drilldown-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content" style="max-width: 800px; width: 90%;">
+        <div class="modal-header">
+          <h2 id="drilldown-title">Transactions</h2>
+          <button class="btn-icon" onclick="window.closeVendorDrillDown()">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="drilldown-list" style="max-height: 500px; overflow-y: auto;">
+            <!-- Transactions populated here -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="window.closeVendorDrillDown()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDEXER -->
+    <script src="src/pages/indexer.js?v=20251223pop"></script>
+
+</body>
+
+</html>

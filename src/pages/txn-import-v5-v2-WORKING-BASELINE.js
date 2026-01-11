@@ -9,7 +9,7 @@ console.log('🚀 Loading Txn Import V5...');
 // STATE MANAGEMENT
 // ============================================
 
-const V5State = {
+window.V5State = {
   importZoneExpanded: true,
   gridData: [],
   importHistory: [],
@@ -23,6 +23,8 @@ const V5State = {
   accountType: null, // New property
   refPrefix: '' // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
 };
+
+const V5State = window.V5State;
 
 const V5_MAX_UNDO_STEPS = 10;
 
@@ -577,31 +579,6 @@ window.renderTxnImportV5Page = function () {
         box-shadow: 3px 3px 8px rgba(251, 192, 45, 0.3);
       }
       
-      /* NEW MODERN THEMES */
-      .ag-theme-ocean .ag-header,
-      .ag-theme-ocean .ag-header-cell {
-        background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%) !important;
-        color: white !important;
-      }
-      
-      .ag-theme-forest .ag-header,
-      .ag-theme-forest .ag-header-cell {
-        background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
-        color: white !important;
-      }
-      
-      .ag-theme-sunset .ag-header,
-      .ag-theme-sunset .ag-header-cell {
-        background: linear-gradient(180deg, #f97316 0%, #ea580c 100%) !important;
-        color: white !important;
-      }
-      
-      .ag-theme-purple .ag-header,
-      .ag-theme-purple .ag-header-cell {
-        background: linear-gradient(180deg, #a855f7 0%, #9333ea 100%) !important;
-        color: white !important;
-      }
-      
       /* Classic Theme - uses default AG Grid styles */
       .ag-theme-classic { /* No custom styles */ }
       
@@ -765,14 +742,11 @@ window.renderTxnImportV5Page = function () {
       /* MAIN CONTAINER - Match Data Import positioning + 10% zoom reduction */
       .txn-import-v5-container {
         padding: 2rem 2.5rem;
-        padding-top: 1rem;
+        padding-top: 2rem;
         transform: scale(0.9);
         transform-origin: top center;
         width: 111%;
         margin-left: -5.5%;
-        display: flex;
-        flex-direction: column;
-        min-height: 800px; /* Force minimum space for the scaled grid */
       }
 
       /* Page Container - removed, using above instead */
@@ -1211,58 +1185,6 @@ window.renderTxnImportV5Page = function () {
       }
       
       /* ========================================
-         PART 3.5: GRID HEIGHT FLEXIBILITY
-         ======================================== */
-        
-        /* GRID CONTAINER - FLEXBOX ANTI-GRAVITY SOLUTION */
-        .v5-grid-container,
-        #v5-grid-container {
-          height: 800px !important;
-          min-height: 800px !important;
-          display: flex !important;
-          flex-direction: column;
-          width: 100%;
-          margin: 0;
-          padding: 0;
-          background: white; /* Ensure visibility */
-        }
-        
-        /* Force AG Grid to fill container */
-        #v5-grid-container .ag-root-wrapper,
-        .v5-grid-container .ag-root-wrapper {
-          flex: 1 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          min-height: 0 !important;
-          height: 100% !important;
-        }
-        
-        /* Force AG Grid internal components to stretch */
-        #v5-grid-container .ag-root,
-        .v5-grid-container .ag-root {
-          flex: 1 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          height: 100% !important;
-        }
-        
-        #v5-grid-container .ag-body-viewport,
-        .v5-grid-container .ag-body-viewport {
-          flex: 1 !important;
-          min-height: 0 !important;
-        }
-        
-        /* CRITICAL: Main page wrapper must also use flex */
-        #app-content,
-        #main-content,
-        .page-content {
-          display: flex !important;
-          flex-direction: column !important;
-          height: 100vh !important;
-          overflow: hidden !important;
-        }
-
-      /* ========================================
          PART 4: BANK STATEMENT PRINT VIEW
          ======================================== */
       
@@ -1325,6 +1247,23 @@ window.renderTxnImportV5Page = function () {
           margin: 5px 0;
           font-size: 10pt;
           color: #666;
+        }
+        
+        
+        
+        /* GRID CONTAINER - FLEX LAYOUT - Extended to bottom */
+        .v5-grid-container,
+        #v5-grid-container {
+          height: calc(100vh - 200px);
+          min-height: 500px;
+          display: block !important;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .ag-root-wrapper {
+          border: 1px solid #000 !important;
         }
         
         .ag-header {
@@ -1460,7 +1399,7 @@ window.renderTxnImportV5Page = function () {
                  class="v5-ref-input" 
                  maxlength="4" 
                  placeholder="####"
-                 oninput="updateRefPrefix(this.value)"
+                 oninput="window.updateRefPrefix(this.value)"
                  title="Reference number prefix (max 4 characters)">
         </div>
         
@@ -1471,7 +1410,7 @@ window.renderTxnImportV5Page = function () {
                  id="v5-search-input" 
                  class="v5-search-input" 
                  placeholder="Search transactions..."
-                 oninput="handleV5Search(event)">
+                 oninput="window.handleV5Search(event)">
         </div>
         
         <!-- Right: Balances (Moved from header) -->
@@ -1528,10 +1467,6 @@ window.renderTxnImportV5Page = function () {
             <label style="font-size:0.85rem; font-weight:600; color:#1e40af;">Theme:</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:140px; padding:0.4rem;">
               <option value="">Default</option>
-              <option value="ocean">Ocean Blue</option>
-              <option value="forest">Forest Green</option>
-              <option value="sunset">Sunset Orange</option>
-              <option value="purple">Royal Purple</option>
               <option value="ledger">Ledger</option>
               <option value="postit">Post-it</option>
               <option value="rainbow">Rainbow</option>
@@ -1542,9 +1477,7 @@ window.renderTxnImportV5Page = function () {
             <select id="v5-font-dropdown" onchange="window.applyAppearance()" class="modal-select" style="width:130px; padding:0.4rem;">
               <option value="">Default</option>
               <option value="inter">Inter</option>
-              <option value="roboto">Roboto</option>
-              <option value="mono">Roboto Mono</option>
-              <option value="lato">Lato</option>
+              <option value="roboto-mono">Roboto Mono</option>
             </select>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
@@ -1753,6 +1686,28 @@ window.renderTxnImportV5Page = function () {
           height: 100% !important;
           min-height: 400px !important;
         }
+        
+      /* Grid Container - FULL HEIGHT to 1px from bottom */
+      .v5-grid-container {
+        width: 100%;
+        height: calc(100vh - 200px);
+        min-height: 600px;
+        margin-top: 0.5rem;
+        padding: 0 !important;
+      }
+        
+        @media (max-width: 768px) {
+          #v5-grid-container {
+            height: calc(100vh - 250px) !important;
+            min-height: 400px;
+          }
+        }
+        
+        @media (min-width: 1400px) {
+          #v5-grid-container {
+            height: calc(100vh - 240px) !important;
+          }
+        }
       </style>
 
       <!-- Empty State (shown when no data) -->
@@ -1902,12 +1857,12 @@ function updateRowBalance(row) {
   recalculateAllBalances();
 }
 
-function recalculateAllBalances() {
+window.recalculateAllBalances = function () {
   if (!V5State.gridData || V5State.gridData.length === 0) return;
 
   const isCreditCard = V5State.accountType === 'CREDIT_CARD';
 
-  let runningBalance = V5State.openingBalance || 0;
+  let runningBalance = parseFloat(V5State.openingBalance) || 0;
 
   V5State.gridData.forEach(txn => {
     // Support both capitalized and lowercase field names
@@ -1929,12 +1884,14 @@ function recalculateAllBalances() {
 
   // Refresh grid to show updated balances
   if (V5State.gridApi) {
-    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+    // USE SPREAD to ensure AG Grid detects change
+    V5State.gridApi.setGridOption('rowData', [...V5State.gridData]);
+    console.log('✅ Grid rowData updated (V2 Restoration)');
   }
 
   // Update reconciliation card
-  updateReconciliationCard();
-}
+  window.updateReconciliationCard?.();
+};
 
 window.swapDebitCredit = function (rowIndex) {
   if (!V5State.gridData || !V5State.gridApi) return;
@@ -2069,14 +2026,14 @@ window.deselectAllV5 = function () {
 // RECONCILIATION UPDATE (REVISED)
 // ============================================
 
-function updateReconciliationCard() {
+window.updateReconciliationCard = function () {
   const gridData = V5State.gridData || [];
   if (gridData.length === 0) {
     console.log('⚠️ No grid data to update balance card');
     return;
   }
 
-  // FIXED: Calculate totals from Debit/Credit columns, not amount field
+  // Calculate totals from Debit/Credit columns
   let totalIn = 0;  // Credits = money IN
   let totalOut = 0; // Debits = money OUT
 
@@ -2084,30 +2041,28 @@ function updateReconciliationCard() {
     const credit = parseFloat(txn.Credit || txn.credit) || 0;
     const debit = parseFloat(txn.Debit || txn.debit) || 0;
 
-    totalIn += credit;   // Sum all credits
-    totalOut += debit;   // Sum all debits
+    totalIn += credit;
+    totalOut += debit;
   });
 
-  const openingBal = V5State.openingBalance || 0.00;
+  const openingBal = parseFloat(V5State.openingBalance) || 0.00;
   const endingBal = openingBal + totalIn - totalOut;
 
-  // PHASE 3: Update NEW balance card in control toolbar
+  // Update balance card elements
   const openingEl = document.getElementById('v5-opening-bal');
   const totalInEl = document.getElementById('v5-total-in');
   const totalOutEl = document.getElementById('v5-total-out');
   const endingEl = document.getElementById('v5-ending-bal');
 
-  if (openingEl) openingEl.textContent =
-    '$' + openingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (totalInEl) totalInEl.textContent =
-    '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (totalOutEl) totalOutEl.textContent =
-    '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (endingEl) endingEl.textContent =
-    '$' + endingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  console.log('✅ Balance card updated:', { openingBal, totalIn, totalOut, endingBal });
-}
+  if (openingEl) openingEl.textContent = fmt(openingBal);
+  if (totalInEl) totalInEl.textContent = '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (totalOutEl) totalOutEl.textContent = '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (endingEl) endingEl.textContent = fmt(endingBal);
+
+  console.log('✅ Balance card updated (V2):', { openingBal, totalIn, totalOut, endingBal });
+};
 
 // ==================================================
 // PHASE 3: SEARCH BAR FILTERING
@@ -3210,7 +3165,6 @@ window.initV5Grid = function () {
         bulkBar.style.display = 'none';
       }
     },
-    domLayout: 'normal',  // CRITICAL: Force grid to fill container, not auto-size to rows
     onGridReady: (params) => {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
@@ -3259,13 +3213,15 @@ window.initV5Grid = function () {
       populateCOADropdown(accountEditor.id);
     }
 
-    // FORCE container to be visible - Height is handled by CSS (v5-grid-container)
+    // FORCE container to be visible with explicit height!
     container.style.display = 'block';
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.position = 'relative';
+    container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
+    container.style.minHeight = '500px'; // Minimum height
     container.style.zIndex = '1';
-    console.log('✅ Container forced to visible. Height is now controlled by CSS.');
+    console.log('✅ Container forced to visible with height:', container.style.height);
 
     // CRITICAL: Hide empty state now that grid has data
     const emptyState = document.getElementById('v5-empty-state');
@@ -3273,11 +3229,6 @@ window.initV5Grid = function () {
       emptyState.style.display = 'none';
       console.log('✅ Empty state hidden');
     }
-
-    // ===========================================================================
-    // RESIZE OBSERVER - DYNAMIC HEIGHT CALCULATION FOR RESPONSIVE GRID
-    // ===========================================================================
-
   } catch (error) {
     console.error('❌ Failed to create AG Grid:', error);
   }
@@ -3834,29 +3785,11 @@ async function loadData() {
   const cached = await window.CacheManager.getTransactions();
 
   if (cached && cached.length > 0) {
-    console.log(`📦 Restored ${cached.length} transactions from cache`);
     V5State.gridData = cached;
-
-    // Auto-detect account type
-    V5State.accountType = detectAccountType(cached);
-
-    // Initialize grid with data
     initV5Grid();
-
-    // Update summary
-    updateReconciliationCard();
-
-    // Show toolbar
-    const toolbar = document.querySelector('.v5-control-toolbar');
-    if (toolbar) toolbar.classList.add('show-data');
-
-    // Hide empty state
-    const emptyState = document.getElementById('v5-empty-state');
-    if (emptyState) emptyState.style.display = 'none';
   } else {
     // Show empty state
-    const emptyState = document.getElementById('v5-empty-state');
-    if (emptyState) emptyState.style.display = 'flex';
+    document.getElementById('v5-empty-state').style.display = 'flex';
   }
 }
 
@@ -3896,10 +3829,14 @@ window.startFreshImport = async function () {
 // ============================================
 
 window.initTxnImportV5Grid = async function () {
-  console.log('🔄 Initializing Txn Import V5...');
-
-  // 1. Try to load existing data
-  await loadData();
+  // Auto-clear caches on page load for smooth UX
+  console.log('🔄 Auto-clearing caches...');
+  try {
+    await window.BrainStorage.clearAllFileHashes();
+    await window.CacheManager.clearAll();
+  } catch (e) {
+    console.warn('Could not clear caches:', e);
+  }
 
   // Show empty state - no cache restore
   document.getElementById('v5-empty-state').style.display = 'flex';

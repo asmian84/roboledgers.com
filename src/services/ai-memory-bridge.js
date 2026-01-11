@@ -16,7 +16,7 @@ class AIMemoryBridge {
     // ============================================
 
     async initializeSession() {
-        console.log('🧠 Initializing AI Memory Bridge...');
+
 
         // Load previous conversations
         const history = await this.brain.getConversationHistory(5);
@@ -33,7 +33,7 @@ class AIMemoryBridge {
         // Start new conversation
         this.currentConversationId = await this.brain.startConversation('AI Session ' + new Date().toISOString());
 
-        console.log('✅ Memory loaded. I remember everything!');
+
         return memoryDocument;
     }
 
@@ -197,7 +197,7 @@ When responding to the user:
             confidence: 1.0
         });
 
-        console.log('📚 Learned from mistake:', mistake.lesson);
+
     }
 
     extractLesson(action, outcome) {
@@ -309,7 +309,7 @@ When responding to the user:
             detail: { knowledge: newKnowledge }
         }));
 
-        console.log('✅ Knowledge updated in real-time:', newKnowledge.key);
+
     }
 
     injectNewKnowledge(memoryDocument, newKnowledge) {
@@ -324,7 +324,7 @@ When responding to the user:
     // ============================================
 
     async startProactiveLearning() {
-        console.log('🤖 Starting proactive learning agent...');
+
 
         // Schedule periodic analysis
         setInterval(async () => {
@@ -355,9 +355,7 @@ When responding to the user:
 
         // Check for anomalies
         const anomalies = await this.detectAnomalies();
-        if (anomalies.length > 0) {
-            console.log('🔍 Detected anomalies:', anomalies);
-        }
+
     }
 
     setupActionListeners() {
@@ -445,8 +443,8 @@ if (typeof window !== 'undefined' && window.aiBrain) {
     // Auto-initialize on page load
     window.addEventListener('DOMContentLoaded', async () => {
         const memory = await window.memoryBridge.initializeSession();
-        console.log('🧠 AI Memory Bridge initialized!');
-        console.log('📚 Memory loaded:', memory.substring(0, 200) + '...');
+
+
 
         // Start proactive learning
         await window.memoryBridge.startProactiveLearning();

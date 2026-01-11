@@ -113,18 +113,35 @@ class ProcessingEngine {
     async categorizeTransactions(transactions, progressCallback) {
         this.log('log', 'Starting categorization', { count: transactions.length });
 
+        // Enable bulk mode for dictionary to prevent console storm
+        if (window.merchantDictionary && window.merchantDictionary.setBulkMode) {
+            window.merchantDictionary.setBulkMode(true);
+        }
+
         let completed = 0;
         const total = transactions.length;
 
-        for (let transaction of transactions) {
-            // Try all 7 methods in order
-            if (!transaction.category || transaction.category === 'Uncategorized') {
-                transaction = await this._applyCategorization(transaction);
-            }
+        try {
+            for (let transaction of transactions) {
+                // Try all 7 methods in order
+                if (!transaction.category || transaction.category === 'Uncategorized') {
+                    transaction = await this._applyCategorization(transaction);
+                }
 
-            completed++;
-            const progress = Math.round((completed / total) * 100);
-            progressCallback(progress, `Categorizing... ${completed}/${total}`);
+                completed++;
+                const progress = Math.round((completed / total) * 100);
+                progressCallback(progress, `Categorizing... ${completed}/${total}`);
+            }
+        } finally {
+            // Disable bulk mode and flush pending syncs
+            if (window.merchantDictionary) {
+                if (window.merchantDictionary.flushPendingSyncs) {
+                    await window.merchantDictionary.flushPendingSyncs();
+                }
+                if (window.merchantDictionary.setBulkMode) {
+                    window.merchantDictionary.setBulkMode(false);
+                }
+            }
         }
 
         this.log('log', 'Categorization complete', {

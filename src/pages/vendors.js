@@ -40,9 +40,9 @@ function getChartOfAccounts() {
 
 window.renderVendors = function () {
   return `
-    <div class="page vendors-page" style="padding: 0; animation: fadeIn 0.5s ease-out; height: 100vh; display: flex; flex-direction: column; background: #f8fafc;">
+    <div class="page snug-page vendors-page" style="animation: fadeIn 0.5s ease-out; background: #f8fafc;">
       <style>
-        .vendors-page { font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
+        .vendors-page { font-family: 'Inter', system-ui, sans-serif; }
         
         /* PREMIUM HEADER STYLE */
         .v-premium-header { 
