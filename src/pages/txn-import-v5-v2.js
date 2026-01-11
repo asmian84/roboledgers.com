@@ -3942,6 +3942,12 @@ window.popOutV5Grid = function () {
   const gridContainer = document.getElementById('v5-grid-container');
   if (!gridContainer) return;
 
+  // CRITICAL: Don't allow popup on empty grid
+  if (!V5State.gridData || V5State.gridData.length === 0) {
+    alert('No grid to popout\n\nPlease load transaction data first.');
+    return;
+  }
+
   // Hide grid in main window
   gridContainer.style.display = 'none';
 
