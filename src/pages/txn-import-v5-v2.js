@@ -4342,12 +4342,13 @@ window.popOutV5Grid = function () {
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
-        const gridData = ${JSON.stringify(V5State.gridData)};
-        const openingBalance = ${V5State.openingBalance || 0};
+        // EFFICIENT: Use window.opener references directly - no data duplication!
+        const opener = window.opener;
         let gridApi;
-
-        // Column defs from main window
-        const columnDefs = ${JSON.stringify(getV5ColumnDefs())};
+        
+        // Get live data/config from main window
+        const getGridData = () => opener.V5State?.gridData || [];
+        const getColumnDefs = () => opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
 
         const gridOptions = {
           columnDefs,
@@ -4362,36 +4363,53 @@ window.popOutV5Grid = function () {
         };
         
         document.addEventListener('DOMContentLoaded', () => {
-          console.log('Popup: DOMContentLoaded - gridData length:', gridData.length);
+          const data = getGridData();
+          console.log('✅ Popup: Loading', data.length, 'rows from window.opener');
+          
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
           
-          // Set initial appearance from main window
-          const themeDropdown = document.getElementById('popup-theme-dropdown');
-          const fontDropdown = document.getElementById('popup-font-dropdown');
-          const sizeDropdown = document.getElementById('popup-size-dropdown');
+          // Apply theme from main window
+          const mainGrid = opener.document.querySelector('.ag-theme-alpine');
+          const popupGrid = document.querySelector('.ag-theme-alpine');
+          if (mainGrid && popupGrid) {
+            const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
+            themeClasses.forEach(c => popupGrid.classList.add(c));
+          }
           
-          if (themeDropdown) themeDropdown.value = '${currentTheme}';
-          if (fontDropdown) fontDropdown.value = '${currentFont}';
-          if (sizeDropdown) sizeDropdown.value = '${currentSize}';
-          
-          // CRITICAL: Apply appearance immediately after setting values
-          applyAppearance();
-          
-          // Initial balance calculation
           updateBalances();
-          
-          console.log('Popup: Grid initialized with', gridData.length, 'rows');
+          console.log('✅ Popup ready');
         });
         
-        // CRITICAL: Auto pop-in when popup window closes
-        window.onbeforeunload = function() {
-          if (window.opener && !window.opener.closed) {
-            window.opener.popInV5Grid();
-          }
+        // CRITICAL: Auto pop-in on close
+        window.onbeforeunload = () => {
+          if (opener && !opener.closed) opener.popInV5Grid();
         };
 
-        // ===== APPEARANCE FUNCTION =====
-        function applyAppearance() {
+        // ===== EFFICIENT: Reuse main window's balance calculation =====
+        function updateBalances() {
+          const data = getGridData();
+          const opening = opener.V5State?.openingBalance || 0;
+          
+          let debit = 0, credit = 0;
+          data.forEach(t => {
+            debit += parseFloat(t.Debit || t.debit) || 0;
+            credit += parseFloat(t.Credit || t.credit) || 0;
+          });
+          
+          const ending = opening - debit + credit;
+          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          
+          document.getElementById('popup-opening').textContent = fmt(opening);
+          document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
+          document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
+          document.getElementById('popup-ending').textContent = fmt(ending);
+        }
+
+        // ===== GRID ACTIONS (minimal wrappers) =====
+        function closePopout() {
+          opener.popInV5Grid();
+          window.close();
+        } {
           const theme = document.getElementById('popup-theme-dropdown').value;
           const font = document.getElementById('popup-font-dropdown').value;
           const size = document.getElementById('popup-size-dropdown').value;
