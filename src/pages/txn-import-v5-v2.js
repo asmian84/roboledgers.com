@@ -923,7 +923,7 @@ window.renderTxnImportV5Page = function () {
       /* Main Header - Match Analytics/Data Import Style */
       .v5-main-header {
         background: white;
-        padding: 16px 32px;
+        padding: 16px 24px; /* Match Analytics padding */
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
