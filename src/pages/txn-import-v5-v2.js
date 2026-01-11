@@ -1975,13 +1975,11 @@ window.recalculateAllBalances = function () {
     const credit = parseFloat(txn.Credit || txn.credit) || 0;
 
     if (isCreditCard) {
-      // Credit Card (Liability): Balance = Opening - Debit + Credit
-      // Payments (debit) reduce what you owe, Purchases (credit) increase what you owe
-      runningBalance = runningBalance - debit + credit;
+      // Credit Card: Opening - Credit (outflow) + Debit (inflow) = Ending
+      runningBalance = runningBalance - credit + debit;
     } else {
-      // Bank Account (Asset): Debit = Money IN, Credit = Money OUT
-      // Balance = Opening + Debit - Credit
-      runningBalance = runningBalance + debit - credit;
+      // Bank Account: Opening - Debit (outflow) + Credit (inflow) = Ending
+      runningBalance = runningBalance - debit + credit;
     }
 
     txn.balance = parseFloat(runningBalance.toFixed(2)); // Round to avoid floating point errors
