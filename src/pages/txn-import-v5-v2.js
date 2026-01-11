@@ -967,19 +967,22 @@ window.renderTxnImportV5Page = function () {
         background: #fef3c7;
         border-bottom: 1px solid #fbbf24;
         padding: 1rem 1.5rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        min-height: 50px;
-      }
-      
-      .v5-inline-bar > div {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        width: 100%;
-      }
+        .v5-ref-input-wrapper,
+        .v5-search-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          height: 40px; /* Consistent height */
+        }
+        
+        .v5-ref-input-wrapper input,
+        .v5-search-wrapper input {
+          height: 32px;
+          padding: 6px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        }
       
       .btn-inline-apply {
         padding: 0.5rem 1rem;
@@ -3907,7 +3910,25 @@ window.printV5Preview = function () {
 };
 
 window.showV5Appearance = function () {
-  alert('Appearance settings: Redirect to Settings > Appearance');
+  const panel = document.getElementById('v5-appearance-panel');
+  const menu = document.getElementById('v5-header-dropdown');
+
+  if (panel) {
+    panel.style.display = 'flex';
+    console.log('✅ Appearance panel shown');
+  }
+
+  if (menu) {
+    menu.style.display = 'none'; // Close dropdown menu
+  }
+};
+
+window.closeV5Appearance = function () {
+  const panel = document.getElementById('v5-appearance-panel');
+  if (panel) {
+    panel.style.display = 'none';
+    console.log('✅ Appearance panel hidden');
+  }
 };
 
 function deleteV5SelectedRows() {
