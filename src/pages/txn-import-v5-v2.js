@@ -1025,10 +1025,12 @@ window.renderTxnImportV5Page = function () {
         flex: 1;
       }
       
+      /* Appearance Controls in Bulk Bar - Horizontal Layout */
       .v5-control-group {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
       }
       
       .v5-control-group label {
