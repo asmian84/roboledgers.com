@@ -1789,30 +1789,34 @@ window.renderTxnImportV5Page = function () {
         }
         
         /* CRITICAL: Force AG Grid wrapper to fill container */
+        /* CRITICAL: Force AG Grid wrapper to 1200px */
         #v5-grid-container .ag-root-wrapper {
-          height: 100% !important;
-          min-height: 400px !important;
+          height: 1200px !important;
+          min-height: 1200px !important;
+          max-height: 1200px !important;
         }
         
       /* Grid Container - FULL HEIGHT to 1px from bottom */
+      /* Grid Container - FIXED 1200px HEIGHT */
       .v5-grid-container {
         width: 100%;
-        height: calc(100vh - 200px);
-        min-height: 600px;
+        height: 1200px !important;
+        min-height: 1200px !important;
+        max-height: 1200px !important;
         margin-top: 0.5rem;
         padding: 0 !important;
       }
         
         @media (max-width: 768px) {
           #v5-grid-container {
-            height: calc(100vh - 250px) !important;
-            min-height: 400px;
+            height: 1200px !important;
+            min-height: 1200px !important;
           }
         }
         
         @media (min-width: 1400px) {
           #v5-grid-container {
-            height: calc(100vh - 240px) !important;
+            height: 1200px !important;
           }
         }
       </style>
