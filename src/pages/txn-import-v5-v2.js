@@ -771,30 +771,27 @@ window.renderTxnImportV5Page = function () {
         height: 36px;
       }
       
-      /* Opening Balance Input */
+      /* Opening Balance Input - Invisible until hover */
       .v5-opening-bal-input {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
         border: 1px solid transparent;
         background: transparent;
-        padding: 4px 8px;
-        border-radius: 4px;
+        cursor: pointer;
         transition: all 0.2s;
-        width: 100%;
-        text-align: left;
       }
       
       .v5-opening-bal-input:hover {
         border-color: #e5e7eb;
-        background: #f8fafc;
+        background: #f9fafb;
+        border-radius: 4px;
       }
       
       .v5-opening-bal-input:focus {
         outline: none;
         border-color: #3b82f6;
         background: white;
+        border-radius: 4px;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        cursor: text;
       }
       
       .v5-ref-input-wrapper label {
@@ -1627,15 +1624,14 @@ window.renderTxnImportV5Page = function () {
         <!-- Right: Balances (Moved from header) -->
         <div class="v5-balances-card" id="v5-balances-card">
           <div class="v5-balance-item">
-            <div class="v5-balance-label">Opening Balance</div>
+            <div class="v5-balance-label">OPENING</div>
             <input 
               type="text" 
               id="v5-opening-bal" 
-              class="v5-opening-bal-input"
+              class="v5-balance-value v5-opening-bal-input"
               value="$0.00"
               onblur="window.handleOpeningBalanceChange(this)"
               onkeypress="if(event.key==='Enter'){this.blur();}"
-              style="text-align: left; padding-left: 8px;"
             />
           </div>
           <div class="v5-balance-item">
