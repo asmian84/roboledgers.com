@@ -208,13 +208,19 @@ window.applyAppearance = function () {
 
   // Apply professional web fonts  
   const fonts = {
-    'roboto': '"Roboto", -apple-system, BlinkMacSystemFont, sans-serif',
-    'inter': '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    'sf-pro': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    'segoe': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-    'helvetica': '"Helvetica Neue", Helvetica, Arial, sans-serif'
+    'neue-haas': '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
+    'arial': 'Arial, sans-serif',
+    'verdana': 'Verdana, sans-serif',
+    'open-sans': '"Open Sans", sans-serif',
+    'roboto': '"Roboto", sans-serif',
+    'public-sans': '"Public Sans", sans-serif',
+    'garamond': '"EB Garamond", serif',
+    'times': '"Times New Roman", Times, serif',
+    'libre-baskerville': '"Libre Baskerville", serif',
+    'georgia': 'Georgia, serif',
+    'inter': '"Inter", sans-serif'
   };
-  grid.style.fontFamily = fonts[font] || '';
+  grid.style.fontFamily = fonts[font] || '"Inter", sans-serif';
 
   // Apply size
   const sizes = { xs: '11px', s: '12px', m: '13px', l: '14px', xl: '16px' };
@@ -233,6 +239,8 @@ window.applyAppearance = function () {
 window.renderTxnImportV5Page = function () {
   return `
     <style id="v5-theme-styles">
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600&family=Roboto:wght@400;500&family=Public+Sans:wght@400;600&family=EB+Garamond:wght@400;500&family=Libre+Baskerville:wght@400;700&display=swap');
+      
       /* RESPONSIVE FOUNDATION */
       :root {
         --mobile-max: 767px;
@@ -1836,12 +1844,21 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Font</label>
             <select id="v5-font-dropdown" onchange="window.applyAppearance()">
-              <option value="">System Default</option>
-              <option value="roboto">Roboto (Google)</option>
-              <option value="inter">Inter (Modern)</option>
-              <option value="sf-pro">SF Pro (Apple)</option>
-              <option value="segoe">Segoe UI (Microsoft)</option>
-              <option value="helvetica">Helvetica Neue</option>
+              <option value="inter">Inter (Default)</option>
+              <optgroup label="Sans-Serif">
+                <option value="neue-haas">Helvetica / Neue Haas</option>
+                <option value="arial">Arial</option>
+                <option value="verdana">Verdana</option>
+                <option value="open-sans">Open Sans</option>
+                <option value="roboto">Roboto</option>
+                <option value="public-sans">Public Sans</option>
+              </optgroup>
+              <optgroup label="Serif">
+                <option value="garamond">Garamond</option>
+                <option value="times">Times New Roman</option>
+                <option value="libre-baskerville">Libre Baskerville</option>
+                <option value="georgia">Georgia</option>
+              </optgroup>
             </select>
           </div>
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
@@ -3751,26 +3768,35 @@ window.showKeyboardShortcuts = function () {
           <div>
             <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Theme</label>
             <select id="v5-theme-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="">Default</option>
-              <option value="ledger">Ledger</option>
-              <option value="postit">Post-it</option>
+              <option value="">Default (Gray)</option>
+              <option value="vanilla">Vanilla</option>
+              <option value="classic">Classic Blue</option>
+              <option value="ledger-pad">Ledger Pad</option>
+              <option value="postit">Post-it Note</option>
               <option value="rainbow" selected>Rainbow</option>
-              <option value="spectrum">Spectrum</option>
-              <option value="tracker">Tracker</option>
-              <option value="neon">Neon</option>
-              <option value="ocean">Ocean</option>
-              <option value="forest">Forest</option>
+              <option value="spectrum">Spectrum (Excel)</option>
+              <option value="vintage">Vintage Dark</option>
             </select>
           </div>
           
           <div>
             <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Font</label>
             <select id="v5-font-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="">Default</option>
-              <option value="inter">Inter</option>
-              <option value="roboto-mono">Roboto Mono</option>
-              <option value="georgia">Georgia</option>
-              <option value="arial">Arial</option>
+              <option value="inter">Inter (Default)</option>
+              <optgroup label="Sans-Serif">
+                <option value="neue-haas">Helvetica / Neue Haas</option>
+                <option value="arial">Arial</option>
+                <option value="verdana">Verdana</option>
+                <option value="open-sans">Open Sans</option>
+                <option value="roboto">Roboto</option>
+                <option value="public-sans">Public Sans</option>
+              </optgroup>
+              <optgroup label="Serif">
+                <option value="garamond">Garamond</option>
+                <option value="times">Times New Roman</option>
+                <option value="libre-baskerville">Libre Baskerville</option>
+                <option value="georgia">Georgia</option>
+              </optgroup>
             </select>
           </div>
           
@@ -3785,15 +3811,6 @@ window.showKeyboardShortcuts = function () {
             </select>
           </div>
         </div>
-            </select>
-          </div>
-          <div>
-            <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Size</label>
-            <select id="v5-size-dropdown" onchange="window.applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="xs">XS</option>
-              <option value="s">S</option>
-              <option value="m" selected>M</option>
-              <option value="l">L</option>
               <option value="xl">XL</option>
             </select>
           </div>
@@ -3994,7 +4011,7 @@ window.popOutV5Grid = function () {
       <script src="https://unpkg.com/@phosphor-icons/web"></script>
       <style>
         /* CRITICAL: Use Inter as primary font stack */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600&family=Roboto:wght@400;500&family=Public+Sans:wght@400;600&family=EB+Garamond:wght@400;500&family=Libre+Baskerville:wght@400;700&display=swap');
         
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -4474,6 +4491,26 @@ window.popOutV5Grid = function () {
             </select>
           </div>
           <div class="control-group">
+            <label class="v5-ref-label" style="margin-right:8px;">Font</label>
+            <select id="popup-font-dropdown-panel" onchange="applyAppearance()">
+              <option value="inter">Inter (Default)</option>
+              <optgroup label="Sans-Serif">
+                <option value="neue-haas">Helvetica / Neue Haas</option>
+                <option value="arial">Arial</option>
+                <option value="verdana">Verdana</option>
+                <option value="open-sans">Open Sans</option>
+                <option value="roboto">Roboto</option>
+                <option value="public-sans">Public Sans</option>
+              </optgroup>
+              <optgroup label="Serif">
+                <option value="garamond">Garamond</option>
+                <option value="times">Times New Roman</option>
+                <option value="libre-baskerville">Libre Baskerville</option>
+                <option value="georgia">Georgia</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="control-group">
             <label class="v5-ref-label" style="margin-right:8px;">Size</label>
             <select id="popup-size-dropdown-panel" onchange="applyAppearance()">
               <option value="s">Small</option>
@@ -4738,6 +4775,7 @@ window.popOutV5Grid = function () {
 
           // Set initial appearance
           document.getElementById('popup-theme-dropdown-panel').value = '${currentTheme}';
+          document.getElementById('popup-font-dropdown-panel').value = '${currentFont}';
           document.getElementById('popup-size-dropdown-panel').value = '${currentSize}';
           applyAppearance();
           updateBalances();
@@ -4792,6 +4830,7 @@ window.popOutV5Grid = function () {
 
         function applyAppearance() {
           const theme = document.getElementById('popup-theme-dropdown-panel').value;
+          const font = document.getElementById('popup-font-dropdown-panel').value;
           const size = document.getElementById('popup-size-dropdown-panel').value;
           const grid = document.getElementById('popout-grid');
           if (!grid) return;
@@ -4800,12 +4839,28 @@ window.popOutV5Grid = function () {
           Array.from(grid.classList).forEach(c => { if(c.startsWith('theme-')) grid.classList.remove(c); });
           grid.classList.add('theme-' + theme);
           
+          // Apply fonts
+          const fonts = {
+            'neue-haas': '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
+            'arial': 'Arial, sans-serif',
+            'verdana': 'Verdana, sans-serif',
+            'open-sans': '"Open Sans", sans-serif',
+            'roboto': '"Roboto", sans-serif',
+            'public-sans': '"Public Sans", sans-serif',
+            'garamond': '"EB Garamond", serif',
+            'times': '"Times New Roman", Times, serif',
+            'libre-baskerville': '"Libre Baskerville", serif',
+            'georgia': 'Georgia, serif',
+            'inter': '"Inter", sans-serif'
+          };
+          grid.style.fontFamily = fonts[font] || '"Inter", sans-serif';
+
           // Apply size
           const sizeMap = { 's': '12px', 'm': '14px', 'l': '16px' };
           grid.style.fontSize = sizeMap[size] || '14px';
 
           // Update parent to sync (using bridge)
-          sendToParent('syncV5Appearance', { theme, size });
+          sendToParent('syncV5Appearance', { theme, font, size });
         }
 
         function selectAll() { gridApi.selectAll(); }
