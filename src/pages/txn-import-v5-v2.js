@@ -4410,7 +4410,7 @@ window.popOutV5Grid = function () {
     </body>
   </html>
   `);
-  // EFFICIENT: Use window.opener references directly - no data duplication!
+
   const opener = window.opener;
   let gridApi;
 
