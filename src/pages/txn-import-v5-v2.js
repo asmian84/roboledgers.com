@@ -1362,11 +1362,11 @@ window.renderTxnImportV5Page = function () {
         
         
         
-        /* GRID CONTAINER - FLEX LAYOUT - Extended to bottom */
+        /* GRID CONTAINER - FLEX LAYOUT - Extended to show ~20 rows */
         .v5-grid-container,
         #v5-grid-container {
-          height: calc(100vh - 200px);
-          min-height: 500px;
+          height: calc(100vh - 120px); /* Increased from 200px to show more rows */
+          min-height: 800px; /* Increased from 500px */
           display: block !important;
           width: 100%;
           margin: 0;
