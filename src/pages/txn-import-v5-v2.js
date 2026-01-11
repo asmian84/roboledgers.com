@@ -817,10 +817,10 @@ window.renderTxnImportV5Page = function () {
         margin: 0 auto;
       }
       
-      /* Search Bar - Flex Grow */
+      /* Search Bar - Clean minimal design */
       .v5-search-wrapper {
-        flex: 0.8;
-        max-width: 400px;
+        flex: 1;
+        max-width: 450px;
         position: relative;
         display: flex;
         align-items: center;
@@ -828,26 +828,27 @@ window.renderTxnImportV5Page = function () {
       
       .v5-search-wrapper i {
         position: absolute;
-        left: 0.75rem;
-        left: 12px;
+        left: 16px;
         color: #9ca3af;
         pointer-events: none;
-        font-size: 16px;
+        font-size: 18px;
       }
       
       .v5-search-input {
-        flex: 1;
-        padding: 8px 12px 8px 36px; /* Extra left padding for icon */
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        width: 100%;
+        padding: 10px 16px 10px 46px; /* Room for icon */
+        border: 1px solid #e5e7eb;
+        border-radius: 24px; /* Rounded corners like mockup */
         font-size: 14px;
-        height: 36px;
+        height: 44px;
+        background: #ffffff;
+        transition: all 0.2s;
       }
       
       .v5-search-input:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: #d1d5db;
+        box-shadow: 0 0 0 3px rgba(209, 213, 219, 0.1);
       }
       
       .v5-search-input::placeholder {
