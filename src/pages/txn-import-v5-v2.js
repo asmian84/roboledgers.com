@@ -3944,7 +3944,7 @@ window.popOutV5Grid = function () {
 
   // CRITICAL: Don't allow popup on empty grid
   if (!V5State.gridData || V5State.gridData.length === 0) {
-    alert('No grid to popout\n\nPlease load transaction data first.');
+    console.warn('⚠️ No grid to popout - Please load transaction data first');
     return;
   }
 
