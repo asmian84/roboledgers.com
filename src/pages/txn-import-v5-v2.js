@@ -4449,6 +4449,20 @@ window.updateV5DataFromPopout = function (newData) {
   saveData();
 };
 
+// CRITICAL: Sync appearance settings FROM popup TO main window
+window.syncAppearanceFromPopup = function (theme, font, size) {
+  const mainTheme = document.getElementById('v5-theme-dropdown');
+  const mainFont = document.getElementById('v5-font-dropdown');
+  const mainSize = document.getElementById('v5-size-dropdown');
+
+  if (mainTheme) mainTheme.value = theme || '';
+  if (mainFont) mainFont.value = font || '';
+  if (mainSize) mainSize.value = size || 'm';
+
+  // Apply appearance to main window grid so both windows stay in sync
+  window.applyAppearance();
+};
+
 function getV5ColumnDefs() {
   // Return same column defs used in main grid (without cellRenderer for actions)
   return [
