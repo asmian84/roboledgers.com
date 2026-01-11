@@ -913,6 +913,44 @@ window.renderTxnImportV5Page = function () {
         flex: 1;
       }
       
+      .v5-ref-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+      }
+      
+      .v5-ref-input-wrapper label {
+        font-weight: 500;
+        margin: 0;
+        line-height: 36px;
+      }
+      
+      .v5-ref-input-wrapper input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        height: 32px;
+      }
+      
+      .v5-search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        height: 36px;
+      }
+      
+      .v5-search-wrapper input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        height: 32px;
+        flex: 1;
+      }
+      
       .v5-control-group {
         display: flex;
         flex-direction: column;
