@@ -2168,6 +2168,16 @@ window.updateReconciliationCard = function () {
   if (totalOutEl) totalOutEl.textContent = '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (endingEl) endingEl.textContent = fmt(endingBal);
 
+  // Add superscript counts
+  const creditCount = gridData.filter(t => (parseFloat(t.Credit || t.credit) || 0) > 0).length;
+  const debitCount = gridData.filter(t => (parseFloat(t.Debit || t.debit) || 0) > 0).length;
+
+  const totalInLabel = document.querySelector('.v5-balance-item:nth-child(2) .v5-balance-label');
+  const totalOutLabel = document.querySelector('.v5-balance-item:nth-child(3) .v5-balance-label');
+
+  if (totalInLabel) totalInLabel.innerHTML = `Total In<sup style="font-size:0.65em; margin-left:3px; color:#10b981;">${creditCount}</sup>`;
+  if (totalOutLabel) totalOutLabel.innerHTML = `Total Out<sup style="font-size:0.65em; margin-left:3px; color:#ef4444;">${debitCount}</sup>`;
+
   console.log('✅ Balance card updated (V2):', { openingBal, totalIn, totalOut, endingBal });
 };
 
