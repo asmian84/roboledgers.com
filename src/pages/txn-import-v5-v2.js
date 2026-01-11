@@ -197,42 +197,47 @@ window.applyAppearance = function () {
   // Reset to base alpine class
   grid.className = 'ag-theme-alpine';
 
-  // Apply industry-standard Material Design color themes
-  if (theme === 'material') {
-    // Google Material Design
+  // Apply professional accounting software color themes
+  if (theme === 'caseware') {
+    // Caseware-inspired blue professional
+    grid.style.setProperty('--ag-background-color', '#f8f9fa');
+    grid.style.setProperty('--ag-foreground-color', '#212529');
+    grid.style.setProperty('--ag-header-background-color', '#2c5aa0');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#e9ecef');
+    grid.style.setProperty('--ag-border-color', '#d1d5db');
+  } else if (theme === 'sage') {
+    // Sage Accounting green
+    grid.style.setProperty('--ag-background-color', '#f5f8f5');
+    grid.style.setProperty('--ag-foreground-color', '#1a3a1a');
+    grid.style.setProperty('--ag-header-background-color', '#00a652');
+    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
+    grid.style.setProperty('--ag-odd-row-background-color', '#e8f3e8');
+    grid.style.setProperty('--ag-border-color', '#c5d9c5');
+  } else if (theme === 'quickbooks') {
+    // QuickBooks classic green/white
     grid.style.setProperty('--ag-background-color', '#ffffff');
-    grid.style.setProperty('--ag-foreground-color', '#212121');
-    grid.style.setProperty('--ag-header-background-color', '#f5f5f5');
-    grid.style.setProperty('--ag-header-foreground-color', '#424242');
-    grid.style.setProperty('--ag-border-color', '#e0e0e0');
-  } else if (theme === 'dark') {
-    // Material Dark
-    grid.style.setProperty('--ag-background-color', '#121212');
-    grid.style.setProperty('--ag-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-header-background-color', '#1e1e1e');
+    grid.style.setProperty('--ag-foreground-color', '#393a3d');
+    grid.style.setProperty('--ag-header-background-color', '#2ca01c');
     grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#1a1a1a');
-  } else if (theme === 'blue-gray') {
-    // Material Blue Gray
-    grid.style.setProperty('--ag-background-color', '#eceff1');
-    grid.style.setProperty('--ag-foreground-color', '#263238');
-    grid.style.setProperty('--ag-header-background-color', '#607d8b');
+    grid.style.setProperty('--ag-odd-row-background-color', '#f7f7f7');
+    grid.style.setProperty('--ag-border-color', '#d4d4d4');
+  } else if (theme === 'excel') {
+    // Microsoft Excel gray
+    grid.style.setProperty('--ag-background-color', '#ffffff');
+    grid.style.setProperty('--ag-foreground-color', '#333333');
+    grid.style.setProperty('--ag-header-background-color', '#217346');
     grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#cfd8dc');
-  } else if (theme === 'indigo') {
-    // Material Indigo
-    grid.style.setProperty('--ag-background-color', '#e8eaf6');
-    grid.style.setProperty('--ag-foreground-color', '#1a237e');
-    grid.style.setProperty('--ag-header-background-color', '#3f51b5');
+    grid.style.setProperty('--ag-odd-row-background-color', '#f2f2f2');
+    grid.style.setProperty('--ag-border-color', '#d0d0d0');
+  } else if (theme === 'professional-dark') {
+    // Professional dark accounting theme
+    grid.style.setProperty('--ag-background-color', '#1e1e1e');
+    grid.style.setProperty('--ag-foreground-color', '#e0e0e0');
+    grid.style.setProperty('--ag-header-background-color', '#2d4356');
     grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#c5cae9');
-  } else if (theme === 'slate') {
-    // Tailwind Slate Professional
-    grid.style.setProperty('--ag-background-color', '#f8fafc');
-    grid.style.setProperty('--ag-foreground-color', '#0f172a');
-    grid.style.setProperty('--ag-header-background-color', '#334155');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#f1f5f9');
+    grid.style.setProperty('--ag-odd-row-background-color', '#252525');
+    grid.style.setProperty('--ag-border-color', '#3a3a3a');
   } else {
     // Default - remove all custom properties
     grid.style.removeProperty('--ag-background-color');
@@ -1769,12 +1774,12 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
-              <option value="">Default Light</option>
-              <option value="material">Material Design</option>
-              <option value="dark">Dark Theme</option>
-              <option value="blue-gray">Blue Gray</option>
-              <option value="indigo">Indigo</option>
-              <option value="slate">Slate Professional</option>
+              <option value="">Classic Light</option>
+              <option value="caseware">Caseware Blue</option>
+              <option value="sage">Sage Green</option>
+              <option value="quickbooks">QuickBooks Classic</option>
+              <option value="excel">Excel Gray</option>
+              <option value="professional-dark">Professional Dark</option>
             </select>
           </div>
           <div class="v5-control-group" style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
@@ -1798,9 +1803,8 @@ window.renderTxnImportV5Page = function () {
               <option value="xl">XL (16px)</option>
             </select>
           </div>
-          <button class="btn-bulk-cancel" onclick="window.closeV5Appearance()" style="margin-left: auto;">
-            <i class="ph ph-x"></i>
-            Close
+          <button class="btn-bulk-cancel" onclick="window.closeV5Appearance()" style="margin-left: auto; min-width: 32px; padding: 6px; border-radius: 4px; background: transparent; border: 1px solid #cbd5e1; color: #64748b; font-size: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">
+            ✕
           </button>
         </div>
       </div>
