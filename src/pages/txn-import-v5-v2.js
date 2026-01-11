@@ -4400,6 +4400,10 @@ window.popOutV5Grid = function () {
           if (debugEl) debugEl.innerHTML = debugHtml;
         }, 100);
 
+        console.log('🔧 STEP 1: Creating gridOptions object');
+        console.log('   - columnDefs:', columnDefs);
+        console.log('   - rowData length:', gridData.length);
+        
         const gridOptions = {
           columnDefs,
           rowData: gridData,
@@ -4412,18 +4416,30 @@ window.popOutV5Grid = function () {
           }
         };
         
+        console.log('🔧 STEP 2: Waiting for DOMContentLoaded...');
+        
         document.addEventListener('DOMContentLoaded', () => {
-          console.log('✅ Popup DOMContentLoaded');
+          console.log('✅✅✅ DOMContentLoaded FIRED!');
           console.log('📊 Grid data length:', gridData.length);
           console.log('📋 Column defs count:', columnDefs.length);
-          console.log('🎯 Grid element:', document.getElementById('popout-grid'));
+          
+          const gridElement = document.getElementById('popout-grid');
+          console.log('🎯 Grid element:', gridElement);
+          console.log('🎯 Grid element dimensions:', gridElement ? gridElement.getBoundingClientRect() : 'NULL');
           
           if (gridData.length === 0) {
             console.warn('⚠️ WARNING: gridData is empty!');
           }
           
+          console.log('🔧 STEP 3: Calling agGrid.createGrid...');
+          console.log('   - Grid element:', document.getElementById('popout-grid'));
+          console.log('   - Grid options:', gridOptions);
+          
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-          console.log('✅ Grid created:', gridApi);
+          
+          console.log('✅✅✅ Grid API created:', gridApi);
+          console.log('   - Grid API getDisplayedRowCount:', gridApi.getDisplayedRowCount ? gridApi.getDisplayedRowCount() : 'N/A');
+          console.log('   - Grid API getModel:', gridApi.getModel ? gridApi.getModel() : 'N/A');
           
           // Populate debug panel
           const debugInfo = {
