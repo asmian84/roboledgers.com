@@ -197,61 +197,13 @@ window.applyAppearance = function () {
     return;
   }
 
-  // Remove ALL old theme classes first
-  grid.className = grid.className
-    .split(' ')
-    .filter(c => !c.startsWith('theme-'))
-    .join(' ');
+  // Remove ALL old theme classes
+  const classList = Array.from(grid.classList).filter(c => !c.startsWith('theme-'));
+  grid.className = classList.join(' ');
 
-  // Apply professional accounting software color themes
-  if (theme === 'caseware') {
-    // Caseware-inspired blue professional
-    grid.style.setProperty('--ag-background-color', '#f8f9fa');
-    grid.style.setProperty('--ag-foreground-color', '#212529');
-    grid.style.setProperty('--ag-header-background-color', '#2c5aa0');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#e9ecef');
-    grid.style.setProperty('--ag-border-color', '#d1d5db');
-  } else if (theme === 'sage') {
-    // Sage Accounting green
-    grid.style.setProperty('--ag-background-color', '#f5f8f5');
-    grid.style.setProperty('--ag-foreground-color', '#1a3a1a');
-    grid.style.setProperty('--ag-header-background-color', '#00a652');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#e8f3e8');
-    grid.style.setProperty('--ag-border-color', '#c5d9c5');
-  } else if (theme === 'quickbooks') {
-    // QuickBooks classic green/white
-    grid.style.setProperty('--ag-background-color', '#ffffff');
-    grid.style.setProperty('--ag-foreground-color', '#393a3d');
-    grid.style.setProperty('--ag-header-background-color', '#2ca01c');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#f7f7f7');
-    grid.style.setProperty('--ag-border-color', '#d4d4d4');
-  } else if (theme === 'excel') {
-    // Microsoft Excel gray
-    grid.style.setProperty('--ag-background-color', '#ffffff');
-    grid.style.setProperty('--ag-foreground-color', '#333333');
-    grid.style.setProperty('--ag-header-background-color', '#217346');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#f2f2f2');
-    grid.style.setProperty('--ag-border-color', '#d0d0d0');
-  } else if (theme === 'professional-dark') {
-    // Professional dark accounting theme
-    grid.style.setProperty('--ag-background-color', '#1e1e1e');
-    grid.style.setProperty('--ag-foreground-color', '#e0e0e0');
-    grid.style.setProperty('--ag-header-background-color', '#2d4356');
-    grid.style.setProperty('--ag-header-foreground-color', '#ffffff');
-    grid.style.setProperty('--ag-odd-row-background-color', '#252525');
-    grid.style.setProperty('--ag-border-color', '#3a3a3a');
-  } else {
-    // Default - remove all custom properties
-    grid.style.removeProperty('--ag-background-color');
-    grid.style.removeProperty('--ag-foreground-color');
-    grid.style.removeProperty('--ag-header-background-color');
-    grid.style.removeProperty('--ag-header-foreground-color');
-    grid.style.removeProperty('--ag-border-color');
-    grid.style.removeProperty('--ag-odd-row-background-color');
+  // Add new theme as CSS class (defined in <style> block)
+  if (theme) {
+    grid.classList.add('theme-' + theme);
   }
 
   // Apply professional web fonts  
@@ -271,7 +223,7 @@ window.applyAppearance = function () {
   // Save to localStorage
   localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
 
-  console.log('✅ Appearance applied:', { theme, font, size });
+  console.log('✅ Appearance applied:', { theme, font, size, classes: grid.className });
 };
 
 // ====================================================================================
@@ -297,6 +249,52 @@ window.renderTxnImportV5Page = function () {
       /* PHASE 2: Grid Touch-Friendly Mobile Styles */
       @media (max-width: 767px) {
         .ag-theme-alpine { font-size: 14px; }
+      
+      /* Caseware-Inspired Accounting Color Schemes */
+      .ag-theme-alpine.theme-caseware {
+        --ag-background-color: #f8f9fa;
+        --ag-foreground-color: #212529;
+        --ag-header-background-color: #2c5aa0 !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #e9ecef;
+        --ag-border-color: #d1d5db;
+      }
+      
+      .ag-theme-alpine.theme-sage {
+        --ag-background-color: #f5f8f5;
+        --ag-foreground-color: #1a3a1a;
+        --ag-header-background-color: #00a652 !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #e8f3e8;
+        --ag-border-color: #c5d9c5;
+      }
+      
+      .ag-theme-alpine.theme-quickbooks {
+        --ag-background-color: #ffffff;
+        --ag-foreground-color: #393a3d;
+        --ag-header-background-color: #2ca01c !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #f7f7f7;
+        --ag-border-color: #d4d4d4;
+      }
+      
+      .ag-theme-alpine.theme-excel {
+        --ag-background-color: #ffffff;
+        --ag-foreground-color: #333333;
+        --ag-header-background-color: #217346 !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #f2f2f2;
+        --ag-border-color: #d0d0d0;
+      }
+      
+      .ag-theme-alpine.theme-professional-dark {
+        --ag-background-color: #1e1e1e;
+        --ag-foreground-color: #e0e0e0;
+        --ag-header-background-color: #2d4356 !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-odd-row-background-color: #252525;
+        --ag-border-color: #3a3a3a;
+      }
         .ag-theme-alpine .ag-row { min-height: 56px !important; }
         .ag-theme-alpine .ag-cell { padding: 12px 8px !important; }
         .v5-grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
