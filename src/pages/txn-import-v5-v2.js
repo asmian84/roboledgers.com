@@ -1702,24 +1702,29 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-control-group">
             <label>Theme</label>
             <select id="v5-theme-dropdown" onchange="window.applyAppearance()">
-              <option value="">Default (Alpine)</option>
-              <option value="balham">Balham (Professional)</option>
-              <option value="material">Material Design</option>
-              <option value="dark">Dark Mode</option>
-              <option value="excel">Excel Classic</option>
-              <option value="tableau">Tableau Style</option>
+              <option value="">Default Light</option>
+              <option value="dark">Dark Mode (Black)</option>
+              <option value="blue">Financial Blue</option>
+              <option value="green">Money Green</option>
+              <option value="contrast">High Contrast</option>
+              <option value="excel">Excel Gray</option>
+              <option value="purple">Royal Purple</option>
+              <option value="orange">Vibrant Orange</option>
+              <option value="teal">Ocean Teal</option>
             </select>
           </div>
           <div class="v5-control-group">
             <label>Font</label>
             <select id="v5-font-dropdown" onchange="window.applyAppearance()">
               <option value="">System Default</option>
-              <option value="segoe">Segoe UI (Microsoft)</option>
-              <option value="inter">Inter (Modern)</option>
-              <option value="roboto">Roboto (Google)</option>
-              <option value="arial">Arial (Classic)</option>
-              <option value="helvetica">Helvetica (Clean)</option>
-              <option value="monospace">Monospace (Code)</option>
+              <option value="arial">Arial (Clean Sans)</option>
+              <option value="verdana">Verdana (Wide & Bold)</option>
+              <option value="georgia">Georgia (Elegant Serif)</option>
+              <option value="times">Times New Roman (Classic)</option>
+              <option value="courier">Courier New (Monospace)</option>
+              <option value="trebuchet">Trebuchet (Modern)</option>
+              <option value="impact">Impact (Bold)</option>
+              <option value="comic">Comic Sans (Casual)</option>
             </select>
           </div>
           <div class="v5-control-group">
