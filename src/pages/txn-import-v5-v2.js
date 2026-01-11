@@ -3278,6 +3278,24 @@ window.initV5Grid = function () {
     rowSelection: 'multiple',
     animateRows: true,
     enableCellChangeFlash: true,
+    onSortChanged: (params) => {
+      // Auto-renumber Ref# based on current sort order
+      setTimeout(() => {
+        const displayedRows = [];
+        params.api.forEachNodeAfterFilterAndSort(node => displayedRows.push(node.data));
+
+        displayedRows.forEach((row, index) => {
+          const newRefNum = String(index + 1).padStart(3, '0');
+          if (row.refNumber !== newRefNum) {
+            row.refNumber = newRefNum;
+          }
+        });
+
+        params.api.refreshCells({ force: true });
+        saveData();
+        console.log('✅ Ref# auto-renumbered after sort');
+      }, 100);
+    },
     onCellValueChanged: (params) => {
       captureState();
       saveData();
