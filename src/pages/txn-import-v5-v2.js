@@ -3939,6 +3939,128 @@ window.confirmStartOver = async function () {
 };
 
 window.popOutV5Grid = function () {
+  // Validate grid has data
+  if (!V5State.gridData || V5State.gridData.length === 0) {
+    console.warn('⚠️ Cannot pop out: grid is empty');
+    return;
+  }
+
+  console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
+
+  // Hide in-page grid
+  document.getElementById('v5-grid-container').style.display = 'none';
+
+  // Open popup
+  const width = Math.min(window.screen.width * 0.9, 1600);
+  const height = Math.min(window.screen.height * 0.9, 900);
+  const left = (window.screen.width - width) / 2;
+  const top = (window.screen.height - height) / 2;
+
+  V5State.popoutWindow = window.open(
+    '',
+    'V5GridPopout',
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  );
+
+  if (!V5State.popoutWindow) {
+    console.error('❌ Popup blocked by browser');
+    document.getElementById('v5-grid-container').style.display = 'block';
+    return;
+  }
+
+  // Write popup HTML
+  V5State.popoutWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Transactions Grid - Popout</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-grid.min.css"/>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/styles/ag-theme-alpine.min.css"/>
+      <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css"/>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        #popout-header { position: sticky; top: 0; z-index: 100; background: white; }
+        #popout-grid { width: 100%; height: calc(100vh - 140px); }
+      </style>
+    </head>
+    <body>
+      <!-- Exact copy of main header -->
+      <div id="popout-header">${document.getElementById('v5-main-header').outerHTML}</div>
+      <div id="popout-toolbar">${document.getElementById('v5-control-toolbar').outerHTML}</div>
+      
+      <div id="popout-grid" class="ag-theme-alpine"></div>
+
+      <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
+      <script>
+        const opener = window.opener;
+        let gridApi;
+        
+        const columnDefs = opener.getV5ColumnDefs ? opener.getV5ColumnDefs() : [];
+        const gridData = opener.V5State?.gridData || [];
+        
+        console.log('✅ Popup: Loaded', gridData.length, 'rows');
+        
+        const gridOptions = {
+          columnDefs,
+          rowData: gridData,
+          defaultColDef: { sortable: true, filter: true, resizable: true },
+          rowSelection: 'multiple',
+          onCellValueChanged: (params) => {
+            opener.updateV5DataFromPopout(gridData);
+            updateBalances();
+          }
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          
+         const mainGrid = opener.document.querySelector('.ag-theme-alpine');
+          const popupGrid = document.querySelector('.ag-theme-alpine');
+          if (mainGrid && popupGrid) {
+            const themeClasses = Array.from(mainGrid.classList).filter(c => c.startsWith('theme-'));
+            themeClasses.forEach(c => popupGrid.classList.add(c));
+          }
+          
+          updateBalances();
+          console.log('✅ Popup ready');
+        });
+        
+        window.onbeforeunload = () => {
+          if (opener && !opener.closed) opener.popInV5Grid();
+        };
+        
+        function updateBalances() {
+          const data = opener.V5State?.gridData || [];
+          const opening = opener.V5State?.openingBalance || 0;
+          
+          let debit = 0, credit = 0;
+          data.forEach(t => {
+            debit += parseFloat(t.Debit || t.debit) || 0;
+            credit += parseFloat(t.Credit || t.credit) || 0;
+          });
+          
+          const ending = opening - debit + credit;
+          const fmt = (n) => (n >= 0 ? '+' : '') + '$' + Math.abs(n).toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+          
+          document.getElementById('popup-opening').textContent = fmt(opening);
+          document.getElementById('popup-debit').textContent = '-$' + debit.toFixed(2);
+          document.getElementById('popup-credit').textContent = '+$' + credit.toFixed(2);
+          document.getElementById('popup-ending').textContent = fmt(ending);
+        }
+        
+        function closePopout() {
+          opener.popInV5Grid();
+          window.close();
+        }
+      </script>
+    </body>
+    </html>
+  `);
+};
+
+
+window.popInV5Grid = function () {
   const gridContainer = document.getElementById('v5-grid-container');
   if (!gridContainer) {
     console.error('Grid container not found');
