@@ -2519,7 +2519,7 @@ window.deleteV5Import = function (id, event) {
   const newHistory = history.filter(item => item.id !== id);
   localStorage.setItem('ab_import_history', JSON.stringify(newHistory));
   // renderV5History(); // DISABLED - rebuilding chips
-  window.showToast('Import removed from history', 'info');
+  // Toast removed
 };
 
 window.loadV5FromHistory = function (id) {
@@ -2533,7 +2533,7 @@ window.loadV5FromHistory = function (id) {
       initV5Grid();
     }
     updateBalanceSummary();
-    window.showToast(`Loaded ${item.filename}`, 'success');
+    // Toast removed
   }
 };
 
@@ -4361,7 +4361,7 @@ window.bulkV5Categorize = function () {
       node.data.account = category;
     });
     V5State.gridApi.refreshCells({ force: true });
-    if (window.showToast) window.showToast(`Categorized ${selectedNodes.length} items`, 'success');
+    // Toast removed
   }
 };
 
