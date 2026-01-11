@@ -2367,8 +2367,8 @@ window.loadSavedData = function () {
         console.log('✅ Control toolbar shown - data loaded');
       }
 
-      // Update balances
-      updateBalanceSummary();
+      // Update reconciliation card
+      window.updateReconciliationCard?.();
     }
 
     return true;
