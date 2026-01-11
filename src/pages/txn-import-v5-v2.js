@@ -1979,9 +1979,9 @@ window.recalculateAllBalances = function () {
       // Payments (debit) reduce what you owe, Purchases (credit) increase what you owe
       runningBalance = runningBalance - debit + credit;
     } else {
-      // Bank Account (Asset): FIXED - Credits = deposits (IN), Debits = withdrawals (OUT)
-      // Balance = Opening + Credits - Debits
-      runningBalance = runningBalance + credit - debit;
+      // Bank Account (Asset): Debit = Money IN, Credit = Money OUT
+      // Balance = Opening + Debit - Credit
+      runningBalance = runningBalance + debit - credit;
     }
 
     txn.balance = parseFloat(runningBalance.toFixed(2)); // Round to avoid floating point errors
