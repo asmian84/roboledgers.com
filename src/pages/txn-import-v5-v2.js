@@ -3940,13 +3940,18 @@ window.confirmStartOver = async function () {
 
 window.popOutV5Grid = function () {
   const gridContainer = document.getElementById('v5-grid-container');
-  if (!gridContainer) return;
+  if (!gridContainer) {
+    console.error('Grid container not found');
+    return;
+  }
 
   // CRITICAL: Don't allow popup on empty grid
   if (!V5State.gridData || V5State.gridData.length === 0) {
     console.warn('⚠️ No grid to popout - Please load transaction data first');
     return;
   }
+
+  console.log('✅ Pop Out Grid: V5State.gridData has', V5State.gridData.length, 'rows');
 
   // Hide grid in main window
   gridContainer.style.display = 'none';
@@ -4074,47 +4079,77 @@ window.popOutV5Grid = function () {
           --ag-border-color: #3a3a3a;
         }
         
-        /* ===== BALANCE CARDS ===== */
-        .popup-balances {
+        /* ===== FREEZE PANE HEADER (Balance Cards) ===== */
+        .popup-freeze-header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: #f9fafb;
+          border-bottom: 2px solid #e5e7eb;
+          padding: 0.5rem 1rem;
           display: flex;
+          align-items: center;
+          justify-content: space-between;
           gap: 1rem;
-          margin-bottom: 0.75rem;
-          padding: 0.5rem;
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        .balance-item {
-          flex: 1;
-          text-align: center;
-          padding: 0.5rem;
-          border-right: 1px solid #e5e7eb;
+        .freeze-left {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          min-width: 150px;
         }
         
-        .balance-item:last-child {
-          border-right: none;
-        }
-        
-        .balance-label {
+        .freeze-ref {
           font-size: 11px;
           font-weight: 600;
           color: #6b7280;
-          letter-spacing: 0.5px;
-          margin-bottom: 4px;
+          white-space: nowrap;
         }
         
-        .balance-value {
-          font-size: 18px;
+        .freeze-search {
+          flex: 1;
+          max-width: 400px;
+        }
+        
+        .freeze-search input {
+          width: 100%;
+          padding: 6px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 13px;
+        }
+        
+        .freeze-balances {
+          display: flex;
+          gap: 1.5rem;
+          align-items: center;
+        }
+        
+        .freeze-balance-item {
+          text-align: right;
+        }
+        
+        .freeze-balance-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #6b7280;
+          letter-spacing: 0.5px;
+          margin-bottom: 2px;
+        }
+        
+        .freeze-balance-value {
+          font-size: 16px;
           font-weight: 700;
           color: #1f2937;
+          white-space: nowrap;
         }
         
-        .balance-value.positive {
+        .freeze-balance-value.positive {
           color: #059669;
         }
         
-        .balance-value.negative {
+        .freeze-balance-value.negative {
           color: #dc2626;
         }
         
@@ -4216,23 +4251,32 @@ window.popOutV5Grid = function () {
       </style>
     </head>
     <body>
-      <!-- Balance Cards -->
-      <div class="popup-balances">
-        <div class="balance-item">
-          <div class="balance-label">OPENING</div>
-          <div class="balance-value" id="popup-opening">$0.00</div>
+      <!-- Freeze Pane Header with Balance Cards -->
+      <div class="popup-freeze-header">
+        <div class="freeze-left">
+          <span class="freeze-ref">REF#</span>
+          <span class="freeze-ref">CBQ</span>
         </div>
-        <div class="balance-item">
-          <div class="balance-label">TOTAL OUT</div>
-          <div class="balance-value negative" id="popup-debit">-$0.00</div>
+        <div class="freeze-search">
+          <input type="text" placeholder="Search transactions..." />
         </div>
-        <div class="balance-item">
-          <div class="balance-label">TOTAL IN</div>
-          <div class="balance-value positive" id="popup-credit">+$0.00</div>
-        </div>
-        <div class="balance-item">
-          <div class="balance-label">ENDING</div>
-          <div class="balance-value" id="popup-ending">$0.00</div>
+        <div class="freeze-balances">
+          <div class="freeze-balance-item">
+            <div class="freeze-balance-label">OPENING</div>
+            <div class="freeze-balance-value" id="popup-opening">$0.00</div>
+          </div>
+          <div class="freeze-balance-item">
+            <div class="freeze-balance-label">TOTAL IN <span style="color:#059669">++</span></div>
+            <div class="freeze-balance-value positive" id="popup-credit">+$0.00</div>
+          </div>
+          <div class="freeze-balance-item">
+            <div class="freeze-balance-label">TOTAL OUT <span style="color:#dc2626">++</span></div>
+            <div class="freeze-balance-value negative" id="popup-debit">-$0.00</div>
+          </div>
+          <div class="freeze-balance-item">
+            <div class="freeze-balance-label">ENDING</div>
+            <div class="freeze-balance-value" id="popup-ending">$0.00</div>
+          </div>
         </div>
       </div>
       
