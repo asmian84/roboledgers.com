@@ -4396,7 +4396,7 @@ window.popOutV5Grid = function () {
           
           let debugHtml = '';
           for (const [key, value] of Object.entries(debugInfo)) {
-            debugHtml += `< div > <strong>${key}:</strong> ${ value }</div > `;
+            debugHtml += '<div><strong>' + key + ':</strong> ' + value + '</div>';
           }
           document.getElementById('debug-content').innerHTML = debugHtml;
           
