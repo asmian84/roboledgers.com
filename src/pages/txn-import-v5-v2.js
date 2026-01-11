@@ -4482,15 +4482,7 @@ window.popOutV5Grid = function () {
           
           console.log('✅ Initialization complete');
         }, 500);
-          
-          // CRITICAL: Apply appearance immediately after setting values
-          applyAppearance();
-          
-          // Initial balance calculation
-          updateBalances();
-          
-          console.log('Popup: Grid initialized with', gridData.length, 'rows');
-        });
+
         
         // CRITICAL: Auto pop-in when popup window closes
         window.onbeforeunload = function() {
