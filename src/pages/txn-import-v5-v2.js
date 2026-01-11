@@ -857,6 +857,7 @@ window.renderTxnImportV5Page = function () {
         background: transparent;
         border-radius: 6px;
         flex-shrink: 0;
+        margin-left: auto; /* Right-align */
       }
       
       .v5-balance-item {
