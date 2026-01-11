@@ -4412,16 +4412,7 @@ window.popOutV5Grid = function () {
         }
 
 
-          const theme = document.getElementById('popup-theme-dropdown').value;
-          const font = document.getElementById('popup-font-dropdown').value;
-          const size = document.getElementById('popup-size-dropdown').value;
-          
-          const grid = document.querySelector('.ag-theme-alpine');
-          if (!grid) return;
-          
-          // Remove all existing theme classes
-          const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
-          classesToRemove.forEach(cls => grid.classList.remove(cls));
+
           
           // Add new theme
           if (theme) {
