@@ -4362,8 +4362,17 @@ window.popOutV5Grid = function () {
         };
         
         document.addEventListener('DOMContentLoaded', () => {
-          console.log('Popup: DOMContentLoaded - gridData length:', gridData.length);
+          console.log('✅ Popup DOMContentLoaded');
+          console.log('📊 Grid data length:', gridData.length);
+          console.log('📋 Column defs count:', columnDefs.length);
+          console.log('🎯 Grid element:', document.getElementById('popout-grid'));
+          
+          if (gridData.length === 0) {
+            console.warn('⚠️ WARNING: gridData is empty!');
+          }
+          
           gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
+          console.log('✅ Grid created:', gridApi);
           
           // Set initial appearance from main window
           const themeDropdown = document.getElementById('popup-theme-dropdown');
