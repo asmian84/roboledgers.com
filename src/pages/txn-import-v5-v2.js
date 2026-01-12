@@ -3988,7 +3988,16 @@ window.popOutV5Grid = function () {
           margin: 0 auto;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 16px;
+        }
+
+        /* Cloudy Card Style */
+        .v5-cloudy-card {
+          background: white;
+          border: 1.5px solid rgba(59, 130, 246, 0.08);
+          border-radius: 12px;
+          padding: 1.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
         }
 
         /* ===== HEADER SECTION ===== */
@@ -3996,7 +4005,6 @@ window.popOutV5Grid = function () {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
         }
 
         .v5-title-group {
@@ -4350,6 +4358,7 @@ window.popOutV5Grid = function () {
         }
 
         /* ===== AG-GRID UI REFINEMENTS (BLUE HEADER) ===== */
+        /* ===== AG-GRID UI REFINEMENTS (BLUE HEADER) ===== */
         .ag-theme-alpine {
           --ag-font-family: 'Inter', sans-serif;
           --ag-foreground-color: #334155;
@@ -4364,6 +4373,9 @@ window.popOutV5Grid = function () {
           --ag-cell-horizontal-padding: 16px;
           --ag-grid-size: 4px;
           --ag-font-size: 14px;
+          border: 1.5px solid rgba(59, 130, 246, 0.08);
+          border-radius: 12px;
+          overflow: hidden;
         }
         
         /* Force White Header Icons */
@@ -4397,7 +4409,7 @@ window.popOutV5Grid = function () {
     <body>
       <div class="v5-popout-container">
         
-        <div class="v5-main-header">
+        <div class="v5-main-header v5-cloudy-card">
           <div class="v5-title-group">
             <div class="v5-branded-icon">
               <i class="ph ph-arrow-square-down"></i>
@@ -4413,7 +4425,7 @@ window.popOutV5Grid = function () {
           </div>
           
           <div class="v5-header-actions">
-            <button class="btn-icon" onclick="sendToParent('popInV5Grid')" title="Pop In">
+            <button class="v5-more-actions-btn" onclick="sendToParent('popInV5Grid')" title="Pop In">
               <i class="ph-bold ph-arrow-square-in"></i>
             </button>
 
@@ -4439,50 +4451,53 @@ window.popOutV5Grid = function () {
         </div>
 
         <!-- Appearance Settings (Initially Hidden) -->
-        <div class="v5-appearance-settings" id="appearance-panel">
-          <div class="control-group">
-            <label class="v5-ref-label" style="margin-right:8px;">Theme</label>
-            <select id="popup-theme-dropdown-panel" onchange="applyAppearance()">
-              <option value="vanilla">Vanilla</option>
-              <option value="classic">Classic Blue</option>
-              <option value="ledger-pad">Ledger Pad</option>
-              <option value="postit">Post-It</option>
-              <option value="spectrum">Spectrum (Excel)</option>
-              <option value="vintage">Vintage Dark</option>
-              <option value="rainbow" selected>Rainbow</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label class="v5-ref-label" style="margin-right:8px;">Font</label>
-            <select id="popup-font-dropdown-panel" onchange="applyAppearance()">
-              <option value="inter">Inter (Default)</option>
-              <optgroup label="Sans-Serif">
-                <option value="neue-haas">Helvetica / Neue Haas</option>
-                <option value="arial">Arial</option>
-                <option value="verdana">Verdana</option>
-                <option value="open-sans">Open Sans</option>
-                <option value="roboto">Roboto</option>
-                <option value="public-sans">Public Sans</option>
-              </optgroup>
-              <optgroup label="Serif">
-                <option value="garamond">Garamond</option>
-                <option value="times">Times New Roman</option>
-                <option value="libre-baskerville">Libre Baskerville</option>
-                <option value="georgia">Georgia</option>
-              </optgroup>
-            </select>
-          </div>
-          <div class="control-group">
-            <label class="v5-ref-label" style="margin-right:8px;">Size</label>
-            <select id="popup-size-dropdown-panel" onchange="applyAppearance()">
-              <option value="s">Small</option>
-              <option value="m" selected>Medium</option>
-              <option value="l">Large</option>
-            </select>
+        <div class="v5-appearance-settings v5-cloudy-card" id="appearance-panel" style="padding: 12px 24px;">
+          <div style="display: flex; gap: 24px; align-items: center;">
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+              <label class="v5-ref-label">Theme</label>
+              <select id="popup-theme-dropdown-panel" class="modal-select" style="width: 140px;" onchange="applyAppearance()">
+                <option value="vanilla">Vanilla</option>
+                <option value="classic">Classic Blue</option>
+                <option value="ledger-pad">Ledger Pad</option>
+                <option value="postit">Post-It</option>
+                <option value="spectrum">Spectrum (Excel)</option>
+                <option value="vintage">Vintage Dark</option>
+                <option value="rainbow" selected>Rainbow</option>
+              </select>
+            </div>
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+              <label class="v5-ref-label">Font</label>
+              <select id="popup-font-dropdown-panel" class="modal-select" style="width: 160px;" onchange="applyAppearance()">
+                <option value="inter">Inter (Default)</option>
+                <optgroup label="Sans-Serif">
+                  <option value="neue-haas">Helvetica / Neue Haas</option>
+                  <option value="arial">Arial</option>
+                  <option value="verdana">Verdana</option>
+                  <option value="open-sans">Open Sans</option>
+                  <option value="roboto">Roboto</option>
+                  <option value="public-sans">Public Sans</option>
+                </optgroup>
+                <optgroup label="Serif">
+                  <option value="garamond">Garamond</option>
+                  <option value="times">Times New Roman</option>
+                  <option value="libre-baskerville">Libre Baskerville</option>
+                  <option value="georgia">Georgia</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+              <label class="v5-ref-label">Size</label>
+              <select id="popup-size-dropdown-panel" class="modal-select" style="width: 100px;" onchange="applyAppearance()">
+                <option value="s">Small</option>
+                <option value="m" selected>Medium</option>
+                <option value="l">Large</option>
+                <option value="xl">X-Large</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="v5-control-toolbar">
+        <div class="v5-control-toolbar v5-cloudy-card" style="padding: 12px 24px;">
           <div class="v5-ref-section">
             <span class="v5-ref-label">REF#</span>
             <input type="text" id="popup-ref-input" class="v5-ref-box" placeholder="####">
@@ -4733,27 +4748,80 @@ window.popOutV5Grid = function () {
             gridApi.setGridOption('quickFilterText', e.target.value);
           };
 
-          // Ref# binding
-          document.getElementById('popup-ref-input').onkeyup = (e) => {
-            const filterModel = gridApi.getFilterModel() || {};
-            if (e.target.value) {
-              filterModel.refNumber = { filterType: 'text', type: 'contains', filter: e.target.value };
-            } else {
-              delete filterModel.refNumber;
-            }
-            gridApi.setFilterModel(filterModel);
+          // Menu toggle
+          const menuBtn = document.getElementById('menu-btn');
+          const actionsMenu = document.getElementById('actions-menu');
+          menuBtn.onclick = (e) => {
+            e.stopPropagation();
+            actionsMenu.classList.toggle('show');
           };
+          window.onclick = () => actionsMenu.classList.remove('show');
 
-          // Set initial appearance
-          document.getElementById('popup-theme-dropdown-panel').value = '${currentTheme}';
-          document.getElementById('popup-font-dropdown-panel').value = '${currentFont}';
-          document.getElementById('popup-size-dropdown-panel').value = '${currentSize}';
+          // Initialize appearance
           applyAppearance();
-          updateBalances();
+        }, 100);
+
+        function toggleAppearancePanel() {
+          const panel = document.getElementById('appearance-panel');
+          panel.classList.toggle('show');
+          document.getElementById('actions-menu').classList.remove('show');
+        }
+
+        function applyAppearance() {
+          const theme = document.getElementById('popup-theme-dropdown-panel').value;
+          const font = document.getElementById('popup-font-dropdown-panel').value;
+          const size = document.getElementById('popup-size-dropdown-panel').value;
+
+          console.log('✨ Popout: Applying Appearance:', { theme, font, size });
+
+          // 1. Theme Class
+          const container = document.getElementById('popout-grid');
+          container.className = 'ag-theme-alpine'; // Reset
+          if (theme !== 'vanilla') {
+            container.classList.add('ag-theme-' + theme);
+          }
+
+          // 2. Font Family
+          const fontMap = {
+            'inter': "'Inter', sans-serif",
+            'neue-haas': "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+            'arial': "Arial, sans-serif",
+            'verdana': "Verdana, Geneva, sans-serif",
+            'open-sans': "'Open Sans', sans-serif",
+            'roboto': "'Roboto', sans-serif",
+            'public-sans': "'Public Sans', sans-serif",
+            'garamond': "'EB Garamond', serif",
+            'times': "'Times New Roman', Times, serif",
+            'libre-baskerville': "'Libre Baskerville', serif",
+            'georgia': "Georgia, serif"
+          };
+          document.body.style.fontFamily = fontMap[font] || fontMap['inter'];
+
+          // 3. Font Size (Inject Style Tag for AG Grid)
+          const sizeMap = { 's': '12px', 'm': '14px', 'l': '16px', 'xl': '18px' };
+          const fontSize = sizeMap[size] || '14px';
           
-          // Debug output
-          document.getElementById('debug-content').innerText = 
-            'Rows: ' + gridData.length + ' | Columns: ' + columnDefs.length + ' | Opener: ' + (window.opener ? 'YES' : 'NO');
+          let styleTag = document.getElementById('popout-dynamic-fonts');
+          if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'popout-dynamic-fonts';
+            document.head.appendChild(styleTag);
+          }
+          styleTag.innerHTML = \`
+            .ag-theme-alpine, .ag-theme-rainbow, .ag-theme-ledger, .ag-theme-postit {
+              --ag-font-size: \${fontSize} !important;
+            }
+            .ag-header-cell-label { 
+              font-size: \${parseInt(fontSize) - 1}px !important; 
+            }
+          \`;
+
+          // 4. Force Grid Refresh
+          if (gridApi) {
+            setTimeout(() => gridApi.sizeColumnsToFit(), 50);
+          }
+        }
+
         }, 300);
 
         // ===== HEADER MENU =====
