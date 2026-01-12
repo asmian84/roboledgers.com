@@ -3345,7 +3345,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 100,
+      width: 90,
       // Sort numerically (001, 002, 003) not alphabetically
       comparator: (valueA, valueB) => {
         const numA = parseInt(valueA) || 0;
@@ -3371,7 +3371,7 @@ window.initV5Grid = function () {
       headerName: 'Description',
       field: 'description',
       editable: true,
-      width: 280,
+      flex: 2,
       cellEditor: 'agTextCellEditor'
     },
     {
@@ -3413,7 +3413,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Balance',
       field: 'balance',
-      width: 110,
+      width: 120,
       editable: false,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3427,7 +3427,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Account',
       field: 'account',
-      width: 120,
+      flex: 1.5,
       editable: true,
       cellEditor: GroupedAccountEditor,  // Phase 2: 5-tier grouped dropdown
       valueGetter: params => {
@@ -3498,7 +3498,14 @@ window.initV5Grid = function () {
     suppressCellFocus: false,
     // Remove vertical grid lines for cleaner look
     suppressColumnVirtualisation: false,
-    suppressHorizontalScroll: false,
+    suppressHorizontalScroll: true,
+    onGridReady: (params) => {
+      params.api.sizeColumnsToFit();
+      // Also listen for resize to re-fit
+      window.addEventListener('resize', () => {
+        setTimeout(() => params.api.sizeColumnsToFit(), 100);
+      });
+    },
     // Default sort by Date (oldest first)
     initialState: {
       sort: {
@@ -4686,6 +4693,13 @@ window.popOutV5Grid = function () {
           defaultColDef: { sortable: true, filter: true, resizable: true },
           rowSelection: 'multiple',
           rowHeight: 48,
+          onGridReady: (params) => {
+            gridApi = params.api;
+            params.api.sizeColumnsToFit();
+            window.addEventListener('resize', () => {
+              setTimeout(() => params.api.sizeColumnsToFit(), 100);
+            });
+          },
           onSelectionChanged: () => {
             const count = gridApi.getSelectedNodes().length;
             const bar = document.getElementById('popup-bulk-bar');
