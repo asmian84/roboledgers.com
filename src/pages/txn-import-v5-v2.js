@@ -668,7 +668,7 @@ window.renderTxnImportV5Page = function () {
       }
       
       .v5-card-grid {
-        overflow-x: auto;
+        overflow: hidden;
       }
       
       /* ========================================
@@ -3345,7 +3345,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 90,
+      width: 80,
       // Sort numerically (001, 002, 003) not alphabetically
       comparator: (valueA, valueB) => {
         const numA = parseInt(valueA) || 0;
@@ -3363,7 +3363,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Date',
       field: 'date',
-      width: 110,
+      width: 100,
       editable: true,
       valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString() : ''
     },
@@ -3395,7 +3395,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Credit',
       field: 'credit',
-      width: 100,
+      width: 90,
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3413,7 +3413,7 @@ window.initV5Grid = function () {
     {
       headerName: 'Balance',
       field: 'balance',
-      width: 120,
+      width: 110,
       editable: false,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3439,9 +3439,9 @@ window.initV5Grid = function () {
     {
       headerName: 'Actions',
       field: 'actions',
-      width: 140,
-      minWidth: 140,
-      maxWidth: 140, // Fixed width wall
+      width: 130,
+      minWidth: 130,
+      maxWidth: 130, // Fixed width wall
       resizable: false, // Prevent user resize
       cellRenderer: (params) => {
         // Source file icon - dynamic based on type
@@ -3491,7 +3491,7 @@ window.initV5Grid = function () {
       filter: true,
       resizable: true,
       flex: 1,
-      minWidth: 100,
+      minWidth: 50,
       suppressMenu: true // Hide three-line menu icon in headers
     },
     suppressRowHoverHighlight: false,
@@ -3501,10 +3501,13 @@ window.initV5Grid = function () {
     suppressHorizontalScroll: true,
     onGridReady: (params) => {
       params.api.sizeColumnsToFit();
-      // Also listen for resize to re-fit
+      // Ensure strict fit on resize
       window.addEventListener('resize', () => {
         setTimeout(() => params.api.sizeColumnsToFit(), 100);
       });
+    },
+    autoSizeStrategy: {
+      type: 'fitGridWidth'
     },
     // Default sort by Date (oldest first)
     initialState: {
@@ -4668,16 +4671,16 @@ window.popOutV5Grid = function () {
         // ===== GRID CONFIG =====
         const columnDefs = [
           { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
-          { headerName: 'Ref#', field: 'refNumber', width: 90, cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' } },
-          { headerName: 'Date', field: 'date', width: 110, sort: 'asc' },
-          { headerName: 'Description', field: 'description', flex: 2, editable: true },
-          { headerName: 'Debit', field: 'debit', width: 100, editable: true, 
+          { headerName: 'Ref#', field: 'refNumber', width: 80, cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' } },
+          { headerName: 'Date', field: 'date', width: 100, sort: 'asc' },
+          { headerName: 'Description', field: 'description', flex: 2, minWidth: 150, editable: true },
+          { headerName: 'Debit', field: 'debit', width: 90, editable: true, 
              valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
           },
-          { headerName: 'Credit', field: 'credit', width: 100, editable: true,
+          { headerName: 'Credit', field: 'credit', width: 90, editable: true,
              valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
           },
-          { headerName: 'Balance', field: 'balance', width: 120, 
+          { headerName: 'Balance', field: 'balance', width: 110, 
              valueFormatter: params => '$' + (params.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
              cellClass: params => (params.value || 0) < 0 ? 'balance-negative' : 'balance-positive'
           },
@@ -4690,7 +4693,9 @@ window.popOutV5Grid = function () {
         const gridOptions = {
           columnDefs,
           rowData: gridData,
-          defaultColDef: { sortable: true, filter: true, resizable: true },
+          defaultColDef: { sortable: true, filter: true, resizable: true, minWidth: 50 },
+          suppressHorizontalScroll: true,
+          autoSizeStrategy: { type: 'fitGridWidth' },
           rowSelection: 'multiple',
           rowHeight: 48,
           onGridReady: (params) => {
