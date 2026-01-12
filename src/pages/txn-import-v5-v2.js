@@ -3964,6 +3964,15 @@ window.popOutV5Grid = function () {
   const currentFont = document.getElementById('v5-font-dropdown')?.value || '';
   const currentSize = document.getElementById('v5-size-dropdown')?.value || 'm';
 
+  // SAFELY SERIALIZE DATA FOR TEMPLATE INJECTION
+  const safeGridData = JSON.stringify(V5State.gridData).replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  const safeRefPrefix = JSON.stringify(V5State.refPrefix || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  const safeOpeningBalance = JSON.stringify(V5State.openingBalance || 0);
+
+  // GATHER MAIN THEME CSS BLOCKS FOR INJECTION
+  const themeStyles = document.getElementById('v5-theme-styles')?.innerHTML || '';
+  const safeThemeStyles = themeStyles.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -4402,6 +4411,9 @@ window.popOutV5Grid = function () {
         .ag-popup-editor {
           z-index: 9999 !important;
         }
+
+        /* INJECTED MAIN THEME CSS */
+        ${safeThemeStyles}
       </style>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-grid.css">
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ag-grid-community/styles@31.0.0/ag-theme-alpine.css">
@@ -4456,19 +4468,19 @@ window.popOutV5Grid = function () {
             <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
               <label class="v5-ref-label">Theme</label>
               <select id="popup-theme-dropdown-panel" class="modal-select" style="width: 140px;" onchange="applyAppearance()">
-                <option value="vanilla">Vanilla</option>
-                <option value="classic">Classic Blue</option>
-                <option value="ledger-pad">Ledger Pad</option>
-                <option value="postit">Post-It</option>
-                <option value="spectrum">Spectrum (Excel)</option>
-                <option value="vintage">Vintage Dark</option>
-                <option value="rainbow" selected>Rainbow</option>
+              <option value="vanilla" ${V5State.currentTheme === 'vanilla' ? 'selected' : ''}>Vanilla</option>
+              <option value="classic" ${V5State.currentTheme === 'classic' ? 'selected' : ''}>Classic Blue</option>
+              <option value="ledger-pad" ${V5State.currentTheme === 'ledger-pad' ? 'selected' : ''}>Ledger Pad</option>
+              <option value="postit" ${V5State.currentTheme === 'postit' ? 'selected' : ''}>Post-It</option>
+              <option value="spectrum" ${V5State.currentTheme === 'spectrum' ? 'selected' : ''}>Spectrum (Excel)</option>
+              <option value="vintage" ${V5State.currentTheme === 'vintage' ? 'selected' : ''}>Vintage Dark</option>
+              <option value="rainbow" ${(!V5State.currentTheme || V5State.currentTheme === 'rainbow') ? 'selected' : ''}>Rainbow</option>
               </select>
             </div>
             <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
               <label class="v5-ref-label">Font</label>
               <select id="popup-font-dropdown-panel" class="modal-select" style="width: 160px;" onchange="applyAppearance()">
-                <option value="inter">Inter (Default)</option>
+                <option value="inter" ${(!V5State.currentFont || V5State.currentFont === 'inter') ? 'selected' : ''}>Inter (Default)</option>
                 <optgroup label="Sans-Serif">
                   <option value="neue-haas">Helvetica / Neue Haas</option>
                   <option value="arial">Arial</option>
@@ -4488,10 +4500,10 @@ window.popOutV5Grid = function () {
             <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
               <label class="v5-ref-label">Size</label>
               <select id="popup-size-dropdown-panel" class="modal-select" style="width: 100px;" onchange="applyAppearance()">
-                <option value="s">Small</option>
-                <option value="m" selected>Medium</option>
-                <option value="l">Large</option>
-                <option value="xl">X-Large</option>
+                <option value="s" ${V5State.currentSize === 's' ? 'selected' : ''}>Small</option>
+                <option value="m" ${(!V5State.currentSize || V5State.currentSize === 'm') ? 'selected' : ''}>Medium</option>
+                <option value="l" ${V5State.currentSize === 'l' ? 'selected' : ''}>Large</option>
+                <option value="xl" ${V5State.currentSize === 'xl' ? 'selected' : ''}>X-Large</option>
               </select>
             </div>
           </div>
@@ -4500,7 +4512,7 @@ window.popOutV5Grid = function () {
         <div class="v5-control-toolbar v5-cloudy-card" style="padding: 12px 24px;">
           <div class="v5-ref-section">
             <span class="v5-ref-label">REF#</span>
-            <input type="text" id="popup-ref-input" class="v5-ref-box" placeholder="####">
+            <input type="text" id="popup-ref-input" class="v5-ref-box" placeholder="####" value="${V5State.refPrefix || ''}">
           </div>
 
           <div class="v5-search-wrapper">
@@ -4551,8 +4563,9 @@ window.popOutV5Grid = function () {
 
       <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.0/dist/ag-grid-community.min.js"></script>
       <script>
-        const gridData = ${JSON.stringify(V5State.gridData)};
-        const openingBalance = ${V5State.openingBalance || 0};
+        const gridData = ${safeGridData};
+        const openingBalance = ${safeOpeningBalance};
+        let refPrefix = ${safeRefPrefix};
         let gridApi;
 
         // ===== COA DATA & HELPERS =====
@@ -4602,107 +4615,85 @@ window.popOutV5Grid = function () {
             this.params = params;
             this.value = params.value || 'Uncategorized';
             this.groupedData = getGroupedCoA();
+            this.value = params.value;
             this.container = document.createElement('div');
-            this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; display:flex; flex-direction:column; overflow:hidden; z-index:9999;';
-            
-            const searchBox = document.createElement('input');
-            searchBox.type = 'text';
-            searchBox.placeholder = 'Search accounts...';
-            searchBox.style.cssText = 'padding:10px; border:none; border-bottom:1px solid #e2e8f0; outline:none; font-size:13px; width:100%;';
-            setTimeout(() => searchBox.focus(), 0);
-            searchBox.addEventListener('input', (e) => this.renderList(e.target.value));
-            this.container.appendChild(searchBox);
-
-            this.listContainer = document.createElement('div');
-            this.listContainer.style.cssText = 'max-height:300px; overflow-y:auto;';
-            this.container.appendChild(this.listContainer);
-            this.renderList();
-          }
-          getGui() { return this.container; }
-          getValue() { return this.value; }
-          isPopup() { return true; }
-          renderList(filter = '') {
-            this.listContainer.innerHTML = '';
-            const lowerFilter = filter.toLowerCase();
-            Object.keys(this.groupedData).forEach(groupName => {
-              const items = this.groupedData[groupName].filter(i => i.toLowerCase().includes(lowerFilter));
-              if (items.length > 0) {
+            this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; max-height:400px; overflow-y:auto; z-index:10000;';
+            const coa = getGroupedCoA();
+            Object.entries(coa).forEach(([group, items]) => {
+              if (items.length) {
                 const header = document.createElement('div');
                 header.style.cssText = 'padding:8px 12px; background:#f8fafc; font-weight:700; font-size:11px; color:#64748b; text-transform:uppercase;';
-                header.innerText = groupName;
-                this.listContainer.appendChild(header);
+                header.innerText = group;
+                this.container.appendChild(header);
                 items.forEach(item => {
                   const div = document.createElement('div');
-                  div.style.cssText = 'padding:8px 16px; font-size:13px; color:#334155; cursor:pointer;';
+                  div.style.cssText = 'padding:8px 16px; font-size:13px; color: #334155; cursor:pointer;';
                   div.innerText = item;
-                  div.onmouseover = () => div.style.background = '#f1f5f9';
-                  div.onmouseout = () => div.style.background = 'white';
                   div.onclick = () => { this.value = item; this.params.stopEditing(); };
-                  this.listContainer.appendChild(div);
+                  this.container.appendChild(div);
                 });
               }
             });
           }
+          getGui() { return this.container; }
+          getValue() { return this.value; }
+          isPopup() { return true; }
         }
 
         // ===== ACTIONS RENDERER =====
         class ActionCellRenderer {
           init(params) {
-            this.params = params;
             this.eGui = document.createElement('div');
             this.eGui.style.cssText = 'display:flex; gap:8px; align-items:center; height:100%;';
-            
             const createBtn = (icon, color, bg, title, onClick) => {
               const btn = document.createElement('button');
               btn.innerHTML = '<i class="ph ph-' + icon + '"></i>';
-              btn.style.cssText = 'border:none; background:' + bg + '; color:' + color + '; border-radius:4px; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition: all 0.2s;';
+              btn.style.cssText = 'border:none; background:' + bg + '; color:' + color + '; border-radius:4px; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px;';
               btn.title = title;
               btn.onclick = (e) => { e.stopPropagation(); onClick(); };
               return btn;
             };
-
-            const btnPdf = createBtn('file-pdf', '#ef4444', '#fee2e2', 'View PDF', () => alert('View PDF: ' + params.data.refNumber));
-            const btnSwap = createBtn('arrows-left-right', '#3b82f6', '#dbeafe', 'Re-allocate', () => alert('Re-allocate: ' + params.data.refNumber));
-            const btnDel = createBtn('trash', '#ef4444', '#fee2e2', 'Delete', () => {
-              if (confirm('Delete transaction ' + params.data.refNumber + '?')) {
-                // We'll update the grid rows by filtering the local gridData array
+            this.eGui.appendChild(createBtn('trash', '#ef4444', '#fee2e2', 'Delete', () => {
+              if (confirm('Delete transaction?')) {
                 const idx = gridData.findIndex(r => r.id === params.data.id);
                 if (idx !== -1) {
                   gridData.splice(idx, 1);
                   gridApi.setGridOption('rowData', gridData);
                   sendToParent('updateV5DataFromPopout', gridData);
                   updateBalances();
+                  renumberRows();
                 }
               }
-            });
-
-            this.eGui.appendChild(btnPdf);
-            this.eGui.appendChild(btnSwap);
-            this.eGui.appendChild(btnDel);
+            }));
           }
           getGui() { return this.eGui; }
         }
 
         // ===== GRID CONFIG =====
         const columnDefs = [
-          { headerName: '', width: 50, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
-          { headerName: 'Ref#', field: 'refNumber', width: 80, cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' } },
+          { headerName: '', width: 40, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
+          { 
+            headerName: 'Ref#', 
+            field: 'refNumber', 
+            width: 80, 
+            cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' },
+            valueGetter: (params) => {
+              if (!params.data.refNumber) return '';
+              return refPrefix ? (refPrefix + '-' + params.data.refNumber) : params.data.refNumber;
+            }
+          },
           { headerName: 'Date', field: 'date', width: 100, sort: 'asc' },
           { headerName: 'Description', field: 'description', flex: 2, minWidth: 150, editable: true },
           { headerName: 'Debit', field: 'debit', width: 90, editable: true, 
-             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
-          },
+             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString() : '' },
           { headerName: 'Credit', field: 'credit', width: 90, editable: true,
-             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
-          },
+             valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString() : '' },
           { headerName: 'Balance', field: 'balance', width: 110, 
-             valueFormatter: params => '$' + (params.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+             valueFormatter: params => '$' + (params.value || 0).toLocaleString(),
              cellClass: params => (params.value || 0) < 0 ? 'balance-negative' : 'balance-positive'
           },
-          { headerName: 'Account', field: 'account', flex: 1.5, editable: true, cellEditor: GroupedAccountEditor,
-             valueFormatter: params => (typeof resolveAccountName === 'function') ? resolveAccountName(params.value) : params.value
-          },
-          { headerName: 'Actions', width: 130, cellRenderer: ActionCellRenderer, resizable: false, sortable: false }
+          { headerName: 'Account', field: 'account', flex: 1.5, editable: true, cellEditor: GroupedAccountEditor },
+          { headerName: 'Actions', width: 80, cellRenderer: ActionCellRenderer }
         ];
 
         const gridOptions = {
@@ -4715,155 +4706,53 @@ window.popOutV5Grid = function () {
           rowHeight: 48,
           onGridReady: (params) => {
             gridApi = params.api;
-            params.api.sizeColumnsToFit();
-            window.addEventListener('resize', () => {
-              setTimeout(() => params.api.sizeColumnsToFit(), 100);
-            });
+            // Defer slightly to ensure initial draw is complete and prevent draw-interruption warnings
+            setTimeout(() => {
+              renumberRows();
+              updateBalances();
+              applyAppearance();
+            }, 0);
           },
+          onSortChanged: () => renumberRows(),
+          onFilterChanged: () => renumberRows(),
           onSelectionChanged: () => {
             const count = gridApi.getSelectedNodes().length;
-            const bar = document.getElementById('popup-bulk-bar');
-            bar.style.display = count > 0 ? 'flex' : 'none';
+            document.getElementById('popup-bulk-bar').style.display = count > 0 ? 'flex' : 'none';
             document.getElementById('popup-selection-count').innerText = count + ' selected';
           },
-          onCellValueChanged: (params) => {
+          onCellValueChanged: () => {
             sendToParent('updateV5DataFromPopout', gridData);
             updateBalances();
           }
         };
 
-        // ===== COMMUNICATION BRIDGE =====
-        function sendToParent(type, data = {}) {
-          if (window.opener && !window.opener.closed) {
-            window.opener.postMessage({ type, data }, '*');
-          }
+        function renumberRows() {
+          if (!gridApi) return;
+          setTimeout(() => {
+            const displayed = [];
+            gridApi.forEachNodeAfterFilterAndSort(node => displayed.push(node.data));
+            displayed.forEach((row, i) => {
+              row.refNumber = String(i + 1).padStart(3, '0');
+            });
+            gridApi.refreshCells({ force: true });
+          }, 50);
         }
 
-        // ===== GRID INIT =====
-        setTimeout(() => {
-          gridApi = agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
-          
-          // Search binding
-          document.getElementById('popup-search-input').onkeyup = (e) => {
-            gridApi.setGridOption('quickFilterText', e.target.value);
-          };
-
-          // Menu toggle
-          const menuBtn = document.getElementById('menu-btn');
-          const actionsMenu = document.getElementById('actions-menu');
-          menuBtn.onclick = (e) => {
-            e.stopPropagation();
-            actionsMenu.classList.toggle('show');
-          };
-          window.onclick = () => actionsMenu.classList.remove('show');
-
-          // Initialize appearance
-          applyAppearance();
-        }, 100);
-
-        function toggleAppearancePanel() {
-          const panel = document.getElementById('appearance-panel');
-          panel.classList.toggle('show');
-          document.getElementById('actions-menu').classList.remove('show');
-        }
-
-        function applyAppearance() {
-          const theme = document.getElementById('popup-theme-dropdown-panel').value;
-          const font = document.getElementById('popup-font-dropdown-panel').value;
-          const size = document.getElementById('popup-size-dropdown-panel').value;
-
-          console.log('✨ Popout: Applying Appearance:', { theme, font, size });
-
-          // 1. Theme Class
-          const container = document.getElementById('popout-grid');
-          container.className = 'ag-theme-alpine'; // Reset
-          if (theme !== 'vanilla') {
-            container.classList.add('ag-theme-' + theme);
-          }
-
-          // 2. Font Family
-          const fontMap = {
-            'inter': "'Inter', sans-serif",
-            'neue-haas': "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif",
-            'arial': "Arial, sans-serif",
-            'verdana': "Verdana, Geneva, sans-serif",
-            'open-sans': "'Open Sans', sans-serif",
-            'roboto': "'Roboto', sans-serif",
-            'public-sans': "'Public Sans', sans-serif",
-            'garamond': "'EB Garamond', serif",
-            'times': "'Times New Roman', Times, serif",
-            'libre-baskerville': "'Libre Baskerville', serif",
-            'georgia': "Georgia, serif"
-          };
-          document.body.style.fontFamily = fontMap[font] || fontMap['inter'];
-
-          // 3. Font Size (Inject Style Tag for AG Grid)
-          const sizeMap = { 's': '12px', 'm': '14px', 'l': '16px', 'xl': '18px' };
-          const fontSize = sizeMap[size] || '14px';
-          
-          let styleTag = document.getElementById('popout-dynamic-fonts');
-          if (!styleTag) {
-            styleTag = document.createElement('style');
-            styleTag.id = 'popout-dynamic-fonts';
-            document.head.appendChild(styleTag);
-          }
-          styleTag.innerHTML = \`
-            .ag-theme-alpine, .ag-theme-rainbow, .ag-theme-ledger, .ag-theme-postit {
-              --ag-font-size: \${fontSize} !important;
-            }
-            .ag-header-cell-label { 
-              font-size: \${parseInt(fontSize) - 1}px !important; 
-            }
-          \`;
-
-          // 4. Force Grid Refresh
-          if (gridApi) {
-            setTimeout(() => gridApi.sizeColumnsToFit(), 50);
-          }
-        }
-
-        }, 300);
-
-        // ===== HEADER MENU =====
-        const menuBtn = document.getElementById('menu-btn');
-        const actionsMenu = document.getElementById('actions-menu');
-
-        menuBtn.onclick = (e) => {
-          e.stopPropagation();
-          actionsMenu.classList.toggle('show');
-        };
-
-        window.onclick = () => {
-          actionsMenu.classList.remove('show');
-        };
-
-        function toggleAppearancePanel() {
-          const panel = document.getElementById('appearance-panel');
-          panel.classList.toggle('show');
-          actionsMenu.classList.remove('show');
-        }
-
-        // ===== ACTIONS =====
         function updateBalances() {
           let tIn = 0, tOut = 0, cIn = 0, cOut = 0;
           gridData.forEach(t => {
-            const credit = parseFloat(t.Credit || t.credit) || 0;
-            const debit = parseFloat(t.Debit || t.debit) || 0;
-            if (credit > 0) { tIn += credit; cIn++; }
-            if (debit > 0) { tOut += debit; cOut++; }
+            const cr = parseFloat(t.credit) || 0;
+            const dr = parseFloat(t.debit) || 0;
+            if (cr > 0) { tIn += cr; cIn++; }
+            if (dr > 0) { tOut += dr; cOut++; }
           });
           const end = (parseFloat(openingBalance) || 0) + tIn - tOut;
-          
-          const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits:2 });
           document.getElementById('popup-opening').innerText = '$' + fmt(openingBalance);
-          
-          // Match Main Page: In is Green/+, Out is Red/-
           document.getElementById('popup-total-in').innerText = '+$' + fmt(tIn);
           document.getElementById('popup-count-in').innerText = cIn;
-          
           document.getElementById('popup-total-out').innerText = '-$' + fmt(tOut);
           document.getElementById('popup-count-out').innerText = cOut;
-          
           document.getElementById('popup-ending-bal').innerText = '$' + fmt(end);
         }
 
@@ -4872,13 +4761,12 @@ window.popOutV5Grid = function () {
           const font = document.getElementById('popup-font-dropdown-panel').value;
           const size = document.getElementById('popup-size-dropdown-panel').value;
           const grid = document.getElementById('popout-grid');
-          if (!grid) return;
           
-          // Remove old theme classes
-          Array.from(grid.classList).forEach(c => { if(c.startsWith('theme-')) grid.classList.remove(c); });
+          // 1. Reset classes and apply base theme + custom theme class
+          grid.className = 'ag-theme-alpine';
           grid.classList.add('theme-' + theme);
-          
-          // Apply fonts
+
+          // 2. Synchronized Font Map (1:1 with main)
           const fonts = {
             'neue-haas': '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
             'arial': 'Arial, sans-serif',
@@ -4894,60 +4782,70 @@ window.popOutV5Grid = function () {
           };
           grid.style.fontFamily = fonts[font] || '"Inter", sans-serif';
 
-          // Apply size
-          const sizeMap = { 's': '12px', 'm': '14px', 'l': '16px' };
-          grid.style.fontSize = sizeMap[size] || '14px';
-
-          // Update parent to sync (using bridge)
+          // 3. Synchronized Size Map (1:1 with main)
+          const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
+          const fs = sizeMap[size] || '13px';
+          
+          let styleTag = document.getElementById('dynamic-fs-v5');
+          if (!styleTag) { 
+            styleTag = document.createElement('style'); 
+            styleTag.id = 'dynamic-fs-v5'; 
+            document.head.appendChild(styleTag); 
+          }
+          styleTag.innerHTML = '.ag-theme-alpine { --ag-font-size: ' + fs + ' !important; } ' +
+                             '.ag-theme-alpine .ag-header-cell-text, .ag-theme-alpine .ag-cell { font-size: ' + fs + ' !important; }';
+          
+          if (gridApi) setTimeout(() => gridApi.sizeColumnsToFit(), 50);
           sendToParent('syncV5Appearance', { theme, font, size });
         }
 
-        function selectAll() { gridApi.selectAll(); }
-        function deselectAll() { gridApi.deselectAll(); }
-        
+        function toggleAppearancePanel() { 
+          document.getElementById('appearance-panel').classList.toggle('show'); 
+        }
+
+        document.getElementById('popup-search-input').oninput = (e) => gridApi.setGridOption('quickFilterText', e.target.value);
+        document.getElementById('popup-ref-input').oninput = (e) => {
+          refPrefix = e.target.value.toUpperCase();
+          gridApi.refreshCells({ columns: ['refNumber'], force: true });
+          sendToParent('syncV5RefPrefix', refPrefix);
+        };
+
+        const menuBtn = document.getElementById('menu-btn');
+        const actionsMenu = document.getElementById('actions-menu');
+        menuBtn.onclick = (e) => { e.stopPropagation(); actionsMenu.classList.toggle('show'); };
+        window.onclick = () => actionsMenu.classList.remove('show');
+
+        // COMMUNICATION
+        function sendToParent(type, data = {}) {
+          if (window.opener && !window.opener.closed) window.opener.postMessage({ type, data }, '*');
+        }
+
         function bulkDelete() {
-          const selected = gridApi.getSelectedRows();
-          if (selected.length === 0) return;
-          if (!confirm('Delete ' + selected.length + ' transaction(s)?')) return;
-          
-          const selectedIds = selected.map(r => r.id);
-          const newData = gridData.filter(r => !selectedIds.includes(r.id));
-          gridData.length = 0;
-          newData.forEach(r => gridData.push(r));
+          const rows = gridApi.getSelectedRows();
+          if (!rows.length || !confirm('Delete ' + rows.length + ' items?')) return;
+          const ids = rows.map(r => r.id);
+          const newData = gridData.filter(r => !ids.includes(r.id));
+          gridData.length = 0; newData.forEach(r => gridData.push(r));
           gridApi.setGridOption('rowData', gridData);
           sendToParent('updateV5DataFromPopout', gridData);
-          updateBalances();
+          updateBalances(); renumberRows();
         }
 
         function bulkCategorize() {
-          const nodes = gridApi.getSelectedNodes();
-          if (nodes.length === 0) return;
-          const cat = prompt('Categorize ' + nodes.length + ' items to:');
+          const rows = gridApi.getSelectedRows();
+          if (!rows.length) return;
+          const cat = prompt('Category:');
           if (cat) {
-            nodes.forEach(n => { n.data.account = cat; });
+            rows.forEach(r => r.account = cat);
             gridApi.refreshCells({ force: true });
             sendToParent('updateV5DataFromPopout', gridData);
-            updateBalances();
           }
         }
 
-        function clearSelection() {
-          gridApi.deselectAll();
-        }
-        
-        function closePopout() {
-          sendToParent('popInV5Grid');
-          window.close();
-        }
+        function clearSelection() { gridApi.deselectAll(); }
 
-        window.onbeforeunload = () => {
-          sendToParent('popInV5Grid');
-        };
-
-        // Extra insurance for immediate popin
-        window.addEventListener('pagehide', () => {
-          sendToParent('popInV5Grid');
-        });
+        // Start grid
+        agGrid.createGrid(document.getElementById('popout-grid'), gridOptions);
       </script>
     </body>
     </html>
@@ -4992,6 +4890,9 @@ window.addEventListener('message', (event) => {
   switch (type) {
     case 'syncV5Appearance':
       window.syncV5Appearance(data.theme, data.size);
+      break;
+    case 'syncV5RefPrefix':
+      window.updateRefPrefix(data);
       break;
     case 'updateV5DataFromPopout':
       window.updateV5DataFromPopout(data);
