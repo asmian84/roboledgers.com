@@ -182,55 +182,7 @@ window.closeAppearanceModal = function () {
   if (panel) panel.style.display = 'none';
 };
 
-window.applyAppearance = function () {
-  const themeDropdown = document.getElementById('v5-theme-dropdown');
-  const fontDropdown = document.getElementById('v5-font-dropdown');
-  const sizeDropdown = document.getElementById('v5-size-dropdown');
-
-  const theme = themeDropdown ? themeDropdown.value : '';
-  const font = fontDropdown ? fontDropdown.value : '';
-  const size = sizeDropdown ? sizeDropdown.value : 'm';
-
-  const grid = document.querySelector('.ag-theme-alpine');
-  if (!grid) {
-    console.error('❌ Grid not found with selector .ag-theme-alpine');
-    return;
-  }
-
-  // Remove ALL old theme classes
-  const classList = Array.from(grid.classList).filter(c => !c.startsWith('theme-'));
-  grid.className = classList.join(' ');
-
-  // Add new theme as CSS class (defined in <style> block)
-  if (theme) {
-    grid.classList.add('theme-' + theme);
-  }
-
-  // Apply professional web fonts  
-  const fonts = {
-    'neue-haas': '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
-    'arial': 'Arial, sans-serif',
-    'verdana': 'Verdana, sans-serif',
-    'open-sans': '"Open Sans", sans-serif',
-    'roboto': '"Roboto", sans-serif',
-    'public-sans': '"Public Sans", sans-serif',
-    'garamond': '"EB Garamond", serif',
-    'times': '"Times New Roman", Times, serif',
-    'libre-baskerville': '"Libre Baskerville", serif',
-    'georgia': 'Georgia, serif',
-    'inter': '"Inter", sans-serif'
-  };
-  grid.style.fontFamily = fonts[font] || '"Inter", sans-serif';
-
-  // Apply size
-  const sizes = { xs: '11px', s: '12px', m: '13px', l: '14px', xl: '16px' };
-  grid.style.fontSize = sizes[size] || '13px';
-
-  // Save to localStorage
-  localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
-
-  console.log('✅ Appearance applied:', { theme, font, size, classes: grid.className });
-};
+// CRITICAL: Unified Appearance Logic moved to bottom (Line 5373)
 
 // ====================================================================================
 // MAIN RENDER FUNCTION
@@ -3429,7 +3381,7 @@ window.initV5Grid = function () {
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
-        return val > 0 ? '$' + val.toFixed(2) : '';
+        return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
       },
       valueSetter: params => {
         const val = parseFloat(params.newValue) || 0;
@@ -3447,7 +3399,7 @@ window.initV5Grid = function () {
       editable: true,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
-        return val > 0 ? '$' + val.toFixed(2) : '';
+        return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
       },
       valueSetter: params => {
         const val = parseFloat(params.newValue) || 0;
@@ -5371,60 +5323,53 @@ window.closeAppearanceModal = function () {
 };
 
 window.applyAppearance = function () {
-  const theme = document.getElementById('v5-theme-dropdown').value;
-  const font = document.getElementById('v5-font-dropdown').value;
-  const size = document.getElementById('v5-size-dropdown').value;
+  const theme = document.getElementById('v5-theme-dropdown')?.value || 'rainbow';
+  const font = document.getElementById('v5-font-dropdown')?.value || 'inter';
+  const size = document.getElementById('v5-size-dropdown')?.value || 'm';
 
   const grid = document.querySelector('.ag-theme-alpine');
-  if (!grid) {
-    console.error('Grid not found');
-    return;
-  }
+  if (!grid) return;
 
-  // CRITICAL FIX: Remove ALL existing theme-* classes before adding new one
+  // 1. Remove ALL existing theme-* classes
   const classesToRemove = Array.from(grid.classList).filter(cls => cls.startsWith('theme-'));
   classesToRemove.forEach(cls => grid.classList.remove(cls));
 
-  // Add new theme class (if any)
-  if (theme) {
-    grid.classList.add(`theme-${theme}`);
-  }
+  // 2. Add new theme class
+  grid.classList.add(`theme-${theme}`);
 
-  // Apply font family to ENTIRE grid
-  if (font) {
-    grid.style.setProperty('--ag-font-family', font);
-    grid.style.fontFamily = font;
-  }
+  // 3. Apply font family
+  const fonts = {
+    'neue-haas': '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
+    'arial': 'Arial, sans-serif',
+    'verdana': 'Verdana, sans-serif',
+    'open-sans': '"Open Sans", sans-serif',
+    'roboto': '"Roboto", sans-serif',
+    'public-sans': '"Public Sans", sans-serif',
+    'garamond': '"EB Garamond", serif',
+    'times': '"Times New Roman", Times, serif',
+    'libre-baskerville': '"Libre Baskerville", serif',
+    'georgia': 'Georgia, serif',
+    'inter': '"Inter", sans-serif'
+  };
+  grid.style.fontFamily = fonts[font] || '"Inter", sans-serif';
 
-  // CRITICAL FIX: Map dropdown values to actual CSS pixel values
-  if (size) {
-    const sizeMap = {
-      'xs': '11px',
-      's': '12px',
-      'm': '13px',
-      'l': '14px',
-      'xl': '16px'
-    };
-    const cssSize = sizeMap[size] || '13px'; // Default to medium if invalid
+  // 4. Apply font size
+  const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
+  const cssSize = sizeMap[size] || '13px';
 
-    // Remove old dynamic style if exists
-    let styleEl = document.getElementById('v5-grid-size-override');
-    if (styleEl) styleEl.remove();
+  let styleEl = document.getElementById('v5-grid-size-override');
+  if (styleEl) styleEl.remove();
 
-    // Inject new style that forces font-size on ALL grid elements
-    styleEl = document.createElement('style');
-    styleEl.id = 'v5-grid-size-override';
-    styleEl.textContent = `
-            .ag-theme-alpine { --ag-font-size: ${cssSize} !important; }
-            .ag-theme-alpine .ag-header-cell-text,
-            .ag-theme-alpine .ag-cell { 
-              font-size: ${cssSize} !important; 
-            }
-          `;
-    document.head.appendChild(styleEl);
-  }
+  styleEl = document.createElement('style');
+  styleEl.id = 'v5-grid-size-override';
+  styleEl.textContent = `
+    .ag-theme-alpine { --ag-font-size: ${cssSize} !important; }
+    .ag-theme-alpine .ag-header-cell-text,
+    .ag-theme-alpine .ag-cell { font-size: ${cssSize} !important; }
+  `;
+  document.head.appendChild(styleEl);
 
-  // Save to localStorage
+  // 5. Save to localStorage
   localStorage.setItem('v5_grid_appearance', JSON.stringify({ theme, font, size }));
 };
 
@@ -5432,12 +5377,12 @@ window.applyAppearance = function () {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     const saved = JSON.parse(localStorage.getItem('v5_grid_appearance') || '{}');
-    if (saved.theme || saved.font || saved.size) {
-      if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme;
-      if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font;
-      if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size;
-      applyAppearance();
-    }
+    if (saved.theme) document.getElementById('v5-theme-dropdown').value = saved.theme;
+    if (saved.font) document.getElementById('v5-font-dropdown').value = saved.font;
+    if (saved.size) document.getElementById('v5-size-dropdown').value = saved.size;
+
+    // Always apply appearance to ensure "Rainbow" default if no saved theme
+    applyAppearance();
   }, 1000);
 });
 
