@@ -78,8 +78,8 @@ class AccountDistributionPanel {
                         <button id="resetFilter" class="btn-secondary" style="display: none; margin-right: 8px;">
                             🔄 Reset Filter
                         </button>
-                        <button id="consolidateMisc" class="btn-warning">
-                            🧹 Consolidate Misc
+                        <button id="consolidateGlobal" class="btn-warning">
+                            🧹 Consolidate Global
                         </button>
                     </div>
                 </div>
@@ -92,16 +92,16 @@ class AccountDistributionPanel {
             resetBtn.addEventListener('click', () => this.resetFilter());
         }
 
-        const consolidateBtn = document.getElementById('consolidateMisc');
+        const consolidateBtn = document.getElementById('consolidateGlobal');
         if (consolidateBtn) {
             consolidateBtn.addEventListener('click', async () => {
-                if (confirm('Are you sure you want to merge all Miscellaneous and Uncategorized accounts into 9970? This will update your vendor dictionary.')) {
+                if (confirm('GLOBAL MERGE: This will unify all vendors who share a category name to the same account code across your entire dictionary. Proceed?')) {
                     consolidateBtn.disabled = true;
                     consolidateBtn.textContent = '⏳ Processing...';
 
                     try {
-                        const count = await window.merchantDictionary.consolidateMiscAccounts();
-                        alert(`Successfully consolidated ${count} vendors into 9970 - Miscellaneous.`);
+                        const count = await window.merchantDictionary.consolidateAllAccounts();
+                        alert(`Successfully consolidated ${count} vendors. All categories are now unified to their most common GL accounts.`);
 
                         // Trigger a full grid refresh
                         if (window.initVendorsGrid) {
@@ -112,7 +112,7 @@ class AccountDistributionPanel {
                         alert('Error during consolidation: ' + err.message);
                     } finally {
                         consolidateBtn.disabled = false;
-                        consolidateBtn.textContent = '🧹 Consolidate Misc';
+                        consolidateBtn.textContent = '🧹 Consolidate Global';
                     }
                 }
             });

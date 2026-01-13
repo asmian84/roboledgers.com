@@ -688,11 +688,75 @@ class MerchantDictionary {
             }
         }
 
+        return updates.length;
+    }
+
+    /**
+     * Consolidate All Accounts (v28.0)
+     * Automatically unifies vendors sharing the same category name into 
+     * a single canonical account code (the most frequently used one for that category).
+     */
+    async consolidateAllAccounts() {
+        if (!this.isInitialized) await this.init();
+
+        // 🛡️ AUTO-BACKUP
+        await this.createRestorePoint('Before Global Account Consolidation');
+
+        console.log('🧹 Starting Global Account Consolidation...');
+
+        // Step 1: Group by category name and count account usage
+        // categoryName -> { accountCode -> count }
+        const categoryStats = new Map();
+
+        for (const m of this.merchants.values()) {
+            const cat = (m.default_category || 'Uncategorized').trim();
+            const acc = (m.default_gl_account || m.default_account || '9970').toString().trim();
+
+            if (!categoryStats.has(cat)) {
+                categoryStats.set(cat, new Map());
+            }
+
+            const accMap = categoryStats.get(cat);
+            accMap.set(acc, (accMap.get(acc) || 0) + 1);
+        }
+
+        // Step 2: Determine canonical account for each category
+        // categoryName -> canonicalAccountCode
+        const canonicals = new Map();
+        for (const [cat, accMap] of categoryStats.entries()) {
+            let winner = '9970';
+            let maxCount = -1;
+
+            for (const [acc, count] of accMap.entries()) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    winner = acc;
+                }
+            }
+            canonicals.set(cat, winner);
+        }
+
+        // Step 3: Apply migrations
+        const updates = [];
+        for (const m of this.merchants.values()) {
+            const cat = (m.default_category || 'Uncategorized').trim();
+            const currentAcc = (m.default_gl_account || m.default_account || '9970').toString().trim();
+            const targetAcc = canonicals.get(cat);
+
+            if (targetAcc && currentAcc !== targetAcc) {
+                console.log(`🪄 Migrating "${m.display_name}": ${cat} (${currentAcc} -> ${targetAcc})`);
+                m.default_gl_account = targetAcc;
+                m.default_account = targetAcc;
+                m.updated_at = new Date().toISOString();
+                updates.push(m);
+            }
+        }
+
         if (updates.length > 0) {
-            console.log(`✅ Consolidation: Updating ${updates.length} vendors to 9970...`);
+            console.log(`✅ Global Consolidation: Updating ${updates.length} vendors...`);
             await this.bulkSaveMerchants(updates, null, false);
         } else {
-            console.log('✨ Consolidation: No vendors needed updating.');
+            console.log('✨ Global Consolidation: Everything already perfectly unified.');
         }
 
         return updates.length;
