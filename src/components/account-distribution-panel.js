@@ -174,19 +174,31 @@ class AccountDistributionPanel {
             return;
         }
 
-        console.log(`🔍 Attempting to filter grid for account: ${accountNumber}`);
-        console.log('📋 Available Columns:', this.gridApi.getColumns().map(c => c.getColId()));
+        const cols = this.gridApi.getColumns().map(c => c.getColId());
+        console.log(`🔍 Attempting to filter for account: ${accountNumber}`);
+        console.log('📋 All colIds:', cols);
+
+        if (!cols.includes('default_account')) {
+            console.error('❌ Column "default_account" not found in grid columns!');
+            alert('Critial Error: Hidden account column missing from grid layout.');
+        }
 
         this.currentFilter = accountNumber;
 
         // Apply filter to grid
-        this.gridApi.setFilterModel({
+        const model = {
             default_account: {
                 filterType: 'text',
                 type: 'equals',
                 filter: accountNumber
             }
-        });
+        };
+
+        console.log('🎯 Applying Filter Model:', model);
+        this.gridApi.setFilterModel(model);
+
+        // Force refresh
+        this.gridApi.onFilterChanged();
 
         // Show reset button
         const resetBtn = document.getElementById('resetFilter');
