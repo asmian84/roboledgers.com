@@ -641,6 +641,63 @@ class MerchantDictionary {
         return updates.length;
     }
 
+    /**
+     * Consolidate Miscellaneous Accounts (v27.0)
+     * Groups all vendors matching "Misc" variants into a single 9970 account
+     */
+    async consolidateMiscAccounts() {
+        if (!this.isInitialized) await this.init();
+
+        // 🛡️ AUTO-BACKUP
+        await this.createRestorePoint('Before Misc Account Consolidation');
+
+        console.log('🧹 Starting Miscellaneous Account Consolidation...');
+        const updates = [];
+
+        // Target account and category
+        const TARGET_ACCOUNT = '9970';
+        const TARGET_CATEGORY = 'Miscellaneous';
+
+        // Variants to match (Case Insensitive)
+        const miscPatterns = [
+            /^MISCELLANEOUS$/i,
+            /^Misc$/i,
+            /^Uncategorized$/i,
+            /^Unknown$/i,
+            /^Pending$/i
+        ];
+
+        for (const [id, m] of this.merchants.entries()) {
+            const currentCat = (m.default_category || '').trim();
+            const currentAcc = (m.default_gl_account || m.default_account || '').toString().trim();
+
+            const isMiscName = miscPatterns.some(p => p.test(currentCat));
+
+            // If it matches a pattern OR is already 9970 (to ensure data consistency)
+            // but we skip if it's already perfectly matched to our target
+            if (isMiscName || currentAcc === '9970' || currentAcc === '1000' || currentAcc === '') {
+
+                // Only update if something actually needs changing
+                if (currentAcc !== TARGET_ACCOUNT || currentCat !== TARGET_CATEGORY) {
+                    m.default_gl_account = TARGET_ACCOUNT; // Canonical field
+                    m.default_account = TARGET_ACCOUNT;    // Legacy/Sync field
+                    m.default_category = TARGET_CATEGORY;
+                    m.updated_at = new Date().toISOString();
+                    updates.push(m);
+                }
+            }
+        }
+
+        if (updates.length > 0) {
+            console.log(`✅ Consolidation: Updating ${updates.length} vendors to 9970...`);
+            await this.bulkSaveMerchants(updates, null, false);
+        } else {
+            console.log('✨ Consolidation: No vendors needed updating.');
+        }
+
+        return updates.length;
+    }
+
 
     /**
      * Converts any string ID to a deterministic UUID for cloud compatibility

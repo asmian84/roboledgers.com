@@ -75,8 +75,11 @@ class AccountDistributionPanel {
                         <p>Loading distribution data...</p>
                     </div>
                     <div class="dist-actions">
-                        <button id="resetFilter" class="btn-secondary" style="display: none;">
+                        <button id="resetFilter" class="btn-secondary" style="display: none; margin-right: 8px;">
                             🔄 Reset Filter
+                        </button>
+                        <button id="consolidateMisc" class="btn-warning">
+                            🧹 Consolidate Misc
                         </button>
                     </div>
                 </div>
@@ -87,6 +90,32 @@ class AccountDistributionPanel {
         const resetBtn = document.getElementById('resetFilter');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => this.resetFilter());
+        }
+
+        const consolidateBtn = document.getElementById('consolidateMisc');
+        if (consolidateBtn) {
+            consolidateBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to merge all Miscellaneous and Uncategorized accounts into 9970? This will update your vendor dictionary.')) {
+                    consolidateBtn.disabled = true;
+                    consolidateBtn.textContent = '⏳ Processing...';
+
+                    try {
+                        const count = await window.merchantDictionary.consolidateMiscAccounts();
+                        alert(`Successfully consolidated ${count} vendors into 9970 - Miscellaneous.`);
+
+                        // Trigger a full grid refresh
+                        if (window.initVendorsGrid) {
+                            await window.initVendorsGrid();
+                        }
+                    } catch (err) {
+                        console.error('Consolidation failed:', err);
+                        alert('Error during consolidation: ' + err.message);
+                    } finally {
+                        consolidateBtn.disabled = false;
+                        consolidateBtn.textContent = '🧹 Consolidate Misc';
+                    }
+                }
+            });
         }
 
         this.addStyles();
@@ -399,6 +428,28 @@ class AccountDistributionPanel {
 
             .btn-secondary:hover {
                 background: #616161;
+            }
+
+            .btn-warning {
+                background: #f59e0b;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: background 0.2s;
+            }
+
+            .btn-warning:hover {
+                background: #d97706;
+            }
+
+            .btn-warning:disabled {
+                background: #fbbf24;
+                cursor: not-allowed;
+                opacity: 0.7;
             }
 
             .empty-state {
