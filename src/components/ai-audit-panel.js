@@ -203,6 +203,11 @@ window.startAIAudit = async function (targetIds) {
 
     if (window.vendorsGridApi) window.vendorsGridApi.refreshCells();
 
+    // Refresh account distribution panel with updated data
+    if (window.accountDistPanel) {
+      window.accountDistPanel.refresh(await window.merchantDictionary.getAllMerchants());
+    }
+
     // Inline message card
     const msg = document.createElement('div');
     msg.style.cssText = `position: fixed; top: 80px; right: 20px; background: ${errorCount > 0 ? '#fef3c7' : '#d1fae5'}; border: 2px solid ${errorCount > 0 ? '#fbbf24' : '#10b981'}; border-radius: 12px; padding: 16px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 9999; max-width: 400px; font-weight: 600; color: ${errorCount > 0 ? '#92400e' : '#065f46'};`;

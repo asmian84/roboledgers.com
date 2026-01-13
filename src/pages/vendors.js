@@ -267,6 +267,10 @@ window.renderVendors = function () {
       </div>
 
       <div class="v-grid-wrapper" style="position: relative; z-index: 1;">
+
+        <!-- Account Distribution Analytics -->
+        <div id="accountDistribution" style="max-width: 1400px; margin: 0 auto 0 auto;"></div>
+
         <div id="vendorsGrid" class="ag-theme-alpine"></div>
         <div id="v-loading-overlay" style="position:absolute; inset:0; background:white; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; border-radius:12px;">
            <div class="spinner" style="width:36px; height:36px; border:4px solid #f3f3f3; border-top:4px solid #4f46e5; border-radius:50%; animation:spin 1s linear infinite;"></div>
@@ -469,6 +473,14 @@ window.initVendorsGrid = async function () {
       getRowId: (params) => params.data.id,
       onGridReady: (params) => {
         window.vendorsGridApi = params.api;
+
+        // Initialize Account Distribution Panel
+        if (window.AccountDistributionPanel) {
+          window.accountDistPanel = new window.AccountDistributionPanel();
+          window.accountDistPanel.init('accountDistribution', params.api);
+          window.accountDistPanel.refresh(rawMerchants);
+        }
+
         // 🕒 Force layout refresh after paint
         setTimeout(() => {
           params.api.sizeColumnsToFit();
