@@ -33,7 +33,7 @@ class OutsourceService {
                 return result;
             }
         } catch (error) {
-            console.warn('📡 Outsource: Clearbit lookup failed', error);
+            // console.warn('📡 Outsource: Clearbit lookup failed', error);
         }
         return null;
     }
@@ -70,7 +70,7 @@ class OutsourceService {
                 return result;
             }
         } catch (error) {
-            console.warn('📡 Outsource: Wikidata lookup failed', error);
+            // console.warn('📡 Outsource: Wikidata lookup failed', error);
         }
         return null;
     }
@@ -93,4 +93,4 @@ class OutsourceService {
 
 // Global Singleton
 window.outsourceService = new OutsourceService();
-console.log('📡 Outsource Service (v25.0) Loaded');
+// console.log('📡 Outsource Service (v25.0) Loaded');

@@ -428,6 +428,9 @@ class MerchantDictionary {
     }
 
     calculateSimilarity(str1, str2) {
+        // Guard against undefined/null/non-string values
+        if (!str1 || !str2 || typeof str1 !== 'string' || typeof str2 !== 'string') return 0;
+
         const longer = str1.length > str2.length ? str1 : str2;
         const shorter = str1.length > str2.length ? str2 : str1;
         if (longer.length === 0) return 1.0;
@@ -477,6 +480,30 @@ class MerchantDictionary {
     async getMerchant(merchantId) {
         if (!this.isInitialized) await this.init();
         return this.merchants.get(merchantId);
+    }
+
+    /**
+     * Find merchant by transaction description
+     * Used by AI categorization engine
+     */
+    async findByDescription(description) {
+        if (!description) return null;
+
+        const normalized = this.normalize(description);
+
+        // Check pattern index first
+        const merchantId = this.normalizedIndex.get(normalized);
+        if (merchantId) {
+            return this.merchants.get(merchantId);
+        }
+
+        // Try fuzzy matching
+        const fuzzyResult = this.fuzzyMatch(description);
+        if (fuzzyResult && fuzzyResult.confidence >= 0.75) {
+            return fuzzyResult.merchant;
+        }
+
+        return null;
     }
 
     async getAllMerchants() {

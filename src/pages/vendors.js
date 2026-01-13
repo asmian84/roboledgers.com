@@ -40,7 +40,7 @@ function getChartOfAccounts() {
 
 window.renderVendors = function () {
   return `
-    <div class="page snug-page vendors-page" style="animation: fadeIn 0.5s ease-out; background: #f8fafc;">
+    <div class="page snug-page vendors-page" style="animation: fadeIn 0.5s ease-out; background: #f8fafc; height: 100%; display: flex; flex-direction: column;">
       <style>
         .vendors-page { font-family: 'Inter', system-ui, sans-serif; }
         
@@ -132,6 +132,28 @@ window.renderVendors = function () {
          .dropdown-item.danger { color: #ef4444; }
          .dropdown-item.danger:hover { background: #fee2e2; color: #b91c1c; }
          .dropdown-divider { height: 1px; background: #e2e8f0; margin: 6px 0; }
+         
+         /* 🛡️ FORCE GRID VISIBILITY */
+         .ag-root-wrapper, .ag-root-wrapper-body, .ag-root, .ag-body-viewport, .ag-body, .ag-center-cols-container {
+            height: 100% !important;
+            min-height: 0 !important;
+         }
+         .ag-header {
+             border-bottom: 2px solid #e2e8f0 !important;
+             background: #f8fafc !important;
+         }
+         .ag-row {
+             background: white !important;
+             border-bottom: 1px solid #f1f5f9 !important;
+             min-height: 48px !important;
+             display: flex !important;
+             align-items: center !important;
+         }
+         .ag-cell {
+            display: flex !important;
+            align-items: center !important;
+            line-height: normal !important;
+         }
       </style>
 
       <div class="v-premium-header">
@@ -169,7 +191,7 @@ window.renderVendors = function () {
         </div>
       </div>
 
-      <div class="v-toolbar">
+      <div class="v-toolbar" style="position: relative; z-index: 1000;">
          <div style="display: flex; gap: 12px; align-items: center;">
             <div id="bulk-actions-area">
                 <span id="selection-count" style="font-size: 13px; font-weight: 800; color: #4f46e5; margin-right: 8px;">0 selected</span>
@@ -188,47 +210,63 @@ window.renderVendors = function () {
                <i class="ph ph-plus-circle"></i> New Rule
             </button>
 
-            <div class="dropdown-container">
+            <div class="dropdown-container" style="position: relative;">
                <button class="btn-icon-menu" onclick="window.toggleVendorMenu(event)" title="More Options">
                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                </button>
-               <div id="vendor-dropdown-menu" class="dropdown-menu hidden">
-                   <button onclick="window.backupVendorsDictionary()" class="dropdown-item">
-                       <i class="ph ph-download-simple"></i>
-                       <span>Safety Backup</span>
-                   </button>
-                   <button onclick="window.exportVendorsToExcel()" class="dropdown-item">
-                       <i class="ph ph-file-xls"></i>
-                       <span>Export Excel</span>
-                   </button>
-                   <button onclick="window.vortexCleanVendors()" class="dropdown-item">
-                       <i class="ph ph-flask"></i>
-                       <span>Vortex Cleanse</span>
-                   </button>
-                   <button onclick="window.masterMergeVendors()" class="dropdown-item">
-                       <i class="ph ph-brain"></i>
-                       <span>Master Merge</span>
-                   </button>
-                   <button onclick="window.bulkWikiEnrich(false)" class="dropdown-item">
-                       <i class="ph ph-globe"></i>
-                       <span>Wiki Enrich All</span>
-                   </button>
-                   <button onclick="document.getElementById('v-file-input').click()" class="dropdown-item">
-                       <i class="ph ph-upload-simple"></i>
-                       <span>Restore Data</span>
-                   </button>
-                   <div class="dropdown-divider"></div>
-                   <button onclick="window.nuclearPurgeVendors()" class="dropdown-item danger">
-                       <i class="ph ph-warning"></i>
-                       <span>Nuclear Purge</span>
-                   </button>
+               <!-- FIXED: Z-Index 10000 and overflow handling -->
+               <div id="vendor-dropdown-menu" class="dropdown-menu hidden" style="position: absolute; right: 0; top: 100%; z-index: 10000; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); min-width: 240px; padding: 6px 0;">
+                   <!-- AI & Sync -->
+                   <div class="menu-item" onclick="window.bulkRecategorizeVendors()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; transition: background 0.1s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-sparkle" style="color:#8b5cf6; font-size: 16px;"></i> <span style="font-weight:600;">AI Audit</span>
+                   </div>
+                   <div class="menu-item" onclick="window.handleManualSync()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; transition: background 0.1s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-cloud-arrow-up" style="color:#0ea5e9; font-size: 16px;"></i> <span style="font-weight:600;">Manual Sync (Push/Pull)</span>
+                   </div>
+                   <div class="menu-item" onclick="window.checkCloudCount()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; transition: background 0.1s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-cloud-check" style="color:#10b981; font-size: 16px;"></i> <span style="font-weight:600;">Check Cloud Count</span>
+                   </div>
+                   
+                   <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+
+                   <!-- Tools -->
+                   <div class="menu-item" onclick="window.bulkWikiEnrich(false)" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-globe" style="font-size: 16px;"></i> Wiki Enrich All
+                   </div>
+                   <div class="menu-item" onclick="window.exportVendorsToExcel()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-file-xls" style="font-size: 16px;"></i> Export Excel
+                   </div>
+
+                   <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+
+                   <!-- Backup/Restore -->
+                   <div class="menu-item" onclick="window.backupVendorsDictionary()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-download-simple" style="font-size: 16px;"></i> Export Backup (JSON)
+                   </div>
+                   <div class="menu-item" onclick="document.getElementById('v-file-input').click()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-upload-simple" style="font-size: 16px;"></i> Restore Data...
+                   </div>
+
+                   <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+
+                   <!-- Dangerous Stages -->
+                   <div class="menu-item" onclick="window.vortexCleanVendors()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-wind" style="font-size: 16px;"></i> Stage 1: Clean
+                   </div>
+                   <div class="menu-item" onclick="window.masterMergeVendors()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-link" style="font-size: 16px;"></i> Stage 2: Merge
+                   </div>
+                   <div class="menu-item" onclick="window.factoryReset()" style="padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #ef4444;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
+                       <i class="ph ph-warning-octagon" style="color:#ef4444; font-size: 16px;"></i> <b>FACTORY RESET</b>
+                   </div>
                </div>
                <input type="file" id="v-file-input" style="display:none" onchange="window.restoreFromVendorsFile(this)">
             </div>
          </div>
+         </div>
       </div>
 
-      <div class="v-grid-wrapper">
+      <div class="v-grid-wrapper" style="position: relative; z-index: 1;">
         <div id="vendorsGrid" class="ag-theme-alpine"></div>
         <div id="v-loading-overlay" style="position:absolute; inset:0; background:white; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; border-radius:12px;">
            <div class="spinner" style="width:36px; height:36px; border:4px solid #f3f3f3; border-top:4px solid #4f46e5; border-radius:50%; animation:spin 1s linear infinite;"></div>
@@ -341,6 +379,9 @@ window.initVendorsGrid = async function () {
     console.timeEnd('Vendors:GetMerchants');
 
     console.log(`📝 Dictionary: Fetched ${rawMerchants.length} vendors for grid.`);
+    if (rawMerchants.length > 0) {
+      console.log('📝 Vendors: First Row Data:', rawMerchants[0]);
+    }
 
     // coaNames is no longer needed here as CategoryCellEditor fetches it internally.
 
@@ -425,17 +466,35 @@ window.initVendorsGrid = async function () {
           if (countEl) countEl.textContent = `${nodes.length} selected`;
         }
       },
+      getRowId: (params) => params.data.id,
       onGridReady: (params) => {
         window.vendorsGridApi = params.api;
-        params.api.sizeColumnsToFit();
+        // 🕒 Force layout refresh after paint
+        setTimeout(() => {
+          params.api.sizeColumnsToFit();
+          // Force redraw of rows
+          params.api.redrawRows();
+        }, 200);
+
         const overlay = document.getElementById('v-loading-overlay');
         if (overlay) overlay.style.display = 'none';
       }
     };
 
     agGrid.createGrid(container, gridOptions);
-    window.addEventListener('resize', () => { if (window.vendorsGridApi) window.vendorsGridApi.sizeColumnsToFit(); });
-  } catch (err) { console.error('❌ Vendors Init Failed:', err); }
+    window.addEventListener('resize', () => {
+      if (window.vendorsGridApi) {
+        setTimeout(() => window.vendorsGridApi.sizeColumnsToFit(), 100);
+      }
+    });
+  } catch (err) {
+    console.error('❌ Vendors Init Failed:', err);
+    alert('Critical Error Loading Grid: ' + err.message);
+  } finally {
+    // ALWAYS remove overlay
+    const overlay = document.getElementById('v-loading-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
 };
 
 /**
@@ -591,52 +650,36 @@ window.bulkDeleteVendors = () => {
 
 window.bulkRecategorizeVendors = async () => {
   const nodes = window.vendorsGridApi.getSelectedNodes();
-  if (nodes.length === 0) {
-    if (!confirm("No vendors selected. Run AI Recategorization on ALL vendors?")) return;
+
+  // Determine targets
+  let targets = [];
+  let mode = 'selected';
+
+  if (nodes.length > 0) {
+    targets = nodes.map(n => n.data);
+  } else {
+    // No selection - check for uncategorized vendors
+    console.log('🧠 AI Audit: Filtering for uncategorized/low-confidence items...');
+    const all = await window.merchantDictionary.getAllMerchants();
+    targets = all.filter(m =>
+      (m.categorization_confidence || 0) < 0.8 ||
+      !m.default_category ||
+      m.default_category === 'Miscellaneous' ||
+      m.default_category === 'Uncategorized'
+    );
+    mode = 'all_unknown';
   }
 
-  const targets = nodes.length > 0 ? nodes : []; // We'll handle grid nodes or all
-
-  const overlay = document.getElementById('v-loading-overlay');
-  if (overlay) overlay.style.display = 'flex';
-  const textEl = overlay.querySelector('p');
-  if (textEl) textEl.textContent = "🧠 Running Advanced AI Recategorization...";
-
-  try {
-    const allRows = [];
-    if (nodes.length > 0) {
-      allRows.push(...nodes.map(n => n.data));
-    } else {
-      // Select all after filter
-      window.vendorsGridApi.forEachNodeAfterFilter(node => {
-        allRows.push(node.data);
-      });
+  if (targets.length === 0) {
+    if (window.toast) {
+      window.toast.success('All vendors are well-categorized! Great job.', { duration: 3000 });
     }
+    return;
+  }
 
-    const updated = [];
-    for (let i = 0; i < allRows.length; i++) {
-      const row = allRows[i];
-      if (textEl) textEl.textContent = `🧠 Analyzing: ${i + 1} of ${allRows.length}...`;
-
-      const r = await window.merchantCategorizer.cleanAndEnrichTransaction(row.display_name);
-      updated.push({
-        ...row,
-        display_name: r.clean_name,
-        industry: r.industry,
-        default_account: r.default_account,
-        default_category: r.default_category,
-        categorization_confidence: r.confidence,
-        notes: r.notes || row.notes
-      });
-    }
-
-    await window.merchantDictionary.bulkSaveMerchants(updated, null, false);
-    alert(`✅ AI Recategorization Complete! Processed ${updated.length} vendors.`);
-    location.reload();
-  } catch (err) {
-    alert('Recategorization Error: ' + err.message);
-  } finally {
-    if (overlay) overlay.style.display = 'none';
+  // Show inline AI Audit panel (replaces all confirms)
+  if (window.showAIAuditPanel) {
+    window.showAIAuditPanel(targets, mode);
   }
 };
 
@@ -646,26 +689,160 @@ window.bulkRecategorizeVendors = async () => {
 window.toggleVendorMenu = function (e) {
   e.stopPropagation();
   const menu = document.getElementById('vendor-dropdown-menu');
-  if (menu) menu.classList.toggle('hidden');
+  const btn = e.currentTarget; // The button clicked
+
+  if (menu) {
+    if (menu.classList.contains('hidden')) {
+      // OPENING MENU
+      const rect = btn.getBoundingClientRect();
+
+      // Apply Fixed Positioning relative to viewport
+      menu.style.position = 'fixed';
+      menu.style.top = (rect.bottom + 5) + 'px';
+      menu.style.left = (rect.right - 240) + 'px'; // 240 is approx width
+      menu.style.zIndex = '999999';
+      menu.style.display = 'block'; // Ensure block display
+
+      menu.classList.remove('hidden');
+    } else {
+      // CLOSING MENU
+      menu.classList.add('hidden');
+      menu.style.display = 'none';
+    }
+  }
 };
 
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('vendor-dropdown-menu');
-  if (menu && !menu.classList.contains('hidden')) {
-    if (!e.target.closest('.dropdown-container')) {
+  // Check if menu is visible (not hidden and display not none)
+  const isVisible = menu && (!menu.classList.contains('hidden') || menu.style.display !== 'none');
+
+  if (isVisible) {
+    if (!e.target.closest('.dropdown-container') && !e.target.closest('#vendor-dropdown-menu')) {
       menu.classList.add('hidden');
+      menu.style.display = 'none';
     }
   }
 });
 
+/**
+ * DEBUG MENU
+ */
+window.debugVendorMenu = function () {
+  const menu = document.getElementById('vendor-dropdown-menu');
+  if (!menu) {
+    console.error('❌ Menu element #vendor-dropdown-menu not found!');
+    return;
+  }
+
+  // Force visibility for inspection
+  menu.classList.remove('hidden');
+  menu.style.display = 'block';
+  menu.style.zIndex = '99999'; // Nuclear option
+
+  console.log('🔍 Menu Debug:', {
+    element: menu,
+    zIndex: menu.style.zIndex,
+    display: menu.style.display,
+    classList: menu.className,
+    rect: menu.getBoundingClientRect()
+  });
+
+  alert(`Menu Debug:\nZ-Index: ${menu.style.zIndex}\nDisplay: ${menu.style.display}\nCheck Console for more.`);
+};
+
 window.restoreFromVendorsFile = (input) => {
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const merchants = JSON.parse(e.target.result).merchants || JSON.parse(e.target.result);
-    await window.merchantDictionary.bulkSaveMerchants(merchants, null, true);
-    location.reload();
-  };
-  reader.readAsText(input.files[0]);
+  const file = input.files[0];
+  if (!file) return;
+
+  const fileName = file.name.toLowerCase();
+
+  // JSON IMPORT (Legacy)
+  if (fileName.endsWith('.json')) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const merchants = JSON.parse(e.target.result).merchants || JSON.parse(e.target.result);
+        await window.merchantDictionary.bulkSaveMerchants(merchants, null, true);
+        alert(`✅ Restored ${merchants.length} vendors from JSON!`);
+        location.reload();
+      } catch (err) {
+        alert('JSON Import Failed: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  // EXCEL IMPORT (New)
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+    if (!window.XLSX) {
+      alert('❌ Excel parser not loaded. Please refresh the page.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rawData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (rawData.length === 0) {
+          alert('❌ Excel file is empty.');
+          return;
+        }
+
+        // SMART MAPPING: Map various column headers to Dictionary schema
+        const mappedMerchants = rawData.map(row => {
+          // Try to find the name column
+          const name = row['Clean_Name'] || row['display_name'] || row['Vendor Name'] || row['Name'] || row['Description'] || row['Original Name'];
+          // Try to find status/category/account
+          const account = row['Account_Number'] || row['Account'] || row['default_account'] || null;
+          const category = row['Account_Name'] || row['Category'] || row['default_category'] || null;
+          const industry = row['Industry'] || row['industry'] || null;
+
+          if (!name) return null;
+
+          return {
+            id: `imp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            display_name: String(name).trim(),
+            normalized_name: window.merchantDictionary.normalize(String(name)),
+            default_account: account ? String(account) : null,
+            default_category: category ? String(category) : null,
+            industry: industry ? String(industry) : null,
+            categorization_confidence: 1.0, // High confidence for manual imports
+            source: 'excel-import',
+            updated_at: new Date().toISOString()
+          };
+        }).filter(m => m !== null);
+
+        if (confirm(`Thinking about importing ${mappedMerchants.length} vendors from Excel... Proceed?`)) {
+          const overlay = document.getElementById('v-loading-overlay');
+          if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.querySelector('p').textContent = `📥 Importing ${mappedMerchants.length} vendors...`;
+          }
+
+          // Use bulkUpsert to merge/update
+          await window.merchantDictionary.bulkSaveMerchants(mappedMerchants, null, true); // True = merge
+
+          alert(`✅ Successfully imported ${mappedMerchants.length} vendors from Excel!`);
+          location.reload();
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert('Excel Import Error: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return;
+  }
+
+  alert('❌ Unsupported file type. Please upload .json, .xlsx, or .csv');
 };
 
 /**
@@ -789,4 +966,167 @@ window.bulkCleanVendors = () => {
       location.reload();
     }
   );
+};
+
+/**
+ * FORCE CLOUD SYNC
+ * Pushes entire local dictionary to Supabase to ensure consistency.
+ */
+window.forceCloudSync = async function () {
+  console.log("☁️ Force Cloud Sync Initiated...");
+  const overlay = document.getElementById('v-loading-overlay');
+  const textEl = overlay ? overlay.querySelector("p") : null;
+
+  if (overlay) overlay.style.display = 'flex';
+  if (textEl) textEl.textContent = "☁️ Pushing Local Data to Cloud...";
+
+  try {
+    // 1. Get ALL local data
+    const allMerchants = await window.merchantDictionary.getAllMerchants();
+    if (!allMerchants || allMerchants.length === 0) {
+      alert("No local data to sync!");
+      if (overlay) overlay.style.display = 'none';
+      return;
+    }
+
+    // 2. Call Bulk Save (which handles cloud batching)
+    // We pass 'false' for clearFirst to just UPSERT/Overwrite
+    await window.merchantDictionary.bulkSaveMerchants(allMerchants, null, false);
+
+    alert(`✅ Cloud Sync Complete!\n\nSuccessfully pushed ${allMerchants.length} records to the cloud.`);
+
+  } catch (err) {
+    console.error("Cloud Sync Failed:", err);
+    alert("❌ Cloud Sync Failed: " + err.message);
+  } finally {
+    if (overlay) overlay.style.display = 'none';
+  }
+};
+
+/**
+ * CHECK CLOUD COUNT
+ * Verifies exactly how many records are in Supabase.
+ */
+window.checkCloudCount = async function () {
+  console.log("☁️ Checking Cloud Count...");
+  try {
+    const tableName = (window.merchantDictionary && window.merchantDictionary.tableName) ? window.merchantDictionary.tableName : 'merchant_dictionary';
+    console.log(`☁️ Verifying count for table: "${tableName}"`);
+
+    if (!window.supabaseService || !window.supabaseService.isOnline) {
+      alert("⚠️ Supabase Service not available or offline.");
+      return;
+    }
+
+    const { count, error } = await window.supabaseService
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+
+    if (error) throw error;
+
+    const localCount = window.vendorsGridApi ? window.vendorsGridApi.getModel().getRowCount() : 'Unknown';
+    alert(`☁️ Cloud Verification:\n\nSupabase ("${tableName}") holds: ${count} records.\nLocal Grid holds: ${localCount} records.\n\n(They should match!)`);
+
+  } catch (e) {
+    console.error("Check failed", e);
+    alert("❌ Failed to check cloud count: " + e.message);
+  }
+};
+
+/**
+ * MANUAL CLOUD SYNC MANAGER
+ * Allows user to choose direction: PUSH or PULL
+ */
+window.handleManualSync = function () {
+  const choice = prompt("☁️ MANUAL CLOUD SYNC\n\nType 'PUSH' to upload local data to Cloud.\nType 'PULL' to download Cloud data to Local.\n\n(Note: PUSH overwrites cloud entries with matching IDs. PULL merges cloud data locally.)", "");
+
+  if (!choice) return;
+
+  const action = choice.trim().toUpperCase();
+
+  if (action === 'PUSH') {
+    if (!confirm("⚠️ CONFIRM PUSH TO CLOUD?\n\nThis will look at your LOCAL grid and UPSERT (update/insert) all records to the Supabase Cloud.\n\nYour memory of recent changes will be saved.")) return;
+
+    // Show Overlay
+    const overlay = document.getElementById('v-loading-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      overlay.querySelector('p').textContent = '☁️ Pushing Local Memory to Cloud...';
+    }
+
+    // Execute Push
+    window.merchantDictionary.forceCloudPush((processed, total) => {
+      if (overlay) overlay.querySelector('p').textContent = `☁️ Uploading... ${processed} / ${total}`;
+    }).then((count) => {
+      alert(`✅ PUSH SUCCESSFULL!\n\nUploaded ${count} records to the cloud.`);
+      if (overlay) overlay.style.display = 'none';
+      window.checkCloudCount(); // Verify
+    }).catch(err => {
+      alert("❌ PUSH FAILED: " + err.message);
+      if (overlay) overlay.style.display = 'none';
+    });
+
+  } else if (action === 'PULL') {
+    if (!confirm("⚠️ CONFIRM PULL FROM CLOUD?\n\nThis will download the latest dictionary from Supabase and merge it into your local browser database.")) return;
+
+    // Show Overlay
+    const overlay = document.getElementById('v-loading-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      overlay.querySelector('p').textContent = '☁️ Downloading from Cloud...';
+    }
+
+    // Execute Pull
+    window.merchantDictionary.syncWithCloud().then(() => {
+      alert("✅ PULL SUCCESSFUL!\n\nLocal dictionary updated.");
+      location.reload();
+    }).catch(err => {
+      alert("❌ PULL FAILED: " + err.message);
+      if (overlay) overlay.style.display = 'none';
+    });
+
+  } else {
+    alert("❌ Invalid Command. Please type PUSH or PULL.");
+  }
+};
+
+/**
+ * FACTORY RESET & RESTORE
+ * 1. Wipes Cloud
+ * 2. Wipes Local
+ * 3. Prompts for JSON Restore
+ */
+window.factoryReset = async function () {
+  if (!confirm("🛑 DANGER: FACTORY RESET 🛑\n\nThis will PERMANENTLY DELETE:\n1. All records in the Cloud\n2. All local data\n\nIt will leave you with an EMPTY system.\n\nAre you ABSOLUTELY sure?")) return;
+
+  const code = prompt("Type 'DELETE' to confirm nuclear wipe:");
+  if (code !== 'DELETE') return;
+
+  const overlay = document.getElementById('v-loading-overlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.querySelector('p').textContent = "🛑 TERMINATING CLOUD DATA...";
+  }
+
+  try {
+    // 1. Wipe Cloud
+    await window.merchantDictionary.wipeCloud();
+    console.log("✅ Cloud Wiped");
+
+    // 2. Wipe Local
+    await window.merchantDictionary.clearAll();
+    console.log("✅ Local Wiped");
+
+    if (overlay) overlay.querySelector('p').textContent = "✅ System Clean. Ready for Restore.";
+
+    alert("✅ FACTORY RESET COMPLETE.\n\nSystem is now empty (0 records).\n\nSelect your JSON backup file to restore and re-sync.");
+
+    // 3. Trigger Restore Immediately
+    document.getElementById('v-file-input').click();
+
+  } catch (e) {
+    console.error("Reset Failed", e);
+    alert("❌ Reset Failed: " + e.message);
+    if (overlay) overlay.style.display = 'none';
+  }
 };

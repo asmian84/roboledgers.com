@@ -30,7 +30,7 @@ class SupabaseService {
 
             this.client = window.supabase.createClient(this.url, activeKey);
             this.isOnline = true;
-            console.log(`☁️ Supabase Service initialized (URL: ...${this.url.slice(-12)})`);
+            // console.log(`☁️ Supabase Service initialized (URL: ...${this.url.slice(-12)})`);
 
             // Background discovery
             this.checkConnection();
@@ -64,14 +64,14 @@ class SupabaseService {
 
                 // Status 200-299 means success.
                 if (status >= 200 && status < 300) {
-                    console.log(`☁️ Supabase: Discovered active table "${name}" for ${cacheKey}`);
+                    // console.log(`☁️ Supabase: Discovered active table "${name}" for ${cacheKey}`);
                     this.tableCache[cacheKey] = name;
                     return name;
                 }
 
                 // If specialized column error (shouldn't happen with HEAD/select(*)) or RLS
                 if (status !== 404 && error && error.code !== 'PGRST116') {
-                    console.log(`☁️ Supabase: Probable table found "${name}" (Status ${status})`);
+                    // console.log(`☁️ Supabase: Probable table found "${name}" (Status ${status})`);
                     this.tableCache[cacheKey] = name;
                     return name;
                 }
@@ -134,4 +134,4 @@ class SupabaseService {
 
 // Global Singleton
 window.supabaseService = new SupabaseService();
-console.log('☁️ Supabase Service Loaded (Discovery v4)');
+// console.log('☁️ Supabase Service Loaded (Discovery v4)');

@@ -4,7 +4,7 @@
  */
 
 // --- 1. DATA & HELPERS ---
-console.log('%c🚀 AUTOBOOKKEEPING v4.0 ACTIVE', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+// console.log('%c🚀 AUTOBOOKKEEPING v4.0 ACTIVE', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
 
 // UNDO SYSTEM STATE
 window.txnUndoStack = [];
@@ -1401,7 +1401,7 @@ window.trainFromGrid = async function () {
 };
 
 window.categorizeLedger = async function () {
-    console.log('🔮 Transactions: Starting Ledger Intelligence scan...');
+    console.log('🔮 Transactions: Starting Ledger Intelligence scan (7-Step Engine)...');
 
     // SAFETY CHECK: Ensure grid is visible and ready
     if (!window.gridApi) {
@@ -1410,89 +1410,58 @@ window.categorizeLedger = async function () {
         return;
     }
 
-    // Check if grid container is visible and has dimensions
+    if (!window.ProcessingEngine) {
+        console.error('ProcessingEngine not loaded');
+        if (window.showToast) window.showToast('Categorization engine not fully loaded', 'error');
+        return;
+    }
+
+    // Show loading overlay
     const gridDiv = document.getElementById('txnGrid');
-    if (!gridDiv) {
-        console.warn('⚠️ Grid container not found, categorization cancelled');
-        if (window.showToast) window.showToast('Grid not visible. Please try again.', 'warning');
-        return;
-    }
-
-    const gridWidth = gridDiv.offsetWidth;
-    const gridHeight = gridDiv.offsetHeight;
-
-    if (gridWidth === 0 || gridHeight === 0) {
-        console.warn(`⚠️ AI Grid ordered to call categorizeLedger() but the grid is coming back with zero width (${gridWidth}x${gridHeight}), maybe the grid UI is not within a visible screen. Categorization cancelled.`);
-        if (window.showToast) window.showToast('Grid not visible. Navigate to the page first.', 'warning');
-        return;
-    }
-
-    // Show loading overlay (will be hidden when done)
     if (window.LoadingOverlay) {
-        window.LoadingOverlay.show('Auto-categorizing transactions...', gridDiv);
+        window.LoadingOverlay.show('Running AI Categorization (7-Step Engine)...', gridDiv);
     }
 
-    window.captureState(); // CAPTURE
-    const data = window.transactionData || [];
-    let updatedCount = 0;
+    // Capture Undo State
+    window.captureState();
 
-    // Use Advanced Engine if available
-    const engine = window.merchantCategorizer;
+    try {
+        const data = window.transactionData || [];
+        const startCount = data.filter(t => !t.accountId || t.accountId === 'Uncategorized' || t.accountId === '9970').length;
+        console.log(`Starting categorization for ${startCount} items (including Suspense)...`);
 
-    // Batch processing helper
-    for (const txn of data) {
-        // Skip if already categorized
-        if (txn.accountDescription && txn.accountDescription !== 'Uncategorized') continue;
-
-        let match = null;
-
-        // 1. Merchant Categorizer (Best)
-        if (engine && engine.cleanTransaction) {
-            const result = engine.cleanTransaction(txn.description);
-            // Verify high confidence
-            if (result && result.confidence >= 0.7 && result.default_category) {
-                match = { category: result.default_category };
+        // Use the centralized engine directly
+        await window.ProcessingEngine.categorizeTransactions(
+            data,
+            (progress, message) => {
+                // Optional: Update loading text if supported
+                if (window.LoadingOverlay && window.LoadingOverlay.updateMessage) {
+                    window.LoadingOverlay.updateMessage(message);
+                }
             }
-        }
+        );
 
-        // 2. Dictionary Fallback
-        if (!match && window.merchantDictionary) {
-            const dictMatch = await window.merchantDictionary.matchTransaction(txn.description);
-            if (dictMatch && dictMatch.merchant) {
-                match = { category: dictMatch.merchant.default_category };
-            }
-        }
-
-        // 3. Pattern Detector Fallback (Regex)
-        if (!match && window.patternDetector) {
-            const detection = window.patternDetector.detect(txn.description);
-            if (detection && detection.confidence > 0.6) {
-                match = { category: detection.category };
-            }
-        }
-
-        if (match) {
-            txn.accountDescription = match.category;
-            txn.category = match.category;
-            updatedCount++;
-        }
-    }
-
-    if (updatedCount > 0) {
-        console.log(`✅ Ledger Intelligence: Matched ${updatedCount} transactions.`);
+        // Refresh Grid
         if (window.gridApi) {
             window.gridApi.setGridOption('rowData', window.transactionData);
             window.gridApi.refreshCells({ force: true });
         }
         saveGridData();
-        if (window.showToast) window.showToast(`Auto-categorized ${updatedCount} transactions`, 'success');
-    } else {
-        if (window.showToast) window.showToast('No new matches found.', 'info');
-    }
 
-    // Hide loading overlay
-    if (window.LoadingOverlay) {
-        window.LoadingOverlay.hide();
+        const endCount = window.transactionData.filter(t => !t.accountId || t.accountId === 'Uncategorized' || t.accountId === '9970').length;
+        const categorizedCount = startCount - endCount;
+
+        if (categorizedCount > 0) {
+            if (window.showToast) window.showToast(`✅ Successfully categorized ${categorizedCount} new transactions!`, 'success');
+        } else {
+            if (window.showToast) window.showToast('No new detailed matches found.', 'info');
+        }
+
+    } catch (e) {
+        console.error('Auto-Categorization Failed:', e);
+        if (window.showToast) window.showToast('Categorization failed: ' + e.message, 'error');
+    } finally {
+        if (window.LoadingOverlay) window.LoadingOverlay.hide();
     }
 };
 

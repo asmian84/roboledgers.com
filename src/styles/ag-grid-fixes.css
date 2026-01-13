@@ -1,7 +1,8 @@
 /* AG Grid Row Visibility Fix */
 /* Force rows to render with proper height */
 
-.ag-theme-quartz .ag-row {
+.ag-theme-quartz .ag-row,
+.ag-theme-alpine .ag-row {
     min-height: 48px !important;
     height: 48px !important;
     opacity: 1 !important;
@@ -9,21 +10,25 @@
     display: flex !important;
 }
 
-.ag-theme-quartz .ag-cell {
+.ag-theme-quartz .ag-cell,
+.ag-theme-alpine .ag-cell {
     display: flex !important;
     align-items: center !important;
     opacity: 1 !important;
     visibility: visible !important;
 }
 
-.ag-theme-quartz .ag-center-cols-viewport {
+.ag-theme-quartz .ag-center-cols-viewport,
+.ag-theme-alpine .ag-center-cols-viewport {
     min-height: 500px !important;
 }
 
-.ag-theme-quartz .ag-center-cols-container {
+.ag-theme-quartz .ag-center-cols-container,
+.ag-theme-alpine .ag-center-cols-container {
     min-height: 500px !important;
 }
 
-.ag-theme-quartz .ag-body-viewport {
+.ag-theme-quartz .ag-body-viewport,
+.ag-theme-alpine .ag-body-viewport {
     overflow-y: auto !important;
 }

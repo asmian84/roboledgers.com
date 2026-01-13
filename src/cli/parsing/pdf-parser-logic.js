@@ -459,7 +459,7 @@ export class PDFParser {
      */
     async parsePDF(file, options = {}) {
         try {
-            console.log('📄 Starting PDF parsing...');
+            // console.log('📄 Starting PDF parsing...');
 
             // Fallback for missing GlobalWorkerOptions (User fix)
             if ((!window.pdfjsLib.GlobalWorkerOptions || !window.pdfjsLib.GlobalWorkerOptions.workerSrc) && window.location.protocol !== 'file:') {
@@ -597,7 +597,7 @@ export class PDFParser {
                 rawText: fullText // For debugging
             };
         } catch (error) {
-            console.error('❌ PDF parsing failed:', error);
+            console.error('❌ Data conversion failed:', error);
             throw error;
         }
     }
@@ -621,7 +621,7 @@ export class PDFParser {
         // ========================================
         // SMART PARSER - Try intelligent classification first
         // ========================================
-        console.log('🧠 Attempting Smart Parser...');
+        // console.log('🧠 Attempting Smart Parser...');
 
         const statementType = this.classifyStatementType(text);
         const detectedBank = this.detectBankSmart(text);
@@ -650,14 +650,14 @@ export class PDFParser {
 
         // If smart parser succeeded, return results
         if (smartTransactions.length > 0) {
-            console.log(`✅ Smart Parser SUCCESS: ${smartTransactions.length} transactions`);
+            // console.log(`✅ Smart Parser SUCCESS: ${smartTransactions.length} transactions`);
             return { transactions: smartTransactions, metadata: smartMetadata };
         }
 
         // ========================================
         // FALLBACK - Use legacy parsers
         // ========================================
-        console.log('⚠️ Smart parser found 0 transactions, trying legacy parsers...');
+        // console.log('⚠️ Smart parser found 0 transactions, trying legacy parsers...');
 
         // Detect RBC Visa (credit card) vs RBC Chequing
         if (bank.name === 'RBC Royal Bank') {

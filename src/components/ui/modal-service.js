@@ -128,7 +128,7 @@ window.ModalService = {
     this.footerCtx = document.getElementById('global-modal-footer');
 
     this.initialized = true;
-    console.log('✅ ModalService initialized');
+    // console.log('✅ ModalService initialized');
   },
 
   close() {

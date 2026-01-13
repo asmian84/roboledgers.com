@@ -423,5 +423,5 @@ window.AISpider = AISpider;
 
 if (typeof window !== 'undefined' && window.aiBrain) {
     window.aiSpider = new AISpider(window.aiBrain);
-    console.log('🕷️ AI Spider initialized - Crawling data, learning patterns, ready to help!');
+    // console.log('🕷️ AI Spider initialized - Crawling data, learning patterns, ready to help!');
 }

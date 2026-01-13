@@ -2,9 +2,9 @@
 // Integrated with Merchant Categorizer v4
 
 window.nukeAndClean = async function () {
-    if (!confirm('🚀 ULTRA-NUCLEAR DATABASE CLEANUP\n\nThis will:\n1. Backup current data\n2. Re-clean ALL merchants using v4 protocol (Stripping store #s, FX, locations)\n3. Delete ALL garbage (bank noise, too short, ignored)\n4. Deduplicate (7-Eleven, Amazon, etc.)\n\nProceed?')) return;
+    if (!confirm('🚀 DATABASE OPTIMIZATION\n\nThis will:\n1. Backup current data\n2. Re-clean ALL merchants using v4 protocol (Stripping store #s, FX, locations)\n3. Delete ALL garbage (bank noise, too short, ignored)\n4. Deduplicate (7-Eleven, Amazon, etc.)\n\nProceed?')) return;
 
-    console.log('🏁 Starting Ultra-Nuclear Cleanup v2...\n');
+    console.log('🏁 Starting Database Optimization...\n');
     console.log('═'.repeat(60));
 
     // STEP 1: Backup
@@ -24,7 +24,7 @@ window.nukeAndClean = async function () {
     await smartDeduplicate();
 
     console.log('\n' + '═'.repeat(60));
-    console.log('✅ ULTRA-CLEANUP COMPLETE!\n');
+    console.log('✅ OPTIMIZATION COMPLETE!\n');
 
     if (window.showToast) {
         window.showToast('Dictionary Optimized! Refresh to see results.', 'success');
@@ -183,5 +183,5 @@ async function backupVendors() {
     console.log(`   ✓ Backed up ${all.length} merchants`);
 }
 
-console.log('💡 Ultra-Nuclear Cleanup v2 Loaded!');
-console.log('   Run: nukeAndClean()');
+console.log('💡 Database Cleanup Tools Loaded');
+// console.log('   Run: nukeAndClean()');

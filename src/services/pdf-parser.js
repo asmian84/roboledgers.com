@@ -109,6 +109,31 @@
             }
 
             /**
+             * Helper: Clean description string
+             * Removes ref numbers, long digits, and LEADING DATES (leakage)
+             */
+            _cleanDescription(description) {
+                if (!description) return '';
+                let clean = description
+                    .replace(/,?\s*(TF|AP|NO\.|REF|ID|Ref)\s*[\d\w]{6,}/gi, '') // Ref numbers with prefixes
+                    .replace(/\s+\d{10,}/g, '') // Long standalone numbers (10+ digits)
+                    .replace(/\s+\d{4}\s+\d{4}\s+\d{4,}/g, '') // Spaced card numbers
+                    .replace(/\s{2,}/g, ' ') // Collapse spaces
+                    .trim();
+
+                // Remove leading dates (often leakage from "Posting Date" or similar cols)
+                // Formats: "04 Jun", "Jun 04", "04 JUN", "JUN 04"
+                // Also handles "04 Jun 2024" if simpler
+                const leadingDatePattern = /^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})\s+/;
+
+                // Run twice to catch double date leakage (e.g. "04 Jun 05 Jun Description")
+                clean = clean.replace(leadingDatePattern, '').trim();
+                clean = clean.replace(leadingDatePattern, '').trim();
+
+                return clean;
+            }
+
+            /**
              * SMART PARSER - Phase 1: Classification
              * Automatically detect statement type (Credit Card vs Bank Account)
              */
@@ -324,10 +349,7 @@
                         previousMonth = monthNum;
 
                         // Clean description - remove transaction reference numbers
-                        let cleanDesc = description
-                            .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
-                            .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
-                            .trim();
+                        let cleanDesc = this._cleanDescription(description);
 
                         // Add buffered description (multi-line handling)
                         let finalDesc = descBuffer ? descBuffer + ' ' + cleanDesc : cleanDesc;
@@ -432,10 +454,9 @@
 
                             // Clean description - remove transaction reference numbers
                             // Patterns: TF 0000000022181093804, AP 0000000022233362595, NO.78783249 001
-                            let cleanDesc = desc
-                                .replace(/\s+(TF|AP|NO\.)\s*\d{10,}/g, '')  // Remove "TF 0000000022181093804" style refs
-                                .replace(/\s+\d{12,}/g, '')                  // Remove any standalone 12+ digit numbers
-                                .trim();
+                            // Clean description - remove transaction reference numbers
+                            // Patterns: TF 0000000022181093804, AP 0000000022233362595, NO.78783249 001
+                            let cleanDesc = this._cleanDescription(desc);
 
                             const amount = withdrawal !== '-' ? parseFloat(withdrawal.replace(/,/g, '')) : parseFloat(deposit.replace(/,/g, ''));
                             const type = withdrawal !== '-' ? 'debit' : 'credit';
@@ -458,10 +479,8 @@
                             const monthNum = months[month];
                             if (monthNum !== undefined) {
                                 // Clean description - remove transaction reference numbers
-                                let cleanDesc = rawDesc
-                                    .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
-                                    .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
-                                    .trim();
+                                // Clean description - remove transaction reference numbers
+                                let cleanDesc = this._cleanDescription(rawDesc);
 
                                 const amount = withdrawal !== '-' ? parseFloat(withdrawal.replace(/,/g, '')) : parseFloat(deposit.replace(/,/g, ''));
                                 const type = withdrawal !== '-' ? 'debit' : 'credit';
@@ -490,10 +509,9 @@
                             if (monthNum !== undefined) {
                                 // Clean description - remove transaction reference numbers
                                 // Patterns: TF 0005524890013997002
-                                let cleanDesc = rawDesc
-                                    .replace(/,?\s*(TF|AP|NO\.)\s*\d{10,}/g, '')  // Remove "TF 0005524890013997002"
-                                    .replace(/\s+\d{10,}/g, '')                     // Remove any standalone long numbers
-                                    .trim();
+                                // Clean description - remove transaction reference numbers
+                                // Patterns: TF 0005524890013997002
+                                let cleanDesc = this._cleanDescription(rawDesc);
 
                                 // Parse amounts correctly handling leading OR trailing minus
                                 const parseBmoVal = (s) => {
@@ -538,10 +556,8 @@
                             const monthNum = months[month];
                             if (monthNum !== undefined) {
                                 // Clean description - remove transaction reference numbers
-                                let cleanDesc = rawDesc
-                                    .replace(/,?\s*(TF|AP|NO\.|REF)\s*\d{10,}/g, '')  // Remove reference numbers
-                                    .replace(/\s+\d{12,}/g, '')                         // Remove standalone long numbers
-                                    .trim();
+                                // Clean description - remove transaction reference numbers
+                                let cleanDesc = this._cleanDescription(rawDesc);
 
                                 const amount = debit !== '-' ? parseFloat(debit.replace(/[$,]/g, '')) : parseFloat(credit.replace(/[$,]/g, ''));
                                 const type = debit !== '-' ? 'debit' : 'credit';
@@ -2017,12 +2033,12 @@
              */
             extractServusTransactions(text) {
                 const transactions = [];
-                console.log(`🔍 Servus Parser (v19): Starting extraction...`);
+                // console.log(`🔍 Servus Parser (v19): Starting extraction...`);
 
                 // Regex: DD-MMM-YYYY (e.g. 28-Feb-2023)
                 const dateRgx = /(\d{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{4})/gi;
                 const allMatches = [...text.matchAll(dateRgx)];
-                console.log(`🔍 Servus Debug: Found ${allMatches.length} date matches.`);
+                // console.log(`🔍 Servus Debug: Found ${allMatches.length} date matches.`);
 
                 const months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
 
@@ -2080,7 +2096,7 @@
                     });
                 }
 
-                console.log(`✅ Servus Extracted ${transactions.length} items`);
+                // console.log(`✅ Servus Extracted ${transactions.length} items`);
                 return { transactions, metadata: {} };
             }
 
@@ -2089,8 +2105,8 @@
              */
             extractScotiaTransactions(text) {
                 const transactions = [];
-                console.log(`🔍 Scotia Parser V2: Starting extraction (MM/DD/YYYY + Math Mode)...`);
-                console.log('📝 Scotia Sample Text:', text.substring(0, 500).replace(/\n/g, ' '));
+                // console.log(`🔍 Scotia Parser V2: Starting extraction (MM/DD/YYYY + Math Mode)...`);
+                // console.log('📝 Scotia Sample Text:', text.substring(0, 500).replace(/\n/g, ' '));
 
                 let currentYear = new Date().getFullYear();
                 const yearMatch = text.match(/Statement Period:.*?,?\s*(\d{4})/i) || text.match(/(\d{4})\s*Statement/i);
@@ -2104,10 +2120,10 @@
                 const dateStartRgx = /^\s*((\d{2}\/\d{2}\/\d{4})|([A-Za-z]{3}\s+\d{1,2}))/;
 
                 const lines = text.split('\n');
-                console.log(`🔍 Scotia Debug: Total Lines: ${lines.length}`);
+                // console.log(`🔍 Scotia Debug: Total Lines: ${lines.length}`);
                 if (lines.length > 0) {
-                    console.log(`📜 Line 0: "${lines[0]}"`);
-                    console.log(`📜 Line 1: "${lines[1] || 'N/A'}"`);
+                    // console.log(`📜 Line 0: "${lines[0]}"`);
+                    // console.log(`📜 Line 1: "${lines[1] || 'N/A'}"`);
                 }
 
                 // Global Date Regex (Unanchored, Global Flag)
@@ -2122,7 +2138,7 @@
                 const transactionRgx = /((\d{2}\/\d{2}\/\d{4})|([A-Za-z]{3}\s+\d{1,2}))/g;
 
                 const allMatches = [...text.matchAll(transactionRgx)];
-                console.log(`🔍 Scotia Debug: Matches Found: ${allMatches.length}`);
+                // console.log(`🔍 Scotia Debug: Matches Found: ${allMatches.length}`);
 
                 let runningBalance = null; // Initialize checks
 
@@ -2197,7 +2213,7 @@
                     if (line.toUpperCase().includes('BALANCE FORWARD') || line.toUpperCase().includes('PREVIOUS BALANCE')) {
                         if (numericParts.length > 0) {
                             runningBalance = numericParts[numericParts.length - 1];
-                            console.log(`🔍 Scotia Debug: Found Start Balance: ${runningBalance}`);
+                            // console.log(`🔍 Scotia Debug: Found Start Balance: ${runningBalance}`);
                         }
                         continue;
                     }
@@ -2238,7 +2254,7 @@
                                 runningBalance = lineBalance;
                             } else {
                                 // Math mismatch
-                                console.warn(`⚠️ Scotia Math Mismatch: Prev=${runningBalance}, Amt=${amount}, New=${lineBalance}. Defaulting to Debit.`);
+                                console.warn(`⚠️ Math Mismatch: Prev=${runningBalance}, Amt=${amount}, New=${lineBalance}. Defaulting to Debit.`);
                                 // Fallback based on text?
                                 // "DEPOSIT" -> Credit
                                 if (line.toUpperCase().includes('DEPOSIT')) type = 'credit';
@@ -2320,7 +2336,7 @@
                     });
                 }
 
-                console.log(`✅ Scotia Parser V2: Extracted ${transactions.length} transactions`);
+                // console.log(`✅ Scotia Parser V2: Extracted ${transactions.length} transactions`);
                 return { transactions, metadata: {} };
             }
 
@@ -2386,7 +2402,7 @@
 
                     return date.toISOString().split('T')[0];
                 } catch (error) {
-                    console.error('Date parsing error:', dateStr, error);
+                    console.error('Date conversion error:', dateStr, error);
                     return dateStr; // Return original if parsing fails
                 }
             }
@@ -2474,7 +2490,7 @@
 
         // Export
         window.pdfParser = new PDFParser();
-        console.log('📄 PDF Parser Loaded (v1.1 - Generic Fallback Support)');
+        // console.log('📄 PDF Parser Loaded (v1.1 - Generic Fallback Support)');
 
         /**
          * Global wrapper function for Processing Engine
@@ -2505,9 +2521,9 @@
             }
         };
 
-        console.log('✅ PDF Parser wrapper function registered');
+        // console.log('✅ PDF Parser wrapper function registered');
 
     } catch (e) {
-        console.error("🔥 CRITICAL PDF PARSER FAILURE:", e);
+        console.error("🔥 CRITICAL DATA CONVERSION ERROR:", e);
     }
 })();

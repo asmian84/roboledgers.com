@@ -310,14 +310,14 @@ class MerchantCategorizer {
 
         // 2. Trigger Condition: Confidence below 80%
         if (result.confidence < 0.8 && window.outsourceService) {
-            console.log(`📡 Fallback Triggered for: "${result.clean_name}" (Confidence: ${Math.round(result.confidence * 100)}%)`);
+            // console.log(`📡 Fallback Triggered for: "${result.clean_name}" (Confidence: ${Math.round(result.confidence * 100)}%)`);
 
             // Try to enrich using Clean Name or Original Name (minus bank noise)
             const queryName = result.clean_name;
             const enriched = await window.outsourceService.outsourceEnrich(queryName);
 
             if (enriched && enriched.name) {
-                console.log(`✅ Fallback Success: Found "${enriched.name}" via ${enriched.source}`);
+                // console.log(`✅ Fallback Success: Found "${enriched.name}" via ${enriched.source}`);
 
                 // Get richer context for guessing (Clearbit domain or Wikidata description)
                 const context = enriched.description || enriched.domain || '';
@@ -336,7 +336,7 @@ class MerchantCategorizer {
                 };
             } else {
                 // HANDLING FAILURE: Both APIs returned empty or error
-                console.warn(`❌ Fallback Failed for: "${queryName}". Flagging for review.`);
+                // console.warn(`❌ Fallback Failed for: "${queryName}". Flagging for review.`);
                 return {
                     ...result,
                     clean_name: result.clean_name || result.original,
@@ -443,4 +443,4 @@ class MerchantCategorizer {
 
 // Global instance
 window.merchantCategorizer = new MerchantCategorizer();
-console.log('🏭 Merchant Categorizer v4 (3-Phase Protocol) Loaded');
+// console.log('🏭 Merchant Categorizer v4 (3-Phase Protocol) Loaded');

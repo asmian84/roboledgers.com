@@ -81,12 +81,49 @@ class GoogleAICategorizer {
     }
 
     /**
-     * Categorize transaction using MCCor AI
+     * Categorize transaction using MCC or AI
+     * @param {object} transaction
+     * @returns {Promise<object>} { category, account, confidence }
+     */
+    /**
+     * Sanitize vendor string (Remove noise, locations, dates)
+     */
+    sanitizeVendorString(rawDescription) {
+        if (!rawDescription) return "";
+        let clean = rawDescription.toUpperCase();
+
+        // 1. Remove Junk Words (Inc, LLC, Corp, etc.)
+        clean = clean.replace(/\b(INC|LLC|LTD|CORP|CORPORATION|CO|NV|SA|GMBH)\b/g, '');
+
+        // 2. Remove Common Locations (State Codes, Countries)
+        // Note: This is "Surgical" - only remove if it looks like a location suffix
+        const locations = [
+            'UNITED STATES', 'USA', 'CANADA', 'CAN', 'UK', 'LONDON', 'TORONTO', 'VANCOUVER',
+            'NY', 'CA', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'
+        ];
+        const locationRegex = new RegExp(`\\b(${locations.join('|')})\\b`, 'g');
+        clean = clean.replace(locationRegex, '');
+
+        // 3. Remove Store Numbers (e.g. #1234, Store 55)
+        clean = clean.replace(/#\s*\d+/g, '').replace(/STORE\s*\d+/g, '');
+
+        // 4. Remove Dates (MM/DD, DD/MM/YY)
+        clean = clean.replace(/\d{2}\/\d{2}/g, '').replace(/\d{2}\/\d{2}\/\d{2,4}/g, '');
+
+        // 5. Cleanup whitespace
+        return clean.replace(/\s+/g, ' ').trim();
+    }
+
+    /**
+     * Categorize transaction using MCC or AI
      * @param {object} transaction
      * @returns {Promise<object>} { category, account, confidence }
      */
     async categorize(transaction) {
         await this.init();
+
+        // V2: Sanitize First
+        const cleanDescription = this.sanitizeVendorString(transaction.description);
 
         // Step 1: Try MCC code lookup if available
         if (transaction.mccCode) {
@@ -101,73 +138,116 @@ class GoogleAICategorizer {
             }
         }
 
-        // Step 2: Try pattern matching against known merchant names
-        const merchantResult = this._matchMerchantKeywords(transaction.description);
+        // Step 2: Try pattern matching (STRICT V2 MODE)
+        // We use the CLEAN description for better matching
+        const merchantResult = this._matchMerchantKeywords(cleanDescription);
         if (merchantResult) {
             return {
                 category: merchantResult.category,
                 account: this._mapCategoryToAccount(merchantResult.category),
                 confidence: 0.85,
-                method: 'MCC Merchant Pattern'
+                method: 'MCC Merchant Pattern (Strict)'
             };
         }
 
         // Step 3: Fall back to Google AI API
         if (this.apiKey) {
+            // Pass the ORIGINAL string to Gemini, but also the CLEAN one if needed.
+            // Actually, for V2, let's pass the ORIGINAL so it has full context,
+            // but the Prompt will be smarter.
             return await this._callGeminiAPI(transaction);
         }
 
         return null; // No categorization possible
     }
 
+
     /**
-     * Look up MCC code
+     * Test connection with a dummy prompt
      */
+    async testConnection(testKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        const prompt = "Reply with 'Success' in JSON format: {\"status\": \"Success\"}";
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-goog-api-key': testKey
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, message: `HTTP ${response.status}: ${errorData.error?.message || 'Unknown error'}` };
+            }
+
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            if (text.toLowerCase().includes('success')) {
+                return { success: true, message: 'Connection established!' };
+            }
+            return { success: false, message: 'Invalid response from API' };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
     lookupMCC(mccCode) {
         return this.mccCodes[mccCode] || null;
     }
 
     /**
      * Match merchant name against MCC code descriptions
+     * V2 UPDATE: STRICT MODE. No single generic words (like "United" or "Delta").
      */
     _matchMerchantKeywords(description) {
         const desc = description.toLowerCase();
 
-        // Airline keywords
-        if (desc.match(/airline|airways|united|delta|southwest|jetblue/)) {
+        // Airline keywords (STRICT: Must be explicit for generic words)
+        // "United" -> Fail. "United Airlines" -> Pass.
+        // "Delta" -> Fail. "Delta Air" -> Pass.
+        if (desc.match(/airlines|airways|united air|delta air|southwest air|jetblue|lufthansa|british air|air canada/)) {
             return { category: 'Travel:Airfare', description: 'Airlines' };
         }
 
-        // Gas stations
-        if (desc.match(/shell|exxon|chevron|bp|mobil|valero|circle k|7-eleven|wawa/)) {
+        // Gas stations (STRICT)
+        if (desc.match(/shell oil|exxon|chevron|bp gas|mobil gas|valero|circle k|7-eleven|wawa/)) {
             return { category: 'Transportation:Fuel', description: 'Gas Station' };
         }
 
-        // Grocery
-        if (desc.match(/walmart|target|safeway|kroger|publix|whole foods|trader joe/)) {
+        // Grocery (STRICT)
+        // Kroger, Safeway, Publix are distinct enough to not need "Store" suffix.
+        if (desc.match(/walmart|target|safeway|kroger|publix|whole foods|trader joe|loblaws|metro/)) {
             return { category: 'Food & Dining:Groceries', description: 'Grocery Store' };
         }
 
-        // Restaurants
-        if (desc.match(/restaurant|cafe|coffee|starbucks|dunkin|mcdonald|burger|pizza/)) {
+        // Restaurants (STRICT)
+        if (desc.match(/starbucks|dunkin|mcdonald|burger king|pizza hut|domino|tim hortons/)) {
             return { category: 'Food & Dining:Restaurants', description: 'Restaurant' };
         }
 
         // Utilities
-        if (desc.match(/electric|power|energy|pacific gas|con edison|duke energy/)) {
+        if (desc.match(/pacific gas|con edison|duke energy|hydro/)) {
             return { category: 'Utilities:Electric', description: 'Electric Utility' };
         }
 
-        if (desc.match(/verizon|att|t-mobile|sprint|phone|wireless/)) {
+        if (desc.match(/verizon|t-mobile|sprint|rogers|bell|telus/)) {
             return { category: 'Utilities:Phone', description: 'Phone/Internet' };
         }
 
         // Streaming services
-        if (desc.match(/netflix|hulu|disney|spotify|apple music|youtube premium/)) {
+        // Relaxed "Disney+" to "Disney" because "Disney" is rarely a Vendor unless it's the company.
+        if (desc.match(/netflix|hulu|disney|spotify|apple music|youtube premium|amazon prime/)) {
             return { category: 'Entertainment:Streaming', description: 'Streaming Service' };
         }
 
         // Amazon
+        // "Amazon" is distinct enough. "Amazon Mkt" was too strict.
         if (desc.match(/amazon|amzn/)) {
             return { category: 'Shopping:Online', description: 'Amazon' };
         }
@@ -181,43 +261,69 @@ class GoogleAICategorizer {
     async _callGeminiAPI(transaction) {
         if (!this.apiKey) return null;
 
-        const prompt = `Categorize this transaction into one of the standard bookkeeping categories:
-    
-Transaction: ${transaction.description}
+        // V2 PROMPT: Context Aware
+        const prompt = `You are an expert bookkeeping AI. Your job is to categorize financial transactions.
+        
+CRITICAL RULE: Distinguish between the VENDOR (who got paid) and the LOCATION.
+Example: "Disney Plus United States" -> Vendor is "Disney Plus" (Streaming), Location is "United States". Do NOT categorize as "Travel/Airline" just because you see "United".
+
+Transaction Description: "${transaction.description}"
 Amount: $${Math.abs(transaction.amount)}
 Type: ${transaction.amount < 0 ? 'Expense' : 'Income'}
 
-Choose the most appropriate category from:
-- Food & Dining (subcategories: Restaurants, Groceries, Fast Food)
-- Transportation (subcategories: Fuel, Auto, Public Transit)
-- Shopping (subcategories: Clothing, Electronics, General)
-- Utilities (subcategories: Electric, Water, Phone, Internet)
-- Healthcare (subcategories:Medical, Dental, Pharmacy)
-- Entertainment (subcategories: Movies, Sports, Streaming)
-- Travel (subcategories: Airfare, Hotels, Car Rental)
-- Services (subcategories: Legal, Accounting, Professional)
+Select the specific Category from this list:
+- Food & Dining:Restaurants
+- Food & Dining:Groceries
+- Food & Dining:Fast Food
+- Transportation:Fuel
+- Transportation:Auto
+- Transportation:Public Transit
+- Shopping:Clothing
+- Shopping:Electronics
+- Shopping:General
+- Utilities:Electric
+- Utilities:Water
+- Utilities:Phone
+- Utilities:Internet
+- Healthcare:Medical
+- Healthcare:Dental
+- Healthcare:Pharmacy
+- Entertainment:Movies
+- Entertainment:Sports
+- Entertainment:Streaming
+- Travel:Airfare
+- Travel:Hotels
+- Travel:Car Rental
+- Services:Legal
+- Services:Accounting
+- Services:Professional
 - Business Income
 - Other Income
 
-Respond in JSON format:
+Respond with this exact JSON:
 {
   "category": "Category:Subcategory",
   "account": "Account Name",
   "confidence": 0.95,
-  "reasoning": "Brief explanation"
+  "reasoning": "Identify the VENDOR first. Explain why."
 }`;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-goog-api-key': this.apiKey
+                },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }]
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`API call failed: ${response.status}`);
+                const errorBody = await response.text();
+                console.error(`Google AI API Error (${response.status}):`, errorBody);
+                throw new Error(`API call failed: ${response.status} - ${errorBody}`);
             }
 
             const data = await response.json();
@@ -234,7 +340,7 @@ Respond in JSON format:
             }
 
         } catch (error) {
-            console.warn('Google AI API call failed:', error);
+            console.error('Google AI API call failed:', error);
         }
 
         return null;

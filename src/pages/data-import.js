@@ -7,7 +7,7 @@
 // STATE MANAGEMENT
 // ============================================
 
-console.log('🚀 Parsing data-import.js...');
+// console.log('🚀 Parsing data-import.js...');
 
 // Global state
 window.previewGrid = null;

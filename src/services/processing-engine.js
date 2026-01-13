@@ -113,40 +113,46 @@ class ProcessingEngine {
     async categorizeTransactions(transactions, progressCallback) {
         this.log('log', 'Starting categorization', { count: transactions.length });
 
-        // Enable bulk mode for dictionary to prevent console storm
-        if (window.merchantDictionary && window.merchantDictionary.setBulkMode) {
-            window.merchantDictionary.setBulkMode(true);
-        }
+        // Fetch vendors for the 7-step engine
+        const vendors = await window.storage.getVendors();
 
         let completed = 0;
         const total = transactions.length;
 
         try {
             for (let transaction of transactions) {
-                // Try all 7 methods in order
-                if (!transaction.category || transaction.category === 'Uncategorized') {
-                    transaction = await this._applyCategorization(transaction);
+                // Process if empty, Uncategorized, OR sitting in Suspense (9970)
+                if (!transaction.accountId || transaction.accountId === 'Uncategorized' || transaction.accountId === '9970' || !transaction.vendorId) {
+                    // 7-Step Smart Categorization Logic
+                    // Now ASYNC to support AI calls
+                    const result = await window.VendorMatcher.smartCategorize(transaction.description, vendors);
+
+                    if (result) {
+                        transaction.vendorId = result.vendorId;
+                        transaction.vendorName = result.vendorName;
+                        transaction.accountId = result.accountId;
+                        transaction.confidence = result.confidence;
+                        transaction.method = result.method;
+
+                        // Log success
+                        this.log('log', `Categorized: ${transaction.description} -> ${result.vendorName}`, {
+                            method: result.method,
+                            account: result.accountId
+                        });
+                    }
                 }
 
                 completed++;
                 const progress = Math.round((completed / total) * 100);
                 progressCallback(progress, `Categorizing... ${completed}/${total}`);
             }
-        } finally {
-            // Disable bulk mode and flush pending syncs
-            if (window.merchantDictionary) {
-                if (window.merchantDictionary.flushPendingSyncs) {
-                    await window.merchantDictionary.flushPendingSyncs();
-                }
-                if (window.merchantDictionary.setBulkMode) {
-                    window.merchantDictionary.setBulkMode(false);
-                }
-            }
+        } catch (err) {
+            this.log('error', 'Categorization loop error', err);
         }
 
         this.log('log', 'Categorization complete', {
             total: transactions.length,
-            categorized: transactions.filter(t => t.category && t.category !== 'Uncategorized').length
+            categorized: transactions.filter(t => t.accountId).length
         });
 
         return transactions;
@@ -155,74 +161,21 @@ class ProcessingEngine {
     /**
      * Apply all categorization methods to a single transaction
      * @private
+     * DEPRECATED: Now using unified smartCategorize in vendorMatcher.js
      */
     async _applyCategorization(transaction) {
-        const methods = [
-            { name: 'Merchant Dictionary', fn: this._tryMerchantDictionary },
-            { name: 'Pattern Detector', fn: this._tryPatternDetector },
-            { name: 'Bayesian Matcher', fn: this._tryBayesianMatcher },
-            { name: 'Global Vendor DB', fn: this._tryGlobalVendorDB },
-            { name: 'Keyword Clusters', fn: this._tryKeywordClusters },
-            { name: 'Categorization Engine', fn: this._tryCategorizationEngine },
-            { name: 'Google AI + MCC', fn: this._tryGoogleAI }
-        ];
-
-        for (let method of methods) {
-            try {
-                const result = await method.fn.call(this, transaction);
-                if (result && result.category) {
-                    this.log('log', `Categorized via ${method.name}`, {
-                        description: transaction.description,
-                        category: result.category
-                    });
-                    return { ...transaction, ...result };
-                }
-            } catch (error) {
-                this.log('warn', `Method ${method.name} failed`, { error: error.message });
-            }
-        }
-
-        // No method succeeded
-        this.log('warn', 'Transaction remains uncategorized', {
-            description: transaction.description
-        });
-        return transaction;
+        // Wrapper for legacy calls if any
+        const vendors = await window.storage.getVendors();
+        return await window.VendorMatcher.smartCategorize(transaction.description, vendors);
     }
 
-    _tryMerchantDictionary(transaction) {
-        if (!window.merchantDictionary) return null;
-        return window.merchantDictionary.categorize(transaction);
-    }
-
-    _tryPatternDetector(transaction) {
-        if (!window.PatternDetector) return null;
-        return window.PatternDetector.categorize(transaction);
-    }
-
-    _tryBayesianMatcher(transaction) {
-        if (!window.BayesianMatcher) return null;
-        return window.BayesianMatcher.categorize(transaction);
-    }
-
-    _tryGlobalVendorDB(transaction) {
-        if (!window.globalVendorDB) return null;
-        return window.globalVendorDB.lookup(transaction.description);
-    }
-
-    _tryKeywordClusters(transaction) {
-        if (!window.keywordClusters) return null;
-        return window.keywordClusters.match(transaction.description);
-    }
-
-    _tryCategorizationEngine(transaction) {
-        if (!window.CategorizationEngine) return null;
-        return window.CategorizationEngine.categorize(transaction);
-    }
-
-    async _tryGoogleAI(transaction) {
-        if (!window.GoogleAICategorizer) return null;
-        return await window.GoogleAICategorizer.categorize(transaction);
-    }
+    _tryMerchantDictionary(transaction) { return null; }
+    _tryPatternDetector(transaction) { return null; }
+    _tryBayesianMatcher(transaction) { return null; }
+    _tryGlobalVendorDB(transaction) { return null; }
+    _tryKeywordClusters(transaction) { return null; }
+    _tryCategorizationEngine(transaction) { return null; }
+    async _tryGoogleAI(transaction) { return null; }
 
     /**
      * Learn from user action (silent machine learning)

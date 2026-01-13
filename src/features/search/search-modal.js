@@ -4,22 +4,22 @@
  */
 
 class SearchModal {
-    constructor() {
-        this.modal = null;
-        this.input = null;
-        this.resultsContainer = null;
-        this.isOpen = false;
-        this.selectedIndex = -1;
-        this.currentResults = { transactions: [], vendors: [], accounts: [] };
-        this.searchTimeout = null;
-        this.recentSearches = this.loadRecentSearches();
+  constructor() {
+    this.modal = null;
+    this.input = null;
+    this.resultsContainer = null;
+    this.isOpen = false;
+    this.selectedIndex = -1;
+    this.currentResults = { transactions: [], vendors: [], accounts: [] };
+    this.searchTimeout = null;
+    this.recentSearches = this.loadRecentSearches();
 
-        this.init();
-    }
+    this.init();
+  }
 
-    init() {
-        // Create modal HTML
-        const modalHTML = `
+  init() {
+    // Create modal HTML
+    const modalHTML = `
       <div id="globalSearchModal" class="search-modal" style="display: none;">
         <div class="search-modal-backdrop"></div>
         <div class="search-modal-content">
@@ -51,122 +51,122 @@ class SearchModal {
       </div>
     `;
 
-        // Insert modal into body
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // Insert modal into body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Get references
-        this.modal = document.getElementById('globalSearchModal');
-        this.input = document.getElementById('globalSearchInput');
-        this.resultsContainer = document.getElementById('searchResults');
-        this.clearBtn = document.getElementById('searchClear');
+    // Get references
+    this.modal = document.getElementById('globalSearchModal');
+    this.input = document.getElementById('globalSearchInput');
+    this.resultsContainer = document.getElementById('searchResults');
+    this.clearBtn = document.getElementById('searchClear');
 
-        // Attach event listeners
-        this.attachListeners();
+    // Attach event listeners
+    this.attachListeners();
 
-        // Inject styles
-        this.injectStyles();
+    // Inject styles
+    this.injectStyles();
 
-        console.log('🔍 Search Modal initialized');
+    // console.log('🔍 Search Modal initialized');
+  }
+
+  attachListeners() {
+    // Input events
+    this.input.addEventListener('input', (e) => this.handleInput(e));
+    this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+    // Clear button
+    this.clearBtn.addEventListener('click', () => this.clear());
+
+    // Backdrop click to close
+    this.modal.querySelector('.search-modal-backdrop').addEventListener('click', () => this.close());
+
+    // Result clicks
+    this.resultsContainer.addEventListener('click', (e) => this.handleResultClick(e));
+  }
+
+  handleInput(e) {
+    const query = e.target.value;
+
+    // Debounce search
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.performSearch(query);
+    }, 300);
+  }
+
+  async performSearch(query) {
+    if (!query || query.length < 2) {
+      this.showRecentSearches();
+      return;
     }
 
-    attachListeners() {
-        // Input events
-        this.input.addEventListener('input', (e) => this.handleInput(e));
-        this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+    // Show loading state
+    this.resultsContainer.innerHTML = '<div class="search-loading">Searching...</div>';
 
-        // Clear button
-        this.clearBtn.addEventListener('click', () => this.clear());
+    // Perform search
+    const results = await window.searchEngine.search(query);
+    this.currentResults = results;
+    this.selectedIndex = -1;
 
-        // Backdrop click to close
-        this.modal.querySelector('.search-modal-backdrop').addEventListener('click', () => this.close());
+    // Render results
+    this.renderResults(results);
+  }
 
-        // Result clicks
-        this.resultsContainer.addEventListener('click', (e) => this.handleResultClick(e));
-    }
+  renderResults(results) {
+    const { transactions, vendors, accounts } = results;
+    const totalResults = transactions.length + vendors.length + accounts.length;
 
-    handleInput(e) {
-        const query = e.target.value;
-
-        // Debounce search
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => {
-            this.performSearch(query);
-        }, 300);
-    }
-
-    async performSearch(query) {
-        if (!query || query.length < 2) {
-            this.showRecentSearches();
-            return;
-        }
-
-        // Show loading state
-        this.resultsContainer.innerHTML = '<div class="search-loading">Searching...</div>';
-
-        // Perform search
-        const results = await window.searchEngine.search(query);
-        this.currentResults = results;
-        this.selectedIndex = -1;
-
-        // Render results
-        this.renderResults(results);
-    }
-
-    renderResults(results) {
-        const { transactions, vendors, accounts } = results;
-        const totalResults = transactions.length + vendors.length + accounts.length;
-
-        if (totalResults === 0) {
-            this.resultsContainer.innerHTML = `
+    if (totalResults === 0) {
+      this.resultsContainer.innerHTML = `
         <div class="search-empty">
           <div class="empty-icon">🔍</div>
           <div class="empty-text">No results found</div>
         </div>
       `;
-            return;
-        }
+      return;
+    }
 
-        let html = '';
+    let html = '';
 
-        // Transactions section
-        if (transactions.length > 0) {
-            html += `
+    // Transactions section
+    if (transactions.length > 0) {
+      html += `
         <div class="search-section">
           <div class="search-section-header">Transactions (${transactions.length})</div>
           ${transactions.map((txn, idx) => this.renderTransaction(txn, idx)).join('')}
         </div>
       `;
-        }
+    }
 
-        // Vendors section
-        if (vendors.length > 0) {
-            html += `
+    // Vendors section
+    if (vendors.length > 0) {
+      html += `
         <div class="search-section">
           <div class="search-section-header">Vendors (${vendors.length})</div>
           ${vendors.map((vendor, idx) => this.renderVendor(vendor, transactions.length + idx)).join('')}
         </div>
       `;
-        }
+    }
 
-        // Accounts section
-        if (accounts.length > 0) {
-            html += `
+    // Accounts section
+    if (accounts.length > 0) {
+      html += `
         <div class="search-section">
           <div class="search-section-header">Accounts (${accounts.length})</div>
           ${accounts.map((account, idx) => this.renderAccount(account, transactions.length + vendors.length + idx)).join('')}
         </div>
       `;
-        }
-
-        this.resultsContainer.innerHTML = html;
     }
 
-    renderTransaction(txn, index) {
-        const amount = txn.amount ? `$${Math.abs(txn.amount).toFixed(2)}` : '';
-        const amountClass = txn.amount >= 0 ? 'amount-positive' : 'amount-negative';
-        const date = txn.date ? new Date(txn.date).toLocaleDateString() : '';
+    this.resultsContainer.innerHTML = html;
+  }
 
-        return `
+  renderTransaction(txn, index) {
+    const amount = txn.amount ? `$${Math.abs(txn.amount).toFixed(2)}` : '';
+    const amountClass = txn.amount >= 0 ? 'amount-positive' : 'amount-negative';
+    const date = txn.date ? new Date(txn.date).toLocaleDateString() : '';
+
+    return `
       <div class="search-result" data-index="${index}" data-type="transaction" data-id="${txn.id}">
         <div class="result-icon">📊</div>
         <div class="result-content">
@@ -179,12 +179,12 @@ class SearchModal {
         <div class="result-amount ${amountClass}">${amount}</div>
       </div>
     `;
-    }
+  }
 
-    renderVendor(vendor, index) {
-        const name = vendor.description || vendor.name || 'Unnamed Vendor';
+  renderVendor(vendor, index) {
+    const name = vendor.description || vendor.name || 'Unnamed Vendor';
 
-        return `
+    return `
       <div class="search-result" data-index="${index}" data-type="vendor" data-id="${vendor.id}">
         <div class="result-icon">🏢</div>
         <div class="result-content">
@@ -195,10 +195,10 @@ class SearchModal {
         </div>
       </div>
     `;
-    }
+  }
 
-    renderAccount(account, index) {
-        return `
+  renderAccount(account, index) {
+    return `
       <div class="search-result" data-index="${index}" data-type="account" data-id="${account.id || account.code}">
         <div class="result-icon">💰</div>
         <div class="result-content">
@@ -209,19 +209,19 @@ class SearchModal {
         </div>
       </div>
     `;
-    }
+  }
 
-    showRecentSearches() {
-        if (this.recentSearches.length === 0) {
-            this.resultsContainer.innerHTML = `
+  showRecentSearches() {
+    if (this.recentSearches.length === 0) {
+      this.resultsContainer.innerHTML = `
         <div class="search-empty">
           <div class="empty-text">Start typing to search...</div>
         </div>
       `;
-            return;
-        }
+      return;
+    }
 
-        const html = `
+    const html = `
       <div class="search-section">
         <div class="search-section-header">Recent Searches</div>
         ${this.recentSearches.map((query, idx) => `
@@ -233,152 +233,152 @@ class SearchModal {
       </div>
     `;
 
-        this.resultsContainer.innerHTML = html;
-    }
+    this.resultsContainer.innerHTML = html;
+  }
 
-    handleKeydown(e) {
-        const results = this.resultsContainer.querySelectorAll('.search-result');
+  handleKeydown(e) {
+    const results = this.resultsContainer.querySelectorAll('.search-result');
 
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                this.selectedIndex = Math.min(this.selectedIndex + 1, results.length - 1);
-                this.updateSelection(results);
-                break;
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this.selectedIndex = Math.min(this.selectedIndex + 1, results.length - 1);
+        this.updateSelection(results);
+        break;
 
-            case 'ArrowUp':
-                e.preventDefault();
-                this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
-                this.updateSelection(results);
-                break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+        this.updateSelection(results);
+        break;
 
-            case 'Enter':
-                e.preventDefault();
-                if (this.selectedIndex >= 0 && results[this.selectedIndex]) {
-                    this.selectResult(results[this.selectedIndex]);
-                }
-                break;
-
-            case 'Escape':
-                e.preventDefault();
-                this.close();
-                break;
+      case 'Enter':
+        e.preventDefault();
+        if (this.selectedIndex >= 0 && results[this.selectedIndex]) {
+          this.selectResult(results[this.selectedIndex]);
         }
-    }
+        break;
 
-    updateSelection(results) {
-        results.forEach((result, idx) => {
-            result.classList.toggle('selected', idx === this.selectedIndex);
-        });
-
-        // Scroll selected into view
-        if (this.selectedIndex >= 0) {
-            results[this.selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-    }
-
-    handleResultClick(e) {
-        const result = e.target.closest('.search-result');
-        if (result) {
-            this.selectResult(result);
-        }
-
-        const recent = e.target.closest('.search-recent');
-        if (recent) {
-            const query = recent.dataset.query;
-            this.input.value = query;
-            this.performSearch(query);
-        }
-    }
-
-    selectResult(result) {
-        const type = result.dataset.type;
-        const id = result.dataset.id;
-        const query = this.input.value;
-
-        // Save to recent searches
-        this.saveRecentSearch(query);
-
-        // Navigate based on type
-        switch (type) {
-            case 'transaction':
-                window.AppRouter?.navigate('/transactions');
-                // TODO: Scroll to and highlight transaction
-                break;
-            case 'vendor':
-                window.AppRouter?.navigate('/vendors');
-                break;
-            case 'account':
-                window.AppRouter?.navigate('/accounts');
-                break;
-        }
-
+      case 'Escape':
+        e.preventDefault();
         this.close();
+        break;
+    }
+  }
+
+  updateSelection(results) {
+    results.forEach((result, idx) => {
+      result.classList.toggle('selected', idx === this.selectedIndex);
+    });
+
+    // Scroll selected into view
+    if (this.selectedIndex >= 0) {
+      results[this.selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  handleResultClick(e) {
+    const result = e.target.closest('.search-result');
+    if (result) {
+      this.selectResult(result);
     }
 
-    saveRecentSearch(query) {
-        if (!query || query.length < 2) return;
+    const recent = e.target.closest('.search-recent');
+    if (recent) {
+      const query = recent.dataset.query;
+      this.input.value = query;
+      this.performSearch(query);
+    }
+  }
 
-        // Remove if already exists
-        this.recentSearches = this.recentSearches.filter(q => q !== query);
+  selectResult(result) {
+    const type = result.dataset.type;
+    const id = result.dataset.id;
+    const query = this.input.value;
 
-        // Add to front
-        this.recentSearches.unshift(query);
+    // Save to recent searches
+    this.saveRecentSearch(query);
 
-        // Keep only last 5
-        this.recentSearches = this.recentSearches.slice(0, 5);
-
-        // Save to localStorage
-        localStorage.setItem('ab3_recent_searches', JSON.stringify(this.recentSearches));
+    // Navigate based on type
+    switch (type) {
+      case 'transaction':
+        window.AppRouter?.navigate('/transactions');
+        // TODO: Scroll to and highlight transaction
+        break;
+      case 'vendor':
+        window.AppRouter?.navigate('/vendors');
+        break;
+      case 'account':
+        window.AppRouter?.navigate('/accounts');
+        break;
     }
 
-    loadRecentSearches() {
-        try {
-            const saved = localStorage.getItem('ab3_recent_searches');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
-    }
+    this.close();
+  }
 
-    open() {
-        this.modal.style.display = 'flex';
-        this.isOpen = true;
-        this.input.value = '';
-        this.input.focus();
-        this.showRecentSearches();
-    }
+  saveRecentSearch(query) {
+    if (!query || query.length < 2) return;
 
-    close() {
-        this.modal.style.display = 'none';
-        this.isOpen = false;
-        this.selectedIndex = -1;
-        this.input.value = '';
-    }
+    // Remove if already exists
+    this.recentSearches = this.recentSearches.filter(q => q !== query);
 
-    clear() {
-        this.input.value = '';
-        this.input.focus();
-        this.showRecentSearches();
-    }
+    // Add to front
+    this.recentSearches.unshift(query);
 
-    toggle() {
-        if (this.isOpen) {
-            this.close();
-        } else {
-            this.open();
-        }
-    }
+    // Keep only last 5
+    this.recentSearches = this.recentSearches.slice(0, 5);
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    // Save to localStorage
+    localStorage.setItem('ab3_recent_searches', JSON.stringify(this.recentSearches));
+  }
 
-    injectStyles() {
-        const style = document.createElement('style');
-        style.innerHTML = `
+  loadRecentSearches() {
+    try {
+      const saved = localStorage.getItem('ab3_recent_searches');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  open() {
+    this.modal.style.display = 'flex';
+    this.isOpen = true;
+    this.input.value = '';
+    this.input.focus();
+    this.showRecentSearches();
+  }
+
+  close() {
+    this.modal.style.display = 'none';
+    this.isOpen = false;
+    this.selectedIndex = -1;
+    this.input.value = '';
+  }
+
+  clear() {
+    this.input.value = '';
+    this.input.focus();
+    this.showRecentSearches();
+  }
+
+  toggle() {
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  injectStyles() {
+    const style = document.createElement('style');
+    style.innerHTML = `
       .search-modal {
         position: fixed;
         top: 0;
@@ -604,11 +604,11 @@ class SearchModal {
         margin: 0 2px;
       }
     `;
-        document.head.appendChild(style);
-    }
+    document.head.appendChild(style);
+  }
 }
 
 // Initialize search modal
 window.searchModal = new SearchModal();
 
-console.log('🔍 Search Modal loaded');
+// console.log('🔍 Search Modal loaded');

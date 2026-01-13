@@ -3,7 +3,7 @@
  * Combines: InlineImport Zone + AG Grid + 7-Method Categorization + Background Processing
  */
 
-console.log('🚀 Loading Txn Import V5...');
+// console.log('🚀 Loading Txn Import V5...');
 
 // ============================================
 // STATE MANAGEMENT
@@ -1697,7 +1697,7 @@ window.autoCategorizeV5 = async function () {
   const categorized = await window.ProcessingEngine.categorizeTransactions(
     V5State.gridData,
     (progress, message) => {
-      console.log(`Progress: ${progress}% - ${message}`);
+      // console.log(`Progress: ${progress}% - ${message}`);
     }
   );
 
@@ -1789,7 +1789,7 @@ function updateReconciliationCard() {
   if (endingEl) endingEl.textContent =
     '$' + endingBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  console.log('✅ Balance card updated:', { openingBal, totalIn, totalOut, endingBal });
+  // console.log('✅ Balance card updated:', { openingBal, totalIn, totalOut, endingBal });
 }
 
 // ==================================================
@@ -1800,14 +1800,14 @@ window.handleV5Search = function (event) {
   const searchTerm = event.target.value.toLowerCase().trim();
 
   if (!V5State.gridApi) {
-    console.warn('Grid API not ready');
+    // console.warn('Grid API not ready');
     return;
   }
 
   if (!searchTerm) {
     // Clear filter
     V5State.gridApi.setFilterModel(null);
-    console.log('🔍 Search cleared - showing all rows');
+    // console.log('🔍 Search cleared - showing all rows');
     return;
   }
 
@@ -1825,7 +1825,7 @@ window.handleV5Search = function (event) {
   V5State.gridApi.setGridOption('quickFilterText', searchTerm);
 
   const rowCount = V5State.gridApi.getDisplayedRowCount();
-  console.log(`🔍 Searching for "${searchTerm}" - ${rowCount} results`);
+  // console.log(`🔍 Searching for "${searchTerm}" - ${rowCount} results`);
 };
 
 // ==================================================
@@ -1901,7 +1901,7 @@ window.applyBulkCategoryInline = function () {
 
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
   saveData();
-  console.log(`✅ Categorized ${rows.length} to ${acct.name}`);
+  // console.log(`✅ Categorized ${rows.length} to ${acct.name}`);
   cancelBulkSelection();
 };
 
@@ -1940,7 +1940,7 @@ window.updateRefPrefix = function (value) {
     V5State.gridApi.refreshCells({ columns: ['refNumber'], force: true });
   }
 
-  console.log(`✅ Ref# prefix updated: "${V5State.refPrefix}"`);
+  // console.log(`✅ Ref# prefix updated: "${V5State.refPrefix}"`);
 };
 
 // ============================================
@@ -1955,7 +1955,7 @@ window.saveData = function () {
     localStorage.setItem('ab_v5_grid_data', JSON.stringify(cleanData));
     localStorage.setItem('ab_v5_last_save', new Date().toISOString());
 
-    console.log(`💾 Saved ${cleanData.length} transactions (blobs filtered)`);
+    // console.log(`💾 Saved ${cleanData.length} transactions (blobs filtered)`);
     return true;
   } catch (error) {
     console.error('❌ Failed to save data:', error);
@@ -1967,12 +1967,12 @@ window.loadSavedData = function () {
   try {
     const savedData = localStorage.getItem('ab_v5_grid_data');
     if (!savedData) {
-      console.log('📂 No saved data found');
+      // console.log('📂 No saved data found');
       return false;
     }
 
     V5State.gridData = JSON.parse(savedData);
-    console.log(`📂 Loaded ${V5State.gridData.length} transactions from storage`);
+    // console.log(`📂 Loaded ${V5State.gridData.length} transactions from storage`);
 
     // Initialize grid with loaded data
     if (V5State.gridData.length > 0) {
@@ -2005,7 +2005,7 @@ function getImportHistory() {
   try {
     const history = localStorage.getItem('ab_import_history');
     const parsed = history ? JSON.parse(history) : [];
-    console.log(`📦 getImportHistory returning ${parsed.length} items`);
+    // console.log(`📦 getImportHistory returning ${parsed.length} items`);
     return parsed;
   } catch (e) {
     console.error('Failed to load import history:', e);
@@ -2037,7 +2037,7 @@ window.saveImportToHistory = function (file, parsedData) {
   // CRITICAL: Sync V5State.recentImports with localStorage
   V5State.recentImports = history;
 
-  console.log(`✅ Saved to history: ${file.name} (${parsedData.length} txns) - Total history: ${history.length} items`);
+  // console.log(`✅ Saved to history: ${file.name} (${parsedData.length} txns) - Total history: ${history.length} items`);
   // renderV5History(); // DISABLED - rebuilding chips
   return newImport.id;
 };
@@ -2146,7 +2146,7 @@ window.deleteImportSource = function (fileId) {
   // Refresh history display
   loadImportHistory();
 
-  console.log(`🗑️ Deleted ${deletedCount} transactions from source: ${fileId}`);
+  // console.log(`🗑️ Deleted ${deletedCount} transactions from source: ${fileId}`);
 };
 
 window.toggleV5History = function () {
@@ -2164,7 +2164,7 @@ window.toggleV5History = function () {
       renderV5History();
     }
 
-    console.log(isHidden ? '📜 History shown' : '📜 History hidden');
+    // console.log(isHidden ? '📜 History shown' : '📜 History hidden');
   }
 };
 
@@ -2177,7 +2177,7 @@ window.openSourceFile = function (fileId) {
 
   const url = URL.createObjectURL(row.sourceFileBlob);
   window.open(url, '_blank');
-  console.log(`📂 Opened source file: ${row.sourceFileName}`);
+  // console.log(`📂 Opened source file: ${row.sourceFileName}`);
 };
 
 // ============================================
@@ -2201,7 +2201,7 @@ window.applyBulkAccount = function () {
   });
 
   V5State.gridApi.refreshCells({ columns: ['account'], force: true });
-  console.log(`✅ Applied account "${selectedAccount}" to ${selectedRows.length} rows`);
+  // console.log(`✅ Applied account "${selectedAccount}" to ${selectedRows.length} rows`);
 };
 
 window.bulkSearchReplace = function () {
@@ -2225,7 +2225,7 @@ window.bulkSearchReplace = function () {
   });
 
   V5State.gridApi.refreshCells({ columns: ['description'], force: true });
-  console.log(`✅ Replaced "${searchValue}" with "${replaceValue}" in ${count} rows`);
+  // console.log(`✅ Replaced "${searchValue}" with "${replaceValue}" in ${count} rows`);
 };
 
 // ============================================
@@ -2271,7 +2271,7 @@ window.populateCOADropdown = function (selectId) {
     }
   });
 
-  console.log(`📋 Populated COA dropdown with 5 categories`);
+  // console.log(`📋 Populated COA dropdown with 5 categories`);
 };
 
 // ============================================
@@ -2283,7 +2283,7 @@ window.populateCOADropdown = function (selectId) {
 // ============================================
 
 window.setGridTheme = function (theme) {
-  console.log(`🎨 Setting theme to: ${theme}`);
+  // console.log(`🎨 Setting theme to: ${theme}`);
 
   // FIX 3: Target the grid container specifically
   const container = document.getElementById('v5-grid-container');

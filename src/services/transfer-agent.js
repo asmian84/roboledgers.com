@@ -129,4 +129,4 @@ window.TransferAgent = {
     }
 };
 
-console.log('🕵️‍♀️ Transfer Agent Loaded');
+// console.log('🕵️‍♀️ Transfer Agent Loaded');

@@ -7,7 +7,7 @@
 (function () {
     'use strict';
 
-    console.log('%c🛡️ DATA INTEGRITY SHIELD ACTIVE', 'background: #059669; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
+    // console.log('%c🛡️ DATA INTEGRITY SHIELD ACTIVE', 'background: #059669; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold;');
 
     const STORAGE_KEY = 'ab3_custom_coa';
 
@@ -73,7 +73,7 @@
                     });
 
                     if (fixedCount > 0) {
-                        console.log(`✅ Sanitized ${fixedCount} transactions with invalid account data`);
+                        // console.log(`✅ Sanitized ${fixedCount} transactions with invalid account data`);
                         localStorage.setItem(txnKey, JSON.stringify(transactions));
                         cleaned = true;
                     }
@@ -82,7 +82,7 @@
 
             // Trigger a refresh if the grid API is available
             if (cleaned) {
-                console.log('🔄 Data cleaned! Refreshing grids...');
+                // console.log('🔄 Data cleaned! Refreshing grids...');
 
                 if (window.accountsGridApi && typeof initAccountsGrid === 'function') {
                     initAccountsGrid();

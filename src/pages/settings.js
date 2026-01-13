@@ -827,6 +827,35 @@ function renderIntegrationsPanel() {
       </div>
       
       <div class="form-section" style="padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; background: #4285f415; color: #4285f4; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    <i class="ph ph-sparkle"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Google Gemini AI</h4>
+                    <div id="ai-status-badge" style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 5px; height: 5px; background: #94a3b8; border-radius: 50%;"></span> NOT CONFIGURED
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="testAILink(event)" style="font-size: 0.75rem;">Test Link</button>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 4px;">
+            <label style="font-size: 0.65rem;">Gemini API Key</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="password" id="google-ai-api-key" placeholder="Enter your Gemini API Key" style="flex: 1; font-family: monospace; font-size: 0.75rem; padding: 8px 12px;">
+                <button class="btn btn-primary btn-sm" onclick="saveIntegrationSettings(event)" style="padding: 0 16px;">Save</button>
+            </div>
+            <p style="font-size: 0.65rem; color: #64748b; margin-top: 6px;">Used for the 7th step: High-certainty categorization & clean-up.</p>
+        </div>
+        
+        <!-- Inline Test Result Area -->
+        <div id="ai-test-result" style="display: none; margin-top: 12px; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; animation: fadeIn 0.3s ease;"></div>
+      </div>
+      
+      <div class="form-section" style="padding: 14px;">
         <h3 style="font-size: 0.8rem;">Partner Ecosystem</h3>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
             <div style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; gap: 10px; background: #fafafa; align-items: center;">
@@ -999,6 +1028,17 @@ async function initSettingsPage(panel) {
       if (document.getElementById('company-name')) document.getElementById('company-name').value = settings.companyName || '';
       if (document.getElementById('fiscal-year-end')) document.getElementById('fiscal-year-end').value = settings.fiscalYearEnd || '12-31';
       if (document.getElementById('currency')) document.getElementById('currency').value = settings.currency || 'USD';
+    } else if (panel === 'integrations') {
+      if (document.getElementById('google-ai-api-key')) {
+        document.getElementById('google-ai-api-key').value = settings.googleAiApiKey || '';
+        if (settings.googleAiApiKey) {
+          const badge = document.getElementById('ai-status-badge');
+          if (badge) {
+            badge.innerHTML = '<span style="width: 5px; height: 5px; background: #10b981; border-radius: 50%;"></span> KEY CONFIGURED';
+            badge.style.color = '#10b981';
+          }
+        }
+      }
     } else if (panel === 'accounts') {
       renderAccountsList();
     } else if (panel === 'appearance') {
@@ -1191,6 +1231,149 @@ function connectSupabase() {
     } else {
     }
   });
+}
+
+async function saveIntegrationSettings(event) {
+  if (event) event.preventDefault();
+
+  try {
+    const settings = await window.storage.getSettings();
+    const apiKey = document.getElementById('google-ai-api-key').value;
+
+    settings.googleAiApiKey = apiKey;
+    await window.storage.updateSettings(settings);
+
+    // Update singleton
+    if (window.GoogleAICategorizer) {
+      window.GoogleAICategorizer.apiKey = apiKey;
+    }
+
+    // Visual feedback
+    const btn = event?.target || document.querySelector('.btn-primary');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ Saved';
+    btn.disabled = true;
+
+    // Update badge
+    const badge = document.getElementById('ai-status-badge');
+    if (badge && apiKey) {
+      badge.innerHTML = '<span style="width: 5px; height: 5px; background: #10b981; border-radius: 50%;"></span> KEY CONFIGURED';
+      badge.style.color = '#10b981';
+    }
+
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 2000);
+
+    console.log('✓ Integration settings updated');
+
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+  }
+}
+
+async function testAILink(event) {
+  if (event) event.preventDefault();
+  const apiKey = document.getElementById('google-ai-api-key').value;
+  const resultArea = document.getElementById('ai-test-result');
+
+  if (!apiKey) {
+    // Show inline error
+    if (resultArea) {
+      resultArea.style.display = 'block';
+      resultArea.style.background = '#fef2f2';
+      resultArea.style.border = '1px solid #fecaca';
+      resultArea.style.color = '#dc2626';
+      resultArea.innerHTML = '<i class="ph ph-warning-circle" style="margin-right: 8px;"></i><strong>API Key Required:</strong> Please enter a valid Gemini API key above.';
+    }
+    return;
+  }
+
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="ph ph-circle-notch ph-spin"></i> Testing...';
+  btn.disabled = true;
+
+  // Hide previous result while testing
+  if (resultArea) resultArea.style.display = 'none';
+
+  try {
+    const result = await window.GoogleAICategorizer.testConnection(apiKey);
+    if (result.success) {
+      // Show inline success message
+      if (resultArea) {
+        resultArea.style.display = 'block';
+        resultArea.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+        resultArea.style.border = '1px solid #86efac';
+        resultArea.style.color = '#15803d';
+        resultArea.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="ph ph-check-circle" style="font-size: 1.5rem; color: #16a34a;"></i>
+            <div>
+              <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 2px;">✅ Connection Successful</div>
+              <div style="font-size: 0.75rem; color: #166534;">Google Gemini AI is online and responsive. You can now use AI-powered categorization.</div>
+            </div>
+          </div>
+        `;
+      }
+      // Also show toast notification
+      if (window.toast) {
+        window.toast.success('Google Gemini AI connected successfully!', { duration: 3000 });
+      }
+      // Update status badge
+      const badge = document.getElementById('ai-status-badge');
+      if (badge) {
+        badge.innerHTML = '<span style="width: 5px; height: 5px; background: #10b981; border-radius: 50%;"></span> ACTIVE';
+        badge.style.color = '#10b981';
+      }
+    } else {
+      // Show inline error message
+      if (resultArea) {
+        resultArea.style.display = 'block';
+        resultArea.style.background = '#fef2f2';
+        resultArea.style.border = '1px solid #fecaca';
+        resultArea.style.color = '#dc2626';
+        resultArea.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="ph ph-x-circle" style="font-size: 1.5rem; color: #dc2626;"></i>
+            <div>
+              <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 2px;">❌ Connection Failed</div>
+              <div style="font-size: 0.75rem; color: #991b1b;">${result.message || 'Unable to connect to Gemini API. Please check your API key.'}</div>
+            </div>
+          </div>
+        `;
+      }
+      // Show toast error
+      if (window.toast) {
+        window.toast.error('AI connection failed: ' + result.message, { duration: 5000 });
+      }
+    }
+  } catch (error) {
+    // Show inline error message
+    if (resultArea) {
+      resultArea.style.display = 'block';
+      resultArea.style.background = '#fef2f2';
+      resultArea.style.border = '1px solid #fecaca';
+      resultArea.style.color = '#dc2626';
+      resultArea.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="ph ph-warning-octagon" style="font-size: 1.5rem; color: #dc2626;"></i>
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 2px;">⚠️ Test Error</div>
+            <div style="font-size: 0.75rem; color: #991b1b;">${error.message || 'An unexpected error occurred during the connection test.'}</div>
+          </div>
+        </div>
+      `;
+    }
+    // Show toast error
+    if (window.toast) {
+      window.toast.error('Test error: ' + error.message, { duration: 5000 });
+    }
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 }
 
 function renderAccountsList() {

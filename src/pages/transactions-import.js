@@ -5,7 +5,7 @@
  * Merges best features from data-import.js and transactions-grid.js
  */
 
-console.log('%c📊💰 TRANSACTIONS-IMPORT v4.0', 'background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+// console.log('%c📊💰 TRANSACTIONS-IMPORT v4.0', 'background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
 
 // ============================================
 // STATE MANAGEMENT
@@ -847,4 +847,4 @@ document.addEventListener('click', (e) => {
     }
 });
 
-console.log('✅ Transactions-Import page loaded');
+// console.log('✅ Transactions-Import page loaded');

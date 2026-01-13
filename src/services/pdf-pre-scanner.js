@@ -53,7 +53,7 @@ class PDFPreScanner {
      */
     async scanPDF(file) {
         try {
-            console.log(`🔍 Pre-scanning: ${file.name}`);
+            // console.log(`🔍 Pre-scanning: ${file.name}`);
 
             // Extract text from first 3 pages only (fast)
             const text = await this.extractQuickText(file);
@@ -77,7 +77,7 @@ class PDFPreScanner {
                 reason: this.getConfidenceReason(text, confidence)
             };
 
-            console.log(`${result.isStatement ? '✅' : '❌'} ${file.name}: ${confidence}% confidence`);
+            // console.log(`${result.isStatement ? '✅' : '❌'} ${file.name}: ${confidence}% confidence`);
 
             return result;
 
@@ -96,7 +96,7 @@ class PDFPreScanner {
      * Batch scan multiple PDFs
      */
     async scanBatch(files) {
-        console.log(`🔍 Batch scanning ${files.length} files...`);
+        // console.log(`🔍 Batch scanning ${files.length} files...`);
 
         const results = [];
         const pdfFiles = Array.from(files).filter(f =>
@@ -332,5 +332,5 @@ class PDFPreScanner {
 // Initialize global instance
 if (typeof window !== 'undefined') {
     window.pdfPreScanner = new PDFPreScanner();
-    console.log('🔍 PDF Pre-Scanner loaded');
+    // console.log('🔍 PDF Pre-Scanner loaded');
 }

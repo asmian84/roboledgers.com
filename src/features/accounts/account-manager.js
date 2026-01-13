@@ -32,7 +32,7 @@ class AccountManager {
         const oldTransactions = localStorage.getItem('ab3_transactions');
 
         if (oldTransactions) {
-            console.log('🔄 Migrating existing transactions to multi-account structure...');
+            // console.log('🔄 Migrating existing transactions to multi-account structure...');
 
             // Create default account
             const defaultAccount = this.createAccount({
@@ -48,7 +48,7 @@ class AccountManager {
             // Remove old key
             localStorage.removeItem('ab3_transactions');
 
-            console.log(`✅ Migration complete. Created account: ${defaultAccount.accountName}`);
+            // console.log(`✅ Migration complete. Created account: ${defaultAccount.accountName}`);
 
             // Show notification
             if (window.toast) {
@@ -96,7 +96,7 @@ class AccountManager {
             this.setCurrentAccount(newAccount.id);
         }
 
-        console.log('✅ Account created:', newAccount.accountName);
+        // console.log('✅ Account created:', newAccount.accountName);
         return newAccount;
     }
 
@@ -152,7 +152,7 @@ class AccountManager {
         };
 
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(accounts));
-        console.log('✅ Account updated:', accounts[index].accountName);
+        // console.log('✅ Account updated:', accounts[index].accountName);
 
         return accounts[index];
     }
@@ -184,7 +184,7 @@ class AccountManager {
             }
         }
 
-        console.log('✅ Account deleted:', account.accountName);
+        // console.log('✅ Account deleted:', account.accountName);
     }
 
     /**
@@ -215,7 +215,7 @@ class AccountManager {
         }
 
         localStorage.setItem(this.CURRENT_ACCOUNT_KEY, accountId);
-        console.log('✅ Switched to account:', account.accountName);
+        // console.log('✅ Switched to account:', account.accountName);
 
         return account;
     }
@@ -272,4 +272,4 @@ class AccountManager {
 // Create global instance
 window.accountManager = new AccountManager();
 
-console.log('💼 Account Manager loaded');
+// console.log('💼 Account Manager loaded');

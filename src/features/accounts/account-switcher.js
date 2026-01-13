@@ -386,4 +386,4 @@ if (document.readyState === 'loading') {
   window.accountSwitcher = new AccountSwitcher();
 }
 
-console.log('💼 Account Switcher loaded');
+// console.log('💼 Account Switcher loaded');

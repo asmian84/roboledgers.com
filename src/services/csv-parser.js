@@ -26,7 +26,7 @@
          * @returns {Array} List of normalized transaction objects
          */
         parse(rawText) {
-            console.log('🧠 SmartCSV: Starting paranoid analysis...');
+            // console.log('🧠 SmartCSV: Starting paranoid analysis...');
 
             const allLines = rawText
                 .split(/\r\n|\n|\r/)
@@ -47,8 +47,8 @@
                 );
             }
 
-            console.log(`🎯 Validated Header at row ${headerRowIndex + 1}:`, allLines[headerRowIndex]);
-            console.log('🗺️ Column Mapping:', headerMap);
+            // console.log(`🎯 Validated Header at row ${headerRowIndex + 1}:`, allLines[headerRowIndex]);
+            // console.log('🗺️ Column Mapping:', headerMap);
 
             // Phase 2: Extract transactions
             const transactions = [];
@@ -73,7 +73,7 @@
                 throw new Error('No valid transactions found. The file format might be incompatible.');
             }
 
-            console.log(`✅ Extracted ${transactions.length} valid transactions. Skipped ${garbageCount} garbage lines.`);
+            // console.log(`✅ Extracted ${transactions.length} valid transactions. Skipped ${garbageCount} garbage lines.`);
             return transactions;
         }
 
@@ -375,6 +375,6 @@
 
     // Expose to window
     window.SmartCSV = new SmartCSVParser();
-    console.log('🧠 SmartCSV Parser Initialized (V4 Port)');
+    // console.log('🧠 SmartCSV Parser Initialized (V4 Port)');
 
 })();

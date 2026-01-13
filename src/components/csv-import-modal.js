@@ -149,7 +149,7 @@ function createCSVImportModal() {
         // Auto-Run Sanitize/Fix Data
         setTimeout(() => {
             if (window.sanitizeData) {
-                console.log('🚑 Auto-running data fix...');
+                // console.log('🚑 Auto-running data fix...');
                 window.sanitizeData();
             }
             // Force re-render to ensure persistence

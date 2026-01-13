@@ -137,71 +137,113 @@ function checkForDuplicates(name, vendors) {
 }
 
 // 5-Step Smart Categorization Logic
-function smartCategorize(description, vendors) {
-    if (!description) return { vendorId: null, accountId: null, vendorName: null, isNew: false, confidence: 0 };
+// 7-Step Smart Categorization Logic
+// Now ASYNC to support AI calls
+async function smartCategorize(description, vendors) {
+    if (!description) return { vendorId: null, accountId: '9970', vendorName: 'Review Required', isNew: true, confidence: 0 };
 
-    const cleanDesc = normalizeVendorName(description);
+    const cleanDesc = normalizeVendorName(description).toUpperCase();
 
-    // 1. Check Vendor Dictionary (Exact & Fuzzy)
-    // Try exact match first for speed
-    let match = vendors.find(v => normalizeVendorName(v.name).toLowerCase() === cleanDesc.toLowerCase());
-
-    // If no exact match, try fuzzy
-    if (!match) {
-        const similar = findSimilarVendors(cleanDesc, vendors, 0.85); // High threshold for auto-match
-        if (similar.length > 0) {
-            match = similar[0].vendor;
-        }
-    }
-
-    // 2. If Found -> Use Vendor's Default Account
+    // --- STEP 1: Exact Dictionary Match ---
+    let match = vendors.find(v => normalizeVendorName(v.name).toUpperCase() === cleanDesc);
     if (match) {
         return {
             vendorId: match.id,
             vendorName: match.name,
-            accountId: match.defaultAccountId || '', // Step 2
+            accountId: match.defaultAccountId || '9970',
             isNew: false,
-            confidence: 1.0
+            confidence: 1.0,
+            method: 'Exact Match'
         };
     }
 
-    // 3. Run Methodologies (Heuristic Rules)
-    const suggestedCategory = suggestCategory(cleanDesc); // Returns 'Utilities', 'Vehicle', etc.
+    // --- STEP 2: Fuzzy Levenshtein Match ---
+    const similar = findSimilarVendors(cleanDesc, vendors, 0.85);
+    if (similar.length > 0) {
+        match = similar[0].vendor;
+        return {
+            vendorId: match.id,
+            vendorName: match.name,
+            accountId: match.defaultAccountId || '9970',
+            isNew: false,
+            confidence: 0.9,
+            method: 'Fuzzy Match'
+        };
+    }
 
-    // Map Categories to Likely Default Accounts (This would ideally be a proper map in settings)
+    // --- STEP 3: Keyword/MCC Pattern Match ---
+    // Uses local heuristic "suggestCategory" logic from original code
+    const suggestedCategory = suggestCategory(cleanDesc);
     const categoryAccountMap = {
-        'Utilities': '6340', // Utilities Expense
-        'Office Supplies': '6110', // Office Supplies
-        'Meals & Entertainment': '6250', // Meals
-        'Travel': '6330', // Travel
-        'Vehicle': '6050', // Auto Expense
-        'Insurance': '6160', // Insurance
-        'Professional Services': '6210', // Legal & Prof
-        'Software': '6140', // Dues & Subs
+        'Utilities': '6800',
+        'Office Supplies': '6700',
+        'Meals & Entertainment': '6300',
+        'Travel': '6600',
+        'Vehicle': '6400',
+        'Insurance': '6500',
+        'Professional Services': '6900',
+        'Software': '6700'
     };
 
-    let suggestedAccountId = '';
     if (suggestedCategory && categoryAccountMap[suggestedCategory]) {
-        suggestedAccountId = categoryAccountMap[suggestedCategory];
-    }
-
-    // 4. Auto-Create Vendor Proposal
-    // If we have a category, we have enough confidence to propose a new vendor
-    if (suggestedCategory) {
-        // Humanize the name (Title Case)
         const proposedName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-
         return {
-            vendorId: null, // To be created
+            vendorId: null,
             vendorName: proposedName,
-            accountId: suggestedAccountId, // Step 5: Assign Suggested Account
+            accountId: categoryAccountMap[suggestedCategory],
             isNew: true,
-            confidence: 0.8
+            confidence: 0.8,
+            method: 'Keyword Pattern'
         };
     }
 
-    // Fallback: No clue
-    return { vendorId: null, accountId: null, vendorName: null, isNew: false, confidence: 0 };
+    // --- STEP 4: Historical Memory (User Corrections) ---
+    // (Future: Query Brain/History)
+
+    // --- STEP 5: Recurring Pattern Recognition ---
+    // (Future: Identify frequent identical amounts/descriptions)
+
+    // --- STEP 6: Amount-Based Heuristics ---
+    // E.g. Exact $15.00 might be bank fee? Skipped for safety.
+
+    // --- STEP 7: Google AI (Gemini) ---
+    // High-certainty fallback using LLM
+    if (window.GoogleAICategorizer) {
+        try {
+            // Construct a mini-transaction object for the AI
+            const aiResult = await window.GoogleAICategorizer.categorize({
+                description: description,
+                amount: 0 // Amount not strictly needed for category, but helpful context if avail
+            });
+
+            if (aiResult && aiResult.account) {
+                const proposedName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                return {
+                    vendorId: null,
+                    vendorName: proposedName,
+                    accountId: aiResult.account,
+                    isNew: true,
+                    confidence: 0.95,
+                    method: 'Google AI'
+                };
+            }
+        } catch (e) {
+            console.warn('AI Categorization failed:', e);
+        }
+    }
+
+    // --- FALLBACK: FORCED CATEGORIZATION ---
+    // Ensure we never return null/empty. Force to "Suspense" (9970)
+    const fallbackName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+    return {
+        vendorId: null,
+        accountId: '9970', // Automated Suspense / Review Required
+        vendorName: fallbackName,
+        isNew: true,
+        confidence: 0,
+        method: 'Forced Fallback'
+    };
 }
 
 // Normalize vendor name (clean up common variations)
@@ -226,4 +268,4 @@ if (typeof window !== 'undefined') {
     };
 }
 
-console.log('🎯 Vendor matcher utility loaded');
+// console.log('🎯 Vendor matcher utility loaded');

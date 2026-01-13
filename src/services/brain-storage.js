@@ -49,7 +49,7 @@ class BrainStorage {
             request.onsuccess = (event) => {
                 clearTimeout(timeout);
                 this.db = event.target.result;
-                console.log(`🧠 BrainStorage: Connected to ${this.dbName} (v${this.db.version})`);
+                // console.log(`🧠 BrainStorage: Connected to ${this.dbName} (v${this.db.version})`);
                 resolve();
             };
 

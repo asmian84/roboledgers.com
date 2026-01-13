@@ -47,4 +47,4 @@ window.verifyCoABalances = function () {
     };
 };
 
-console.log('✅ COA Verification loaded. Run window.verifyCoABalances() to check balances.');
+// console.log('✅ COA Verification loaded. Run window.verifyCoABalances() to check balances.');

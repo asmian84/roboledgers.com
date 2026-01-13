@@ -219,4 +219,4 @@ class SearchEngine {
 // Create global instance
 window.searchEngine = new SearchEngine();
 
-console.log('🔍 Search Engine loaded');
+// console.log('🔍 Search Engine loaded');

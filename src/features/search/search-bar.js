@@ -4,14 +4,14 @@
  */
 
 class SearchBar {
-    constructor() {
-        this.searchBar = null;
-        this.init();
-    }
+  constructor() {
+    this.searchBar = null;
+    this.init();
+  }
 
-    init() {
-        // Create search bar HTML for header
-        const searchBarHTML = `
+  init() {
+    // Create search bar HTML for header
+    const searchBarHTML = `
       <div class="header-search-bar" id="headerSearchBar">
         <span class="search-icon-compact">🔍</span>
         <input 
@@ -24,67 +24,67 @@ class SearchBar {
       </div>
     `;
 
-        // Find header and insert search bar
-        const header = document.querySelector('header') || document.querySelector('.app-header');
-        if (header) {
-            // Insert before last child (usually user menu)
-            const insertPoint = header.querySelector('.user-menu') || header.lastElementChild;
-            if (insertPoint) {
-                insertPoint.insertAdjacentHTML('beforebegin', searchBarHTML);
-            } else {
-                header.insertAdjacentHTML('beforeend', searchBarHTML);
-            }
-        }
-
-        this.searchBar = document.getElementById('headerSearchBar');
-        const input = document.getElementById('headerSearchInput');
-
-        // Click to open modal
-        if (this.searchBar) {
-            this.searchBar.addEventListener('click', () => {
-                window.searchModal?.open();
-            });
-        }
-
-        // Also make input focusable but open modal instead
-        if (input) {
-            input.addEventListener('focus', () => {
-                window.searchModal?.open();
-                input.blur(); // Remove focus from readonly input
-            });
-        }
-
-        // Register Ctrl+K shortcut
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+K or Cmd+K
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                window.searchModal?.toggle();
-            }
-
-            // Forward slash (/) to open search
-            if (e.key === '/' && !this.isInputFocused()) {
-                e.preventDefault();
-                window.searchModal?.open();
-            }
-        });
-
-        this.injectStyles();
-        console.log('🔍 Search Bar loaded');
+    // Find header and insert search bar
+    const header = document.querySelector('header') || document.querySelector('.app-header');
+    if (header) {
+      // Insert before last child (usually user menu)
+      const insertPoint = header.querySelector('.user-menu') || header.lastElementChild;
+      if (insertPoint) {
+        insertPoint.insertAdjacentHTML('beforebegin', searchBarHTML);
+      } else {
+        header.insertAdjacentHTML('beforeend', searchBarHTML);
+      }
     }
 
-    isInputFocused() {
-        const active = document.activeElement;
-        return active && (
-            active.tagName === 'INPUT' ||
-            active.tagName === 'TEXTAREA' ||
-            active.isContentEditable
-        );
+    this.searchBar = document.getElementById('headerSearchBar');
+    const input = document.getElementById('headerSearchInput');
+
+    // Click to open modal
+    if (this.searchBar) {
+      this.searchBar.addEventListener('click', () => {
+        window.searchModal?.open();
+      });
     }
 
-    injectStyles() {
-        const style = document.createElement('style');
-        style.innerHTML = `
+    // Also make input focusable but open modal instead
+    if (input) {
+      input.addEventListener('focus', () => {
+        window.searchModal?.open();
+        input.blur(); // Remove focus from readonly input
+      });
+    }
+
+    // Register Ctrl+K shortcut
+    document.addEventListener('keydown', (e) => {
+      // Ctrl+K or Cmd+K
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        window.searchModal?.toggle();
+      }
+
+      // Forward slash (/) to open search
+      if (e.key === '/' && !this.isInputFocused()) {
+        e.preventDefault();
+        window.searchModal?.open();
+      }
+    });
+
+    this.injectStyles();
+    // console.log('🔍 Search Bar loaded');
+  }
+
+  isInputFocused() {
+    const active = document.activeElement;
+    return active && (
+      active.tagName === 'INPUT' ||
+      active.tagName === 'TEXTAREA' ||
+      active.isContentEditable
+    );
+  }
+
+  injectStyles() {
+    const style = document.createElement('style');
+    style.innerHTML = `
       .header-search-bar {
         position: relative;
         display: flex;
@@ -149,17 +149,17 @@ class SearchBar {
         }
       }
     `;
-        document.head.appendChild(style);
-    }
+    document.head.appendChild(style);
+  }
 }
 
 // Initialize search bar when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.searchBar = new SearchBar();
-    });
-} else {
+  document.addEventListener('DOMContentLoaded', () => {
     window.searchBar = new SearchBar();
+  });
+} else {
+  window.searchBar = new SearchBar();
 }
 
-console.log('🔍 Search Bar module loaded');
+// console.log('🔍 Search Bar module loaded');
