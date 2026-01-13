@@ -477,6 +477,16 @@ window.initVendorsGrid = async function () {
           if (countEl) countEl.textContent = `${nodes.length} selected`;
         }
       },
+      isExternalFilterPresent: () => {
+        // Return true if we have an active drill-down account
+        return window.activeAccountDrilldown !== undefined && window.activeAccountDrilldown !== null;
+      },
+      doesExternalFilterPass: (node) => {
+        // Return true if node matches the drill-down account
+        if (!window.activeAccountDrilldown) return true;
+        const account = node.data.default_account || node.data.default_gl_account || '9970';
+        return String(account) === String(window.activeAccountDrilldown);
+      },
       getRowId: (params) => params.data.id,
       onGridReady: (params) => {
         window.vendorsGridApi = params.api;

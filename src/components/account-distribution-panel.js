@@ -174,30 +174,11 @@ class AccountDistributionPanel {
             return;
         }
 
-        const cols = this.gridApi.getColumns().map(c => c.getColId());
-        console.log(`🔍 Attempting to filter for account: ${accountNumber}`);
-        console.log('📋 All colIds:', cols);
-
-        if (!cols.includes('default_account')) {
-            console.error('❌ Column "default_account" not found in grid columns!');
-            alert('Critial Error: Hidden account column missing from grid layout.');
-        }
-
+        console.log(`📊 Drilling down into account: ${accountNumber}`);
         this.currentFilter = accountNumber;
 
-        // Apply filter to grid
-        const model = {
-            default_account: {
-                filterType: 'text',
-                type: 'equals',
-                filter: accountNumber
-            }
-        };
-
-        console.log('🎯 Applying Filter Model:', model);
-        this.gridApi.setFilterModel(model);
-
-        // Force refresh
+        // Set global filter state and signal grid to refresh
+        window.activeAccountDrilldown = accountNumber;
         this.gridApi.onFilterChanged();
 
         // Show reset button
@@ -206,22 +187,22 @@ class AccountDistributionPanel {
             resetBtn.style.display = 'inline-block';
         }
 
-        // Update UI
+        // Update UI highlighting
         document.querySelectorAll('.dist-row').forEach(row => {
             row.classList.toggle('active', row.dataset.account === accountNumber);
         });
-
-        console.log(`📊 Filtered to account ${accountNumber}`);
     }
 
     /**
      * Reset grid filter
      */
     resetFilter() {
+        console.log('📊 Resetting account filter...');
         this.currentFilter = null;
+        window.activeAccountDrilldown = null;
 
         if (this.gridApi) {
-            this.gridApi.setFilterModel(null);
+            this.gridApi.onFilterChanged();
         }
 
         // Hide reset button
@@ -234,8 +215,6 @@ class AccountDistributionPanel {
         document.querySelectorAll('.dist-row').forEach(row => {
             row.classList.remove('active');
         });
-
-        console.log('📊 Filter reset - showing all vendors');
     }
 
     /**
