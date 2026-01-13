@@ -201,11 +201,20 @@ window.startAIAudit = async function (targetIds) {
       }
     }
 
-    if (window.vendorsGridApi) window.vendorsGridApi.refreshCells();
+    // Full grid data refresh with normalization
+    if (window.vendorsGridApi) {
+      let allVendors = await window.merchantDictionary.getAllMerchants();
+      // Normalize for filtering
+      allVendors = allVendors.map(v => ({
+        ...v,
+        default_account: v.default_account || v.default_gl_account || '9970'
+      }));
+      window.vendorsGridApi.setGridOption('rowData', allVendors);
 
-    // Refresh account distribution panel with updated data
-    if (window.accountDistPanel) {
-      window.accountDistPanel.refresh(await window.merchantDictionary.getAllMerchants());
+      // Refresh distribution panel
+      if (window.accountDistPanel) {
+        window.accountDistPanel.refresh(allVendors);
+      }
     }
 
     // Inline message card

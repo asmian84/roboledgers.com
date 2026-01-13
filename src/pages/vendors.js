@@ -379,8 +379,14 @@ window.initVendorsGrid = async function () {
 
     // 2. FETCH DATA
     console.time('Vendors:GetMerchants');
-    const rawMerchants = await window.merchantDictionary.getAllMerchants();
+    let rawMerchants = await window.merchantDictionary.getAllMerchants();
     console.timeEnd('Vendors:GetMerchants');
+
+    // Normalize: Ensure default_account exists for grid filtering
+    rawMerchants = rawMerchants.map(v => ({
+      ...v,
+      default_account: v.default_account || v.default_gl_account || '9970'
+    }));
 
     console.log(`📝 Dictionary: Fetched ${rawMerchants.length} vendors for grid.`);
     if (rawMerchants.length > 0) {
@@ -407,6 +413,7 @@ window.initVendorsGrid = async function () {
     const columnDefs = [
       { width: 50, checkboxSelection: true, headerCheckboxSelection: true, headerCheckboxSelectionFilteredOnly: true, pinned: 'left' },
       { field: 'display_name', headerName: 'Vendor Name', flex: 2, sortable: true, filter: 'agTextColumnFilter', cellStyle: { fontWeight: 700, color: '#1e293b' } },
+      { field: 'default_account', colId: 'default_account', hide: true, filter: 'agTextColumnFilter', suppressFiltersToolPanel: false },
       {
         field: 'default_category',
         headerName: 'Account',
@@ -473,6 +480,7 @@ window.initVendorsGrid = async function () {
       getRowId: (params) => params.data.id,
       onGridReady: (params) => {
         window.vendorsGridApi = params.api;
+        console.log('🏁 Grid Ready. Columns:', params.api.getColumns().map(c => c.getColId()));
 
         // Initialize Account Distribution Panel
         if (window.AccountDistributionPanel) {

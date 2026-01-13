@@ -169,7 +169,13 @@ class AccountDistributionPanel {
      * @param {string} accountNumber - GL account to filter by
      */
     filterByAccount(accountNumber) {
-        if (!this.gridApi) return;
+        if (!this.gridApi) {
+            console.error('❌ Cannot filter: gridApi is missing');
+            return;
+        }
+
+        console.log(`🔍 Attempting to filter grid for account: ${accountNumber}`);
+        console.log('📋 Available Columns:', this.gridApi.getColumns().map(c => c.getColId()));
 
         this.currentFilter = accountNumber;
 
