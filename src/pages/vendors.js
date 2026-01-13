@@ -412,7 +412,7 @@ window.initVendorsGrid = async function () {
 
     const columnDefs = [
       { width: 50, checkboxSelection: true, headerCheckboxSelection: true, headerCheckboxSelectionFilteredOnly: true, pinned: 'left' },
-      { field: 'display_name', headerName: 'Vendor Name', flex: 2, sortable: true, filter: 'agTextColumnFilter', cellStyle: { fontWeight: 700, color: '#1e293b' } },
+      { field: 'display_name', headerName: 'Vendor Name', flex: 2, sortable: true, filter: 'agTextColumnFilter', floatingFilter: true, cellStyle: { fontWeight: 700, color: '#1e293b' } },
       { field: 'default_account', colId: 'default_account', hide: true, filter: 'agTextColumnFilter', suppressFiltersToolPanel: false },
       {
         field: 'default_category',
@@ -425,7 +425,10 @@ window.initVendorsGrid = async function () {
           const color = val === 'Uncategorized' || val === 'Miscellaneous' ? '#94a3b8' : '#2563eb';
           const bg = val === 'Uncategorized' || val === 'Miscellaneous' ? 'transparent' : '#eff6ff';
           return `<span style="background:${bg}; color:${color}; padding:2px 8px; border-radius:12px; font-weight:700; font-size:12px;">${val}</span>`;
-        }
+        },
+        filter: 'agTextColumnFilter',
+        floatingFilter: true,
+        sortable: true
       },
       {
         field: 'categorization_confidence',
@@ -433,16 +436,19 @@ window.initVendorsGrid = async function () {
         width: 130,
         cellRenderer: params => {
           const val = Math.round((params.value || 0) * 100);
-          const color = val > 80 ? '#10b981' : val > 50 ? '#f59e0b' : '#ef4444';
+          const color = val > 80 ? '#16a34a' : val > 50 ? '#ca8a04' : '#ef4444';
           return `<div style="display:flex; align-items:center; gap:8px;">
-                        <div style="flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                        <div style="flex:1; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden;">
                             <div style="width:${val}%; height:100%; background:${color};"></div>
                         </div>
                         <span style="color:${color}; font-weight:800; font-size:11px;">${val}%</span>
                     </div>`;
-        }
+        },
+        filter: 'agNumberColumnFilter',
+        floatingFilter: true,
+        sortable: true
       },
-      { field: 'industry', headerName: 'Industry', flex: 1, sortable: true, cellStyle: { color: '#64748b' } },
+      { field: 'industry', headerName: 'Industry', flex: 1, sortable: true, filter: 'agTextColumnFilter', floatingFilter: true, cellStyle: { color: '#64748b' } },
       {
         headerName: '',
         width: 60,

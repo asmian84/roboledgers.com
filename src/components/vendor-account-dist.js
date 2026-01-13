@@ -166,7 +166,9 @@ class AccountDistributionPanel {
 
             html += `
                 <tr class="dist-row ${this.currentFilter === item.account ? 'active' : ''}" 
-                    data-account="${item.account}">
+                    data-account="${item.account}"
+                    onclick="window.accountDistPanel.filterByAccount('${item.account}')"
+                    style="cursor: pointer;">
                     <td>
                         <span class="account-badge" style="background-color: ${accountColor}">
                             ${item.account}
@@ -176,7 +178,7 @@ class AccountDistributionPanel {
                     <td class="count">${item.count}</td>
                     <td class="percentage">${percentage}%</td>
                     <td>
-                        <button class="btn-filter" onclick="window.accountDistPanel.filterByAccount('${item.account}')">
+                        <button class="btn-filter">
                             Filter →
                         </button>
                     </td>
@@ -198,23 +200,32 @@ class AccountDistributionPanel {
      * @param {string} accountNumber - GL account to filter by
      */
     filterByAccount(accountNumber) {
-        if (!this.gridApi) {
-            console.error('❌ Cannot filter: gridApi is missing');
-            return;
+        try {
+            if (!this.gridApi) {
+                console.error('❌ Cannot filter: gridApi is missing');
+                alert('Grid API not ready. Please try again in 1 second.');
+                return;
+            }
+
+            console.log(`📊 Panel: Drilling down into account [${accountNumber}]`);
+            this.currentFilter = accountNumber;
+
+            // Set global filter state and signal grid to refresh
+            window.activeAccountDrilldown = accountNumber;
+            console.log('📉 Panel: Signal grid filter change. ActiveDrilldown =', window.activeAccountDrilldown);
+
+            this.gridApi.onFilterChanged();
+
+            // Show reset button
+            const resetBtn = document.getElementById('resetFilter');
+            if (resetBtn) {
+                resetBtn.style.display = 'inline-block';
+            }
+        } catch (err) {
+            console.error('❌ filterByAccount Failed:', err);
         }
 
-        console.log(`📊 Drilling down into account: ${accountNumber}`);
-        this.currentFilter = accountNumber;
-
-        // Set global filter state and signal grid to refresh
-        window.activeAccountDrilldown = accountNumber;
-        this.gridApi.onFilterChanged();
-
-        // Show reset button
-        const resetBtn = document.getElementById('resetFilter');
-        if (resetBtn) {
-            resetBtn.style.display = 'inline-block';
-        }
+        // Update UI highlighting
 
         // Update UI highlighting
         document.querySelectorAll('.dist-row').forEach(row => {
