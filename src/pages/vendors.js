@@ -478,14 +478,18 @@ window.initVendorsGrid = async function () {
         }
       },
       isExternalFilterPresent: () => {
-        // Return true if we have an active drill-down account
-        return window.activeAccountDrilldown !== undefined && window.activeAccountDrilldown !== null;
+        window.activeAccountDrilldown = window.activeAccountDrilldown || null;
+        const active = window.activeAccountDrilldown !== undefined && window.activeAccountDrilldown !== null;
+        if (active) console.log('📉 Grid: External filter is ACTIVE for', window.activeAccountDrilldown);
+        return active;
       },
       doesExternalFilterPass: (node) => {
-        // Return true if node matches the drill-down account
         if (!window.activeAccountDrilldown) return true;
         const account = node.data.default_account || node.data.default_gl_account || '9970';
-        return String(account) === String(window.activeAccountDrilldown);
+        const match = String(account) === String(window.activeAccountDrilldown);
+        // Only log failures to avoid spam, or log specific matches for debug
+        if (match) console.log(`✅ Grid Filter Match: ${node.data.display_name} (${account})`);
+        return match;
       },
       getRowId: (params) => params.data.id,
       onGridReady: (params) => {
