@@ -84,12 +84,29 @@ window.renderVendors = function () {
         }
 
         /* GRID WRAPPER */
-        .v-grid-wrapper { flex: 1; padding: 12px; position: relative; min-height: 0; }
-        #vendorsGrid {
-            height: 100%; width: 100%; background: white;
-            border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;
+         /* 🛡️ ROBUST GRID LAYOUT */
+         .v-grid-wrapper { 
+            display: flex !important; 
+            flex-direction: column !important; 
+            flex: 1 !important; 
+            min-height: 0 !important; 
+            padding: 12px;
+            background: #f8fafc;
+         }
+         #vendorsGrid {
+            flex: 1 !important;
+            min-height: 400px !important; /* Ensure it never collapses to 0 */
+            width: 100%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
             box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05);
-        }
+         }
+         #accountDistribution {
+            margin-bottom: 20px !important;
+            flex-shrink: 0;
+         }
 
         .ag-theme-alpine { --ag-font-family: 'Inter', sans-serif; --ag-font-size: 13px; }
         
@@ -133,27 +150,8 @@ window.renderVendors = function () {
          .dropdown-item.danger:hover { background: #fee2e2; color: #b91c1c; }
          .dropdown-divider { height: 1px; background: #e2e8f0; margin: 6px 0; }
          
-         /* 🛡️ FORCE GRID VISIBILITY */
-         .ag-root-wrapper, .ag-root-wrapper-body, .ag-root, .ag-body-viewport, .ag-body, .ag-center-cols-container {
-            height: 100% !important;
-            min-height: 0 !important;
-         }
-         .ag-header {
-             border-bottom: 2px solid #e2e8f0 !important;
-             background: #f8fafc !important;
-         }
-         .ag-row {
-             background: white !important;
-             border-bottom: 1px solid #f1f5f9 !important;
-             min-height: 48px !important;
-             display: flex !important;
-             align-items: center !important;
-         }
-         .ag-cell {
-            display: flex !important;
-            align-items: center !important;
-            line-height: normal !important;
-         }
+         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+         @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
       </style>
 
       <div class="v-premium-header">
@@ -266,15 +264,14 @@ window.renderVendors = function () {
          </div>
       </div>
 
-      <div class="v-grid-wrapper" style="position: relative; z-index: 1;">
-
+      <div class="v-grid-wrapper" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
         <!-- Account Distribution Analytics -->
-        <div id="accountDistribution" style="max-width: 1400px; margin: 0 auto 0 auto;"></div>
+        <div id="accountDistribution" style="max-width: 1400px; margin: 0 auto;"></div>
 
-        <div id="vendorsGrid" class="ag-theme-alpine"></div>
+        <div id="vendorsGrid" class="ag-theme-alpine" style="height: 600px; width: 100%; border-radius: 12px; overflow: hidden;"></div>
         <div id="v-loading-overlay" style="position:absolute; inset:0; background:white; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; border-radius:12px;">
            <div class="spinner" style="width:36px; height:36px; border:4px solid #f3f3f3; border-top:4px solid #4f46e5; border-radius:50%; animation:spin 1s linear infinite;"></div>
-           <p style="margin-top:12px; color:#64748b; font-weight:600; font-size: 13px;">Pritining Dictionary Data...</p>
+           <p style="margin-top:12px; color:#64748b; font-weight:600; font-size: 13px;">Printing Dictionary Data...</p>
         </div>
       </div>
     </div>

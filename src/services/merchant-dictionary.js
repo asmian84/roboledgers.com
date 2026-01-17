@@ -995,14 +995,13 @@ class MerchantDictionary {
         if (!this.isInitialized) await this.init();
         if (!Array.isArray(merchants)) return 0;
 
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['merchants', 'pattern_cache'], 'readwrite');
             const store = transaction.objectStore('merchants');
             const cacheStore = transaction.objectStore('pattern_cache');
             let saved = 0;
 
             if (clearFirst) {
-                console.log('🗑️ Dictionary: Clearing before bulk save...');
                 store.clear();
                 cacheStore.clear();
                 this.merchants.clear();
@@ -1011,36 +1010,24 @@ class MerchantDictionary {
             }
 
             transaction.oncomplete = () => {
-                // Update in-memory map AFTER transaction success
                 merchants.forEach(m => this.merchants.set(m.id, m));
-                console.log(`✅ Bulk save complete: ${saved} merchants persisted`);
                 resolve(saved);
             };
 
-            transaction.onerror = (e) => {
-                console.error('❌ Bulk save transaction failed:', e);
-                reject(e);
-            };
+            transaction.onerror = (e) => reject(e);
 
             for (const merchant of merchants) {
                 const request = store.put(merchant);
-                request.onsuccess = () => {
-                    saved++;
-                    if (progressCallback && saved % 500 === 0) {
-                        progressCallback(saved, merchants.length);
-                    }
-                };
+                request.onsuccess = () => saved++;
             }
         });
 
-        // SYNC TO CLOUD
+        // SYNC TO CLOUD (Now Reachable)
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                console.log(`☁️ Dictionary: Pushing ${merchants.length} merchants to cloud ("${this.tableName}")...`);
                 const cloudSafeList = merchants.map(m => this.sanitizeForCloud(m));
                 const { error } = await window.supabaseService.from(this.tableName).upsert(cloudSafeList);
                 if (error) console.error('☁️ Dictionary: Bulk cloud push failed:', error);
-                else console.log('✅ Dictionary: Bulk cloud push successful');
             } catch (e) {
                 console.warn('☁️ Dictionary: Supabase error during bulkSaveMerchants', e);
             }
@@ -1103,9 +1090,8 @@ class MerchantDictionary {
             return;
         }
 
-        console.log(`📥 Importing ${merchants.length} merchants...`);
-        const total = merchants.length;
         let imported = 0;
+        if (imported === 0) console.log(`☁️ Cloud Sync: Updating local memory with ${merchants.length} records...`);
 
         for (const m of merchants) {
             // NORMALIZATION: Handle legacy schema variations
@@ -1142,7 +1128,6 @@ class MerchantDictionary {
                 }
             }
             imported++;
-            if (imported % 500 === 0) console.log(`   Progress: ${imported}/${total}...`);
         }
 
         console.log(`✅ Successfully imported ${imported} merchants`);

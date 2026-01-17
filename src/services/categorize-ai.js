@@ -204,77 +204,109 @@ class CategorizeAI {
     }
 
     /**
-     * Batch Analysis (Memory-Optimized)
-     * Processes multiple vendors efficiently without freezing the browser
-     * @param {Array} vendors - Array of vendor objects with {id, display_name, mcc_code}
-     * @param {Function} progressCallback - Optional callback(processed, total, currentVendor)
-     * @returns {Promise<Object>} { results: Array, successCount: number, errorCount: number }
+     * Batch Analysis (PERFECTED TURBO MODE)
+     * Processes vendors in parallel blocks with yielding to prevent UI freeze.
+     * @param {Array} vendors - Array of vendor objects
+     * @param {Function} progressCallback - Optional progress tracking
      */
     async analyzeBatch(vendors, progressCallback = null) {
-        const BATCH_SIZE = 50;
-        const BATCH_DELAY = 50;
-
+        this.isAborted = false; // Reset abort flag
+        const BATCH_SIZE = 25;
+        const CONCURRENCY = 3; // Process 3 batches in parallel
         const results = [];
-        let successCount = 0;
-        let errorCount = 0;
         let processed = 0;
 
-        // Process in batches
-        for (let batchStart = 0; batchStart < vendors.length; batchStart += BATCH_SIZE) {
-            const batchEnd = Math.min(batchStart + BATCH_SIZE, vendors.length);
-            const batch = vendors.slice(batchStart, batchEnd);
+        if (window.merchantDictionary) {
+            await window.merchantDictionary.createRestorePoint('Turbo AI Audit Start');
+        }
 
-            for (const vendor of batch) {
-                processed++;
+        console.log(`⚡ PERFECTED TURBO: Categorizing ${vendors.length} vendors (Concurrency: ${CONCURRENCY})...`);
 
-                try {
-                    const analysis = await this.analyze({
-                        description: vendor.display_name,
-                        mcc: vendor.mcc_code
-                    });
+        for (let i = 0; i < vendors.length; i += (BATCH_SIZE * CONCURRENCY)) {
+            if (this.isAborted) {
+                console.warn('🛑 Turbo Audit: Aborted by user.');
+                break;
+            }
 
-                    // Check if analysis succeeded
-                    if (analysis && analysis.category && analysis.gl_account) {
-                        results.push({
-                            id: vendor.id,
-                            ...vendor,
-                            industry: analysis.category.split(':')[0],
-                            default_account: analysis.gl_account,
-                            default_category: analysis.category,
-                            categorization_confidence: analysis.confidence,
-                            source: analysis.source
-                        });
-                        successCount++;
-                    } else {
-                        // Keep original vendor data if analysis failed
-                        results.push(vendor);
-                        errorCount++;
-                        if (processed <= 5) { // Only log first 5 to avoid spam
-                            console.warn(`⚠️ Analysis failed for "${vendor.display_name}":`, analysis);
-                        }
-                    }
-
-                    // Progress callback (throttled every 10 items)
-                    if (progressCallback && (processed % 10 === 0 || processed === vendors.length)) {
-                        progressCallback(processed, vendors.length, vendor.display_name);
-                    }
-
-                } catch (err) {
-                    // Keep original vendor data on error
-                    results.push(vendor);
-                    errorCount++;
-                    console.error(`Batch error for "${vendor.display_name}":`, err.message);
-                    this.logger.log('BATCH_ERROR', { vendor: vendor.display_name, error: err.message });
+            // Prepare parallel blocks
+            const blocks = [];
+            for (let c = 0; c < CONCURRENCY; c++) {
+                const startIdx = i + (c * BATCH_SIZE);
+                if (startIdx < vendors.length) {
+                    blocks.push(vendors.slice(startIdx, startIdx + BATCH_SIZE));
                 }
             }
 
-            // Breathe between batches
-            if (batchEnd < vendors.length) {
-                await new Promise(r => setTimeout(r, BATCH_DELAY));
-            }
+            // Execute parallel batch requests
+            const blockPromises = blocks.map(async (batch) => {
+                if (this.isAborted) return;
+
+                const batchInputs = batch.map(v => ({ description: v.display_name, id: v.id }));
+                try {
+                    let batchResults;
+                    if (window.GoogleAICategorizer && window.GoogleAICategorizer.apiKey) {
+                        batchResults = await window.GoogleAICategorizer.categorizeBatch(batchInputs);
+                    } else {
+                        // Sequential fallback (should not happen if key is set)
+                        batchResults = await Promise.all(batch.map(v => this.analyze({ description: v.display_name })));
+                    }
+
+                    if (this.isAborted) return;
+
+                    // Process results for this block
+                    const blockUpdates = [];
+                    batch.forEach((vendor, index) => {
+                        processed++;
+                        const res = batchResults[index];
+                        if (res && res.account) {
+                            const updated = {
+                                ...vendor,
+                                industry: res.category ? res.category.split(':')[0] : 'Other',
+                                default_account: res.account,
+                                default_category: res.category || 'Miscellaneous',
+                                categorization_confidence: res.confidence || 0.8,
+                                source: res.method || 'Turbo AI'
+                            };
+                            results.push(updated);
+                            blockUpdates.push(updated);
+                        } else {
+                            results.push(vendor);
+                        }
+                    });
+
+                    // ✨ INCREMENTAL SAVE (Non-Blocking)
+                    if (blockUpdates.length > 0 && window.merchantDictionary) {
+                        await window.merchantDictionary.bulkSaveMerchants(blockUpdates, null, false);
+
+                        // SYNC UI (Using requestAnimationFrame for performance)
+                        if (window.vendorsGridApi) {
+                            requestAnimationFrame(() => {
+                                window.vendorsGridApi.applyTransaction({ update: blockUpdates });
+                            });
+                        }
+                    }
+
+                    if (progressCallback && batch.length > 0) {
+                        progressCallback(processed, vendors.length, batch[batch.length - 1].display_name);
+                    }
+                } catch (err) {
+                    console.error('Batch block failed:', err);
+                    batch.forEach(v => { results.push(v); processed++; });
+                }
+            });
+
+            // Wait for this set of parallel blocks to finish
+            await Promise.all(blockPromises);
+
+            // 🛡️ EVENT LOOP YIELD: Take a tiny breather to let the UI paint and handle clicks
+            await new Promise(resolve => setTimeout(resolve, 1));
         }
 
-        return { results, successCount, errorCount };
+        return { results, successCount: results.filter(r => r.source?.includes('AI')).length, errorCount: vendors.length - results.length };
+    }
+
+    abort() {
+        this.isAborted = true;
     }
 }
 

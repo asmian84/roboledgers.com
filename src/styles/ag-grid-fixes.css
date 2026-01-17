@@ -1,34 +1,42 @@
-/* AG Grid Row Visibility Fix */
-/* Force rows to render with proper height */
+/* AG Grid Emergency Restoration - Viewport & Height Integrity */
 
-.ag-theme-quartz .ag-row,
-.ag-theme-alpine .ag-row {
-    min-height: 48px !important;
-    height: 48px !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: flex !important;
+.ag-theme-alpine {
+    --ag-font-family: 'Inter', sans-serif;
+    --ag-font-size: 13px;
+    --ag-header-background-color: #f8fafc;
+    --ag-row-hover-color: #f1f5f9;
 }
 
-.ag-theme-quartz .ag-cell,
-.ag-theme-alpine .ag-cell {
+/* 🛑 CRITICAL: Neutralize Viewport Flex (Breaks Grid Virtualization) */
+.ag-body-viewport,
+.ag-body-horizontal-scroll-viewport,
+.ag-center-cols-viewport {
+    display: block !important;
+    height: auto !important;
+    min-height: 100% !important;
+}
+
+.ag-center-cols-container {
+    min-height: 100% !important;
+}
+
+/* 🛑 CRITICAL: Row Height Integrity */
+.ag-row {
+    border-bottom: 1px solid #f1f5f9 !important;
+    min-height: 48px !important;
+}
+
+/* Remove toxic flex overrides that break positioning */
+.ag-row[role="row"] {
+    display: block !important;
+}
+
+.ag-cell {
     display: flex !important;
     align-items: center !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+    line-height: normal !important;
 }
 
-.ag-theme-quartz .ag-center-cols-viewport,
-.ag-theme-alpine .ag-center-cols-viewport {
-    min-height: 500px !important;
-}
-
-.ag-theme-quartz .ag-center-cols-container,
-.ag-theme-alpine .ag-center-cols-container {
-    min-height: 500px !important;
-}
-
-.ag-theme-quartz .ag-body-viewport,
-.ag-theme-alpine .ag-body-viewport {
-    overflow-y: auto !important;
+.no-border-cell {
+    border: none !important;
 }

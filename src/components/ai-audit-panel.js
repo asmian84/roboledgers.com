@@ -148,9 +148,40 @@ window.startAIAudit = async function (targetIds) {
   const all = await window.merchantDictionary.getAllMerchants();
   const targets = all.filter(m => targetIds.includes(m.id));
 
-  const overlay = document.getElementById('v-loading-overlay');
-  if (overlay) overlay.style.display = 'flex';
-  const textEl = overlay ? overlay.querySelector('p') : null;
+  // Create or get HUD (Non-blocking progress bar)
+  let hud = document.getElementById('ai-audit-hud');
+  if (!hud) {
+    hud = document.createElement('div');
+    hud.id = 'ai-audit-hud';
+    hud.style.cssText = `
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: white; padding: 12px 20px; border-radius: 16px;
+      display: flex; align-items: center; gap: 16px; z-index: 100000;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); animation: slideUp 0.3s ease;
+      min-width: 400px;
+    `;
+    document.body.appendChild(hud);
+  }
+
+  hud.innerHTML = `
+    <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+      <div class="spinner" style="width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.2); border-top: 3px solid white; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+    </div>
+    <div style="flex: 1;">
+      <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+        <span id="hud-status">🚀 Turbo AI Audit</span>
+        <span id="hud-percent">0%</span>
+      </div>
+      <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+        <div id="hud-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #d946ef); transition: width 0.3s ease;"></div>
+      </div>
+    </div>
+    <button onclick="if(window.CategorizeAI) window.CategorizeAI.abort(); this.parentElement.remove();" style="background: rgba(255,255,255,0.1); border: none; color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;" onmouseover="this.style.background='rgba(255,100,100,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">ABORT</button>
+  `;
+
+  const progressBar = document.getElementById('hud-progress-bar');
+  const percentText = document.getElementById('hud-percent');
+  const statusText = document.getElementById('hud-status');
 
   try {
     let updatedMerchants = [];
@@ -158,63 +189,46 @@ window.startAIAudit = async function (targetIds) {
     let errorCount = 0;
 
     if (useGoogleAI) {
-      // Delegate to CategorizeAI's internal batch processor
-      if (!window.CategorizeAI) await import('./services/categorize-ai.js');
-
       const { results, successCount: success, errorCount: errors } = await window.CategorizeAI.analyzeBatch(
         targets,
-        (processed, total) => {
-          if (textEl) {
-            textEl.textContent = `🧠 AI Analysis: ${processed}/${total} (${Math.round(processed / total * 100)}%)`;
-          }
+        (processed, total, currentName) => {
+          const pct = Math.round((processed / total) * 100);
+          if (progressBar) progressBar.style.width = `${pct}%`;
+          if (percentText) percentText.textContent = `${pct}%`;
+          if (statusText) statusText.textContent = `Analyzing: ${currentName}`;
         }
       );
-
       updatedMerchants = results;
       successCount = success;
       errorCount = errors;
-
     } else {
-      // Local logic mode
+      // Local matching (kept for reference, still using HUD)
       for (const row of targets) {
-        try {
-          const result = window.merchantCategorizer.cleanTransaction(row.display_name);
-          updatedMerchants.push({ ...row, ...result });
-          successCount++;
-        } catch {
-          errorCount++;
-        }
+        if (window.CategorizeAI.isAborted) break;
+        const result = window.merchantCategorizer.cleanTransaction(row.display_name);
+        const updated = { ...row, ...result };
+        updatedMerchants.push(updated);
+        await window.merchantDictionary.updateMerchant(updated.id, updated, false);
+        successCount++;
+        const pct = Math.round((successCount / targets.length) * 100);
+        if (progressBar) progressBar.style.width = `${pct}%`;
+        if (percentText) percentText.textContent = `${pct}%`;
+        if (statusText) statusText.textContent = `Matching: ${row.display_name}`;
       }
     }
 
-    // Save in batches
-    if (textEl) textEl.textContent = "💾 Saving updates...";
+    // Hide HUD after small delay
+    setTimeout(() => { if (hud) hud.style.opacity = '0'; setTimeout(() => hud.remove(), 500); }, 2000);
 
-    const SAVE_BATCH_SIZE = 100;
-    for (let i = 0; i < updatedMerchants.length; i += SAVE_BATCH_SIZE) {
-      const saveBatch = updatedMerchants.slice(i, i + SAVE_BATCH_SIZE);
-      await window.merchantDictionary.bulkSaveMerchants(saveBatch, null, false);
-
-      if (textEl && updatedMerchants.length > SAVE_BATCH_SIZE) {
-        const saveProgress = Math.min(100, Math.round((i + saveBatch.length) / updatedMerchants.length * 100));
-        textEl.textContent = `💾 Saving: ${saveProgress}%`;
-      }
-    }
-
-    // Full grid data refresh with normalization
+    // Grid refresh remains the same...
     if (window.vendorsGridApi) {
       let allVendors = await window.merchantDictionary.getAllMerchants();
-      // Normalize for filtering
       allVendors = allVendors.map(v => ({
         ...v,
         default_account: v.default_account || v.default_gl_account || '9970'
       }));
       window.vendorsGridApi.setGridOption('rowData', allVendors);
-
-      // Refresh distribution panel
-      if (window.accountDistPanel) {
-        window.accountDistPanel.refresh(allVendors);
-      }
+      if (window.accountDistPanel) window.accountDistPanel.refresh(allVendors);
     }
 
     // Inline message card

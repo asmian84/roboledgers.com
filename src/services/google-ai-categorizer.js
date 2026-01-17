@@ -139,7 +139,6 @@ class GoogleAICategorizer {
         }
 
         // Step 2: Try pattern matching (STRICT V2 MODE)
-        // We use the CLEAN description for better matching
         const merchantResult = this._matchMerchantKeywords(cleanDescription);
         if (merchantResult) {
             return {
@@ -152,33 +151,227 @@ class GoogleAICategorizer {
 
         // Step 3: Fall back to Google AI API
         if (this.apiKey) {
-            // Pass the ORIGINAL string to Gemini, but also the CLEAN one if needed.
-            // Actually, for V2, let's pass the ORIGINAL so it has full context,
-            // but the Prompt will be smarter.
             return await this._callGeminiAPI(transaction);
         }
 
         return null; // No categorization possible
     }
 
+    /**
+     * Batch Categorize (Turbo Mode)
+     * Processes multiple vendors in a single API call for massive speed gains.
+     */
+    async categorizeBatch(vendors) {
+        await this.init();
+        if (!this.apiKey) {
+            console.error('❌ AI Turbo: API Key missing from settings!');
+            throw new Error('MISSING_API_KEY');
+        }
+
+        console.log(`🚀 AI Turbo: Processing batch of ${vendors.length} vendors...`);
+
+        // 1. Get Chart of Accounts for context
+        const coa = await this._getCOAContext();
+
+        // 2. Prepare the batch prompt
+        const vendorList = vendors.map((v, i) => `${i + 1}. Description: "${v.description}"`).join('\n');
+
+        const prompt = `You are an expert bookkeeping AI for a Canadian/US business. 
+Categorize the following list of transactions into the provided Chart of Accounts.
+
+### CHART OF ACCOUNTS (Source of Truth):
+${coa}
+
+### TRANSACTIONS TO CATEGORIZE:
+${vendorList}
+
+### INSTRUCTIONS:
+1. Identify the VENDOR (who got paid) vs the LOCATION.
+2. Select the BEST account code and name from the Chart of Accounts provided above.
+3. If unsure, use "8500 - Miscellaneous" or "9970 - Unusual item".
+4. Respond ONLY with a JSON array of objects.
+
+### RESPONSE FORMAT:
+[
+  { "id": 1, "account": "CODE", "category": "NAME", "confidence": 0.95, "reasoning": "Brief explanation" },
+  { "id": 2, "account": "CODE", "category": "NAME", "confidence": 0.85, "reasoning": "Brief explanation" }
+]`;
+
+        try {
+            console.log('📡 Sending request to Gemini prompt length:', prompt.length);
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-goog-api-key': this.apiKey },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error(`❌ AI Batch Call Failed: HTTP ${response.status}`, errText);
+                throw new Error(`API failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            console.log('📥 Raw Response from Gemini:', text.substring(0, 500), '...');
+
+            // Better JSON extraction to handle code blocks
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+
+            if (jsonMatch) {
+                const results = JSON.parse(jsonMatch[0]);
+                console.log('✅ Parsed Batch results:', results.length);
+                // Map results back to vendor order
+                return vendors.map((v, i) => {
+                    const match = results.find(r => r.id === (i + 1));
+                    return match ? { ...match, method: 'Turbo Gemini Batch' } : null;
+                });
+            } else {
+                console.warn('⚠️ No JSON array found in Gemini response.');
+            }
+        } catch (err) {
+            console.error('❌ AI Batch Call Failure Error:', err);
+        }
+
+        return vendors.map(v => null);
+    }
+
+    async _getCOAContext() {
+        const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+        let rawCustom = [];
+        try { rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]'); } catch (e) { }
+
+        const fullCOA = [...rawDefault, ...rawCustom].filter(a => a.type === 'Expense' || a.type === 'Revenue');
+        return fullCOA.map(a => `${a.code} - ${a.name} (${a.category})`).join('\n');
+    }
 
     /**
-     * Test connection with a dummy prompt
+     * Helper to call fetch with exponential backoff on 429 errors
+     */
+    async _fetchWithRetry(url, options, maxRetries = 3) {
+        let lastError;
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(url, options);
+
+                // If it's a rate limit error (429) or server error (500+), retry
+                if (response.status === 429 || response.status >= 500) {
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 500;
+                    console.warn(`⚠️ Gemini API ${response.status}: Retrying in ${delay.toFixed(0)}ms... (Attempt ${i + 1}/${maxRetries})`);
+                    await new Promise(r => setTimeout(r, delay));
+                    continue;
+                }
+
+                return response;
+            } catch (err) {
+                lastError = err;
+                if (i === maxRetries - 1) throw err;
+                const delay = Math.pow(2, i) * 1000;
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+        throw lastError;
+    }
+
+    /**
+     * Batch Categorize (Turbo Mode)
+     * Processes multiple vendors with SMART DEDUPLICATION.
+     */
+    async categorizeBatch(vendors) {
+        await this.init();
+        if (!this.apiKey) throw new Error('MISSING_API_KEY');
+
+        // 1. SMART DEDUPLICATION: Only ask for unique vendor descriptions
+        const uniqueMap = new Map();
+        vendors.forEach((v, i) => {
+            const clean = this.sanitizeVendorString(v.description);
+            if (!uniqueMap.has(clean)) {
+                uniqueMap.set(clean, { description: clean, originalIndices: [] });
+            }
+            uniqueMap.get(clean).originalIndices.push(i);
+        });
+
+        const uniqueVendors = Array.from(uniqueMap.values());
+        console.log(`🚀 AI Turbo: Deduplicated ${vendors.length} vendors into ${uniqueVendors.length} unique prompts.`);
+
+        // 2. Get Chart of Accounts for context
+        const coa = await this._getCOAContext();
+
+        // 3. Prepare the batch prompt (using unique vendors)
+        const vendorList = uniqueVendors.map((v, i) => `${i + 1}. Description: "${v.description}"`).join('\n');
+
+        const prompt = `You are an expert bookkeeping AI for a Canadian/US business. 
+Categorize the following list of transactions into the provided Chart of Accounts.
+
+### CHART OF ACCOUNTS (Source of Truth):
+${coa}
+
+### TRANSACTIONS TO CATEGORIZE:
+${vendorList}
+
+### INSTRUCTIONS:
+1. Identify the VENDOR (who got paid) vs the LOCATION.
+2. Select the BEST account code and name from the Chart of Accounts provided above.
+3. If unsure, use "8500 - Miscellaneous" or "9970 - Unusual item".
+4. Respond ONLY with a JSON array of objects.
+
+### RESPONSE FORMAT:
+[
+  { "id": 1, "account": "CODE", "category": "NAME", "confidence": 0.95, "reasoning": "Brief explanation" },
+  { "id": 2, "account": "CODE", "category": "NAME", "confidence": 0.85, "reasoning": "Brief explanation" }
+]`;
+
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent`;
+            const response = await this._fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-goog-api-key': this.apiKey },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`API failed: ${response.status} - ${errText}`);
+            }
+
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+
+            if (jsonMatch) {
+                const uniqueResults = JSON.parse(jsonMatch[0]);
+                const finalResults = new Array(vendors.length).fill(null);
+
+                // Map results back to all original occurrences
+                uniqueResults.forEach(r => {
+                    const uniqueIndex = r.id - 1;
+                    if (uniqueVendors[uniqueIndex]) {
+                        uniqueVendors[uniqueIndex].originalIndices.forEach(origIdx => {
+                            finalResults[origIdx] = { ...r, method: 'Turbo Gemini 2.0 Batch' };
+                        });
+                    }
+                });
+                return finalResults;
+            }
+        } catch (err) {
+            console.error('❌ AI Batch Call Failure:', err);
+        }
+
+        return vendors.map(v => null);
+    }
+
+    /**
+     * Test connection with Gemini 2.0 Flash
      */
     async testConnection(testKey) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent`;
         const prompt = "Reply with 'Success' in JSON format: {\"status\": \"Success\"}";
 
         try {
-            const response = await fetch(url, {
+            const response = await this._fetchWithRetry(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-goog-api-key': testKey
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+                headers: { 'Content-Type': 'application/json', 'X-goog-api-key': testKey },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
 
             if (!response.ok) {
@@ -188,10 +381,9 @@ class GoogleAICategorizer {
 
             const data = await response.json();
             const text = data.candidates[0].content.parts[0].text;
-            if (text.toLowerCase().includes('success')) {
-                return { success: true, message: 'Connection established!' };
-            }
-            return { success: false, message: 'Invalid response from API' };
+            return text.toLowerCase().includes('success')
+                ? { success: true, message: 'Gemini 2.0 Flash: Connected!' }
+                : { success: false, message: 'Invalid response from API' };
         } catch (error) {
             return { success: false, message: error.message };
         }
@@ -201,176 +393,72 @@ class GoogleAICategorizer {
         return this.mccCodes[mccCode] || null;
     }
 
-    /**
-     * Match merchant name against MCC code descriptions
-     * V2 UPDATE: STRICT MODE. No single generic words (like "United" or "Delta").
-     */
     _matchMerchantKeywords(description) {
         const desc = description.toLowerCase();
-
-        // Airline keywords (STRICT: Must be explicit for generic words)
-        // "United" -> Fail. "United Airlines" -> Pass.
-        // "Delta" -> Fail. "Delta Air" -> Pass.
-        if (desc.match(/airlines|airways|united air|delta air|southwest air|jetblue|lufthansa|british air|air canada/)) {
+        if (desc.match(/airlines|airways|united air|delta air|southwest air|jetblue|lufthansa|british air|air canada/))
             return { category: 'Travel:Airfare', description: 'Airlines' };
-        }
-
-        // Gas stations (STRICT)
-        if (desc.match(/shell oil|exxon|chevron|bp gas|mobil gas|valero|circle k|7-eleven|wawa/)) {
+        if (desc.match(/shell oil|exxon|chevron|bp gas|mobil gas|valero|circle k|7-eleven|wawa/))
             return { category: 'Transportation:Fuel', description: 'Gas Station' };
-        }
-
-        // Grocery (STRICT)
-        // Kroger, Safeway, Publix are distinct enough to not need "Store" suffix.
-        if (desc.match(/walmart|target|safeway|kroger|publix|whole foods|trader joe|loblaws|metro/)) {
+        if (desc.match(/walmart|target|safeway|kroger|publix|whole foods|trader joe|loblaws|metro/))
             return { category: 'Food & Dining:Groceries', description: 'Grocery Store' };
-        }
-
-        // Restaurants (STRICT)
-        if (desc.match(/starbucks|dunkin|mcdonald|burger king|pizza hut|domino|tim hortons/)) {
+        if (desc.match(/starbucks|dunkin|mcdonald|burger king|pizza hut|domino|tim hortons/))
             return { category: 'Food & Dining:Restaurants', description: 'Restaurant' };
-        }
-
-        // Utilities
-        if (desc.match(/pacific gas|con edison|duke energy|hydro/)) {
+        if (desc.match(/pacific gas|con edison|duke energy|hydro/))
             return { category: 'Utilities:Electric', description: 'Electric Utility' };
-        }
-
-        if (desc.match(/verizon|t-mobile|sprint|rogers|bell|telus/)) {
+        if (desc.match(/verizon|t-mobile|sprint|rogers|bell|telus/))
             return { category: 'Utilities:Phone', description: 'Phone/Internet' };
-        }
-
-        // Streaming services
-        // Relaxed "Disney+" to "Disney" because "Disney" is rarely a Vendor unless it's the company.
-        if (desc.match(/netflix|hulu|disney|spotify|apple music|youtube premium|amazon prime/)) {
+        if (desc.match(/netflix|hulu|disney|spotify|apple music|youtube premium|amazon prime/))
             return { category: 'Entertainment:Streaming', description: 'Streaming Service' };
-        }
-
-        // Amazon
-        // "Amazon" is distinct enough. "Amazon Mkt" was too strict.
-        if (desc.match(/amazon|amzn/)) {
+        if (desc.match(/amazon|amzn/))
             return { category: 'Shopping:Online', description: 'Amazon' };
-        }
-
         return null;
     }
 
-    /**
-     * Call Google Gemini API for categorization
-     */
     async _callGeminiAPI(transaction) {
         if (!this.apiKey) return null;
 
-        // V2 PROMPT: Context Aware
-        const prompt = `You are an expert bookkeeping AI. Your job is to categorize financial transactions.
-        
-CRITICAL RULE: Distinguish between the VENDOR (who got paid) and the LOCATION.
-Example: "Disney Plus United States" -> Vendor is "Disney Plus" (Streaming), Location is "United States". Do NOT categorize as "Travel/Airline" just because you see "United".
-
-Transaction Description: "${transaction.description}"
-Amount: $${Math.abs(transaction.amount)}
-Type: ${transaction.amount < 0 ? 'Expense' : 'Income'}
-
-Select the specific Category from this list:
-- Food & Dining:Restaurants
-- Food & Dining:Groceries
-- Food & Dining:Fast Food
-- Transportation:Fuel
-- Transportation:Auto
-- Transportation:Public Transit
-- Shopping:Clothing
-- Shopping:Electronics
-- Shopping:General
-- Utilities:Electric
-- Utilities:Water
-- Utilities:Phone
-- Utilities:Internet
-- Healthcare:Medical
-- Healthcare:Dental
-- Healthcare:Pharmacy
-- Entertainment:Movies
-- Entertainment:Sports
-- Entertainment:Streaming
-- Travel:Airfare
-- Travel:Hotels
-- Travel:Car Rental
-- Services:Legal
-- Services:Accounting
-- Services:Professional
-- Business Income
-- Other Income
-
-Respond with this exact JSON:
-{
-  "category": "Category:Subcategory",
-  "account": "Account Name",
-  "confidence": 0.95,
-  "reasoning": "Identify the VENDOR first. Explain why."
-}`;
+        const prompt = `You are an expert bookkeeping AI. Categorize: "${transaction.description}"
+        Respond with exact JSON: { "category": "Category", "account": "Code", "confidence": 0.95, "reasoning": "..." }`;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, {
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent`;
+            const response = await this._fetchWithRetry(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-goog-api-key': this.apiKey
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+                headers: { 'Content-Type': 'application/json', 'X-goog-api-key': this.apiKey },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
 
-            if (!response.ok) {
-                const errorBody = await response.text();
-                console.error(`Google AI API Error (${response.status}):`, errorBody);
-                throw new Error(`API call failed: ${response.status} - ${errorBody}`);
-            }
-
+            if (!response.ok) return null;
             const data = await response.json();
             const text = data.candidates[0].content.parts[0].text;
-
-            // Extract JSON from response (might be wrapped in markdown)
             const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const result = JSON.parse(jsonMatch[0]);
-                return {
-                    ...result,
-                    method: 'Google AI API'
-                };
-            }
-
+            if (jsonMatch) return { ...JSON.parse(jsonMatch[0]), method: 'Google AI 2.0' };
         } catch (error) {
-            console.error('Google AI API call failed:', error);
+            console.error('Single gemini call failed:', error);
         }
-
         return null;
     }
 
-    /**
-     * Map category to account code
-     */
     _mapCategoryToAccount(category) {
         const categoryMap = {
-            'Food & Dining:Restaurants': '6300', // Meals & Entertainment
-            'Food & Dining:Groceries': '6100', // Cost of Goods Sold
+            'Food & Dining:Restaurants': '6300',
+            'Food & Dining:Groceries': '6100',
             'Food & Dining:Fast Food': '6300',
-            'Transportation:Fuel': '6400', // Auto Expense
+            'Transportation:Fuel': '6400',
             'Transportation:Auto': '6400',
-            'Shopping:Clothing': '6700', // Office Supplies
+            'Shopping:Clothing': '6700',
             'Shopping:General': '6700',
-            'Utilities:Electric': '6800', // Utilities
+            'Utilities:Electric': '6800',
             'Utilities:Phone': '6800',
             'Utilities:Internet': '6800',
-            'Healthcare:Medical': '6500', // Insurance
-            'Entertainment:Streaming': '6900', // Other Expenses
-            'Travel:Airfare': '6600', // Travel
+            'Healthcare:Medical': '6500',
+            'Entertainment:Streaming': '6900',
+            'Travel:Airfare': '6600',
             'Services:Legal': '6900',
-            'Business Income': '4000' // Revenue
+            'Business Income': '4000'
         };
-
-        return categoryMap[category] || '6900'; // Default to Other Expenses
+        return categoryMap[category] || '6900';
     }
 }
 
-// Export as global singleton
 window.GoogleAICategorizer = new GoogleAICategorizer();
