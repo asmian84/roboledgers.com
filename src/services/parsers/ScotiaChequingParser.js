@@ -3,20 +3,20 @@ import { BaseBankParser } from './BaseBankParser.js';
 export class ScotiaChequingParser extends BaseBankParser {
     constructor() {
         const formatRules = `
-SCOTIABANK CHEQUING FORMAT:
-- Column headers: "Date | Description | Withdrawals/Debits ($) | Deposits/Credits ($) | Balance ($)"
-- Date format: MM/DD/YYYY (e.g., 08/02/2023)
-- Multi-line descriptions with transaction codes
-- "BALANCE FORWARD" shown at top
-- Account format: "XXXXXX XXXXX XX"
+SCOTIABANK CHEQUING FORMAT (Online Banking Statement):
+- Column headers: "Date | Description | Withdrawals | Deposits | Balance"
+- Date format: "Day, Mon. DD, YYYY" (e.g., "Wed, Jan. 31, 2024")
+- Descriptions are lowercase (e.g., "service charge", "customer transfer dr.")
+- Reference codes like "PCTO 705990451320" may appear after description
+- Multi-line descriptions common
 
 KNOWN PATTERNS:
-- "TRANSFER TO" → debit (sent)
-- "TRANSFER FROM" → credit (received)
-- "DEBIT MEMO", "INTERAC E-TRANSFER" → debit
-- "SERVICE CHARGE", "INTERAC E-TRANSFER FEE" → debit
-- "MISC PAYMENT" → credit
-- "BUSINESS PAD" (payroll) → debit
+- "customer transfer dr." (with PCTO code) → debit (sent)
+- "customer transfer cr." → credit (received)  
+- "service charge" → debit
+- "insurance" + "CO" → debit
+- "interac e-transfer" → debit/credit depending on context
+- Description cleaning: Remove reference codes like "PCTO XXXXXXXXXX", "CO"
         `;
         super('Scotiabank', 'Chequing', formatRules);
     }
