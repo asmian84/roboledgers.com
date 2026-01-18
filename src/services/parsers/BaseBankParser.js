@@ -196,3 +196,6 @@ ${statementText}`;
         });
     }
 }
+
+// Expose to window for file:// compatibility
+window.BaseBankParser = BaseBankParser;

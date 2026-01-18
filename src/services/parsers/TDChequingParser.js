@@ -18,3 +18,7 @@ SMART PARSING RULES:
 }
 
 export const tdChequingParser = new TDChequingParser();
+
+// Expose to window for file:// compatibility
+window.TDChequingParser = TDChequingParser;
+window.tdChequingParser = tdChequingParser;

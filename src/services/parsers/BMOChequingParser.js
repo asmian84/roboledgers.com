@@ -23,3 +23,7 @@ SMART PARSING RULES:
 }
 
 export const bmoChequingParser = new BMOChequingParser();
+
+// Expose to window for file:// compatibility
+window.BMOChequingParser = BMOChequingParser;
+window.bmoChequingParser = bmoChequingParser;

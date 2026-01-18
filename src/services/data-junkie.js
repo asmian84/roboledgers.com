@@ -339,9 +339,13 @@ class DataJunkie {
         // Step 3: Parse with AI using ParserRouter (brand detection + brand-specific parsing)
         let parsed;
         try {
-            // Dynamically import ParserRouter
-            const { parserRouter } = await import('./ParserRouter.js');
-            const result = await parserRouter.parseStatement(fullText);
+            // Use global parserRouter (dynamic import fails on file://)
+            const router = window.parserRouter;
+            if (!router) {
+                throw new Error('ParserRouter not found on window. Ensure modules are loaded in index.html.');
+            }
+
+            const result = await router.parseStatement(fullText);
 
             // Adapt to expected format
             parsed = {

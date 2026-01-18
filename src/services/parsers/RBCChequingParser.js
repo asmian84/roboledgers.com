@@ -19,3 +19,7 @@ SMART PARSING RULES:
 }
 
 export const rbcChequingParser = new RBCChequingParser();
+
+// Expose to window for file:// compatibility
+window.RBCChequingParser = RBCChequingParser;
+window.rbcChequingParser = rbcChequingParser;

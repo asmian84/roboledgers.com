@@ -19,3 +19,7 @@ SMART PARSING RULES:
 }
 
 export const scotiaChequingParser = new ScotiaChequingParser();
+
+// Expose to window for file:// compatibility
+window.ScotiaChequingParser = ScotiaChequingParser;
+window.scotiaChequingParser = scotiaChequingParser;

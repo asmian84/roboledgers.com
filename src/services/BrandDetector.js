@@ -79,3 +79,7 @@ ${statementText.substring(0, 2000)}`;
 }
 
 export const brandDetector = new BrandDetector();
+
+// Expose to window for file:// compatibility
+window.BrandDetector = BrandDetector;
+window.brandDetector = brandDetector;

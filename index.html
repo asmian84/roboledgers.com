@@ -276,8 +276,15 @@
   <script src="src/services/account-balances.js"></script>
   <script src="src/services/pattern-detector.js"></script>
   <script src="src/services/transaction-matcher.js"></script>
+  <!-- Global App Config (Pre-Module) -->
+  <script>
+    // These must be set before modules load
+    window.VITE_GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // This will be replaced by Vite or manually if needed
+    console.log('🛠️ App Config seeded');
+  </script>
+
   <script src="src/services/data-junkie.js"></script>
-  
+
   <!-- AI-Powered Bank Statement Parsers -->
   <script type="module" src="src/services/parsers/BaseBankParser.js"></script>
   <script type="module" src="src/services/BrandDetector.js"></script>
@@ -293,7 +300,7 @@
   <script type="module" src="src/services/parsers/TDVisaParser.js"></script>
   <script type="module" src="src/services/parsers/AmexParser.js"></script>
   <script type="module" src="src/services/ParserRouter.js"></script>
-  
+
   <script src="src/services/pdf-pre-scanner.js"></script>
   <script src="src/services/wiki-service.js"></script>
   <script src="src/services/outsource-service.js"></script>
