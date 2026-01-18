@@ -52,10 +52,10 @@ class DataJunkie {
                 }
             }
 
-            // Need at least 3 statement keywords
-            const isStatement = keywordCount >= 3;
+            // Need at least 2 statement keywords (lowered from 3 for better detection)
+            const isStatement = keywordCount >= 2;
 
-
+            console.log(`📋 ${file.name}: ${keywordCount} bank keywords found → ${isStatement ? 'DETECTED' : 'SKIPPED'}`);
 
             return isStatement;
 
