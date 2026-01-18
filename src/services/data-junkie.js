@@ -371,7 +371,7 @@ class DataJunkie {
         const unique = await this.detectDuplicates(parsed.transactions);
 
         // Step 5: Return clean data
-        return {
+        const result = {
             skipped: false,
             transactions: unique,
             duplicatesRemoved: parsed.transactions.length - unique.length,
@@ -379,6 +379,27 @@ class DataJunkie {
             accountType: parsed.accountType,
             accountHolder: parsed.accountHolder
         };
+
+        // Step 6: Update UI to show brand and account type
+        this.updateBrandUI(parsed.bank, parsed.accountType);
+
+        return result;
+    }
+
+    /**
+     * Update UI to display brand and account type
+     */
+    updateBrandUI(bank, accountType) {
+        try {
+            const accountTypeElement = document.getElementById('v5-account-type');
+            if (accountTypeElement && bank && accountType) {
+                const displayText = `${bank} - ${accountType}`;
+                accountTypeElement.textContent = displayText;
+                console.log(`✅ Updated UI: ${displayText}`);
+            }
+        } catch (error) {
+            console.error('Failed to update brand UI:', error);
+        }
     }
 
     /**

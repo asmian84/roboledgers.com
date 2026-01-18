@@ -1634,7 +1634,7 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-title-text">
             <h1>Transactions</h1>
             <p class="v5-subtitle">
-              <span class="v5-account-type">CHECKING</span>
+              <span class="v5-account-type" id="v5-account-type">CHECKING</span>
               <span class="v5-dot">•</span>
               <span class="v5-status">Ready for Review</span>
             </p>
