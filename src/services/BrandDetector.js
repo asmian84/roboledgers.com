@@ -58,8 +58,13 @@ ${statementText.substring(0, 2000)}`;
         try {
             const result = await this.model.generateContent(prompt);
             const response = await result.response;
-            const parsed = JSON.parse(response.text());
+            let text = response.text();
 
+            // Strip markdown code blocks if present (```json ... ```)
+            text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+            // Parse JSON response
+            const parsed = JSON.parse(text);
             // Add parser name based on detection
             parsed.parserName = `${parsed.brand}${parsed.accountType}Parser`;
 
