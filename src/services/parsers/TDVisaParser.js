@@ -1,24 +1,18 @@
-import { BaseBankParser } from './BaseBankParser.js';
-
-export class TDVisaParser extends BaseBankParser {
+/**
+ * TD Visa Parser
+ */
+class TDVisaParser extends BaseBankParser {
     constructor() {
         const formatRules = `
 TD VISA FORMAT:
-- Column headers: "TRANSACTION | POSTING | DATE | DATE | ACTIVITY DESCRIPTION | AMOUNT($)"
-- Date format: MMMDD (e.g., OCT21, NOV05)
-- Payment line: "PAYMENT - THANK YOU" with negative amount (e.g., -$263.19)
-- Charges shown as positive → debit
-- Payments/Credits shown as NEGATIVE → credit
-- Cash Back summary may be present
-- "ANNUAL CASHBACK CREDIT" is a credit
-
-KNOWN PATTERNS:
-- "PAYMENT - THANK YOU" with negative → credit
-- "ANNUAL CASHBACK CREDIT" with negative → credit (reward)
-- Merchant purchases → debit
+- Date: MMM DD (e.g., "JAN 15")
+- Columns: Transaction Date | Posting Date | Description | Amount ($)
+- Polarity: Simple positive for debt, negative or credit column for money in.
         `;
         super('TD', 'Visa', formatRules);
     }
 }
 
-export const tdVisaParser = new TDVisaParser();
+// Expose to window for file:// compatibility
+window.TDVisaParser = TDVisaParser;
+window.tdVisaParser = new TDVisaParser();
