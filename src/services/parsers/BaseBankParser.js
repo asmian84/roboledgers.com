@@ -40,7 +40,20 @@ CRITICAL RULES:
 4. Credit = money IN (${this.accountType === 'Chequing' ? 'deposits, transfers received' : 'payments, refunds'})
 5. Both amounts are POSITIVE numbers
 6. NEVER put values in BOTH debit AND credit for same transaction
-7. Clean descriptions (merge multi-line, remove extra spaces)
+
+DESCRIPTION CLEANING (VERY IMPORTANT):
+Clean ALL junk from descriptions:
+- Remove leading dates (e.g., "01 Oct", "03 Apr", "14 Feb")
+- Remove trailing reference codes (e.g., "- S", "- 8", "A", "F")
+- Remove transaction IDs and numbers after description
+- Remove multiple spaces
+- Keep ONLY the core merchant/transaction name
+- Examples:
+  * "01 Oct Misc Payment AMEX BILL F" → "Misc Payment AMEX BILL"
+  * "03 Apr Online Banking transfer - S" → "Online Banking transfer"
+  * "04 Jul e-Transfer sent Jonathan A" → "e-Transfer sent Jonathan"
+  * "08 Jun Online Banking transfer - 8" → "Online Banking transfer"
+  * "13 Mar Misc Payment UNIRECO CI" → "Misc Payment UNIRECO CI"
 
 ${this.accountType !== 'Chequing' ? `
 CREDIT CARD SPECIFIC:
@@ -57,7 +70,7 @@ Return ONLY valid JSON (no markdown):
   "transactions": [
     {
       "date": "YYYY-MM-DD",
-      "description": "clean merchant name",
+      "description": "CLEAN merchant name (no dates, no codes)",
       "debit": number or null,
       "credit": number or null
     }
