@@ -8,21 +8,14 @@ export class BMOChequingParser extends BaseBankParser {
     constructor() {
         const formatRules = `
 BMO CHEQUING FORMAT:
-- Transaction dates: MmmDD format (e.g., Jul11, Aug02)
-- Column headers: "Date | Description | Amounts deducted from your account($) | Amounts added to your account($) | Balance($)"
-- Or: "Date | Description | Deducted | Added | Balance"
-- Multi-line descriptions are common (e.g., "INTERAC e-Transfer Sent" or "Debit Card Purchase, INT'L POS PUR...")
-- Opening balance labeled: "Opening balance" or "Opening balance($)"
-- Statement period: "For the period ending [Month Day, Year]"
-- Account number format: "#XXXXX-XXX"
+- Date: MmmDD (e.g., "Jul11", "Aug02")
+- Columns: Date | Description | Deducted | Added | Balance
 
-KNOWN PATTERNS:
-- "INTERAC e-Transfer Sent" → debit (money out)
-- "INTERAC e-Transfer Received" → credit (money in)
-- "Online Bill Payment" → debit
-- "Direct Deposit" → credit
-- "Debit Card Purchase" → debit
-- "Plan Fee" or "Monthly Fee" → debit
+SMART PARSING RULES:
+1. Date year: Usually found in the "For the period ending [Month Day, Year]" header.
+2. Multi-line descriptions: Descriptions like "INTERAC e-Transfer Sent" or "Debit Card Purchase" often wrap.
+3. Account Number: Found in header as "#XXXXX-XXX".
+4. Polarity: "Deducted" = money out, "Added" = money in.
         `;
 
         super('BMO', 'Chequing', formatRules);
