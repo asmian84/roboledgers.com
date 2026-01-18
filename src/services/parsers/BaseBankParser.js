@@ -98,21 +98,30 @@ ${statementText}`;
     }
 
     /**
-     * Parse statement
+     * Parse bank statement
      */
     async parse(statementText) {
         const prompt = this.buildPrompt(statementText);
 
         try {
             const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            let text = response.text();
+            const responseText = result.response.text();
 
             // Strip markdown code blocks if present
-            text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            let jsonText = responseText.trim();
+            if (jsonText.startsWith('```')) {
+                jsonText = jsonText.replace(/^```json?\s*\n?/, '').replace(/\n?```\s*$/, '');
+            }
 
-            // Parse JSON response
-            const parsed = JSON.parse(text);
+            const parsed = JSON.parse(jsonText);
+
+            // CRITICAL: Post-process descriptions to remove dates (AI often fails at this)
+            if (parsed.transactions && Array.isArray(parsed.transactions)) {
+                parsed.transactions = parsed.transactions.map(tx => ({
+                    ...tx,
+                    description: this.cleanDescription(tx.description || '')
+                }));
+            }
 
             this.validate(parsed);
 
