@@ -88,10 +88,26 @@ class ProcessingEngine {
         const ext = file.name.split('.').pop().toLowerCase();
 
         if (ext === 'pdf') {
-            if (!window.parsePdfStatementAndActivate) {
-                throw new Error('PDF parser not available');
+            // Use NEW AI-powered parser via DataJunkie
+            if (!window.dataJunkie) {
+                console.warn('⚠️ DataJunkie not available, falling back to old parser');
+                if (!window.parsePdfStatementAndActivate) {
+                    throw new Error('PDF parser not available');
+                }
+                return await window.parsePdfStatementAndActivate(file, progressCallback);
             }
-            return await window.parsePdfStatementAndActivate(file, progressCallback);
+
+            progressCallback(50);
+            const result = await window.dataJunkie.scanAndProcess(file);
+            progressCallback(100);
+
+            // Adapt result format to expected structure
+            if (result.skipped) {
+                console.warn(`⚠️ File skipped: ${result.reason}`);
+                return [];
+            }
+
+            return result.transactions || [];
 
         } else if (ext === 'csv') {
             if (!window.SmartCsvParser) {
