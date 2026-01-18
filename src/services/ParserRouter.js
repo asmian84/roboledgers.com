@@ -67,7 +67,7 @@ class ParserRouter {
     }
 }
 
-export const parserRouter = new ParserRouter();
+const parserRouter = new ParserRouter();
 
 // Expose to window for file:// compatibility
 window.ParserRouter = ParserRouter;
