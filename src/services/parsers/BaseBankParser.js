@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export class BaseBankParser {
     constructor(bankName, accountType, formatRules) {
-        const apiKey = process.env.VITE_GEMINI_API_KEY; // Use process.env for Node.js
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Vite environment variable
         if (!apiKey) {
             throw new Error('VITE_GEMINI_API_KEY not found');
         }
