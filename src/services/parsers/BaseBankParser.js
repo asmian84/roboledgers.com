@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export class BaseBankParser {
     constructor(bankName, accountType, formatRules) {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const apiKey = process.env.VITE_GEMINI_API_KEY; // Use process.env for Node.js
         if (!apiKey) {
             throw new Error('VITE_GEMINI_API_KEY not found');
         }
@@ -17,10 +17,9 @@ export class BaseBankParser {
 
         this.genAI = new GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.0-flash', // Stable model
             generationConfig: {
-                temperature: 0.1,
-                responseMimeType: 'application/json'
+                temperature: 0.1
             }
         });
     }

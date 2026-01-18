@@ -1,4 +1,4 @@
-import { Based BankParser } from './BaseBankParser.js';
+import { BaseBankParser } from './BaseBankParser.js';
 
 export class CIBCVisaParser extends BaseBankParser {
     constructor() {

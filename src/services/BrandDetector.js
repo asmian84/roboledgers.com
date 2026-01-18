@@ -6,16 +6,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export class BrandDetector {
     constructor() {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const apiKey = process.env.VITE_GEMINI_API_KEY; // Use process.env for Node.js
         if (!apiKey) {
             throw new Error('VITE_GEMINI_API_KEY not found');
         }
         this.genAI = new GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.0-flash',
             generationConfig: {
-                temperature: 0.0, // Zero temperature for deterministic detection
-                responseMimeType: 'application/json'
+                temperature: 0.0
             }
         });
     }
