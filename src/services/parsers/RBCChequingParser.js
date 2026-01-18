@@ -1,6 +1,7 @@
-import { BaseBankParser } from './BaseBankParser.js';
-
-export class RBCChequingParser extends BaseBankParser {
+/**
+ * RBC Chequing Parser
+ */
+class RBCChequingParser extends BaseBankParser {
   constructor() {
     const formatRules = `
 RBC CHEQUING FORMAT:
@@ -18,8 +19,6 @@ SMART PARSING RULES:
   }
 }
 
-export const rbcChequingParser = new RBCChequingParser();
-
 // Expose to window for file:// compatibility
 window.RBCChequingParser = RBCChequingParser;
-window.rbcChequingParser = rbcChequingParser;
+window.rbcChequingParser = new RBCChequingParser();

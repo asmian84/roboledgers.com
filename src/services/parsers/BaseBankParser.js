@@ -1,13 +1,11 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 /**
  * Base Bank Parser
  * Template for brand-specific parsers
  */
-export class BaseBankParser {
+class BaseBankParser {
     constructor(bankName, accountType, formatRules) {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Vite environment variable
-        if (!apiKey) {
+        const apiKey = window.VITE_GEMINI_API_KEY;
+        if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
             throw new Error('VITE_GEMINI_API_KEY not found');
         }
 

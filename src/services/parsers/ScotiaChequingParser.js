@@ -1,6 +1,7 @@
-import { BaseBankParser } from './BaseBankParser.js';
-
-export class ScotiaChequingParser extends BaseBankParser {
+/**
+ * Scotiabank Chequing Parser
+ */
+class ScotiaChequingParser extends BaseBankParser {
   constructor() {
     const formatRules = `
 SCOTIABANK CHEQUING FORMAT:
@@ -18,8 +19,6 @@ SMART PARSING RULES:
   }
 }
 
-export const scotiaChequingParser = new ScotiaChequingParser();
-
 // Expose to window for file:// compatibility
 window.ScotiaChequingParser = ScotiaChequingParser;
-window.scotiaChequingParser = scotiaChequingParser;
+window.scotiaChequingParser = new ScotiaChequingParser();

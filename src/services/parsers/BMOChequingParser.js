@@ -1,10 +1,7 @@
-import { BaseBankParser } from './BaseBankParser.js';
-
 /**
  * BMO Chequing Parser
- * Handles: BMO Business Chequing, BMO Personal Chequing
  */
-export class BMOChequingParser extends BaseBankParser {
+class BMOChequingParser extends BaseBankParser {
     constructor() {
         const formatRules = `
 BMO CHEQUING FORMAT:
@@ -22,8 +19,6 @@ SMART PARSING RULES:
     }
 }
 
-export const bmoChequingParser = new BMOChequingParser();
-
 // Expose to window for file:// compatibility
 window.BMOChequingParser = BMOChequingParser;
-window.bmoChequingParser = bmoChequingParser;
+window.bmoChequingParser = new BMOChequingParser();

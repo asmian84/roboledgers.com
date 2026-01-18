@@ -1,6 +1,7 @@
-import { BaseBankParser } from './BaseBankParser.js';
-
-export class TDChequingParser extends BaseBankParser {
+/**
+ * TD Chequing Parser
+ */
+class TDChequingParser extends BaseBankParser {
     constructor() {
         const formatRules = `
 TD CHEQUING FORMAT:
@@ -17,8 +18,6 @@ SMART PARSING RULES:
     }
 }
 
-export const tdChequingParser = new TDChequingParser();
-
 // Expose to window for file:// compatibility
 window.TDChequingParser = TDChequingParser;
-window.tdChequingParser = tdChequingParser;
+window.tdChequingParser = new TDChequingParser();
