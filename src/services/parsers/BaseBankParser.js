@@ -139,6 +139,34 @@ ${statementText}`;
     }
 
     /**
+     * Forcibly clean description (fallback if AI fails)
+     * Remove leading date patterns that AI misses
+     */
+    cleanDescription(description) {
+        if (!description) return '';
+
+        let cleaned = description.trim();
+
+        // Remove leading date patterns (various formats)
+        // Pattern 1: "01 Oct", "14 Feb", "23 Apr"
+        cleaned = cleaned.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+/i, '');
+
+        // Pattern 2: "Wed, Jan. 31,", "Mon, Dec. 5,"
+        cleaned = cleaned.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2},?\s*/i, '');
+
+        // Pattern 3: Any "DD MMM" at start
+        cleaned = cleaned.replace(/^\d{1,2}\s+[A-Z][a-z]{2}\s+/i, '');
+
+        // Remove trailing reference codes: "- S", "- 8", "- 3092", etc.
+        cleaned = cleaned.replace(/\s+-\s+[A-Z0-9]+$/i, '');
+
+        // Remove extra whitespace
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+        return cleaned;
+    }
+
+    /**
      * Validate output
      */
     validate(parsed) {
