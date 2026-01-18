@@ -1634,9 +1634,9 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-title-text">
             <h1>Transactions</h1>
             <p class="v5-subtitle">
-              <span class="v5-account-type" id="v5-account-type">CHECKING</span>
-              <span class="v5-dot">•</span>
-              <span class="v5-status">Ready for Review</span>
+              <span class="v5-account-type" id="v5-account-type" style="display: none;"></span>
+              <span class="v5-dot" id="v5-header-dot" style="display: none;">•</span>
+              <span class="v5-status" id="v5-status-text">Waiting to get started...</span>
             </p>
           </div>
         </div>
@@ -3150,6 +3150,13 @@ window.parseV5Files = async function () {
 
     // AUTO-DETECT account type from transaction patterns
     V5State.accountType = detectAccountType(categorized);
+
+    // Update Header with Bank and Type
+    const detectedBank = categorized[0]?._bank || 'Bank Statement';
+    if (window.updateV5PageHeader) {
+      window.updateV5PageHeader(detectedBank, V5State.accountType);
+    }
+
     console.log(`📊 Detected account type: ${V5State.accountType}`);
 
     // Generate IDs and convert Amount to Debit/Credit
@@ -5255,41 +5262,75 @@ window.startFreshImport = async function () {
 // AUTO-INITIALIZE
 // ============================================
 
+// Helper to show the toolbar safely
+function showControlToolbar() {
+  const toolbar = document.getElementById('v5-control-toolbar');
+  if (toolbar) {
+    toolbar.style.display = 'flex';
+  } else {
+    console.warn('Control toolbar element not found');
+  }
+}
+
 window.initTxnImportV5Grid = async function () {
   // Check for cached data first - RESTORE instead of clear
   console.log('🔄 Checking for cached grid data...');
 
   try {
+    let restoredData = null;
+
     // Try to restore from CacheManager
     const cached = await window.CacheManager?.getTransactions();
+    if (cached && cached.length > 0) restoredData = cached;
 
-    if (cached && cached.length > 0) {
-      console.log(`✅ Restored ${cached.length} transactions from cache`);
-      V5State.gridData = cached;
-      initV5Grid();
-      showControlToolbar();
-      return;
+    // Try localStorage fallback if CacheManager empty
+    if (!restoredData) {
+      const localData = localStorage.getItem('ab_v5_grid_data');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        if (parsed && parsed.length > 0) restoredData = parsed;
+      }
     }
 
-    // Try localStorage fallback
-    const localData = localStorage.getItem('ab_v5_grid_data');
-    if (localData) {
-      const parsed = JSON.parse(localData);
-      if (parsed && parsed.length > 0) {
-        console.log(`✅ Restored ${parsed.length} transactions from localStorage`);
-        V5State.gridData = parsed;
+    if (restoredData) {
+      // VALIDATION: Check for garbage data
+      const isValid = restoredData.every(tx => {
+        // Must have valid date and not be a massive header string
+        return tx.date !== 'Invalid Date' && tx.date.match(/^\d{4}-\d{2}-\d{2}$/) && tx.description.length < 500;
+      });
+
+      if (isValid) {
+        console.log(`✅ Restored ${restoredData.length} transactions from cache`);
+        V5State.gridData = restoredData;
+
+        // Re-detect account type as it might not be persisted
+        if (!V5State.accountType && typeof detectAccountType === 'function') {
+          V5State.accountType = detectAccountType(restoredData);
+        }
+
+        // Update status header
+        if (window.updateV5PageHeader) {
+          const bank = restoredData[0]?._bank || 'Bank Statement';
+          window.updateV5PageHeader(bank, V5State.accountType);
+        }
+
         initV5Grid();
         showControlToolbar();
         return;
+      } else {
+        console.warn('⚠️ Found garbage data in cache - purging!');
+        localStorage.removeItem('ab_v5_grid_data');
+        if (window.CacheManager) await window.CacheManager.clear();
       }
     }
   } catch (e) {
     console.warn('Could not restore cached data:', e);
   }
 
-  // No cached data - show empty state
+  // No cached data or purged - show empty state
   console.log('ℹ️ No cached data found - showing empty state');
-  document.getElementById('v5-empty-state').style.display = 'flex';
+  const emptyState = document.getElementById('v5-empty-state');
+  if (emptyState) emptyState.style.display = 'flex';
 };
 
 console.log('📄 Txn Import V5: Module ready');
@@ -5624,3 +5665,26 @@ window.handleOpeningBalanceChange = function (input) {
 };
 
 console.log('✅ txn-import-v5.js loaded successfully!');
+
+window.updateV5PageHeader = function (brand, type) {
+  const brandEl = document.getElementById('v5-account-type');
+  const dotEl = document.getElementById('v5-header-dot');
+  const statusEl = document.getElementById('v5-status-text');
+
+  if (!brandEl || !statusEl) return;
+
+  if (brand && type) {
+    // Clean up brand string (remove explicit "Statement" text if present)
+    const cleanBrand = brand.replace(/Statement/i, '').trim();
+    brandEl.textContent = `${cleanBrand} - ${type}`;
+    brandEl.style.display = 'inline';
+    if (dotEl) dotEl.style.display = 'inline';
+    statusEl.textContent = 'Ready for Review';
+    statusEl.style.color = '#10b981'; // Green for ready
+  } else {
+    brandEl.style.display = 'none';
+    if (dotEl) dotEl.style.display = 'none';
+    statusEl.textContent = 'Waiting to get started...';
+    statusEl.style.color = '#6b7280'; // Gray for waiting
+  }
+};

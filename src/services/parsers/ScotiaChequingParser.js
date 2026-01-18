@@ -145,6 +145,32 @@ SMART PARSING RULES:
       isCredit = true;
     }
 
+    // UI FORMATTING: Insert comma after known transaction types
+    // This triggers the "Gray Type / Bold Merchant" display in the grid
+    const typePrefixes = [
+      "BILL PAYMENT", "INSURANCE", "SERVICE CHARGE", "POINT OF SALE PURCHASE",
+      "TRANSFER TO", "TRANSFER FROM", "ABM WITHDRAWAL", "CASH WITHDRAWAL",
+      "SHARED ABM WITHDRAWAL", "DEBIT MEMO", "CREDIT MEMO", "MISC PAYMENT",
+      "INTERAC ABM FEE", "OVERDRAFT PROTECTION FEE", "RETURNED NSF CHEQUE",
+      "NSF SERVICE CHARGE", "BUSINESS PAD", "MB BILL PAYMENT", "PC BILL PAYMENT"
+    ];
+
+    for (const type of typePrefixes) {
+      if (description.toUpperCase().startsWith(type)) {
+        // Only insert if not already present and followed by space or end
+        // We verify the next char isn't already a comma
+        if (description.length > type.length && description[type.length] !== ',') {
+          description = description.substring(0, type.length) + ',' + description.substring(type.length);
+        }
+        break;
+      }
+    }
+
+    // Special handling for CHQ # (e.g., "CHQ 45 ...")
+    if (description.match(/^CHQ\s+\d+/i)) {
+      description = description.replace(/^(CHQ\s+\d+)(\s+)/i, '$1,$2');
+    }
+
     const tx = {
       date: isoDate,
       description: description,

@@ -45,6 +45,25 @@ class ScotiaCreditCardParser extends BaseBankParser {
             const description = remainder.substring(0, firstAmt).trim();
             if (!description) continue;
 
+            // UI FORMATTING: Insert comma after known transaction types
+            const typePrefixes = [
+                "BILL PAYMENT", "INSURANCE", "SERVICE CHARGE", "POINT OF SALE PURCHASE",
+                "TRANSFER TO", "TRANSFER FROM", "ABM WITHDRAWAL", "CASH WITHDRAWAL",
+                "SHARED ABM WITHDRAWAL", "DEBIT MEMO", "CREDIT MEMO", "MISC PAYMENT",
+                "INTERAC ABM FEE", "OVERDRAFT PROTECTION FEE", "RETURNED NSF CHEQUE",
+                "NSF SERVICE CHARGE", "BUSINESS PAD", "MB BILL PAYMENT", "PC BILL PAYMENT"
+            ];
+
+            for (const type of typePrefixes) {
+                if (description.toUpperCase().startsWith(type)) {
+                    // Only insert if not already present and followed by space or end
+                    if (description.length > type.length && description[type.length] !== ',') {
+                        description = description.substring(0, type.length) + ',' + description.substring(type.length);
+                    }
+                    break;
+                }
+            }
+
             // Parse amount (may have trailing minus for credits)
             let rawAmt = amounts[0];
             const isNegative = rawAmt.endsWith('-');

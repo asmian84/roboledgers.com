@@ -82,6 +82,13 @@ class ParserRouter {
             confidence: detection.confidence
         };
 
+        // CRITICAL FIX: Inject brand into EACH transaction so it survives array flattening
+        result.transactions.forEach(tx => {
+            tx._bank = detection.fullBrandName; // e.g. "Scotiabank"
+            tx._brand = detection.brand;        // e.g. "Scotiabank"
+            tx._accountType = detection.accountType; // e.g. "Chequing"
+        });
+
         console.log(`✅ Successfully parsed ${result.transactions.length} transactions from ${detection.fullBrandName}`);
 
         return result;
