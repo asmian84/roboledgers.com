@@ -3386,17 +3386,21 @@ window.initV5Grid = function () {
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
-      headerCheckboxSelectionFilteredOnly: true,  // Only select filtered rows!
+      headerCheckboxSelectionFilteredOnly: true,
       width: 40,
+      minWidth: 40,
       maxWidth: 40,
-      suppressSizeToFit: true
+      suppressSizeToFit: true, // Fixed width
+      pinned: 'left'
     },
-    // Source column removed - icon moved to Actions column
     {
       headerName: 'Ref#',
       field: 'refNumber',
       width: 80,
-      // Sort numerically (001, 002, 003) not alphabetically
+      minWidth: 80,
+      maxWidth: 100,
+      suppressSizeToFit: true, // Priority 4: Low/Fixed
+      // Sort numerically (001, 002, 003)
       comparator: (valueA, valueB) => {
         const numA = parseInt(valueA) || 0;
         const numB = parseInt(valueB) || 0;
@@ -3405,7 +3409,6 @@ window.initV5Grid = function () {
       valueGetter: (params) => {
         if (!params.data.refNumber) return '';
         const prefix = V5State.refPrefix || '';
-        // Add hyphen if prefix exists
         return prefix ? `${prefix}-${params.data.refNumber}` : params.data.refNumber;
       },
       cellStyle: { fontWeight: '600', color: '#6B7280' }
@@ -3413,9 +3416,11 @@ window.initV5Grid = function () {
     {
       headerName: 'Date',
       field: 'date',
-      width: 120,
+      width: 110,
+      minWidth: 110,
+      maxWidth: 140,
+      suppressSizeToFit: true, // Priority 5: Fixed
       editable: true,
-      // Handle both lowercase and PascalCase field names
       valueGetter: params => params.data.date || params.data.Date || '',
       valueFormatter: params => {
         if (!params.value) return '';
@@ -3430,9 +3435,9 @@ window.initV5Grid = function () {
       headerName: 'Description',
       field: 'description',
       editable: true,
-      flex: 2,
+      flex: 3, // Priority 1: Highest auto-fit priority
+      minWidth: 250,
       cellEditor: 'agTextCellEditor',
-      // Handle both lowercase and PascalCase field names
       valueGetter: params => params.data.description || params.data.Description || '',
       // Multi-line display: split on comma
       cellRenderer: params => {
@@ -3440,24 +3445,23 @@ window.initV5Grid = function () {
         if (!value.includes(',')) {
           return value;
         }
-        // Split on first comma only
         const parts = value.split(',');
-        const transactionType = parts[0].trim();  // e.g., "Debit Card Purchase"
-        const merchantName = parts.slice(1).join(',').trim();  // e.g., "THE HOME DEPOT"
+        const transactionType = parts[0].trim();
+        const merchantName = parts.slice(1).join(',').trim();
         return `<div style="line-height: 1.3;">
           <div style="font-weight: 500;">${merchantName}</div>
           <div style="font-size: 0.85em; color: #6B7280;">${transactionType}</div>
         </div>`;
       },
-      // Allow HTML in cells
       autoHeight: true
     },
     {
       headerName: 'Debit',
       field: 'debit',
-      width: 100,
+      width: 110,
+      minWidth: 100,
+      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
       editable: true,
-      // Handle both lowercase and PascalCase field names
       valueGetter: params => {
         const val = parseFloat(params.data.debit || params.data.Debit) || 0;
         return val > 0 ? val : 0;
@@ -3479,9 +3483,10 @@ window.initV5Grid = function () {
     {
       headerName: 'Credit',
       field: 'credit',
-      width: 90,
+      width: 110,
+      minWidth: 100,
+      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
       editable: true,
-      // Handle both lowercase and PascalCase field names
       valueGetter: params => {
         const val = parseFloat(params.data.credit || params.data.Credit) || 0;
         return val > 0 ? val : 0;
@@ -3503,7 +3508,9 @@ window.initV5Grid = function () {
     {
       headerName: 'Balance',
       field: 'balance',
-      width: 110,
+      width: 120,
+      minWidth: 100,
+      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
       editable: false,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3517,11 +3524,11 @@ window.initV5Grid = function () {
     {
       headerName: 'Account',
       field: 'account',
-      flex: 1.5,
+      flex: 2, // Priority 2: Second highest priority
+      minWidth: 150,
       editable: true,
-      cellEditor: GroupedAccountEditor,  // Phase 2: 5-tier grouped dropdown
+      cellEditor: GroupedAccountEditor,
       valueGetter: params => {
-        // Support multiple field names from different parsers
         return params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized';
       },
       valueFormatter: params => resolveAccountName(params.value)
@@ -3529,12 +3536,12 @@ window.initV5Grid = function () {
     {
       headerName: 'Actions',
       field: 'actions',
-      width: 130,
-      minWidth: 130,
-      maxWidth: 130, // Fixed width wall
-      resizable: false, // Prevent user resize
+      width: 140,
+      minWidth: 140,
+      maxWidth: 140,
+      suppressSizeToFit: true, // Priority 3: Fixed wall
+      resizable: false,
       cellRenderer: (params) => {
-        // Source file icon - dynamic based on type
         let sourceIcon = '';
         if (params.data.sourceFileType) {
           const isPdf = params.data.sourceFileType === 'pdf' || params.data.sourceFileType.includes('pdf');
@@ -3545,7 +3552,6 @@ window.initV5Grid = function () {
                  style="cursor: pointer; color: ${color}; margin-right: 0.5rem; font-size: 1.125rem;"
                  title="Open ${params.data.sourceFileName}"></i>`;
         }
-
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
             ${sourceIcon}
