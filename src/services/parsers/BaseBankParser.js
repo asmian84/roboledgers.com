@@ -41,19 +41,35 @@ CRITICAL RULES:
 5. Both amounts are POSITIVE numbers
 6. NEVER put values in BOTH debit AND credit for same transaction
 
-DESCRIPTION CLEANING (VERY IMPORTANT):
-Clean ALL junk from descriptions:
-- Remove leading dates (e.g., "01 Oct", "03 Apr", "14 Feb")
-- Remove trailing reference codes (e.g., "- S", "- 8", "A", "F")
-- Remove transaction IDs and numbers after description
-- Remove multiple spaces
-- Keep ONLY the core merchant/transaction name
-- Examples:
-  * "01 Oct Misc Payment AMEX BILL F" → "Misc Payment AMEX BILL"
-  * "03 Apr Online Banking transfer - S" → "Online Banking transfer"
-  * "04 Jul e-Transfer sent Jonathan A" → "e-Transfer sent Jonathan"
-  * "08 Jun Online Banking transfer - 8" → "Online Banking transfer"
-  * "13 Mar Misc Payment UNIRECO CI" → "Misc Payment UNIRECO CI"
+DESCRIPTION CLEANING (CRITICAL - MUST FOLLOW):
+This is the MOST IMPORTANT rule. Clean ALL junk from descriptions:
+
+1. **Remove ALL leading dates** (any format):
+   - "01 Oct" → REMOVE
+   - "03 Apr" → REMOVE  
+   - "14 Feb" → REMOVE
+   - "Wed, Jan. 31," → REMOVE
+   - Remove ANY date-like pattern at the start
+
+2. **Remove trailing codes**:
+   - "- S", "- 8", "- A", "- F" → REMOVE
+   - Transaction IDs, reference numbers → REMOVE
+
+3. **Remove extra formatting**:
+   - Multiple spaces → single space
+   - Trailing/leading whitespace → REMOVE
+
+4. **Keep ONLY the core merchant/transaction name**
+
+**EXAMPLES (YOU MUST DO THIS):**
+- Input: "01 Oct Misc Payment AMEX BILL PYMT" → Output: "Misc Payment AMEX BILL PYMT"
+- Input: "03 Apr Online Banking transfer - 3092" → Output: "Online Banking transfer"
+- Input: "04 Jul e-Transfer sent Jonathan Applewood" → Output: "e-Transfer sent Jonathan Applewood"
+- Input: "06 Jun Online Banking transfer - 8865" → Output: "Online Banking transfer"
+- Input: "13 Mar Misc Payment UNIRECO COMMERC TELPAY INC" → Output: "Misc Payment UNIRECO COMMERC TELPAY INC"
+- Input: "Wed, Jan. 31, service charge" → Output: "service charge"
+
+**IF YOU SEE A LEADING DATE PATTERN, YOU MUST REMOVE IT!**
 
 ${this.accountType !== 'Chequing' ? `
 CREDIT CARD SPECIFIC:
@@ -70,7 +86,7 @@ Return ONLY valid JSON (no markdown):
   "transactions": [
     {
       "date": "YYYY-MM-DD",
-      "description": "CLEAN merchant name (no dates, no codes)",
+      "description": "CLEAN merchant name (NO leading dates, NO codes)",
       "debit": number or null,
       "credit": number or null
     }
