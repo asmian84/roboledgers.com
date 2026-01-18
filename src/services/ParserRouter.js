@@ -5,17 +5,45 @@
  */
 class ParserRouter {
     constructor() {
+        // ARCHITECTURE: Each bank gets exactly 2 parsers:
+        // 1. Bank Account (Chequing/Savings) - Asset logic
+        // 2. Credit Card (Visa/MC/Amex) - Liability logic
+
         this.parsers = {
+            // ===== BMO =====
             'BMOChequing': window.bmoChequingParser,
-            'BMOMastercard': window.bmoMastercardParser,
-            'CIBCChequing': window.cibcChequingParser,
-            'CIBCVisa': window.cibcVisaParser,
-            'RBCChequing': window.rbcChequingParser,
-            'RBCVisa': window.rbcVisaParser,
+            'BMOSavings': window.bmoChequingParser,
+            'BMOCreditCard': window.bmoCreditCardParser || window.bmoChequingParser,
+            'BMOMastercard': window.bmoCreditCardParser || window.bmoChequingParser,
+            'BMOVisa': window.bmoCreditCardParser || window.bmoChequingParser,
+
+            // ===== SCOTIABANK =====
             'ScotiabankChequing': window.scotiaChequingParser,
-            'ScotiabankMastercard': window.scotiaMastercardParser,
+            'ScotiabankSavings': window.scotiaChequingParser,
+            'ScotiabankCreditCard': window.scotiaCreditCardParser || window.scotiaMastercardParser,
+            'ScotiabankMastercard': window.scotiaCreditCardParser || window.scotiaMastercardParser,
+            'ScotiabankVisa': window.scotiaCreditCardParser || window.scotiaMastercardParser,
+
+            // ===== TD =====
             'TDChequing': window.tdChequingParser,
-            'TDVisa': window.tdVisaParser,
+            'TDSavings': window.tdChequingParser,
+            'TDCreditCard': window.tdCreditCardParser || window.tdVisaParser,
+            'TDVisa': window.tdCreditCardParser || window.tdVisaParser,
+
+            // ===== RBC =====
+            'RBCChequing': window.rbcChequingParser,
+            'RBCSavings': window.rbcChequingParser,
+            'RBCCreditCard': window.rbcCreditCardParser || window.rbcVisaParser,
+            'RBCVisa': window.rbcCreditCardParser || window.rbcVisaParser,
+
+            // ===== CIBC =====
+            'CIBCChequing': window.cibcChequingParser,
+            'CIBCSavings': window.cibcChequingParser,
+            'CIBCCreditCard': window.cibcCreditCardParser || window.cibcVisaParser,
+            'CIBCVisa': window.cibcCreditCardParser || window.cibcVisaParser,
+
+            // ===== AMEX (Credit Card only) =====
+            'AmexCreditCard': window.amexParser,
             'AmexAmex': window.amexParser
         };
     }

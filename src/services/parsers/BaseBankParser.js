@@ -10,11 +10,54 @@ class BaseBankParser {
     }
 
     /**
-     * Parse statement text using Gemini AI
+     * Abstract method for Regex parsing - to be implemented by child classes
+     * @param {string} text 
+     * @returns {Object|null} { transactions: [] } or null if not implemented/failed
+     */
+    parseWithRegex(text) {
+        return null; // Default implementation returns null to trigger AI fallback
+    }
+
+    /**
+    /**
+     * Parse statement text using Hybrid Strategy (Regex First -> AI Fallback)
      * @param {string} statementText 
      * @returns {Promise<Object>}
      */
     async parse(statementText) {
+        // 1. Try Local Regex Parsing First (Free, Private, Fast)
+        try {
+            console.log(`⚡ BaseBankParser: Attempting local REGEX parsing for ${this.bankName}...`);
+            const regexResult = this.parseWithRegex(statementText);
+
+            if (regexResult && regexResult.transactions && regexResult.transactions.length > 0) {
+                console.log(`✅ Regex parsing successful: ${regexResult.transactions.length} transactions found.`);
+                return regexResult; // Return immediately, skipping AI
+            }
+
+            console.log('⚠️ Regex parsing found 0 transactions.');
+
+            // STRICT LOCAL MODE: As requested, do NOT fall back to AI for parsing.
+            // We return an empty list so the user sees "0 transactions" instead of an API error.
+            return {
+                bank: this.bankName,
+                accountType: this.accountType,
+                accountHolder: 'Unknown',
+                transactions: []
+            };
+
+        } catch (e) {
+            console.warn('⚠️ Regex parsing error:', e);
+            return {
+                bank: this.bankName,
+                accountType: this.accountType,
+                accountHolder: 'Unknown',
+                transactions: []
+            };
+        }
+
+        // 2. Fallback to Gemini AI (DISABLED)
+        /*
         const prompt = this.buildPrompt(statementText);
         const apiKey = window.VITE_GEMINI_API_KEY;
 
@@ -36,7 +79,8 @@ class BaseBankParser {
                     }],
                     generationConfig: {
                         temperature: 0.1,
-                        responseMimeType: 'application/json'
+                        responseMimeType: 'application/json',
+                        maxOutputTokens: 8192
                     }
                 })
             });
@@ -66,6 +110,7 @@ class BaseBankParser {
             console.error(`${this.bankName} parser failed:`, error);
             throw error;
         }
+        */
     }
 
     buildPrompt(statementText) {
@@ -83,10 +128,11 @@ CRITICAL RULES:
 1. Parse ONLY: date, description, debit, credit
 2. DO NOT parse balance (we calculate it)
 3. Debit = money OUT (${this.accountType === 'Chequing' ? 'withdrawals, fees, transfers sent' : 'charges, purchases'})
-4. Credit = money IN (${this.accountType === 'Chequing' ? 'deposits, transfers received' : 'payments, refunds'})
-5. Both amounts are POSITIVE numbers
-6. NEVER put values in BOTH debit AND credit for same transaction
-7. EXCLUDE header/footer text like "Opening Balance", "Balance Forward", "Page X of Y".
+4. Credit = money IN (${this.accountType === 'Chequing' ? 'deposits, transfers received, cheque deposits' : 'payments, refunds'})
+5. BOTH amounts must be POSITIVE numbers in the JSON.
+6. NEVER put values in BOTH debit AND credit for the same transaction.
+7. CRITICAL: Words like "DEPOSIT", "CREDIT", "REFUND", "PAYMENT RECEIVED", "INTERAC e-Transfer - Received" MUST ALWAYS be in the \`credit\` field.
+8. EXCLUDE header/footer text like "Opening Balance", "Balance Forward", "Page X of Y".
 
 DESCRIPTION CLEANING (CRITICAL):
 This is the MOST IMPORTANT rule. Clean ALL junk from descriptions:

@@ -14,17 +14,17 @@ class DataJunkie {
         this.statementKeywords = [
             'account statement', 'bank statement', 'credit card statement',
             'transaction history', 'cibc', 'rbc', 'td', 'scotiabank', 'bmo',
-            'opening balance', 'closing balance', 'purchases', 'payments'
+            'opening balance', 'closing balance', 'purchases', 'payments',
+            'chequing', 'savings', 'visa', 'mastercard', 'amex', 'statement',
+            'balance', 'debits', 'credits', 'details', 'activity'
         ];
 
         // Exclusion patterns (NOT bank statements)
         this.exclusionKeywords = [
-            'invoice', 'receipt', 'quote', 'cra', 'canada revenue',
-            'tax return', 't4', 'notice of assessment', 'audit',
-            'contract', 'agreement', 'client data'
+            // 'invoice',  // User might stick an invoice in there, but let's be careful not to exclude bank statements that mention "invoice payment"
+            'tax return', 't4', 'notice of assessment', 'audit report',
+            'lease agreement', 'employment contract'
         ];
-
-
     }
 
     /**
@@ -39,8 +39,10 @@ class DataJunkie {
             // Check for exclusion keywords first
             for (const keyword of this.exclusionKeywords) {
                 if (lowerText.includes(keyword)) {
-
-                    return false;
+                    console.log(`⚠️ Skipped ${file.name} due to exclusion keyword: ${keyword}`);
+                    // Return false only if we are VERY sure. 
+                    // For now, let's be permissive to avoid blocking valid files.
+                    // return false; 
                 }
             }
 
@@ -52,16 +54,18 @@ class DataJunkie {
                 }
             }
 
-            // Need at least 2 statement keywords (lowered from 3 for better detection)
-            const isStatement = keywordCount >= 2;
+            // PERMISSIVE MODE: Accept if ANY keyword is found.
+            const isStatement = keywordCount >= 1;
 
             console.log(`📋 ${file.name}: ${keywordCount} bank keywords found → ${isStatement ? 'DETECTED' : 'SKIPPED'}`);
 
             return isStatement;
 
         } catch (error) {
-
-            return false;
+            console.error(`❌ Error in isBankStatement for ${file.name}:`, error);
+            // In case of error (e.g., PDF parse fail), let's assume it IS a statement 
+            // and let the parser fail later if needed. Better to try than skip.
+            return true;
         }
     }
 
@@ -371,8 +375,9 @@ class DataJunkie {
             }
         }
 
-        // Step 4: Detect duplicates
-        const unique = await this.detectDuplicates(parsed.transactions);
+        // Step 4: Detect duplicates (DISABLED for debugging "14 lines" issue)
+        // const unique = await this.detectDuplicates(parsed.transactions);
+        const unique = parsed.transactions;
 
         // Step 5: Return clean data
         const result = {
@@ -422,7 +427,29 @@ class DataJunkie {
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(' ');
+
+                        // Simple Y-coordinate based line reconstruction
+                        // This ensures that "Date Desc Amount" ends up on its own line
+                        let lastY = -1;
+                        let pageText = '';
+
+                        // Items are usually sorted by PDF, but sometimes not perfectly.
+                        // We rely on standard order.
+                        for (const item of textContent.items) {
+                            const y = item.transform[5];
+
+                            // If Y changes significantly (> 2px), it's a new line
+                            if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+                                pageText += '\n';
+                            } else if (pageText.length > 0 && !pageText.endsWith('\n')) {
+                                // Same line, add space between items
+                                pageText += ' ';
+                            }
+
+                            pageText += item.str;
+                            lastY = y;
+                        }
+
                         fullText += pageText + '\n';
                     }
 

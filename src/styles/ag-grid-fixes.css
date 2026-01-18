@@ -7,29 +7,34 @@
     --ag-row-hover-color: #f1f5f9;
 }
 
-/* 🛑 CRITICAL: Neutralize Viewport Flex (Breaks Grid Virtualization) */
-.ag-body-viewport,
-.ag-body-horizontal-scroll-viewport,
-.ag-center-cols-viewport {
-    display: block !important;
-    height: auto !important;
-    min-height: 100% !important;
+/* Ensure headers stay sticky/frozen when scrolling */
+.v5-grid-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.ag-center-cols-container {
-    min-height: 100% !important;
+.v5-grid-container .ag-root-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/* 🛑 CRITICAL: Row Height Integrity */
-.ag-row {
-    border-bottom: 1px solid #f1f5f9 !important;
-    min-height: 48px !important;
+.v5-grid-container .ag-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: var(--ag-header-background-color, #f8fafc) !important;
 }
 
-/* Remove toxic flex overrides that break positioning */
-.ag-row[role="row"] {
-    display: block !important;
+.v5-grid-container .ag-body-viewport {
+    flex: 1;
+    overflow-y: auto !important;
 }
+
+/* 🛑 REMOVED: Viewport Flex overrides that broke positioning/headers */
+
+/* 🛑 REMOVED: Row display block overrides that broke virtualization */
 
 .ag-cell {
     display: flex !important;

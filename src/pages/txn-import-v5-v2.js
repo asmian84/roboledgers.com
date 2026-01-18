@@ -3165,34 +3165,69 @@ window.parseV5Files = async function () {
       txn.refNumber = String(index + 1).padStart(3, '0');
 
       // Convert amount to debit/credit based on account type
-      const amount = parseFloat(txn.amount) || 0;
+      // PRESERVE debit/credit if already set by the parser (check BOTH cases!)
+      const parsedDebit = parseFloat(txn.debit || txn.Debit) || 0;
+      const parsedCredit = parseFloat(txn.credit || txn.Credit) || 0;
+      const parsedBalance = parseFloat(txn.balance || txn.Balance) || null;
 
-      if (isCreditCard) {
-        // Credit Card: Positive = Charge (Credit), Negative = Payment (Debit)
-        if (amount > 0) {
-          txn.credit = amount;  // Charges increase what you owe
-          txn.debit = 0;
-          runningBalance += amount;
-        } else {
-          txn.debit = Math.abs(amount);  // Payments reduce what you owe
-          txn.credit = 0;
-          runningBalance -= Math.abs(amount);
-        }
+      if (parsedDebit > 0 || parsedCredit > 0) {
+        // Parser already set values - use them!
+        txn.debit = parsedDebit;
+        txn.Debit = parsedDebit;
+        txn.credit = parsedCredit;
+        txn.Credit = parsedCredit;
+        runningBalance += parsedCredit - parsedDebit;
       } else {
-        // Bank Account: Positive = Deposit (Debit), Negative = Withdrawal (Credit)
-        if (amount > 0) {
-          txn.debit = amount;  // Deposits increase balance
-          txn.credit = 0;
-          runningBalance += amount;
+        // Fallback: Calculate from amount field
+        const amount = Math.abs(parseFloat(txn.amount || txn.Amount) || 0);
+
+        // Check if Smart Parser provided a 'type' field
+        const txnType = (txn.type || txn.Type || '').toLowerCase();
+
+        // Determine if this is a debit or credit
+        let isDebit = false;
+
+        if (txnType === 'debit') {
+          isDebit = true;
+        } else if (txnType === 'credit') {
+          isDebit = false;
         } else {
-          txn.credit = Math.abs(amount);  // Withdrawals decrease balance
+          // No type specified - use description keywords
+          const desc = (txn.description || txn.Description || '').toLowerCase();
+          const debitKeywords = /withdrawal|abm|atm|debit|purchase|payment|fee|charge|cheque|chq|transfer\s+out|e-?transfer\s+sent|pre-?authorized/i;
+          const creditKeywords = /deposit|credit|refund|payroll|salary|interest|e-?transfer\s+received/i;
+
+          if (debitKeywords.test(desc)) {
+            isDebit = true;
+          } else if (creditKeywords.test(desc)) {
+            isDebit = false;
+          } else if (isCreditCard) {
+            // Credit card: positive = charge (debit from user perspective)
+            isDebit = amount > 0;
+          } else {
+            // Bank account: default to debit for unknown
+            isDebit = true;
+          }
+        }
+
+        if (isDebit) {
+          txn.debit = amount;
+          txn.Debit = amount;
+          txn.credit = 0;
+          txn.Credit = 0;
+          runningBalance -= amount;
+        } else {
+          txn.credit = amount;
+          txn.Credit = amount;
           txn.debit = 0;
-          runningBalance -= Math.abs(amount);
+          txn.Debit = 0;
+          runningBalance += amount;
         }
       }
 
-      // Set balance
-      txn.balance = runningBalance;
+      // Use parsed balance if available, otherwise use running balance
+      txn.balance = parsedBalance !== null ? parsedBalance : runningBalance;
+      txn.Balance = txn.balance;
     });
 
     // Initialize or update grid
@@ -3332,6 +3367,13 @@ window.initV5Grid = function () {
   }
   console.log('📊 First 3 transactions:', V5State.gridData.slice(0, 3));
 
+  // DEBUG: Log full structure of first transaction
+  if (V5State.gridData.length > 0) {
+    const first = V5State.gridData[0];
+    console.log('🔍 FULL FIRST TRANSACTION:', JSON.stringify(first, null, 2));
+    console.log('🔍 Keys:', Object.keys(first));
+  }
+
   const columnDefs = [
     {
       headerName: '',
@@ -3364,22 +3406,55 @@ window.initV5Grid = function () {
     {
       headerName: 'Date',
       field: 'date',
-      width: 100,
+      width: 120,
       editable: true,
-      valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString() : ''
+      // Handle both lowercase and PascalCase field names
+      valueGetter: params => params.data.date || params.data.Date || '',
+      valueFormatter: params => {
+        if (!params.value) return '';
+        try {
+          return new Date(params.value).toLocaleDateString();
+        } catch (e) {
+          return params.value;
+        }
+      }
     },
     {
       headerName: 'Description',
       field: 'description',
       editable: true,
       flex: 2,
-      cellEditor: 'agTextCellEditor'
+      cellEditor: 'agTextCellEditor',
+      // Handle both lowercase and PascalCase field names
+      valueGetter: params => params.data.description || params.data.Description || '',
+      // Multi-line display: split on comma
+      cellRenderer: params => {
+        const value = params.value || '';
+        if (!value.includes(',')) {
+          return value;
+        }
+        // Split on first comma only
+        const parts = value.split(',');
+        const transactionType = parts[0].trim();  // e.g., "Debit Card Purchase"
+        const merchantName = parts.slice(1).join(',').trim();  // e.g., "THE HOME DEPOT"
+        return `<div style="line-height: 1.3;">
+          <div style="font-weight: 500;">${merchantName}</div>
+          <div style="font-size: 0.85em; color: #6B7280;">${transactionType}</div>
+        </div>`;
+      },
+      // Allow HTML in cells
+      autoHeight: true
     },
     {
       headerName: 'Debit',
       field: 'debit',
       width: 100,
       editable: true,
+      // Handle both lowercase and PascalCase field names
+      valueGetter: params => {
+        const val = parseFloat(params.data.debit || params.data.Debit) || 0;
+        return val > 0 ? val : 0;
+      },
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
         return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
@@ -3387,8 +3462,9 @@ window.initV5Grid = function () {
       valueSetter: params => {
         const val = parseFloat(params.newValue) || 0;
         params.data.debit = val;
-        params.data.credit = 0; // Clear credit when setting debit
-        // Recalculate balance
+        params.data.Debit = val;
+        params.data.credit = 0;
+        params.data.Credit = 0;
         updateRowBalance(params.data);
         return true;
       }
@@ -3398,6 +3474,11 @@ window.initV5Grid = function () {
       field: 'credit',
       width: 90,
       editable: true,
+      // Handle both lowercase and PascalCase field names
+      valueGetter: params => {
+        const val = parseFloat(params.data.credit || params.data.Credit) || 0;
+        return val > 0 ? val : 0;
+      },
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
         return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
@@ -3405,8 +3486,9 @@ window.initV5Grid = function () {
       valueSetter: params => {
         const val = parseFloat(params.newValue) || 0;
         params.data.credit = val;
-        params.data.debit = 0; // Clear debit when setting credit
-        // Recalculate balance
+        params.data.Credit = val;
+        params.data.debit = 0;
+        params.data.Debit = 0;
         updateRowBalance(params.data);
         return true;
       }
@@ -3487,6 +3569,7 @@ window.initV5Grid = function () {
   const gridOptions = {
     columnDefs: columnDefs,
     rowData: V5State.gridData,
+    headerHeight: 48, // Explicitly set height for visibility
     defaultColDef: {
       sortable: true,
       filter: true,
@@ -3497,16 +3580,10 @@ window.initV5Grid = function () {
     },
     suppressRowHoverHighlight: false,
     suppressCellFocus: false,
-    // Remove vertical grid lines for cleaner look
+    // Enable virtualization and proper positioning
     suppressColumnVirtualisation: false,
-    suppressHorizontalScroll: true,
-    onGridReady: (params) => {
-      params.api.sizeColumnsToFit();
-      // Ensure strict fit on resize
-      window.addEventListener('resize', () => {
-        setTimeout(() => params.api.sizeColumnsToFit(), 100);
-      });
-    },
+    suppressHorizontalScroll: false,
+    // NOTE: onGridReady is defined later in this object
     autoSizeStrategy: {
       type: 'fitGridWidth'
     },
@@ -3566,20 +3643,22 @@ window.initV5Grid = function () {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
       V5State.gridColumnApi = params.columnApi;
-      // Autofit columns to content with smart constraints
-      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
-      params.api.autoSizeColumns(allColumnIds, false);
+
+      // Fit columns to grid width (not content)
+      params.api.sizeColumnsToFit();
+
+      // Re-fit on window resize
+      window.addEventListener('resize', () => {
+        setTimeout(() => params.api.sizeColumnsToFit(), 100);
+      });
     },
     onGridSizeChanged: (params) => {
-      // Re-autofit on resize with constraints
-      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
-      params.api.autoSizeColumns(allColumnIds, false);
+      // Re-fit columns when grid container resizes
+      params.api.sizeColumnsToFit();
     },
     onFirstDataRendered: (params) => {
-      console.log('🎯 First data rendered - auto-sizing columns');
-      // Fit to content with constraints
-      const allColumnIds = params.columnApi.getColumns().map(col => col.getColId());
-      params.api.autoSizeColumns(allColumnIds, false);
+      console.log('🎯 First data rendered - fitting columns to grid');
+      params.api.sizeColumnsToFit();
 
       // Log grid state
       const rect = container.getBoundingClientRect();
@@ -5112,7 +5191,16 @@ function updateSelectionCount() {
 // ============================================
 
 async function saveData() {
+  // Save to CacheManager (IndexedDB)
   await window.CacheManager.saveTransactions(V5State.gridData);
+
+  // Also save to localStorage as backup
+  try {
+    const dataToSave = V5State.gridData.map(({ sourceFileBlob, ...rest }) => rest);
+    localStorage.setItem('ab_v5_grid_data', JSON.stringify(dataToSave));
+  } catch (e) {
+    console.warn('Could not save to localStorage:', e);
+  }
 
   // Background sync to Supabase
   if (window.CacheManager.syncToSupabase) {
@@ -5168,16 +5256,39 @@ window.startFreshImport = async function () {
 // ============================================
 
 window.initTxnImportV5Grid = async function () {
-  // Auto-clear caches on page load for smooth UX
-  console.log('🔄 Auto-clearing caches...');
+  // Check for cached data first - RESTORE instead of clear
+  console.log('🔄 Checking for cached grid data...');
+
   try {
-    await window.BrainStorage.clearAllFileHashes();
-    await window.CacheManager.clearAll();
+    // Try to restore from CacheManager
+    const cached = await window.CacheManager?.getTransactions();
+
+    if (cached && cached.length > 0) {
+      console.log(`✅ Restored ${cached.length} transactions from cache`);
+      V5State.gridData = cached;
+      initV5Grid();
+      showControlToolbar();
+      return;
+    }
+
+    // Try localStorage fallback
+    const localData = localStorage.getItem('ab_v5_grid_data');
+    if (localData) {
+      const parsed = JSON.parse(localData);
+      if (parsed && parsed.length > 0) {
+        console.log(`✅ Restored ${parsed.length} transactions from localStorage`);
+        V5State.gridData = parsed;
+        initV5Grid();
+        showControlToolbar();
+        return;
+      }
+    }
   } catch (e) {
-    console.warn('Could not clear caches:', e);
+    console.warn('Could not restore cached data:', e);
   }
 
-  // Show empty state - no cache restore
+  // No cached data - show empty state
+  console.log('ℹ️ No cached data found - showing empty state');
   document.getElementById('v5-empty-state').style.display = 'flex';
 };
 
