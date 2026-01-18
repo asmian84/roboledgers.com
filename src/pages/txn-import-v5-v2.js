@@ -3390,17 +3390,16 @@ window.initV5Grid = function () {
       width: 40,
       minWidth: 40,
       maxWidth: 40,
-      suppressSizeToFit: true, // Fixed width
+      suppressSizeToFit: true,
       pinned: 'left'
     },
     {
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 80,
-      minWidth: 80,
-      maxWidth: 100,
-      suppressSizeToFit: true, // Priority 4: Low/Fixed
-      // Sort numerically (001, 002, 003)
+      width: 70, // Reduced slightly
+      minWidth: 70,
+      maxWidth: 90,
+      suppressSizeToFit: true, // Fixed
       comparator: (valueA, valueB) => {
         const numA = parseInt(valueA) || 0;
         const numB = parseInt(valueB) || 0;
@@ -3416,10 +3415,10 @@ window.initV5Grid = function () {
     {
       headerName: 'Date',
       field: 'date',
-      width: 110,
-      minWidth: 110,
-      maxWidth: 140,
-      suppressSizeToFit: true, // Priority 5: Fixed
+      width: 100, // Reduced to fit content better
+      minWidth: 100,
+      maxWidth: 120,
+      suppressSizeToFit: true, // Fixed
       editable: true,
       valueGetter: params => params.data.date || params.data.Date || '',
       valueFormatter: params => {
@@ -3435,11 +3434,11 @@ window.initV5Grid = function () {
       headerName: 'Description',
       field: 'description',
       editable: true,
-      flex: 3, // Priority 1: Highest auto-fit priority
-      minWidth: 250,
+      flex: 1, // TAKES ALL REMAINING SPACE (Highest Priority)
+      minWidth: 300,
       cellEditor: 'agTextCellEditor',
+      cellStyle: { paddingRight: '20px' }, // Fix bleed: enforce 20px visual gutter
       valueGetter: params => params.data.description || params.data.Description || '',
-      // Multi-line display: split on comma
       cellRenderer: params => {
         const value = params.value || '';
         if (!value.includes(',')) {
@@ -3455,12 +3454,15 @@ window.initV5Grid = function () {
       },
       autoHeight: true
     },
+    // AMOUNTS: Fixed width + Right Aligned to prevent "bleed"
     {
       headerName: 'Debit',
       field: 'debit',
-      width: 110,
-      minWidth: 100,
-      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
+      width: 120,
+      minWidth: 110,
+      suppressSizeToFit: true, // Priority: Ensure readability
+      type: 'numericColumn',   // Right align header
+      cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' }, // Explicit flex align
       editable: true,
       valueGetter: params => {
         const val = parseFloat(params.data.debit || params.data.Debit) || 0;
@@ -3483,9 +3485,11 @@ window.initV5Grid = function () {
     {
       headerName: 'Credit',
       field: 'credit',
-      width: 110,
-      minWidth: 100,
-      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
+      width: 120,
+      minWidth: 110,
+      suppressSizeToFit: true, // Priority: Ensure readability
+      type: 'numericColumn',
+      cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
       editable: true,
       valueGetter: params => {
         const val = parseFloat(params.data.credit || params.data.Credit) || 0;
@@ -3509,8 +3513,9 @@ window.initV5Grid = function () {
       headerName: 'Balance',
       field: 'balance',
       width: 120,
-      minWidth: 100,
-      suppressSizeToFit: true, // Priority 6: Fixed/Balance group
+      minWidth: 110,
+      suppressSizeToFit: true, // Priority: Ensure readability
+      type: 'numericColumn',
       editable: false,
       valueFormatter: params => {
         const val = parseFloat(params.value) || 0;
@@ -3518,14 +3523,16 @@ window.initV5Grid = function () {
       },
       cellStyle: params => {
         const val = parseFloat(params.value) || 0;
-        return val < 0 ? { color: '#ef4444' } : { color: '#10b981' };
+        const color = val < 0 ? '#ef4444' : '#10b981';
+        return { color: color, 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' };
       }
     },
     {
       headerName: 'Account',
       field: 'account',
-      flex: 2, // Priority 2: Second highest priority
+      width: 200, // Fixed reasonable width
       minWidth: 150,
+      suppressSizeToFit: true, // Priority 3: Fixed to give Desc more room
       editable: true,
       cellEditor: GroupedAccountEditor,
       valueGetter: params => {
@@ -3536,10 +3543,10 @@ window.initV5Grid = function () {
     {
       headerName: 'Actions',
       field: 'actions',
-      width: 140,
-      minWidth: 140,
-      maxWidth: 140,
-      suppressSizeToFit: true, // Priority 3: Fixed wall
+      width: 130,
+      minWidth: 130,
+      maxWidth: 130,
+      suppressSizeToFit: true, // Priority 4: Fixed
       resizable: false,
       cellRenderer: (params) => {
         let sourceIcon = '';
