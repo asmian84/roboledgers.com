@@ -1,37 +1,21 @@
 import { BaseBankParser } from './BaseBankParser.js';
 
 export class RBCChequingParser extends BaseBankParser {
-    constructor() {
-        const formatRules = `
-RBC CHEQUING FORMAT (Business Account Statement):
-- Header: "ROYAL BANK OF CANADA Business Account Statement"
-- Columns: "Date | Description | Cheques&Debits($) | Deposits&Credits($) | Balance($)"
-- Date format: "DDMon" (e.g., "27Dec", "02Jan", "03Jan") - No year in transaction rows
-- Extract year from statement period header (e.g., "December 22, 2023 to January 24, 2024")
-- Multi-line descriptions common (description continues on next line)
+  constructor() {
+    const formatRules = `
+RBC CHEQUING FORMAT:
+- Date: D MMM (e.g., "7 May", "15 Jan")
+- Column Anchors: A gap of 2 or more spaces separation usually indicates a column boundary (Description vs Amount).
+- Fields: Date | Description | Cheques&Debits | Deposits&Credits | Balance
 
-PARSING RULES:
-- Combine DDMon with statement year
-- Handle year rollover (Dec → Jan means new year)
-- Descriptions may include:
-  * Reference numbers (e.g., "Reference 091863637854190")
-  * Check numbers (e.g., "Mobile cheque deposit - 5639")
-  * Transfer codes (e.g., "OnlineBanking transfer-2760")
-- Clean descriptions: Remove reference codes, keep merchant/transaction type
-
-KNOWN PATTERNS:
-- "e-Transfer sent" + merchant → debit
-- "Mobile cheque deposit" → credit
-- "Online Banking transfer" → could be debit or credit (check amount column)
-- "Telephone Banking transfer" → credit
-- "Misc Payment" + description → debit
-- "Monthly fee" → debit
-- "Regular transaction fee" → debit
-- "Interac purchase" + merchant → debit 
-- "Payroll Deposit" + company → credit
+SMART PARSING RULES:
+1. Date year is not in transaction rows; extract it from the statement header.
+2. If "Jan" appears after "Dec", increment the year (year rollover).
+3. Skip lines containing "Opening Balance" or "Closing Balance".
+4. Cleanup: Remove "Reference XXXXXXXXX" from descriptions.
         `;
-        super('RBC', 'Chequing', formatRules);
-    }
+    super('RBC', 'Chequing', formatRules);
+  }
 }
 
 export const rbcChequingParser = new RBCChequingParser();
