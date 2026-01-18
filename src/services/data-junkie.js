@@ -333,19 +333,83 @@ class DataJunkie {
             return { skipped: true, reason: 'Not a bank statement' };
         }
 
-        // Step 2: Parse PDF (existing parser)
-        const parsed = await window.pdfParser.parsePDF(file);
+        // Step 2: Extract full text for AI parser
+        const fullText = await this.extractFullText(file);
 
-        // Step 3: Detect duplicates
+        // Step 3: Parse with AI using ParserRouter (brand detection + brand-specific parsing)
+        let parsed;
+        try {
+            // Dynamically import ParserRouter
+            const { parserRouter } = await import('./ParserRouter.js');
+            const result = await parserRouter.parseStatement(fullText);
+
+            // Adapt to expected format
+            parsed = {
+                bank: result.brandDetection.fullBrandName,
+                accountType: result.brandDetection.accountType,
+                accountHolder: result.accountHolder,
+                transactions: result.transactions.map(tx => ({
+                    Date: tx.date,
+                    Description: tx.description,
+                    Amount: tx.debit || tx.credit,
+                    Type: tx.debit ? 'Debit' : 'Credit',
+                    Debit: tx.debit,
+                    Credit: tx.credit
+                }))
+            };
+        } catch (error) {
+            console.error('AI Parser failed:', error);
+            // Fallback to old parser if AI fails
+            if (window.pdfParser) {
+                parsed = await window.pdfParser.parsePDF(file);
+            } else {
+                throw error;
+            }
+        }
+
+        // Step 4: Detect duplicates
         const unique = await this.detectDuplicates(parsed.transactions);
 
-        // Step 4: Return clean data
+        // Step 5: Return clean data
         return {
             skipped: false,
             transactions: unique,
             duplicatesRemoved: parsed.transactions.length - unique.length,
-            bank: parsed.bank
+            bank: parsed.bank,
+            accountType: parsed.accountType,
+            accountHolder: parsed.accountHolder
         };
+    }
+
+    /**
+     * Extract full text from PDF (all pages)
+     */
+    async extractFullText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                try {
+                    const typedArray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullText += pageText + '\n';
+                    }
+
+                    resolve(fullText);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        });
     }
 }
 
