@@ -94,6 +94,11 @@ class ParserRouter {
             tx._tag = detection.tag || detection.accountType; // e.g. "Chequing"
         });
 
+        // Step 5: Run Validation Engine (silent auto-fix)
+        if (window.validationEngine) {
+            result = window.validationEngine.validate(result);
+        }
+
         console.log(`✅ Successfully parsed ${result.transactions.length} transactions from ${detection.fullBrandName}`);
 
         return result;
