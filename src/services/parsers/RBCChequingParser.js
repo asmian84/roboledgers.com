@@ -23,6 +23,8 @@ SMART PARSING RULES:
   /**
    * REGEX PARSER for RBC Chequing
    * Format: Date (D Mon) | Description | Debit | Credit | Balance
+   * KEY INSIGHT: Multiple transactions can occur on the same date
+   * A new transaction starts when we see an AMOUNT (not a new date)
    */
   parseWithRegex(text) {
     const lines = text.split('\n');
@@ -35,26 +37,32 @@ SMART PARSING RULES:
       this.currentYear = parseInt(yearMatch[1]);
     }
     let lastMonth = null;
+    let currentDate = null; // Track the current date for multi-transaction days
 
-    // RBC Date pattern: "7 May" or "15 Jan" (day space month)
-    const dateRegex = /^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i;
+    // RBC Date pattern: "06 Feb" or "7 May" (day space month)
+    const dateRegex = /^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i;
 
-    // Amount pattern: number with commas and 2 decimals, optionally negative
-    // RBC typically has Amount + Balance at end of line
-    const amountPattern = /([\d,]+\.\d{2})\s+([\d,]+\.\d{2}(?:\s*CR|\s*DR)?)$/i;
-    const singleAmountPattern = /([\d,]+\.\d{2}(?:\s*CR|\s*DR)?)$/i;
+    // Amount pattern: ends with Amount + Balance
+    // RBC format: "Description  Amount  Balance" with spacing
+    const amountPattern = /([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/;
+
+    // Single amount pattern (some transactions only have one amount)
+    const singleAmountPattern = /([\d,]+\.\d{2})$/;
 
     console.log(`[RBC] Starting parse with ${lines.length} lines, year: ${this.currentYear}`);
+
+    let pendingDescription = '';
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       // Skip headers and summary lines
-      if (line.match(/Opening Balance|Closing Balance|Balance Forward|Statement|Account Number/i)) continue;
+      if (line.match(/Opening Balance|Closing Balance|Balance Forward|Statement|Account Number|Account Activity|Cheques.*Debits|Deposits.*Credits/i)) continue;
       if (line.match(/^Date\s+Description/i)) continue;
+      if (line.match(/^Page\s+\d+/i)) continue;
 
-      // Check if line starts with RBC date format
+      // Check if line starts with a date
       const dateMatch = line.match(dateRegex);
       if (dateMatch) {
         const day = dateMatch[1];
@@ -63,44 +71,44 @@ SMART PARSING RULES:
         // Year rollover detection
         const monthIndex = this.getMonthIndex(monthName);
         if (lastMonth !== null && monthIndex < lastMonth && monthIndex <= 1) {
-          // Rolled over to new year (e.g., Dec -> Jan)
           this.currentYear++;
           console.log(`[RBC] Year rollover detected: ${this.currentYear}`);
         }
         lastMonth = monthIndex;
 
-        const isoDate = this.formatDate(day, monthName, this.currentYear);
+        currentDate = this.formatDate(day, monthName, this.currentYear);
 
-        // Try to find amounts on this line
-        let fullLine = line;
-        let amountMatch = fullLine.match(amountPattern);
+        // Remove the date from the line to get description part
+        const lineAfterDate = line.substring(dateMatch[0].length).trim();
 
-        // Multi-line: Look ahead if no amounts found
-        if (!amountMatch) {
-          let lookAhead = 1;
-          while (i + lookAhead < lines.length && lookAhead <= 3) {
-            const nextLine = lines[i + lookAhead].trim();
-            if (!nextLine || nextLine.match(dateRegex)) break;
-
-            fullLine += ' ' + nextLine;
-            amountMatch = fullLine.match(amountPattern);
-            if (amountMatch) {
-              i += lookAhead; // Skip consumed lines
-              break;
-            }
-            lookAhead++;
-          }
+        // Try to extract transaction from this line
+        const extracted = this.extractTransaction(lineAfterDate, currentDate);
+        if (extracted) {
+          transactions.push(extracted);
+        } else if (lineAfterDate) {
+          // No amount found - start accumulating for multi-line description
+          pendingDescription = lineAfterDate;
         }
+      } else if (currentDate) {
+        // No date at start - could be:
+        // 1. Continuation of previous description
+        // 2. A new transaction for the same date
 
-        if (amountMatch) {
-          this.processTransaction(isoDate, fullLine, dateMatch[0], amountMatch, transactions);
+        // Check if this line has an amount (marks transaction boundary)
+        const extracted = this.extractTransaction(line, currentDate);
+        if (extracted) {
+          // If we have pending description, prepend it
+          if (pendingDescription) {
+            extracted.description = pendingDescription + ' ' + extracted.description;
+            pendingDescription = '';
+          }
+          transactions.push(extracted);
         } else {
-          // Try single amount (might be a simplified format)
-          const singleMatch = fullLine.match(singleAmountPattern);
-          if (singleMatch) {
-            this.processSimpleTransaction(isoDate, fullLine, dateMatch[0], singleMatch, transactions);
-          } else {
-            console.log(`[RBC] ✗ No amount found for: "${line}"`);
+          // Accumulate description (but limit to prevent runaway)
+          if (pendingDescription && pendingDescription.length < 200) {
+            pendingDescription += ' ' + line;
+          } else if (!pendingDescription) {
+            pendingDescription = line;
           }
         }
       }
@@ -108,6 +116,48 @@ SMART PARSING RULES:
 
     console.log(`[RBC] Parsing complete. Found ${transactions.length} transactions.`);
     return { transactions };
+  }
+
+  /**
+   * Extract a transaction from a line if it has an amount
+   */
+  extractTransaction(text, dateStr) {
+    if (!text) return null;
+
+    // Pattern: Description ending with Amount Balance
+    // Example: "e-Transfer - Autodeposit COMPANY   1,234.56   67,890.12"
+    const twoAmountMatch = text.match(/([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/);
+    const singleAmountMatch = text.match(/([\d,]+\.\d{2})$/);
+
+    let amount = 0;
+    let balance = 0;
+    let description = text;
+
+    if (twoAmountMatch) {
+      amount = parseFloat(twoAmountMatch[1].replace(/,/g, ''));
+      balance = parseFloat(twoAmountMatch[2].replace(/,/g, ''));
+      description = text.replace(twoAmountMatch[0], '').trim();
+    } else if (singleAmountMatch) {
+      amount = parseFloat(singleAmountMatch[1].replace(/,/g, ''));
+      description = text.replace(singleAmountMatch[0], '').trim();
+    } else {
+      return null; // No amount found
+    }
+
+    // Clean the description
+    description = this.cleanRBCDescription(description);
+
+    // Determine debit vs credit
+    const isCredit = this.isCredit(description);
+
+    return {
+      date: dateStr,
+      description: description,
+      amount: amount,
+      debit: isCredit ? 0 : amount,
+      credit: isCredit ? amount : 0,
+      balance: balance
+    };
   }
 
   getMonthIndex(monthName) {
@@ -118,66 +168,6 @@ SMART PARSING RULES:
   formatDate(day, monthName, year) {
     const month = this.getMonthIndex(monthName) + 1;
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  }
-
-  processTransaction(isoDate, fullLine, dateStr, amountMatch, transactions) {
-    // amountMatch[1] = Transaction Amount
-    // amountMatch[2] = Balance (may have CR/DR suffix)
-    let rawAmount = amountMatch[1].replace(/,/g, '');
-    let rawBalance = amountMatch[2].replace(/,/g, '').replace(/\s*(CR|DR)/i, '');
-
-    let amount = parseFloat(rawAmount);
-    let balance = parseFloat(rawBalance);
-
-    // Handle CR/DR suffix
-    if (amountMatch[2].match(/CR/i)) balance = balance; // Credit is positive
-    if (amountMatch[2].match(/DR/i)) balance = -balance;
-
-    // Extract description (between date and amounts)
-    let description = fullLine.substring(dateStr.length);
-    description = description.replace(amountMatch[0], '').trim();
-
-    // Clean description
-    description = this.cleanRBCDescription(description);
-
-    // Determine if debit or credit based on keywords
-    let isCredit = this.isCredit(description);
-
-    const tx = {
-      date: isoDate,
-      description: description,
-      amount: amount,
-      debit: isCredit ? 0 : amount,
-      credit: isCredit ? amount : 0,
-      balance: balance
-    };
-
-    transactions.push(tx);
-    console.log(`[RBC] ✓ Parsed: ${isoDate} | ${description.substring(0, 40)}... | D:${tx.debit} C:${tx.credit}`);
-  }
-
-  processSimpleTransaction(isoDate, fullLine, dateStr, amountMatch, transactions) {
-    let rawAmount = amountMatch[1].replace(/,/g, '').replace(/\s*(CR|DR)/i, '');
-    let amount = parseFloat(rawAmount);
-
-    // Extract description
-    let description = fullLine.substring(dateStr.length);
-    description = description.replace(amountMatch[0], '').trim();
-    description = this.cleanRBCDescription(description);
-
-    let isCredit = amountMatch[1].match(/CR/i) || this.isCredit(description);
-
-    const tx = {
-      date: isoDate,
-      description: description,
-      amount: amount,
-      debit: isCredit ? 0 : amount,
-      credit: isCredit ? amount : 0,
-      balance: 0
-    };
-
-    transactions.push(tx);
-    console.log(`[RBC] ✓ Simple: ${isoDate} | ${description.substring(0, 40)}... | D:${tx.debit} C:${tx.credit}`);
   }
 
   isCredit(description) {
