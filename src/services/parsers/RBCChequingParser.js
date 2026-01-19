@@ -30,11 +30,26 @@ SMART PARSING RULES:
     const lines = text.split('\n');
     const transactions = [];
 
-    // Try to extract year from statement header
-    const yearMatch = text.match(/Statement\s+(?:From|Period)[:\s]+[A-Za-z]+\s+\d{1,2},?\s+(\d{4})/i) ||
-      text.match(/(\d{4})/);
-    if (yearMatch) {
-      this.currentYear = parseInt(yearMatch[1]);
+    // Extract year from statement - look for "January 1, 2024" or "February 5, 2024" patterns
+    // CRITICAL: Be specific to avoid matching random 4-digit numbers
+    const yearPatterns = [
+      /(\w+)\s+\d{1,2},?\s+(20\d{2})\s+to\s+\w+\s+\d{1,2},?\s+(20\d{2})/i, // "January 1, 2024 to February 5, 2024"
+      /Statement\s+Period.*?(20\d{2})/i,
+      /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+(20\d{2})/i,
+      /(20\d{2})-\d{2}-\d{2}/ // ISO date
+    ];
+
+    for (const pattern of yearPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        // Use the last year found in case of date range
+        const year = match[match.length - 1] || match[1];
+        if (year && year.match(/^20\d{2}$/)) {
+          this.currentYear = parseInt(year);
+          console.log(`[RBC] Extracted year: ${this.currentYear}`);
+          break;
+        }
+      }
     }
     let lastMonth = null;
     let currentDate = null; // Track the current date for multi-transaction days
@@ -177,76 +192,77 @@ SMART PARSING RULES:
 
   cleanRBCDescription(desc) {
     // =====================================================
-    // RBC E-TRANSFER AGGRESSIVE CLEANUP
-    // Remove ALL encrypted confirmation codes and gibberish
+    // RBC DESCRIPTION CLEANUP & REFORMATTING
+    // Goal: Convert "Type Name Garbage" → "Name, Type"
     // =====================================================
 
-    // 1. Remove ALL patterns starting with C1A (e-transfer codes)
-    // Examples: C1AHPXxct6rG, C1AcEMz4CvEh, C1AZV6bP5EPg
+    // 1. REMOVE DATES - "10 Jan", "February 5, 2024", "2 of 3", page refs
+    desc = desc.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*/i, '');
+    desc = desc.replace(/\b\d{1,2}\s+of\s+\d+\b/gi, ''); // "2 of 3"
+    desc = desc.replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+20\d{2}\b/gi, '');
+    desc = desc.replace(/\bto\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+20\d{2}\b/gi, '');
+    desc = desc.replace(/\b20\d{2}\b/g, ''); // Standalone years
+
+    // 2. REMOVE GIBBERISH CODES
     desc = desc.replace(/\bC1A[a-zA-Z0-9]{4,}\b/gi, '');
-
-    // 2. Remove ALL patterns starting with CA + capital + mixed (e-transfer codes)
-    // Examples: CAjQuCUn, CA7W2uNJ, CAAmuJNk, CARA36w6, CAJYE68E
     desc = desc.replace(/\bCA[A-Z][a-zA-Z0-9]{3,}\b/g, '');
-
-    // 3. Remove hex-like strings (16+ chars of hex)
-    // Examples: 2ed20c5be4c14d3ba079fb3d1cba34c9, 0cfd400b58e84493b7ad8fa072eac546
     desc = desc.replace(/\b[a-f0-9]{16,}\b/gi, '');
-
-    // 4. Remove mixed case gibberish (upper followed by lower/numbers, 6+ chars)
-    // Examples: CANWGJn5, EMLAdv001
-    desc = desc.replace(/\b[A-Z]{2,}[a-z0-9]{3,}[A-Za-z0-9]*\b/g, (match) => {
-      // Keep known patterns
-      const keepPatterns = ['PAYroll', 'PAYROLL', 'FLEETCOR'];
-      if (keepPatterns.some(p => match.toUpperCase().includes(p.toUpperCase()))) return match;
-      // If it contains mixed case after uppercase prefix, likely gibberish
-      if (match.match(/[A-Z]{2,}[a-z][0-9]/)) return '';
-      return match;
-    });
-
-    // 5. Remove "@ + something" patterns (EMLAdv001@)
     desc = desc.replace(/\b[\w]+@[\w]*\b/g, '');
-
-    // 6. Remove isolated number sequences (6+ digits)
     desc = desc.replace(/\b\d{6,}\b/g, '');
-
-    // 7. Remove duplicate number patterns (513722 513722)
     desc = desc.replace(/\b(\d{5,})\s+\1\b/g, '');
 
-    // 8. Remove trailing short mixed codes (Nk, 1, etc.)
-    desc = desc.replace(/\s+[A-Z][a-z]?\d*$/g, '');
+    // 3. EXTRACT TYPE AND NAME
+    // Known transaction types at the start
+    const typePatterns = [
+      { pattern: /^e-?Transfer\s*-?\s*Autodeposit\s*/i, type: 'e-Transfer, Autodeposit' },
+      { pattern: /^e-?Transfer\s+sent\s*/i, type: 'e-Transfer sent' },
+      { pattern: /^e-?Transfer\s*-?\s*/i, type: 'e-Transfer' },
+      { pattern: /^Contactless\s+Interac\s+purchase\s*-?\s*\d*\s*/i, type: 'Contactless Interac purchase' },
+      { pattern: /^Online\s+Banking\s+transfer\s*-?\s*\d*\s*/i, type: 'Online Banking transfer' },
+      { pattern: /^Business\s+PAD\s*/i, type: 'Business PAD' },
+      { pattern: /^Direct\s+Deposits?\s*\(PDS\)\s*service\s+total\s*/i, type: 'Direct Deposits (PDS)' },
+      { pattern: /^Insurance\s*/i, type: 'Insurance' },
+      { pattern: /^Misc\s+Payment\s*/i, type: 'Misc Payment' },
+      { pattern: /^Pay\s+Employee-Vendor\s*/i, type: 'Pay Employee-Vendor' },
+      { pattern: /^Monthly\s+fee\s*/i, type: 'Monthly fee' },
+    ];
 
-    // 9. Clean up "Autodeposit" formatting
-    desc = desc.replace(/e-?Transfer\s*-?\s*Autodeposit/gi, 'e-Transfer, Autodeposit');
-    desc = desc.replace(/-\s*Autodeposit/gi, ', Autodeposit');
+    let extractedType = '';
+    let name = desc;
 
-    // 10. Remove Reference numbers
-    desc = desc.replace(/Reference\s+[\dX]+/gi, '');
-
-    // 11. Remove duplicate company names
-    desc = desc.replace(/(\b\w+\s+\w+\s+\w+)\s+.*?\1/gi, '$1');
-
-    // 12. Clean up leading date patterns that leaked through
-    desc = desc.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*/i, '');
-
-    // 13. Clean up multiple spaces, hyphens, commas
-    desc = desc.replace(/\s+/g, ' ');
-    desc = desc.replace(/\s*-\s*-\s*/g, ' - ');
-    desc = desc.replace(/,\s*,/g, ',');
-    desc = desc.replace(/^[\s,\-]+|[\s,\-]+$/g, '');
-    desc = desc.trim();
-
-    // Add comma after transaction type for UI formatting
-    const types = ['E-TRANSFER', 'INTERAC', 'BILL PAYMENT', 'SERVICE CHARGE', 'POINT OF SALE', 'ABM', 'CHEQUE', 'MISC PAYMENT', 'ONLINE BANKING', 'BUSINESS PAD', 'DIRECT DEPOSITS'];
-    for (const type of types) {
-      const upper = desc.toUpperCase();
-      if (upper.startsWith(type) && desc.length > type.length && desc[type.length] !== ',') {
-        desc = desc.substring(0, type.length) + ',' + desc.substring(type.length);
+    for (const { pattern, type } of typePatterns) {
+      if (desc.match(pattern)) {
+        extractedType = type;
+        name = desc.replace(pattern, '').trim();
         break;
       }
     }
 
-    return desc;
+    // 4. CLEAN UP NAME
+    // Remove trailing garbage
+    name = name.replace(/\s+-\s*$/g, '');
+    name = name.replace(/\s+\d{1,4}$/g, ''); // trailing numbers like "-3639"
+    name = name.replace(/\s+/g, ' ').trim();
+
+    // 5. FINAL FORMAT: "NAME, Type" for UI display
+    // The grid shows Line1 (bold) above comma, Line2 (gray) after comma
+    let finalDesc;
+    if (extractedType && name) {
+      finalDesc = `${name}, ${extractedType}`;
+    } else if (name) {
+      finalDesc = name;
+    } else if (extractedType) {
+      finalDesc = extractedType;
+    } else {
+      finalDesc = desc;
+    }
+
+    // 6. Final cleanup
+    finalDesc = finalDesc.replace(/,\s*,/g, ',');
+    finalDesc = finalDesc.replace(/^[\s,\-]+|[\s,\-]+$/g, '');
+    finalDesc = finalDesc.trim();
+
+    return finalDesc;
   }
 }
 
