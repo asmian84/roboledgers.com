@@ -187,56 +187,70 @@ SMART PARSING RULES:
 
   cleanRBCDescription(desc) {
     // =====================================================
-    // RBC E-TRANSFER CLEANUP - Remove encrypted confirmation codes
-    // Examples: "CAESnsaJ", "c8bf83a55b4fa1e2a25e12ecdf6f0bo5", "C1AavajMbjum"
+    // RBC E-TRANSFER AGGRESSIVE CLEANUP
+    // Remove ALL encrypted confirmation codes and gibberish
     // =====================================================
 
-    // Remove e-transfer encrypted confirmation codes (mixed alphanumeric, 8+ chars)
-    // Pattern: Capital letter followed by mixed case/numbers that looks like gibberish
-    desc = desc.replace(/\b[A-Z0-9][a-zA-Z0-9]{7,}\b/g, (match) => {
-      // Keep known words, remove garbage-looking strings
-      const knownWords = ['AUTODEPOSIT', 'TRANSFER', 'ETRANSFER', 'INTERAC', 'RECEIVED', 'DEPOSIT', 'PAYMENT',
-        'INSURANCE', 'ALBERTA', 'ONTARIO', 'QUEBEC', 'BRITISH', 'COLUMBIA', 'MANITOBA',
-        'SASKATCHEWAN', 'BUSINESS', 'SERVICES', 'CANMORE', 'PROPERTIES', 'RETREATS',
-        'PAYROLL', 'SANDBOX', 'REGISTR', 'SERVICE', 'BANKING', 'EMPLOYEE', 'VENDOR'];
-      if (knownWords.some(w => match.toUpperCase().includes(w))) return match;
+    // 1. Remove ALL patterns starting with C1A (e-transfer codes)
+    // Examples: C1AHPXxct6rG, C1AcEMz4CvEh, C1AZV6bP5EPg
+    desc = desc.replace(/\bC1A[a-zA-Z0-9]{4,}\b/gi, '');
 
-      // If it looks like a hex/encoded string (lots of lowercase or mixed), remove it
-      if (match.match(/[a-z]{3,}/) && match.match(/[0-9]/)) return '';
-      // If it has too many consonants together (gibberish), remove it
-      if (match.match(/[^aeiou]{5,}/i)) return '';
+    // 2. Remove ALL patterns starting with CA + capital + mixed (e-transfer codes)
+    // Examples: CAjQuCUn, CA7W2uNJ, CAAmuJNk, CARA36w6, CAJYE68E
+    desc = desc.replace(/\bCA[A-Z][a-zA-Z0-9]{3,}\b/g, '');
 
+    // 3. Remove hex-like strings (16+ chars of hex)
+    // Examples: 2ed20c5be4c14d3ba079fb3d1cba34c9, 0cfd400b58e84493b7ad8fa072eac546
+    desc = desc.replace(/\b[a-f0-9]{16,}\b/gi, '');
+
+    // 4. Remove mixed case gibberish (upper followed by lower/numbers, 6+ chars)
+    // Examples: CANWGJn5, EMLAdv001
+    desc = desc.replace(/\b[A-Z]{2,}[a-z0-9]{3,}[A-Za-z0-9]*\b/g, (match) => {
+      // Keep known patterns
+      const keepPatterns = ['PAYroll', 'PAYROLL', 'FLEETCOR'];
+      if (keepPatterns.some(p => match.toUpperCase().includes(p.toUpperCase()))) return match;
+      // If it contains mixed case after uppercase prefix, likely gibberish
+      if (match.match(/[A-Z]{2,}[a-z][0-9]/)) return '';
       return match;
     });
 
-    // Remove standalone encrypted codes (e.g., "CA7W2uNJ", "CA8YAt56")
-    desc = desc.replace(/\bCA[A-Z0-9][a-zA-Z0-9]{4,}\b/g, '');
+    // 5. Remove "@ + something" patterns (EMLAdv001@)
+    desc = desc.replace(/\b[\w]+@[\w]*\b/g, '');
 
-    // Remove hex-like strings (e.g., "c8bf83a55b4fa1e2a25e12ecdf6f0bo5")
-    desc = desc.replace(/\b[a-f0-9]{20,}\b/gi, '');
+    // 6. Remove isolated number sequences (6+ digits)
+    desc = desc.replace(/\b\d{6,}\b/g, '');
 
-    // Remove "Autodeposit" prefix redundancy after e-Transfer
-    desc = desc.replace(/e-Transfer\s*-?\s*Autodeposit/gi, 'e-Transfer, Autodeposit');
+    // 7. Remove duplicate number patterns (513722 513722)
+    desc = desc.replace(/\b(\d{5,})\s+\1\b/g, '');
 
-    // Remove reference numbers
+    // 8. Remove trailing short mixed codes (Nk, 1, etc.)
+    desc = desc.replace(/\s+[A-Z][a-z]?\d*$/g, '');
+
+    // 9. Clean up "Autodeposit" formatting
+    desc = desc.replace(/e-?Transfer\s*-?\s*Autodeposit/gi, 'e-Transfer, Autodeposit');
+    desc = desc.replace(/-\s*Autodeposit/gi, ', Autodeposit');
+
+    // 10. Remove Reference numbers
     desc = desc.replace(/Reference\s+[\dX]+/gi, '');
 
-    // Remove long digit sequences (8+ digits)
-    desc = desc.replace(/\b\d{8,}\b/g, '');
+    // 11. Remove duplicate company names
+    desc = desc.replace(/(\b\w+\s+\w+\s+\w+)\s+.*?\1/gi, '$1');
 
-    // Remove trailing garbage after company names (short random codes)
-    desc = desc.replace(/\s+[A-Z][a-z0-9]{2,6}$/g, '');
+    // 12. Clean up leading date patterns that leaked through
+    desc = desc.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*/i, '');
 
-    // Clean up multiple spaces and trim
-    desc = desc.replace(/\s+/g, ' ').trim();
-
-    // Remove trailing/leading hyphens and commas
-    desc = desc.replace(/^[\s,\-]+|[\s,\-]+$/g, '').trim();
+    // 13. Clean up multiple spaces, hyphens, commas
+    desc = desc.replace(/\s+/g, ' ');
+    desc = desc.replace(/\s*-\s*-\s*/g, ' - ');
+    desc = desc.replace(/,\s*,/g, ',');
+    desc = desc.replace(/^[\s,\-]+|[\s,\-]+$/g, '');
+    desc = desc.trim();
 
     // Add comma after transaction type for UI formatting
-    const types = ['E-TRANSFER', 'INTERAC', 'BILL PAYMENT', 'SERVICE CHARGE', 'POINT OF SALE', 'ABM', 'CHEQUE', 'MISC PAYMENT'];
+    const types = ['E-TRANSFER', 'INTERAC', 'BILL PAYMENT', 'SERVICE CHARGE', 'POINT OF SALE', 'ABM', 'CHEQUE', 'MISC PAYMENT', 'ONLINE BANKING', 'BUSINESS PAD', 'DIRECT DEPOSITS'];
     for (const type of types) {
-      if (desc.toUpperCase().startsWith(type) && desc.length > type.length && desc[type.length] !== ',') {
+      const upper = desc.toUpperCase();
+      if (upper.startsWith(type) && desc.length > type.length && desc[type.length] !== ',') {
         desc = desc.substring(0, type.length) + ',' + desc.substring(type.length);
         break;
       }
