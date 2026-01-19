@@ -3576,8 +3576,7 @@ window.initV5Grid = function () {
         colId: 'description',
         headerName: 'Description',
         field: 'description',
-        // FLEX 1: Absorbs all residual space after other columns auto-size
-        flex: 1,
+        // NO FLEX: Content-based sizing, Description absorbs remaining via smartAutoFit
         minWidth: 200,
         editable: true,
         cellEditor: 'agTextCellEditor',
@@ -3674,9 +3673,8 @@ window.initV5Grid = function () {
         colId: 'account',
         headerName: 'Account',
         field: 'account',
-        // NO FLEX: Content-based sizing
-        minWidth: 120,
-        suppressSizeToFit: true, // Prevent stretching
+        // Allow auto-size to expand to fit content
+        minWidth: 130,
         editable: true,
         cellEditor: GroupedAccountEditor,
         valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',
