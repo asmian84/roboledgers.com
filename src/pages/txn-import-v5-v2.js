@@ -3381,8 +3381,67 @@ window.initV5Grid = function () {
     console.log('🔍 Keys:', Object.keys(first));
   }
 
+  // SMART AUTO-FIT LOGIC: "Natural Alignment" + "Continuous Layout Loop"
+  // 1. Auto-calculates content width
+  // 2. Adds "Breathing Room" buffer to numbers (creates natural left-padding)
+  // 3. Fills remaining space with Description/Account
+  // 4. Runs in a loop to catch layout shifts/font loads
+  const applySmartAutoFit = (api, columnApi) => {
+    const container = document.getElementById('v5-grid-container');
+    const gridWidth = container ? container.clientWidth : 0;
+    if (gridWidth < 100) return; // Not visible yet
+
+    // A. "Natural" Size: Measure content of all columns
+    const allColIds = ['checkbox', 'refNumber', 'date', 'description', 'debit', 'credit', 'balance', 'account', 'actions'];
+    columnApi.autoSizeColumns(allColIds, false);
+
+    // B. Lock Data Columns with "Breathing Room"
+    // The buffer here acts as the "Natural Padding" preventing bleed
+    const colConfig = {
+      'checkbox': 0,
+      'refNumber': 15, // Small buffer
+      'date': 20,
+      'debit': 40,    // LARGE buffer: Creates gap between Desc and Debit
+      'credit': 40,   // LARGE buffer
+      'balance': 40,  // LARGE buffer
+      'actions': 10   // Small buffer
+    };
+
+    let usedWidth = 0;
+    Object.keys(colConfig).forEach(colId => {
+      const w = columnApi.getColumn(colId).getActualWidth();
+      const finalW = w + colConfig[colId];
+      columnApi.setColumnWidth(colId, finalW);
+      usedWidth += finalW;
+    });
+
+    // C. Distribute Remainder (Desc vs Account)
+    // Desc gets 70%, Account gets 30% of leftovers
+    let remainingSpace = gridWidth - usedWidth - 25; // Scrollbar safety
+    if (remainingSpace < 300) remainingSpace = 300;
+
+    const descWidth = Math.floor(remainingSpace * 0.70);
+    const acctWidth = Math.floor(remainingSpace * 0.30);
+
+    columnApi.setColumnWidth('description', descWidth);
+    columnApi.setColumnWidth('account', acctWidth);
+
+    console.log('📐 Smart Auto-Fit Loop:', { gridWidth, usedWidth, descWidth, acctWidth });
+  };
+
+  // Continuous loop to ensure perfect fit during load/render/resize
+  const startAutoFitLoop = (api, columnApi) => {
+    let count = 0;
+    const interval = setInterval(() => {
+      applySmartAutoFit(api, columnApi);
+      count++;
+      if (count > 5) clearInterval(interval); // Run 5 times (2.5 sec)
+    }, 500);
+  };
+
   const columnDefs = [
     {
+      colId: 'checkbox',
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
@@ -3390,79 +3449,56 @@ window.initV5Grid = function () {
       width: 40,
       minWidth: 40,
       maxWidth: 40,
-      suppressSizeToFit: true,
-      pinned: 'left'
+      pinned: 'left',
+      resizable: false
     },
     {
+      colId: 'refNumber',
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 70, // Reduced slightly
-      minWidth: 70,
-      maxWidth: 90,
-      suppressSizeToFit: true, // Fixed
-      comparator: (valueA, valueB) => {
-        const numA = parseInt(valueA) || 0;
-        const numB = parseInt(valueB) || 0;
-        return numA - numB;
-      },
-      valueGetter: (params) => {
-        if (!params.data.refNumber) return '';
-        const prefix = V5State.refPrefix || '';
-        return prefix ? `${prefix}-${params.data.refNumber}` : params.data.refNumber;
+      comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
+      valueGetter: params => {
+        const p = V5State.refPrefix || '';
+        return p ? `${p}-${params.data.refNumber}` : params.data.refNumber;
       },
       cellStyle: { fontWeight: '600', color: '#6B7280' }
     },
     {
+      colId: 'date',
       headerName: 'Date',
       field: 'date',
-      width: 100, // Reduced to fit content better
-      minWidth: 100,
-      maxWidth: 120,
-      suppressSizeToFit: true, // Fixed
       editable: true,
       valueGetter: params => params.data.date || params.data.Date || '',
       valueFormatter: params => {
-        if (!params.value) return '';
-        try {
-          return new Date(params.value).toLocaleDateString();
-        } catch (e) {
-          return params.value;
-        }
+        try { return params.value ? new Date(params.value).toLocaleDateString() : ''; }
+        catch (e) { return params.value; }
       }
     },
     {
+      colId: 'description',
       headerName: 'Description',
       field: 'description',
       editable: true,
-      flex: 1, // TAKES ALL REMAINING SPACE (Highest Priority)
-      minWidth: 300,
+      // Dynamic Sizing via Smart Logic
       cellEditor: 'agTextCellEditor',
-      cellStyle: { paddingRight: '20px' }, // Fix bleed: enforce 20px visual gutter
       valueGetter: params => params.data.description || params.data.Description || '',
       cellRenderer: params => {
-        const value = params.value || '';
-        if (!value.includes(',')) {
-          return value;
-        }
-        const parts = value.split(',');
-        const transactionType = parts[0].trim();
-        const merchantName = parts.slice(1).join(',').trim();
+        const val = params.value || '';
+        if (!val.includes(',')) return val;
+        const parts = val.split(',');
         return `<div style="line-height: 1.3;">
-          <div style="font-weight: 500;">${merchantName}</div>
-          <div style="font-size: 0.85em; color: #6B7280;">${transactionType}</div>
+          <div style="font-weight: 500;">${parts.slice(1).join(',').trim()}</div>
+          <div style="font-size: 0.85em; color: #6B7280;">${parts[0].trim()}</div>
         </div>`;
       },
       autoHeight: true
     },
-    // AMOUNTS: Fixed width + Right Aligned to prevent "bleed"
     {
+      colId: 'debit',
       headerName: 'Debit',
       field: 'debit',
-      width: 120,
-      minWidth: 110,
-      suppressSizeToFit: true, // Priority: Ensure readability
-      type: 'numericColumn',   // Right align header
-      cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' }, // Explicit flex align
+      type: 'numericColumn',
+      cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
       editable: true,
       valueGetter: params => {
         const val = parseFloat(params.data.debit || params.data.Debit) || 0;
@@ -3483,11 +3519,9 @@ window.initV5Grid = function () {
       }
     },
     {
+      colId: 'credit',
       headerName: 'Credit',
       field: 'credit',
-      width: 120,
-      minWidth: 110,
-      suppressSizeToFit: true, // Priority: Ensure readability
       type: 'numericColumn',
       cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
       editable: true,
@@ -3510,43 +3544,39 @@ window.initV5Grid = function () {
       }
     },
     {
+      colId: 'balance',
       headerName: 'Balance',
       field: 'balance',
-      width: 120,
-      minWidth: 110,
-      suppressSizeToFit: true, // Priority: Ensure readability
       type: 'numericColumn',
       editable: false,
-      valueFormatter: params => {
-        const val = parseFloat(params.value) || 0;
-        return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      },
+      valueFormatter: params => parseFloat(params.value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
       cellStyle: params => {
         const val = parseFloat(params.value) || 0;
-        const color = val < 0 ? '#ef4444' : '#10b981';
-        return { color: color, 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' };
+        return {
+          color: val < 0 ? '#ef4444' : '#10b981',
+          'text-align': 'right',
+          'justify-content': 'flex-end',
+          'display': 'flex',
+          'align-items': 'center'
+        };
       }
     },
     {
+      colId: 'account',
       headerName: 'Account',
       field: 'account',
-      width: 200, // Fixed reasonable width
-      minWidth: 150,
-      suppressSizeToFit: true, // Priority 3: Fixed to give Desc more room
       editable: true,
       cellEditor: GroupedAccountEditor,
-      valueGetter: params => {
-        return params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized';
-      },
+      valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',
       valueFormatter: params => resolveAccountName(params.value)
     },
     {
+      colId: 'actions',
       headerName: 'Actions',
       field: 'actions',
-      width: 130,
+      width: 130, // Anchor
       minWidth: 130,
       maxWidth: 130,
-      suppressSizeToFit: true, // Priority 4: Fixed
       resizable: false,
       cellRenderer: (params) => {
         let sourceIcon = '';
@@ -3562,20 +3592,9 @@ window.initV5Grid = function () {
         return `
           <div style="display: flex; gap: 8px; align-items: center; height: 100%;">
             ${sourceIcon}
-            <button 
-              class="action-btn" 
-              onclick="window.swapDebitCredit(${params.node.rowIndex})" 
-              title="Swap Debit/Credit"
-              style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;"
-            >⇄</button>
-            <button 
-              class="action-btn delete-btn" 
-              onclick="window.deleteV5Row(${params.node.rowIndex})" 
-              title="Delete"
-              style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;"
-            >✕</button>
-          </div>
-        `;
+            <button class="action-btn" onclick="window.swapDebitCredit(${params.node.rowIndex})" title="Swap" style="padding:4px 8px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">⇄</button>
+            <button class="action-btn delete-btn" onclick="window.deleteV5Row(${params.node.rowIndex})" title="Delete" style="padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">✕</button>
+          </div>`;
       }
     }
   ];
@@ -3594,7 +3613,6 @@ window.initV5Grid = function () {
       sortable: true,
       filter: true,
       resizable: true,
-      flex: 1,
       minWidth: 50,
       suppressMenu: true // Hide three-line menu icon in headers
     },
@@ -3603,10 +3621,10 @@ window.initV5Grid = function () {
     // Enable virtualization and proper positioning
     suppressColumnVirtualisation: false,
     suppressHorizontalScroll: false,
-    // NOTE: onGridReady is defined later in this object
-    autoSizeStrategy: {
-      type: 'fitGridWidth'
-    },
+
+    // Manual Smart Logic Override
+    // autoSizeStrategy: { type: 'fitGridWidth' }, 
+
     // Default sort by Date (oldest first)
     initialState: {
       sort: {
@@ -3648,48 +3666,38 @@ window.initV5Grid = function () {
       }
     },
     onRowSelected: (event) => {
+      // ... existing selection logic ...
       const selectedNodes = V5State.gridApi.getSelectedNodes();
-      const count = selectedNodes.length;
       const bulkBar = document.getElementById('v5-bulk-bar');
-      const countSpan = document.getElementById('v5-bulk-count');
-      if (count >= 2) {  // Only show for 2+ rows
+      if (selectedNodes.length >= 2) {
         bulkBar.style.display = 'flex';
-        countSpan.textContent = `${count} item${count > 1 ? 's' : ''} selected`;
+        document.getElementById('v5-bulk-count').textContent = `${selectedNodes.length} items selected`;
       } else {
         bulkBar.style.display = 'none';
       }
     },
+
     onGridReady: (params) => {
       console.log('✅ AG Grid onGridReady fired');
       V5State.gridApi = params.api;
       V5State.gridColumnApi = params.columnApi;
 
-      // Fit columns to grid width (not content)
-      params.api.sizeColumnsToFit();
+      // Start the Continuous Fit Loop
+      startAutoFitLoop(params.api, params.columnApi);
 
       // Re-fit on window resize
       window.addEventListener('resize', () => {
-        setTimeout(() => params.api.sizeColumnsToFit(), 100);
+        startAutoFitLoop(params.api, params.columnApi);
       });
     },
-    onGridSizeChanged: (params) => {
-      // Re-fit columns when grid container resizes
-      params.api.sizeColumnsToFit();
-    },
-    onFirstDataRendered: (params) => {
-      console.log('🎯 First data rendered - fitting columns to grid');
-      params.api.sizeColumnsToFit();
 
-      // Log grid state
-      const rect = container.getBoundingClientRect();
-      console.log('📐 Grid container dimensions:', {
-        width: rect.width,
-        height: rect.height,
-        top: rect.top,
-        left: rect.left,
-        visible: rect.height > 0 && rect.width > 0
-      });
-      console.log('🎯 Grid has', params.api.getDisplayedRowCount(), 'displayed rows');
+    onGridSizeChanged: (params) => {
+      applySmartAutoFit(params.api, params.columnApi);
+    },
+
+    onFirstDataRendered: (params) => {
+      console.log('🎯 First data rendered - looping fit');
+      startAutoFitLoop(params.api, params.columnApi);
     }
   };
 
