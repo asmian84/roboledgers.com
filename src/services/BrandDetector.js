@@ -96,21 +96,56 @@ class BrandDetector {
             ccScore += 10;
         }
 
-        // Determine account type
+        // 3. Determine account type
         let accountType = 'Chequing'; // Default to bank account
         if (ccScore > bankScore) {
             accountType = 'CreditCard';
         }
 
-        console.log(`[DETECT] Brand: ${detectedBrand}, Bank Score: ${bankScore}, CC Score: ${ccScore} → ${accountType}`);
+        // 4. Detect sub-type for more specific tagging
+        let subType = accountType;
+        if (accountType === 'Chequing' && lowerText.includes('savings')) {
+            subType = 'Savings';
+        } else if (accountType === 'CreditCard') {
+            if (detectedBrand === 'Amex') {
+                subType = 'Amex';
+            } else if (lowerText.includes('visa')) {
+                subType = 'Visa';
+            } else if (lowerText.includes('mastercard')) {
+                subType = 'Mastercard';
+            }
+        }
+
+        // 5. Get prefix for Ref# column
+        const prefix = this.getPrefix(subType);
+
+        console.log(`[DETECT] Brand: ${detectedBrand}, Bank Score: ${bankScore}, CC Score: ${ccScore} → ${accountType} (${subType}), Prefix: ${prefix}`);
 
         return {
             brand: detectedBrand,
             fullBrandName: detectedBrand,
             accountType,
+            subType,
+            prefix,
+            tag: subType, // Display tag (e.g., "Chequing", "Visa", "Mastercard")
             confidence: Math.max(bankScore, ccScore) > 4 ? 0.95 : 0.7,
             parserName: `${detectedBrand}${accountType}`
         };
+    }
+
+    /**
+     * Get the Ref# prefix based on account sub-type
+     */
+    getPrefix(subType) {
+        const prefixMap = {
+            'Chequing': 'CHQ',
+            'Savings': 'SAV',
+            'Visa': 'VISA',
+            'Mastercard': 'MC',
+            'Amex': 'AMEX',
+            'CreditCard': 'CC' // Fallback
+        };
+        return prefixMap[subType] || 'TXN';
     }
 }
 

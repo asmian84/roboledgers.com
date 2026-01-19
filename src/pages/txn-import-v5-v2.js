@@ -3151,13 +3151,25 @@ window.parseV5Files = async function () {
     // AUTO-DETECT account type from transaction patterns
     V5State.accountType = detectAccountType(categorized);
 
-    // Update Header with Bank and Type
+    // Update Header with Bank and Tag (e.g., "Scotiabank - Chequing")
     const detectedBank = categorized[0]?._bank || 'Bank Statement';
-    if (window.updateV5PageHeader) {
-      window.updateV5PageHeader(detectedBank, V5State.accountType);
+    const detectedTag = categorized[0]?._tag || V5State.accountType;
+    const detectedPrefix = categorized[0]?._prefix || '';
+
+    // Set the Ref# prefix from brand detection
+    if (detectedPrefix) {
+      V5State.refPrefix = detectedPrefix;
+      console.log(`🏷️ Ref# prefix set to: ${detectedPrefix}`);
+      // Update the UI input field if it exists
+      const refInput = document.getElementById('popup-ref-input');
+      if (refInput) refInput.value = detectedPrefix;
     }
 
-    console.log(`📊 Detected account type: ${V5State.accountType}`);
+    if (window.updateV5PageHeader) {
+      window.updateV5PageHeader(detectedBank, detectedTag);
+    }
+
+    console.log(`📊 Detected: ${detectedBank} - ${detectedTag} (Prefix: ${detectedPrefix})`);
 
     // Generate IDs and convert Amount to Debit/Credit
     const isCreditCard = V5State.accountType === 'CREDIT_CARD';
@@ -3587,9 +3599,10 @@ window.initV5Grid = function () {
         field: 'debit',
         // NO FLEX: Content-based sizing
         minWidth: 80,
+        suppressSizeToFit: true, // Prevent stretching
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
-        cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
+        cellStyle: { color: '#EF4444', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
         editable: true,
         valueGetter: params => {
           const val = parseFloat(params.data.debit || params.data.Debit) || 0;
@@ -3615,9 +3628,10 @@ window.initV5Grid = function () {
         field: 'credit',
         // NO FLEX: Content-based sizing
         minWidth: 80,
+        suppressSizeToFit: true, // Prevent stretching
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
-        cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
+        cellStyle: { color: '#10B981', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
         editable: true,
         valueGetter: params => {
           const val = parseFloat(params.data.credit || params.data.Credit) || 0;
@@ -3643,19 +3657,17 @@ window.initV5Grid = function () {
         field: 'balance',
         // NO FLEX: Content-based sizing
         minWidth: 90,
+        suppressSizeToFit: true, // Prevent stretching
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
         editable: false,
         valueFormatter: params => parseFloat(params.value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-        cellStyle: params => {
-          const val = parseFloat(params.value) || 0;
-          return {
-            color: val < 0 ? '#ef4444' : '#10b981',
-            'text-align': 'right',
-            'justify-content': 'flex-end',
-            'display': 'flex',
-            'align-items': 'center'
-          };
+        cellStyle: {
+          color: '#111827', // Always black
+          'text-align': 'right',
+          'justify-content': 'flex-end',
+          'display': 'flex',
+          'align-items': 'center'
         }
       },
       {
@@ -3664,6 +3676,7 @@ window.initV5Grid = function () {
         field: 'account',
         // NO FLEX: Content-based sizing
         minWidth: 120,
+        suppressSizeToFit: true, // Prevent stretching
         editable: true,
         cellEditor: GroupedAccountEditor,
         valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',

@@ -79,6 +79,9 @@ class ParserRouter {
             brand: detection.brand,
             fullBrandName: detection.fullBrandName,
             accountType: detection.accountType,
+            subType: detection.subType || detection.accountType,
+            prefix: detection.prefix || 'TXN',
+            tag: detection.tag || detection.accountType,
             confidence: detection.confidence
         };
 
@@ -87,6 +90,8 @@ class ParserRouter {
             tx._bank = detection.fullBrandName; // e.g. "Scotiabank"
             tx._brand = detection.brand;        // e.g. "Scotiabank"
             tx._accountType = detection.accountType; // e.g. "Chequing"
+            tx._prefix = detection.prefix || 'TXN'; // e.g. "CHQ"
+            tx._tag = detection.tag || detection.accountType; // e.g. "Chequing"
         });
 
         console.log(`✅ Successfully parsed ${result.transactions.length} transactions from ${detection.fullBrandName}`);
