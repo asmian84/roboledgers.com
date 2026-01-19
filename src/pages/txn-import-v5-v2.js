@@ -3576,7 +3576,7 @@ window.initV5Grid = function () {
         colId: 'description',
         headerName: 'Description',
         field: 'description',
-        // NO FLEX: Content-based sizing, Description absorbs remaining via smartAutoFit
+        // NO FLEX: Pure content-based sizing like Excel
         minWidth: 200,
         editable: true,
         cellEditor: 'agTextCellEditor',
@@ -3783,56 +3783,39 @@ window.initV5Grid = function () {
       V5State.gridApi = params.api;
       V5State.gridColumnApi = params.columnApi;
 
-      // SMART AUTO-FIT: Size to content, then expand Description only
-      const smartAutoFit = () => {
+      // HYBRID: Auto-size to content, then expand Description to fill remaining
+      const fitColumns = () => {
         const api = params.api;
-
-        // Step 1: Auto-size ALL columns to their content (including headers)
         api.autoSizeAllColumns();
 
-        // Step 2: Calculate remaining space
-        const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
-        let totalColWidth = 0;
-        api.getAllDisplayedColumns().forEach(col => {
-          totalColWidth += col.getActualWidth();
-        });
-
-        const remainingSpace = gridWidth - totalColWidth;
-
-        // Step 3: If there's remaining space, add it to Description column only
-        if (remainingSpace > 10) {
-          const descCol = api.getColumn('description');
-          if (descCol) {
-            const currentWidth = descCol.getActualWidth();
-            api.setColumnWidth(descCol, currentWidth + remainingSpace - 5);
+        // Expand Description to fill remaining space
+        setTimeout(() => {
+          const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
+          let totalWidth = 0;
+          api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
+          const remaining = gridWidth - totalWidth;
+          if (remaining > 20) {
+            const descCol = api.getColumn('description');
+            if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
           }
-        }
+        }, 50);
       };
 
-      setTimeout(smartAutoFit, 100);
-
-      // Re-fit on window resize
-      window.addEventListener('resize', () => setTimeout(smartAutoFit, 100));
+      setTimeout(fitColumns, 100);
+      window.addEventListener('resize', () => setTimeout(fitColumns, 100));
     },
 
     onGridSizeChanged: (params) => {
-      // Use same smart auto-fit logic
       const api = params.api;
       api.autoSizeAllColumns();
-
       setTimeout(() => {
         const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
-        let totalColWidth = 0;
-        api.getAllDisplayedColumns().forEach(col => {
-          totalColWidth += col.getActualWidth();
-        });
-
-        const remainingSpace = gridWidth - totalColWidth;
-        if (remainingSpace > 10) {
+        let totalWidth = 0;
+        api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
+        const remaining = gridWidth - totalWidth;
+        if (remaining > 20) {
           const descCol = api.getColumn('description');
-          if (descCol) {
-            api.setColumnWidth(descCol, descCol.getActualWidth() + remainingSpace - 5);
-          }
+          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
         }
       }, 50);
     },
@@ -3841,20 +3824,14 @@ window.initV5Grid = function () {
       console.log('🎯 First data rendered');
       const api = params.api;
       api.autoSizeAllColumns();
-
       setTimeout(() => {
         const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
-        let totalColWidth = 0;
-        api.getAllDisplayedColumns().forEach(col => {
-          totalColWidth += col.getActualWidth();
-        });
-
-        const remainingSpace = gridWidth - totalColWidth;
-        if (remainingSpace > 10) {
+        let totalWidth = 0;
+        api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
+        const remaining = gridWidth - totalWidth;
+        if (remaining > 20) {
           const descCol = api.getColumn('description');
-          if (descCol) {
-            api.setColumnWidth(descCol, descCol.getActualWidth() + remainingSpace - 5);
-          }
+          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
         }
       }, 50);
     }
