@@ -96,6 +96,10 @@ class ParserRouter {
 
         // Step 5: Run Validation Engine (silent auto-fix)
         if (window.validationEngine) {
+            // Update status text in UI
+            const statusEl = document.getElementById('v5-status-text');
+            if (statusEl) statusEl.textContent = 'Validating data...';
+
             result = window.validationEngine.validate(result);
         }
 
