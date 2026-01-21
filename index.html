@@ -50,16 +50,9 @@
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script>
-    // Initialize PDF.js - disable worker for file:// protocol to avoid cross-origin issues
-    if (window.location.protocol === 'file:') {
-      // Disable worker for local file access
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-      console.log('📄 PDF.js: Worker disabled for file:// protocol');
-    } else {
-      // Use worker for http/https
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      console.log('📄 PDF.js: Worker enabled');
-    }
+    // Initialize PDF.js - use reliable CDN worker
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    console.log('📄 PDF.js: Worker path set to CDN');
   </script>
 
   <!-- Phosphor Icons -->

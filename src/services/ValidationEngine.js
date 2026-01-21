@@ -36,13 +36,14 @@ class ValidationEngine {
      * @param {Object} parseResult - Result from parser { transactions: [], bank, accountType, etc }
      * @returns {Object} - Cleaned parseResult with fixed transactions
      */
-    validate(parseResult) {
+    validate(parseResult, onProgress) {
         if (!parseResult || !parseResult.transactions) {
             return parseResult;
         }
 
         const startTime = performance.now();
         this.stats.processed = parseResult.transactions.length;
+        const total = parseResult.transactions.length;
 
         // Run all validators
         parseResult.transactions = parseResult.transactions.map((tx, index) => {
@@ -50,16 +51,37 @@ class ValidationEngine {
             tx = this.validateAmount(tx);
             tx = this.validateDescription(tx);
             tx = this.validateClassification(tx);
+
+            // Report progress every 5-10 transactions to avoid UI lag
+            if (onProgress && (index % 10 === 0 || index === total - 1)) {
+                onProgress(index + 1, total);
+            }
+
             return tx;
         });
 
-        // Run transaction-level validators
+        // Remove junk rows identified during validation
+        const preFilterCount = parseResult.transactions.length;
+        parseResult.transactions = parseResult.transactions.filter(tx => {
+            return tx.description !== 'Review Required: Header Info';
+        });
+
+        if (parseResult.transactions.length < preFilterCount) {
+            this.stats.descriptionsFix += (preFilterCount - parseResult.transactions.length);
+        }
+
+        // Run transaction-set validators
         parseResult.transactions = this.validateTransactionSet(parseResult.transactions);
+
+        // Run balance verification (needs whole set)
+        if (typeof this.validateBalances === 'function') {
+            parseResult.transactions = this.validateBalances(parseResult.transactions);
+        }
 
         const elapsed = (performance.now() - startTime).toFixed(1);
 
         if (this.config.debugMode) {
-            console.log(`⚡ ValidationEngine: ${this.stats.processed} txns in ${elapsed}ms | Fixes: D:${this.stats.datesFix} Desc:${this.stats.descriptionsFix} Class:${this.stats.classificationsFix}`);
+            console.log(`⚡ ValidationEngine: ${this.stats.processed} txns in ${elapsed}ms | Fixes: D:${this.stats.datesFix} Desc:${this.stats.descriptionsFix} Class:${this.stats.classificationsFix} Bal:${this.stats.balancesFix}`);
         }
 
         return parseResult;
@@ -75,8 +97,8 @@ class ValidationEngine {
         const date = new Date(tx.date);
         const year = date.getFullYear();
 
-        // Fix: Year out of range
-        if (year < this.config.minYear || year > this.config.maxYear) {
+        // Fix: Invalid date or Year out of range
+        if (isNaN(year) || year < this.config.minYear || year > this.config.maxYear) {
             // Try to extract correct year from context
             const fixedYear = this.inferCorrectYear(parseResult);
             if (fixedYear) {
@@ -159,9 +181,9 @@ class ValidationEngine {
         const originalLength = desc.length;
 
         // Remove gibberish patterns (e-transfer codes)
-        desc = desc.replace(/\bC1A[a-zA-Z0-9]{4,}\b/gi, '');
-        desc = desc.replace(/\bCA[A-Z][a-zA-Z0-9]{3,}\b/g, '');
-        desc = desc.replace(/\b[a-f0-9]{16,}\b/gi, '');
+        desc = desc.replace(/C1A[a-zA-Z0-9]{4,}/gi, '');
+        desc = desc.replace(/CA[a-zA-Z0-9]{5,}/gi, ''); // Synced with RBCChequingParser
+        desc = desc.replace(/[a-f0-9]{16,}/gi, '');
 
         // Remove leaked dates
         desc = desc.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*/i, '');
@@ -182,7 +204,20 @@ class ValidationEngine {
         desc = desc.replace(/\s+/g, ' ').trim();
         desc = desc.replace(/^[\s,\-]+|[\s,\-]+$/g, '');
 
-        if (desc.length !== originalLength) {
+        // Detect header/footer junk (metadata)
+        const junkPatterns = [
+            /Available\s+balance/i,
+            /Current\s+balance/i,
+            /Document\s+delivery/i,
+            /Balance\s+details/i,
+            /No\s+Holds/i,
+            /Filters\s+Ma/i, // Specific to RBC footer junk
+            /\*\*\*\*\d{4}/ // Masked account numbers
+        ];
+
+        const isJunk = junkPatterns.some(p => p.test(desc));
+        if (isJunk) {
+            desc = 'Review Required: Header Info';
             this.stats.descriptionsFix++;
         }
 
@@ -253,6 +288,32 @@ class ValidationEngine {
     }
 
     // ==========================================
+    // BALANCE VALIDATION
+    // ==========================================
+    validateBalances(transactions) {
+        if (!transactions || transactions.length < 2) return transactions;
+
+        // Simple check: Does balance[i] = balance[i-1] - debit[i] + credit[i]?
+        // Only if balance is present.
+        for (let i = 1; i < transactions.length; i++) {
+            const prev = transactions[i - 1];
+            const curr = transactions[i];
+
+            if (curr.balance !== undefined && prev.balance !== undefined) {
+                const calculated = prev.balance - (curr.debit || 0) + (curr.credit || 0);
+                const diff = Math.abs(curr.balance - calculated);
+
+                if (diff > 0.01 && diff < 1000) { // Small discrepancy - likely a parse error in amounts
+                    // If balance seems more reliable, we don't auto-fix amounts yet (risky)
+                    // But we can flag it for future ML learning
+                }
+            }
+        }
+
+        return transactions;
+    }
+
+    // ==========================================
     // STATS RESET
     // ==========================================
     resetStats() {
@@ -261,7 +322,8 @@ class ValidationEngine {
             datesFix: 0,
             descriptionsFix: 0,
             classificationsFix: 0,
-            amountsFix: 0
+            amountsFix: 0,
+            balancesFix: 0
         };
     }
 }

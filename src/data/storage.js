@@ -348,7 +348,7 @@ class StorageService {
 
             // Push to cloud if online
             if (window.supabaseService && window.supabaseService.isOnline) {
-                window.supabaseService.from('accounts').upsert(accounts).then(({ error }) => {
+                window.supabaseService.from('chart_of_accounts').upsert(accounts).then(({ error }) => {
                     if (!error) console.log('☁️ Storage: Initialized accounts pushed to cloud');
                 });
             }
@@ -407,7 +407,7 @@ class StorageService {
         // SYNC TO CLOUD
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                const { error } = await window.supabaseService.from('accounts').insert([account]);
+                const { error } = await window.supabaseService.from('chart_of_accounts').insert([account]);
                 if (error) console.error('☁️ Storage: Failed to push account to cloud:', error);
             } catch (e) {
                 console.warn('☁️ Storage: Supabase error during createAccount', e);
@@ -439,7 +439,7 @@ class StorageService {
         // SYNC TO CLOUD
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                const { error } = await window.supabaseService.from('accounts').update(updated).eq('id', id);
+                const { error } = await window.supabaseService.from('chart_of_accounts').update(updated).eq('id', id);
                 if (error) console.error('☁️ Storage: Failed to update account in cloud:', error);
             } catch (e) {
                 console.warn('☁️ Storage: Supabase error during updateAccount', e);
@@ -463,7 +463,7 @@ class StorageService {
         // SYNC TO CLOUD
         if (window.supabaseService && window.supabaseService.isOnline) {
             try {
-                const { error } = await window.supabaseService.from('accounts').delete().eq('id', id);
+                const { error } = await window.supabaseService.from('chart_of_accounts').delete().eq('id', id);
                 if (error) console.error('☁️ Storage: Failed to delete account from cloud:', error);
             } catch (e) {
                 console.warn('☁️ Storage: Supabase error during deleteAccount', e);

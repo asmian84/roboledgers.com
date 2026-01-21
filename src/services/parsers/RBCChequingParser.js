@@ -115,6 +115,8 @@ SMART PARSING RULES:
           // If we have pending description, prepend it
           if (pendingDescription) {
             extracted.description = pendingDescription + ' ' + extracted.description;
+            // CRITICAL: Re-clean the concatenated description to ensure proper formatting
+            extracted.description = this.cleanRBCDescription(extracted.description);
             pendingDescription = '';
           }
           transactions.push(extracted);
@@ -186,15 +188,20 @@ SMART PARSING RULES:
   }
 
   isCredit(description) {
-    const creditKeywords = /DEPOSIT|CREDIT|REFUND|PAYROLL|TRANSFER\s+FROM|E-TRANSFER.*RECEIVED|INTERAC.*REC|DIRECT\s+DEPOSIT/i;
+    const creditKeywords = /DEPOSIT|CREDIT|REFUND|PAYROLL|TRANSFER\s+FROM|E-TRANSFER.*RECEIVED|INTERAC.*REC|DIRECT\s+DEPOSIT|AUTODEPOSIT/i;
     return creditKeywords.test(description);
   }
 
   cleanRBCDescription(desc) {
+    console.log('[RBC] cleanRBCDescription CALLED with:', JSON.stringify(desc));
     // =====================================================
     // RBC DESCRIPTION CLEANUP & REFORMATTING
     // Goal: Convert "Type Name Garbage" → "Name, Type"
+    // Uses Scotia-inspired prefix matching for consistency
     // =====================================================
+
+    // 0. EARLY NORMALIZATION: Collapse all whitespace/newlines into single spaces
+    desc = desc.replace(/\s+/g, ' ').trim();
 
     // 1. REMOVE DATES - "10 Jan", "February 5, 2024", "2 of 3", page refs
     desc = desc.replace(/^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*/i, '');
@@ -203,66 +210,69 @@ SMART PARSING RULES:
     desc = desc.replace(/\bto\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+20\d{2}\b/gi, '');
     desc = desc.replace(/\b20\d{2}\b/g, ''); // Standalone years
 
-    // 2. REMOVE GIBBERISH CODES
-    desc = desc.replace(/\bC1A[a-zA-Z0-9]{4,}\b/gi, '');
-    desc = desc.replace(/\bCA[A-Z][a-zA-Z0-9]{3,}\b/g, '');
-    desc = desc.replace(/\b[a-f0-9]{16,}\b/gi, '');
-    desc = desc.replace(/\b[\w]+@[\w]*\b/g, '');
-    desc = desc.replace(/\b\d{6,}\b/g, '');
-    desc = desc.replace(/\b(\d{5,})\s+\1\b/g, '');
+    // 2. REMOVE GIBBERISH CODES (Aggressive & Case-Insensitive)
+    desc = desc.replace(/C1A[a-zA-Z0-9]{4,}/gi, '');
+    desc = desc.replace(/CA[a-zA-Z0-9]{5,}/gi, ''); // Broadened and case-insensitive
+    desc = desc.replace(/[a-f0-9]{16,}/gi, '');
+    desc = desc.replace(/[\w.-]+@[\w.-]+\b/g, ''); // Email fix
+    desc = desc.replace(/\b\d{6,}\b/gi, ''); // Long numbers
+    desc = desc.replace(/\b(\d{5,})\s+\1\b/gi, ''); // Duplicate numbers
 
-    // 3. EXTRACT TYPE AND NAME
-    // Known transaction types at the start
-    const typePatterns = [
-      { pattern: /^e-?Transfer\s*-?\s*Autodeposit\s*/i, type: 'e-Transfer, Autodeposit' },
-      { pattern: /^e-?Transfer\s+sent\s*/i, type: 'e-Transfer sent' },
-      { pattern: /^e-?Transfer\s*-?\s*/i, type: 'e-Transfer' },
-      { pattern: /^Contactless\s+Interac\s+purchase\s*-?\s*\d*\s*/i, type: 'Contactless Interac purchase' },
-      { pattern: /^Online\s+Banking\s+transfer\s*-?\s*\d*\s*/i, type: 'Online Banking transfer' },
-      { pattern: /^Business\s+PAD\s*/i, type: 'Business PAD' },
-      { pattern: /^Direct\s+Deposits?\s*\(PDS\)\s*service\s+total\s*/i, type: 'Direct Deposits (PDS)' },
-      { pattern: /^Insurance\s*/i, type: 'Insurance' },
-      { pattern: /^Misc\s+Payment\s*/i, type: 'Misc Payment' },
-      { pattern: /^Pay\s+Employee-Vendor\s*/i, type: 'Pay Employee-Vendor' },
-      { pattern: /^Monthly\s+fee\s*/i, type: 'Monthly fee' },
+    // 3. PREFIX MATCHING (RBC Format: "Name, Type")
+    // RBC-specific transaction type prefixes
+    // NOTE: Unlike Scotia which uses "Type, Name", RBC uses "Name, Type"
+    const typePrefixes = [
+      "E-TRANSFER - AUTODEPOSIT", "E-TRANSFER SENT", "E-TRANSFER",
+      "AUTODEPOSIT", "ONLINE BANKING PAYMENT", "ONLINE BANKING TRANSFER",
+      "MISC PAYMENT", "BUSINESS PAD", "MOBILE CHEQUE DEPOSIT",
+      "RBCINS LIFE", "REQUEST FULFILLED FEE", "MONTHLY FEE", "ACCOUNT FEES",
+      "CONTACTLESS INTERAC PURCHASE", "DIRECT DEPOSITS (PDS) SERVICE TOTAL"
     ];
 
-    let extractedType = '';
-    let name = desc;
+    // Check for prefix match and reformat to "Name, Type"
+    // Use simple string matching instead of regex for reliability
+    let matched = false;
+    const descUpper = desc.toUpperCase();
 
-    for (const { pattern, type } of typePatterns) {
-      if (desc.match(pattern)) {
-        extractedType = type;
-        name = desc.replace(pattern, '').trim();
+    // DEBUG: Show what we're trying to match
+    if (descUpper.includes('TRANSFER') || descUpper.includes('AUTODEPOSIT')) {
+      console.log('[DEBUG] Checking desc:', descUpper.substring(0, 60));
+    }
+
+    for (const type of typePrefixes) {
+      const searchStr = type + ' ';
+      if (descUpper.startsWith(searchStr)) {
+        // DEBUG: Show successful match
+        console.log('[DEBUG] ✓ MATCHED:', type);
+
+        // Found a match - extract everything after the prefix
+        const name = desc.substring(type.length).trim();
+        if (name) {
+          // Format as "Name, Type" (RBC style)
+          const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+          desc = `${name}, ${formattedType}`;
+          console.log('[DEBUG] Result:', desc.substring(0, 60));
+          matched = true;
+        }
         break;
       }
     }
 
-    // 4. CLEAN UP NAME
-    // Remove trailing garbage
-    name = name.replace(/\s+-\s*$/g, '');
-    name = name.replace(/\s+\d{1,4}$/g, ''); // trailing numbers like "-3639"
-    name = name.replace(/\s+/g, ' ').trim();
-
-    // 5. FINAL FORMAT: "NAME, Type" for UI display
-    // The grid shows Line1 (bold) above comma, Line2 (gray) after comma
-    let finalDesc;
-    if (extractedType && name) {
-      finalDesc = `${name}, ${extractedType}`;
-    } else if (name) {
-      finalDesc = name;
-    } else if (extractedType) {
-      finalDesc = extractedType;
-    } else {
-      finalDesc = desc;
+    // 4. FALLBACK: Split on dash if no prefix matched but dash exists
+    if (!desc.includes(',') && desc.includes(' - ')) {
+      const parts = desc.split(' - ');
+      if (parts.length === 2) {
+        // Format: "Type - Name" → "Name, Type"
+        desc = `${parts[1].trim()}, ${parts[0].trim()}`;
+      }
     }
 
-    // 6. Final cleanup
-    finalDesc = finalDesc.replace(/,\s*,/g, ',');
-    finalDesc = finalDesc.replace(/^[\s,\-]+|[\s,\-]+$/g, '');
-    finalDesc = finalDesc.trim();
+    // 5. Final cleanup
+    desc = desc.replace(/,\s*,/g, ','); // Remove double commas
+    desc = desc.replace(/\s+/g, ' ').trim();
+    desc = desc.replace(/^[,\s]+|[,\s]+$/g, ''); // Trim leading/trailing commas and spaces
 
-    return finalDesc;
+    return desc;
   }
 }
 

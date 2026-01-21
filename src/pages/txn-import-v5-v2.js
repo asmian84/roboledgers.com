@@ -2079,6 +2079,86 @@ window.renderTxnImportV5Page = function () {
         
       </div>
       
+      <!-- Recovery Prompt Modal (In-Page) -->
+      <div id="v5-recovery-modal" class="v5-modal-overlay" style="display: none;">
+        <div class="v5-modal-content">
+          <div class="v5-modal-header">
+            <i class="ph-duotone ph-clock-counter-clockwise" style="font-size: 2rem; color: var(--primary);"></i>
+            <h3>Restore Previous Session?</h3>
+          </div>
+          <p>We found data from your last session. Would you like to load it or start fresh?</p>
+          <div class="v5-modal-actions">
+            <button onclick="window.confirmV5Recovery(true)" class="btn-modal-primary">Yes, Restore Data</button>
+            <button onclick="window.confirmV5Recovery(false)" class="btn-modal-secondary">No, Start Fresh</button>
+          </div>
+        </div>
+      </div>
+
+      <style>
+        .v5-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .v5-modal-content {
+          background: white;
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          max-width: 450px;
+          width: 90%;
+          text-align: center;
+          border: 1px solid #E5E7EB;
+        }
+        .v5-modal-header {
+          margin-bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .v5-modal-actions {
+          display: flex;
+          gap: 1rem;
+          margin-top: 1.5rem;
+          justify-content: center;
+        }
+        .btn-modal-primary {
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-modal-primary:hover {
+          filter: brightness(1.1);
+          transform: translateY(-1px);
+        }
+        .btn-modal-secondary {
+          background: #F3F4F6;
+          color: #374151;
+          border: 1px solid #D1D5DB;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .btn-modal-secondary:hover {
+          background: #E5E7EB;
+        }
+      </style>
+
       <!-- AG Grid -->
       <div id="v5-grid-container" class="v5-grid-container ag-theme-alpine">
         <!-- Grid will be initialized here -->
@@ -2576,7 +2656,7 @@ window.saveData = function () {
     // console.log(`💾 Saved ${cleanData.length} transactions (blobs filtered)`);
     return true;
   } catch (error) {
-    console.error('❌ Failed to save data:', error);
+    // Silently fail if quota exceeded - data still works in memory
     return false;
   }
 };
@@ -2652,8 +2732,12 @@ window.saveImportToHistory = function (file, parsedData) {
   history.unshift(newImport);
   if (history.length > 20) history.pop();
 
-  // Save to localStorage
-  localStorage.setItem('ab_import_history', JSON.stringify(history));
+  // Save to localStorage (silently fail if quota exceeded)
+  try {
+    localStorage.setItem('ab_import_history', JSON.stringify(history));
+  } catch (error) {
+    // Quota exceeded - history still works in memory for this session
+  }
 
   // CRITICAL: Sync V5State.recentImports with localStorage
   V5State.recentImports = history;
@@ -3391,6 +3475,15 @@ window.initV5Grid = function () {
     const first = V5State.gridData[0];
     console.log('🔍 FULL FIRST TRANSACTION:', JSON.stringify(first, null, 2));
     console.log('🔍 Keys:', Object.keys(first));
+
+    // DEBUG: Check ALL descriptions for commas
+    console.log('🔍 DESCRIPTION COMMA CHECK:');
+    V5State.gridData.slice(0, 20).forEach((txn, idx) => {
+      const desc = txn.Description || txn.description || '';
+      const hasComma = desc.includes(',');
+      const status = hasComma ? '✅' : '❌';
+      console.log(`  ${status} Row ${String(idx + 1).padStart(3, '0')}: "${desc.substring(0, 60)}..."`);
+    });
   }
 
   // NOTE: Column definitions are now defined INLINE inside gridOptions below.
@@ -3585,9 +3678,10 @@ window.initV5Grid = function () {
           const val = params.value || '';
           if (!val.includes(',')) return val;
           const parts = val.split(',');
+          // parts[0] = Name, parts[1...] = Type
           return `<div style="line-height: 1.3;">
-          <div style="font-weight: 500;">${parts.slice(1).join(',').trim()}</div>
-          <div style="font-size: 0.85em; color: #6B7280;">${parts[0].trim()}</div>
+          <div style="font-weight: 500;">${parts[0].trim()}</div>
+          <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
         </div>`;
         },
         autoHeight: true
@@ -3786,54 +3880,72 @@ window.initV5Grid = function () {
       // HYBRID: Auto-size to content, then expand Description to fill remaining
       const fitColumns = () => {
         const api = params.api;
+        if (!api) return;
+
         api.autoSizeAllColumns();
 
         // Expand Description to fill remaining space
         setTimeout(() => {
-          const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
+          const gridElement = document.querySelector('.ag-root-wrapper');
+          if (!gridElement) return;
+
+          const gridWidth = gridElement.clientWidth - 10; // Margin buffer
           let totalWidth = 0;
-          api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
+          api.getAllDisplayedColumns().forEach(c => {
+            totalWidth += c.getActualWidth();
+          });
+
           const remaining = gridWidth - totalWidth;
-          if (remaining > 20) {
+          if (remaining > 5) {
             const descCol = api.getColumn('description');
-            if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
+            if (descCol) {
+              api.setColumnWidth(descCol, descCol.getActualWidth() + remaining);
+            }
+          } else if (remaining < -10) {
+            // Oversized - force fit to eliminate horizontal scroll
+            // This is "Wall-to-Wall" mode
+            api.sizeColumnsToFit();
           }
-        }, 50);
+        }, 150);
       };
 
-      setTimeout(fitColumns, 100);
-      window.addEventListener('resize', () => setTimeout(fitColumns, 100));
+      // Initial fit + retry after data might have settled
+      fitColumns();
+      setTimeout(fitColumns, 500);
+      setTimeout(fitColumns, 1500);
+
+      window.addEventListener('resize', () => fitColumns());
     },
 
     onGridSizeChanged: (params) => {
-      const api = params.api;
-      api.autoSizeAllColumns();
-      setTimeout(() => {
-        const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
-        let totalWidth = 0;
-        api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
-        const remaining = gridWidth - totalWidth;
-        if (remaining > 20) {
-          const descCol = api.getColumn('description');
-          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
-        }
-      }, 50);
+      V5State.gridApi?.autoSizeAllColumns();
+      // Re-trigger fit legacy if needed - though onGridReady logic should suffice
     },
 
     onFirstDataRendered: (params) => {
-      console.log('🎯 First data rendered');
-      const api = params.api;
-      api.autoSizeAllColumns();
+      console.log('Target: First data rendered - fitting columns');
+      // Re-trigger the robust fitColumns from onGridReady via a shared function if possible,
+      // but for now let's just trigger autoSize
+      params.api.autoSizeAllColumns();
+
+      // CRITICAL: Force row height recalculation for autoHeight columns (2-line descriptions)
+      params.api.resetRowHeights();
+
+      // Wait for rendering
       setTimeout(() => {
-        const gridWidth = document.querySelector('.ag-body-viewport')?.clientWidth || 0;
+        const api = params.api;
+        const gridElement = document.querySelector('.ag-root-wrapper');
+        if (!gridElement || !api) return;
+
+        const gridWidth = gridElement.clientWidth - 20;
         let totalWidth = 0;
         api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
         const remaining = gridWidth - totalWidth;
-        if (remaining > 20) {
+        if (remaining > 10) {
           const descCol = api.getColumn('description');
-          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining - 10);
+          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining);
         }
-      }, 50);
+      }, 200);
     }
   };
 
@@ -5485,7 +5597,6 @@ function showControlToolbar() {
 }
 
 window.initTxnImportV5Grid = async function () {
-  // Check for cached data first - RESTORE instead of clear
   console.log('🔄 Checking for cached grid data...');
 
   try {
@@ -5507,42 +5618,78 @@ window.initTxnImportV5Grid = async function () {
     if (restoredData) {
       // VALIDATION: Check for garbage data
       const isValid = restoredData.every(tx => {
-        // Must have valid date and not be a massive header string
         return tx.date !== 'Invalid Date' && tx.date.match(/^\d{4}-\d{2}-\d{2}$/) && tx.description.length < 500;
       });
 
       if (isValid) {
-        console.log(`✅ Restored ${restoredData.length} transactions from cache`);
-        V5State.gridData = restoredData;
+        console.log(`💡 Found ${restoredData.length} transactions in cache. Prompting for recovery...`);
 
-        // Re-detect account type as it might not be persisted
-        if (!V5State.accountType && typeof detectAccountType === 'function') {
-          V5State.accountType = detectAccountType(restoredData);
+        // PAUSE: Show modal instead of auto-restoring
+        const modal = document.getElementById('v5-recovery-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+          // Store the data temporarily for the confirmation handler
+          window._pendingV5Restoration = restoredData;
+          return;
+        } else {
+          // Fallback if modal not found
+          window.applyV5Restoration(restoredData);
+          return;
         }
-
-        // Update status header
-        if (window.updateV5PageHeader) {
-          const bank = restoredData[0]?._bank || 'Bank Statement';
-          window.updateV5PageHeader(bank, V5State.accountType);
-        }
-
-        initV5Grid();
-        showControlToolbar();
-        return;
-      } else {
-        console.warn('⚠️ Found garbage data in cache - purging!');
-        localStorage.removeItem('ab_v5_grid_data');
-        if (window.CacheManager) await window.CacheManager.clear();
       }
     }
   } catch (e) {
-    console.warn('Could not restore cached data:', e);
+    console.warn('Could not check cached data:', e);
   }
 
-  // No cached data or purged - show empty state
+  // No cached data or declined - show empty state
   console.log('ℹ️ No cached data found - showing empty state');
   const emptyState = document.getElementById('v5-empty-state');
   if (emptyState) emptyState.style.display = 'flex';
+};
+
+// HELPER: Actually apply the data
+window.applyV5Restoration = function (restoredData) {
+  V5State.gridData = restoredData;
+
+  // Re-detect account type as it might not be persisted
+  if (!V5State.accountType && typeof detectAccountType === 'function') {
+    V5State.accountType = detectAccountType(restoredData);
+  }
+
+  // Update status header
+  if (window.updateV5PageHeader) {
+    const bank = restoredData[0]?._bank || 'Bank Statement';
+    window.updateV5PageHeader(bank, V5State.accountType);
+  }
+
+  initV5Grid();
+  showControlToolbar();
+
+  // Hide empty state if visible
+  const emptyState = document.getElementById('v5-empty-state');
+  if (emptyState) emptyState.style.display = 'none';
+};
+
+// HANDLER: Recovery Modal Actions
+window.confirmV5Recovery = async function (shouldRestore) {
+  const modal = document.getElementById('v5-recovery-modal');
+  if (modal) modal.style.display = 'none';
+
+  if (shouldRestore && window._pendingV5Restoration) {
+    window.applyV5Restoration(window._pendingV5Restoration);
+  } else {
+    // START FRESH
+    console.log('🧹 Clearing cache as requested');
+    localStorage.removeItem('ab_v5_grid_data');
+    localStorage.removeItem('ab_import_session');
+    if (window.CacheManager) await window.CacheManager.clearAll();
+
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) emptyState.style.display = 'flex';
+  }
+
+  delete window._pendingV5Restoration;
 };
 
 console.log('📄 Txn Import V5: Module ready');

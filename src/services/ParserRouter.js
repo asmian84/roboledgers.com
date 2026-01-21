@@ -72,7 +72,7 @@ class ParserRouter {
 
         // Step 3: Parse with brand-specific parser
         console.log(`🤖 Step 2: Parsing with ${parserKey} parser...`);
-        const result = await parser.parse(statementText);
+        let result = await parser.parse(statementText);
 
         // Step 4: Add brand info to result
         result.brandDetection = {
@@ -96,14 +96,70 @@ class ParserRouter {
 
         // Step 5: Run Validation Engine (silent auto-fix)
         if (window.validationEngine) {
-            // Update status text in UI
-            const statusEl = document.getElementById('v5-status-text');
-            if (statusEl) statusEl.textContent = 'Validating data...';
+            try {
+                // Update status text in UI
+                const statusEl = document.getElementById('v5-status-text');
+                const progressContainer = document.getElementById('v5-progress-container');
+                const progressFill = document.getElementById('v5-progress-fill');
+                const progressMsg = document.getElementById('v5-progress-message');
 
-            result = window.validationEngine.validate(result);
+                if (statusEl) statusEl.textContent = 'Validating data...';
+
+                // Only show progress bar if not already visible (prevent flicker during batch uploads)
+                if (progressContainer && progressContainer.style.display !== 'flex') {
+                    progressContainer.style.display = 'flex';
+                    // Track when we showed it
+                    progressContainer.dataset.showTime = Date.now();
+                }
+
+                if (progressMsg) progressMsg.textContent = 'Validating and auto-fixing transaction data...';
+
+                result = window.validationEngine.validate(result, (current, total) => {
+                    if (progressFill) {
+                        const percent = Math.round((current / total) * 100);
+                        progressFill.style.width = `${percent}%`;
+                    }
+                });
+
+                // Hide progress bar after validation, but only if it's been visible for at least 1 second
+                // to prevent flicker during batch uploads
+                setTimeout(() => {
+                    const gridVisible = document.getElementById('v5-grid-container')?.offsetHeight > 0;
+                    if (gridVisible && progressContainer) {
+                        const showTime = parseInt(progressContainer.dataset.showTime || '0');
+                        const elapsed = Date.now() - showTime;
+                        const minDisplayTime = 1000; // 1 second minimum
+
+                        if (elapsed >= minDisplayTime) {
+                            progressContainer.style.display = 'none';
+                        } else {
+                            // Wait for remaining time before hiding
+                            setTimeout(() => {
+                                progressContainer.style.display = 'none';
+                            }, minDisplayTime - elapsed);
+                        }
+                    }
+                }, 800);
+            } catch (vErr) {
+                console.warn('⚠️ Validation Engine failed, but returning original parse results:', vErr);
+            }
         }
 
         console.log(`✅ Successfully parsed ${result.transactions.length} transactions from ${detection.fullBrandName}`);
+
+        // DEBUG: Log first 3 transactions to see field names
+        if (result.transactions.length > 0) {
+            console.log('🔍 PARSER OUTPUT - First 3 transactions:');
+            result.transactions.slice(0, 3).forEach((txn, idx) => {
+                const debugInfo = {
+                    description: txn.description,
+                    Description: txn.Description,
+                    date: txn.date,
+                    Date: txn.Date
+                };
+                console.log(`  Transaction ${idx + 1}:`, JSON.stringify(debugInfo, null, 2));
+            });
+        }
 
         return result;
     }
