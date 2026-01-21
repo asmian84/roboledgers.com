@@ -1634,7 +1634,25 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-title-text">
             <h1>Transactions</h1>
             <p class="v5-subtitle">
-              <span class="v5-account-type" id="v5-account-type" style="display: none;"></span>
+              <select id="v5-bank-brand-select" class="v5-inline-dropdown" style="display: none;">
+                <option value="">Detecting...</option>
+                <option value="RBC">RBC</option>
+                <option value="TD">TD</option>
+                <option value="BMO">BMO</option>
+                <option value="CIBC">CIBC</option>
+                <option value="Scotiabank">Scotiabank</option>
+                <option value="Amex">Amex</option>
+                <option value="Tangerine">Tangerine</option>
+              </select>
+              <span id="v5-bank-dash" style="display: none;"> - </span>
+              <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
+                <option value="">Auto...</option>
+                <option value="Chequing">CHEQUING</option>
+                <option value="Savings">SAVINGS</option>
+                <option value="Visa">VISA</option>
+                <option value="Mastercard">MASTERCARD</option>
+                <option value="Amex">AMEX</option>
+              </select>
               <span class="v5-dot" id="v5-header-dot" style="display: none;">•</span>
               <span class="v5-status" id="v5-status-text">Waiting to get started...</span>
             </p>
@@ -6025,25 +6043,152 @@ window.handleOpeningBalanceChange = function (input) {
 
 console.log('✅ txn-import-v5.js loaded successfully!');
 
-window.updateV5PageHeader = function (brand, type) {
-  const brandEl = document.getElementById('v5-account-type');
-  const dotEl = document.getElementById('v5-header-dot');
-  const statusEl = document.getElementById('v5-status-text');
+// =====================================================
+// BANK/TAG DROPDOWN INTEGRATION WITH LEARNING
+// =====================================================
 
-  if (!brandEl || !statusEl) return;
+let currentDetection = null; // Store detection result with fingerprint
 
-  if (brand && type) {
-    // Clean up brand string (remove explicit "Statement" text if present)
-    const cleanBrand = brand.replace(/Statement/i, '').trim();
-    brandEl.textContent = `${cleanBrand} - ${type}`;
-    brandEl.style.display = 'inline';
-    if (dotEl) dotEl.style.display = 'inline';
-    statusEl.textContent = 'Ready for Review';
-    statusEl.style.color = '#10b981'; // Green for ready
-  } else {
-    brandEl.style.display = 'none';
-    if (dotEl) dotEl.style.display = 'none';
-    statusEl.textContent = 'Waiting to get started...';
-    statusEl.style.color = '#6b7280'; // Gray for waiting
+/**
+ * Update brand/tag display - NEW VERSION with dropdowns
+ * Compatible with old updateV5PageHeader calls
+ */
+window.updateV5PageHeader = function (brand, type, detection = null) {
+  // If called with full detection object, use new system
+  if (typeof brand === 'object' && brand.brand) {
+    detection = brand;
+    brand = detection.brand;
+    type = detection.subType || detection.tag;
   }
+
+  updateBrandDisplay({ brand, subType: type, ...(detection || {}) });
 };
+
+/**
+ * Main function to update dropdowns and confidence badge
+ */
+function updateBrandDisplay(detection) {
+  const bankSelect = document.getElementById('v5-bank-brand-select');
+  const tagSelect = document.getElementById('v5-account-tag-select');
+  const dash = document.getElementById('v5-bank-dash');
+  const dot = document.getElementById('v5-header-dot');
+  const status = document.getElementById('v5-status-text');
+
+  if (!bankSelect || !tagSelect || !status) {
+    console.warn('[UI] Brand dropdown elements not found');
+    return;
+  }
+
+  if (!detection || !detection.brand) {
+    // Hide dropdowns, show "Waiting..."
+    bankSelect.style.display = 'none';
+    tagSelect.style.display = 'none';
+    if (dash) dash.style.display = 'none';
+    dot.style.display = 'none';
+    status.textContent = 'Waiting to get started...';
+    status.className = 'v5-status';
+    status.style.color = '#6b7280'; // Gray
+    return;
+  }
+
+  // Store detection globally
+  currentDetection = detection;
+
+  // Set dropdown values
+  bankSelect.value = detection.brand;
+  tagSelect.value = detection.subType || detection.accountType || detection.tag;
+
+  // Show dropdowns
+  bankSelect.style.display = 'inline';
+  tagSelect.style.display = 'inline';
+  if (dash) dash.style.display = 'inline';
+  dot.style.display = 'inline';
+
+  // Update confidence badge
+  updateConfidenceBadge(detection.confidence || 0.7, detection.source);
+
+  console.log('[UI] Updated brand display:', detection.brand, '-', detection.subType, '(confidence:', detection.confidence, ')');
+}
+
+/**
+ * Update confidence badge text and color
+ */
+function updateConfidenceBadge(confidence, source) {
+  const status = document.getElementById('v5-status-text');
+  if (!status) return;
+
+  // Remove any existing confidence classes
+  status.className = 'v5-status';
+
+  if (source === 'user_learned') {
+    status.textContent = '🎓 Learned';
+    status.classList.add('confidence-learned');
+  } else if (source === 'user_override') {
+    status.textContent = '✓ Manual';
+    status.classList.add('confidence-learned');
+  } else if (confidence >= 0.95) {
+    status.textContent = '✓ Auto-detected';
+    status.classList.add('confidence-high');
+  } else if (confidence >= 0.70) {
+    status.textContent = '⚠ Verify';
+    status.classList.add('confidence-medium');
+  } else {
+    status.textContent = '❌ Select';
+    status.classList.add('confidence-low');
+  }
+}
+
+/**
+ * Handle bank/tag dropdown changes
+ */
+async function onBankTagChange() {
+  const bankSelect = document.getElementById('v5-bank-brand-select');
+  const tagSelect = document.getElementById('v5-account-tag-select');
+
+  if (!bankSelect || !tagSelect) return;
+
+  const bank = bankSelect.value;
+  const tag = tagSelect.value;
+
+  if (!bank || !tag) return;
+
+  console.log('[UI] User changed bank/tag to:', bank, '-', tag);
+
+  // Learn this association
+  if (window.bankLearningService && currentDetection?.fingerprint) {
+    window.bankLearningService.learn(currentDetection.fingerprint, {
+      brand: bank,
+      accountType: tag,
+      parserName: `${bank}${tag}`
+    });
+    console.log('[LEARNING] Saved user choice');
+  }
+
+  // Update confidence to show it's user-selected
+  updateConfidenceBadge(1.0, 'user_override');
+
+  // TODO: Re-parse with correct parser if needed
+  // This would trigger a re-parse of the uploaded file with the new parser
+}
+
+// Attach event listeners once DOM elements exist
+function attachBrandDropdownListeners() {
+  const bankSelect = document.getElementById('v5-bank-brand-select');
+  const tagSelect = document.getElementById('v5-account-tag-select');
+
+  if (bankSelect && tagSelect) {
+    bankSelect.addEventListener('change', onBankTagChange);
+    tagSelect.addEventListener('change', onBankTagChange);
+    console.log('[UI] ✅ Bank/tag dropdown handlers attached');
+  } else {
+    // Retry after a short delay (DOM might not be ready)
+    setTimeout(attachBrandDropdownListeners, 100);
+  }
+}
+
+// Initialize listeners
+attachBrandDropdownListeners();
+
+// Expose globally for backward compatibility
+window.updateBrandDisplay = updateBrandDisplay;
+

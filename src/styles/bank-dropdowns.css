@@ -1,0 +1,48 @@
+/* ============================================
+   Bank/Tag Inline Dropdown Styling
+   ============================================ */
+.v5-inline-dropdown {
+    background: transparent;
+    border: none;
+    color: #3b82f6;
+    /* Blue like "CHECKING" in screenshot */
+    font-weight: 600;
+    font-size: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0 4px;
+    outline: none;
+    margin: 0 2px;
+}
+
+.v5-inline-dropdown:hover {
+    text-decoration: underline;
+    color: #2563eb;
+}
+
+.v5-inline-dropdown:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Confidence badge colors (for v5-status-text) */
+.v5-status.confidence-high {
+    color: #10b981 !important;
+    /* Green */
+}
+
+.v5-status.confidence-medium {
+    color: #f59e0b !important;
+    /* Orange */
+}
+
+.v5-status.confidence-low {
+    color: #ef4444 !important;
+    /* Red */
+}
+
+.v5-status.confidence-learned {
+    color: #8b5cf6 !important;
+    /* Purple */
+}
