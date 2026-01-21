@@ -23,8 +23,8 @@ BMO CHEQUING FORMAT:
      * LOCAL REGEX PARSER for BMO Chequing statements
      * Extracts from the ACTUAL debit/credit columns in the PDF
      */
-    parseWithRegex(text) {
-        const lines = text.split('\n');
+    async parse(statementText) {
+        const lines = statementText.split('\n');
         const transactions = [];
         let currentYear = new Date().getFullYear();
 

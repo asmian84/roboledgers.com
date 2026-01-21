@@ -7,8 +7,8 @@ class ScotiaCreditCardParser extends BaseBankParser {
         super('Scotiabank', 'CreditCard', 'Scotiabank Credit Card - Liability account');
     }
 
-    parseWithRegex(text) {
-        const lines = text.split('\n');
+    async parse(statementText) {
+        const lines = statementText.split('\n');
         const transactions = [];
         let currentYear = new Date().getFullYear();
 
