@@ -290,6 +290,56 @@ class BrandDetector {
     }
 
     /**
+     * Detect brand with learning system integration
+     * Checks learned associations first, falls back to automated detection
+     */
+    async detectWithLearning(text, filename = '') {
+        // Ensure learning service is available
+        if (!window.bankLearningService) {
+            console.warn('[DETECT] Learning service not available, using standard detection');
+            return this.detectBrand(text);
+        }
+
+        // 1. Generate fingerprint
+        const fingerprint = await window.bankLearningService.generateFingerprint(text, filename);
+
+        // 2. Check learned associations FIRST
+        const learned = window.bankLearningService.recall(fingerprint);
+        if (learned) {
+            console.log(`[DETECT] ✅ Using learned association: ${learned.brand} ${learned.accountType} (uploaded ${learned.uploadCount}x)`);
+
+            // Return learned choice with full metadata
+            return {
+                brand: learned.brand,
+                fullBrandName: learned.brand,
+                legalName: this.bankSignatures.find(b => b.id === learned.brand)?.legalName || learned.brand,
+                institutionCode: this.bankSignatures.find(b => b.id === learned.brand)?.institutionCode || null,
+                accountType: learned.accountType,
+                subType: learned.accountType,
+                prefix: this.getPrefix(learned.accountType),
+                tag: learned.accountType,
+                confidence: 1.0,
+                parserName: learned.parserName || `${learned.brand}${learned.accountType}`,
+                evidence: [`Previously corrected by user (uploaded ${learned.uploadCount}x, ${learned.similarity}% match)`],
+                source: 'user_learned',
+                fingerprint: fingerprint // Store for later learning updates
+            };
+        }
+
+        // 3. Fall back to automated detection
+        const autoDetected = await this.detectBrand(text);
+        autoDetected.source = 'auto_detected';
+        autoDetected.fingerprint = fingerprint; // Store for later learning
+
+        // 4. Flag low confidence results for user review
+        if (autoDetected.confidence < 0.8) {
+            autoDetected.needsReview = true;
+        }
+
+        return autoDetected;
+    }
+
+    /**
      * Get the Ref# prefix based on account sub-type
      */
     getPrefix(subType) {
