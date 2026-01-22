@@ -56,10 +56,10 @@ class ParserRouter {
     async parseStatement(statementText) {
         console.log('🔍 Step 1: Detecting bank brand...');
 
-        // Step 1: Detect brand (with learning)
-        const detection = await window.brandDetector.detectWithLearning(statementText, '');
+        // Step 1: Detect brand
+        const detection = await window.brandDetector.detectBrand(statementText);
 
-        console.log(`✅ Detected: ${detection.brand} ${detection.accountType} (${detection.confidence}, source: ${detection.source || 'auto'})`);
+        console.log(`✅ Detected: ${detection.brand} ${detection.accountType} (${detection.confidence})`);
         console.log(`📍 Routing to: ${detection.parserName}`);
 
         // Step 2: Get the specific parser
@@ -74,7 +74,7 @@ class ParserRouter {
         console.log(`🤖 Step 2: Parsing with ${parserKey} parser...`);
         let result = await parser.parse(statementText);
 
-        // Step 4: Add brand info to result (including learning metadata)
+        // Step 4: Add brand info to result
         result.brandDetection = {
             brand: detection.brand,
             fullBrandName: detection.fullBrandName,
@@ -82,9 +82,7 @@ class ParserRouter {
             subType: detection.subType || detection.accountType,
             prefix: detection.prefix || 'TXN',
             tag: detection.tag || detection.accountType,
-            confidence: detection.confidence,
-            source: detection.source, // 'user_learned' or 'auto_detected'
-            fingerprint: detection.fingerprint // For learning on user change
+            confidence: detection.confidence
         };
 
         // CRITICAL FIX: Inject brand into EACH transaction so it survives array flattening
