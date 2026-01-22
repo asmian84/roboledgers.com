@@ -3237,10 +3237,10 @@ window.parseV5Files = async function () {
     // AUTO-DETECT account type from transaction patterns
     V5State.accountType = detectAccountType(categorized);
 
-    // Update Header with Bank and Tag (e.g., "Scotiabank - Chequing")
-    const detectedBank = categorized[0]?._bank || 'Bank Statement';
-    const detectedTag = categorized[0]?._tag || V5State.accountType;
-    const detectedPrefix = categorized[0]?._prefix || '';
+    // Update Header with Bank and Tag from brandDetection
+    const detectedBank = parsedData.brandDetection?.brand || parsedData.bank || categorized[0]?._bank || 'Unknown Bank';
+    const detectedTag = parsedData.brandDetection?.subType || parsedData.brandDetection?.tag || categorized[0]?._tag || V5State.accountType;
+    const detectedPrefix = parsedData.brandDetection?.prefix || categorized[0]?._prefix || '';
 
     // Set the Ref# prefix from brand detection
     if (detectedPrefix) {
@@ -3252,7 +3252,8 @@ window.parseV5Files = async function () {
     }
 
     if (window.updateV5PageHeader) {
-      window.updateV5PageHeader(detectedBank, detectedTag);
+      // Pass brand detection object for full context
+      window.updateV5PageHeader(detectedBank, detectedTag, parsedData.brandDetection);
     }
 
     console.log(`📊 Detected: ${detectedBank} - ${detectedTag} (Prefix: ${detectedPrefix})`);
