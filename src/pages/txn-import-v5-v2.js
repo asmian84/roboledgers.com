@@ -3194,6 +3194,16 @@ window.parseV5Files = async function () {
       updateV5Progress
     );
 
+    // CRITICAL: Capture brand detection BEFORE categorization wipes it
+    const firstTxn = transactions[0] || {};
+    const brandDetection = {
+      brand: firstTxn._brand || firstTxn._bank || 'Unknown Bank',
+      tag: firstTxn._tag || firstTxn._accountType || 'CHECKING',
+      prefix: firstTxn._prefix || 'TXN'
+    };
+
+    console.log('🔍 DEBUG: Captured brand detection BEFORE categorization:', brandDetection);
+
     // Categorize using all 7 methods
     updateV5Progress(0, 1, 'Categorizing transactions...');
     const categorized = await window.ProcessingEngine.categorizeTransactions(
@@ -3246,10 +3256,10 @@ window.parseV5Files = async function () {
     // AUTO-DETECT account type from transaction patterns
     V5State.accountType = detectAccountType(categorized);
 
-    // Update Header with Bank and Tag from transaction metadata
-    const detectedBank = categorized[0]?._brand || categorized[0]?._bank || 'Unknown Bank';
-    const detectedTag = categorized[0]?._tag || categorized[0]?._accountType || V5State.accountType;
-    const detectedPrefix = categorized[0]?._prefix || '';
+    // Update Header with Bank and Tag from CAPTURED brand detection
+    const detectedBank = brandDetection.brand;
+    const detectedTag = brandDetection.tag;
+    const detectedPrefix = brandDetection.prefix;
 
     // Set the Ref# prefix from brand detection
     if (detectedPrefix) {
