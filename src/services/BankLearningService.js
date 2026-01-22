@@ -264,3 +264,5 @@ class BankLearningService {
 // Expose to window for file:// compatibility
 window.BankLearningService = BankLearningService;
 window.bankLearningService = new BankLearningService();
+
+console.log('🎓 BankLearningService loaded:', window.bankLearningService.getStats());
