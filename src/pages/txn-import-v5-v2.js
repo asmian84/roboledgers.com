@@ -3196,13 +3196,21 @@ window.parseV5Files = async function () {
 
     // CRITICAL: Capture brand detection BEFORE categorization wipes it
     const firstTxn = transactions[0] || {};
+
+    console.log('🔍 DEBUG: First transaction FULL:', firstTxn);
+    console.log('🔍 DEBUG: firstTxn._brand:', firstTxn._brand);
+    console.log('🔍 DEBUG: firstTxn._bank:', firstTxn._bank);
+    console.log('🔍 DEBUG: firstTxn._tag:', firstTxn._tag);
+    console.log('🔍 DEBUG: firstTxn._accountType:', firstTxn._accountType);
+    console.log('🔍 DEBUG: firstTxn._prefix:', firstTxn._prefix);
+
     const brandDetection = {
       brand: firstTxn._brand || firstTxn._bank || 'Unknown Bank',
       tag: firstTxn._tag || firstTxn._accountType || 'CHECKING',
       prefix: firstTxn._prefix || 'TXN'
     };
 
-    console.log('🔍 DEBUG: Captured brand detection BEFORE categorization:', brandDetection);
+    console.log('🔍 DEBUG: brandDetection:', brandDetection);
 
     // Categorize using all 7 methods
     updateV5Progress(0, 1, 'Categorizing transactions...');
