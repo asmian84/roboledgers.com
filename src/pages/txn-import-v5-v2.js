@@ -3209,13 +3209,14 @@ window.parseV5Files = async function () {
     const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const file = V5State.selectedFiles[0]; // Get first file
 
-    // DEBUG: Log what parsedData contains
-    console.group('🔍 DEBUG: ParsedData Structure');
-    console.log('parsedData keys:', Object.keys(parsedData || {}));
-    console.log('parsedData.bank:', parsedData?.bank);
-    console.log('parsedData.accountType:', parsedData?.accountType);
-    console.log('parsedData.brandDetection:', parsedData?.brandDetection);
+    // DEBUG: Log categorized structure
+    console.group('🔍 DEBUG: Categorized Data');
+    console.log('categorized length:', categorized.length);
+    console.log('First transaction:', categorized[0]);
+    console.log('First txn._bank:', categorized[0]?._bank);
+    console.log('First txn._tag:', categorized[0]?._tag);
     console.groupEnd();
+
     const fileType = file.name.endsWith('.pdf') ? 'pdf' : 'csv';
 
     categorized.forEach(row => {
@@ -3245,10 +3246,10 @@ window.parseV5Files = async function () {
     // AUTO-DETECT account type from transaction patterns
     V5State.accountType = detectAccountType(categorized);
 
-    // Update Header with Bank and Tag from brandDetection
-    const detectedBank = parsedData.brandDetection?.brand || parsedData.bank || categorized[0]?._bank || 'Unknown Bank';
-    const detectedTag = parsedData.brandDetection?.subType || parsedData.brandDetection?.tag || categorized[0]?._tag || V5State.accountType;
-    const detectedPrefix = parsedData.brandDetection?.prefix || categorized[0]?._prefix || '';
+    // Update Header with Bank and Tag from transaction metadata
+    const detectedBank = categorized[0]?._brand || categorized[0]?._bank || 'Unknown Bank';
+    const detectedTag = categorized[0]?._tag || categorized[0]?._accountType || V5State.accountType;
+    const detectedPrefix = categorized[0]?._prefix || '';
 
     // Set the Ref# prefix from brand detection
     if (detectedPrefix) {
@@ -3264,12 +3265,13 @@ window.parseV5Files = async function () {
     console.log('detectedBank:', detectedBank);
     console.log('detectedTag:', detectedTag);
     console.log('detectedPrefix:', detectedPrefix);
-    console.log('brandDetection object:', parsedData.brandDetection);
+    console.log('Source: categorized[0]._bank =', categorized[0]?._bank);
+    console.log('Source: categorized[0]._tag =', categorized[0]?._tag);
     console.groupEnd();
 
     if (window.updateV5PageHeader) {
-      // Pass brand detection object for full context
-      window.updateV5PageHeader(detectedBank, detectedTag, parsedData.brandDetection);
+      // Pass brand/tag (brandDetection not available in this flow)
+      window.updateV5PageHeader(detectedBank, detectedTag);
     }
 
     console.log(`📊 Detected: ${detectedBank} - ${detectedTag} (Prefix: ${detectedPrefix})`);
