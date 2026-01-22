@@ -3208,6 +3208,14 @@ window.parseV5Files = async function () {
     // ============================================
     const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const file = V5State.selectedFiles[0]; // Get first file
+
+    // DEBUG: Log what parsedData contains
+    console.group('🔍 DEBUG: ParsedData Structure');
+    console.log('parsedData keys:', Object.keys(parsedData || {}));
+    console.log('parsedData.bank:', parsedData?.bank);
+    console.log('parsedData.accountType:', parsedData?.accountType);
+    console.log('parsedData.brandDetection:', parsedData?.brandDetection);
+    console.groupEnd();
     const fileType = file.name.endsWith('.pdf') ? 'pdf' : 'csv';
 
     categorized.forEach(row => {
@@ -3250,6 +3258,14 @@ window.parseV5Files = async function () {
       const refInput = document.getElementById('popup-ref-input');
       if (refInput) refInput.value = detectedPrefix;
     }
+
+    // DEBUG: Show what we're about to pass to header
+    console.group('📊 DEBUG: Extracted Bank/Tag');
+    console.log('detectedBank:', detectedBank);
+    console.log('detectedTag:', detectedTag);
+    console.log('detectedPrefix:', detectedPrefix);
+    console.log('brandDetection object:', parsedData.brandDetection);
+    console.groupEnd();
 
     if (window.updateV5PageHeader) {
       // Pass brand detection object for full context
