@@ -1,29 +1,54 @@
 /* ============================================
    Bank/Tag Inline Dropdown Styling
+   Makes dropdowns look like clickable text, not ugly browser selects
    ============================================ */
 .v5-inline-dropdown {
+    /* Remove default select styling */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    /* Make it look like text */
     background: transparent;
     border: none;
     color: #3b82f6;
-    /* Blue like "CHECKING" in screenshot */
+    /* Blue like "CHECKING" */
     font-weight: 600;
     font-size: inherit;
     font-family: inherit;
     cursor: pointer;
-    padding: 0 4px;
-    outline: none;
+    padding: 2px 20px 2px 4px;
+    /* Right padding for arrow */
     margin: 0 2px;
+    outline: none;
+
+    /* Add subtle down arrow */
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="12" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M2 4l4 4 4-4" stroke="%233b82f6" stroke-width="2" fill="none" stroke-linecap="round"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 12px;
+
+    /* Smooth transition */
+    transition: all 0.2s ease;
 }
 
 .v5-inline-dropdown:hover {
-    text-decoration: underline;
     color: #2563eb;
+    background-color: rgba(59, 130, 246, 0.05);
+    border-radius: 4px;
 }
 
 .v5-inline-dropdown:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
     border-radius: 4px;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Dash between dropdowns */
+#v5-bank-dash {
+    color: #94a3b8;
+    margin: 0 4px;
 }
 
 /* Confidence badge colors (for v5-status-text) */

@@ -356,6 +356,7 @@ class DataJunkie {
                 bank: result.brandDetection.fullBrandName,
                 accountType: result.brandDetection.accountType,
                 accountHolder: result.accountHolder,
+                brandDetection: result.brandDetection, // Full detection for UI
                 transactions: result.transactions.map(tx => ({
                     Date: tx.date,
                     Description: tx.description,
