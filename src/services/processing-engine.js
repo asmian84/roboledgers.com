@@ -107,6 +107,14 @@ class ProcessingEngine {
                 return [];
             }
 
+            // DEBUG: Check brand metadata from DataJunkie
+            console.group('🔍 [ProcessingEngine] Brand Metadata Check');
+            console.log('result.brandDetection:', result.brandDetection);
+            console.log('First transaction:', result.transactions?.[0]);
+            console.log('First txn._brand:', result.transactions?.[0]?._brand);
+            console.log('First txn._tag:', result.transactions?.[0]?._tag);
+            console.groupEnd();
+
             return result.transactions || [];
 
         } else if (ext === 'csv') {
