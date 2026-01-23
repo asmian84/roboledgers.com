@@ -1620,6 +1620,65 @@ window.renderTxnImportV5Page = function () {
           page-break-after: always;
         }
       }
+
+      /* BANK/TAG DROPDOWNS - Stealth Style */
+      .v5-inline-dropdown {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background: transparent;
+        border: none;
+        color: #3b82f6; /* RoboLedgers Blue */
+        font-weight: 600;
+        font-size: 1.1rem;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        padding: 0 16px 0 0; /* Space for arrow */
+        margin: 0;
+        outline: none;
+        background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="10" height="10" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M2 4l4 4 4-4" stroke="%233b82f6" stroke-width="2" fill="none" stroke-linecap="round"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 10px;
+        transition: all 0.2s ease;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      .v5-inline-dropdown:hover {
+        color: #2563eb;
+        background-color: rgba(59, 130, 246, 0.05);
+        border-radius: 4px;
+      }
+
+      .v5-inline-dropdown:focus {
+        background-color: rgba(59, 130, 246, 0.1);
+        border-radius: 4px;
+      }
+
+      /* Confidence badge styling */
+      .v5-status {
+        font-size: 0.85rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+      .v5-status.confidence-high {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981 !important;
+      }
+      .v5-status.confidence-medium {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b !important;
+      }
+      .v5-status.confidence-low {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444 !important;
+      }
+      .v5-status.confidence-learned {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6 !important;
+      }
     </style>
 
     <div class="txn-import-v5-container">
