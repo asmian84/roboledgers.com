@@ -363,7 +363,13 @@ class DataJunkie {
                     Amount: tx.debit || tx.credit,
                     Type: tx.debit ? 'Debit' : 'Credit',
                     Debit: tx.debit,
-                    Credit: tx.credit
+                    Credit: tx.credit,
+                    // CRITICAL: Preserve brand metadata from ParserRouter
+                    _brand: tx._brand,
+                    _bank: tx._bank,
+                    _tag: tx._tag,
+                    _accountType: tx._accountType,
+                    _prefix: tx._prefix
                 }))
             };
         } catch (error) {
