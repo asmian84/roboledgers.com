@@ -6070,21 +6070,7 @@ console.log('✅ txn-import-v5.js loaded successfully!');
 
 let currentDetection = null; // Store detection result with fingerprint
 
-/**
- * Update brand/tag display - NEW VERSION with dropdowns
- * Compatible with old updateV5PageHeader calls
- */
-window.updateV5PageHeader = function (brand, type, detection = null) {
-  // If called with full detection object, use new system
-  if (typeof brand === 'object' && brand.brand) {
-    detection = brand;
-    brand = detection.brand;
-    type = detection.subType || detection.tag;
-  }
 
-  // Update live header with bank/tag
-  window.updateV5PageHeader(brand, type, detection);
-};
 
 /**
  * Main function to update dropdowns and confidence badge
