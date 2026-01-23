@@ -387,7 +387,8 @@ class DataJunkie {
             duplicatesRemoved: parsed.transactions.length - unique.length,
             bank: parsed.bank,
             accountType: parsed.accountType,
-            accountHolder: parsed.accountHolder
+            accountHolder: parsed.accountHolder,
+            brandDetection: parsed.brandDetection // For metadata injection
         };
 
         // Step 6: Update UI to show brand and account type
