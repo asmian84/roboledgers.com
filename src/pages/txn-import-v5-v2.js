@@ -6068,9 +6068,26 @@ console.log('✅ txn-import-v5.js loaded successfully!');
 // BANK/TAG DROPDOWN INTEGRATION WITH LEARNING
 // =====================================================
 
-let currentDetection = null; // Store detection result with fingerprint
+let currentDetection = null;
 
-
+/**
+ * Update brand/tag display - NEW VERSION with dropdowns
+ * This is the global entry point for both old string calls and new object calls
+ */
+window.updateV5PageHeader = function (brand, type, detection = null) {
+  // Overload 1: detection object passed as first argument
+  if (typeof brand === 'object' && brand !== null && brand.brand) {
+    updateBrandDisplay(brand);
+  } else {
+    // Overload 2: string arguments (legacy flow)
+    updateBrandDisplay({
+      brand: brand,
+      subType: type || 'Chequing',
+      confidence: 1.0,
+      source: 'auto'
+    });
+  }
+};
 
 /**
  * Main function to update dropdowns and confidence badge
