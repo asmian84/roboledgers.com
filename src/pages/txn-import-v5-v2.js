@@ -1634,9 +1634,24 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-title-text">
             <h1>Transactions</h1>
             <p class="v5-subtitle">
-              <span id="v5-bank-brand" style="display: none; color: #3b82f6; font-weight: 600;"></span>
+              <select id="v5-bank-brand-select" class="v5-inline-dropdown" style="display: none;">
+                <option value="">Select Bank</option>
+                <option value="TD">TD</option>
+                <option value="RBC">RBC</option>
+                <option value="BMO">BMO</option>
+                <option value="CIBC">CIBC</option>
+                <option value="Scotiabank">Scotiabank</option>
+                <option value="Amex">Amex Canada</option>
+              </select>
               <span id="v5-bank-dash" style="display: none; color: #94a3b8;"> - </span>
-              <span id="v5-account-tag" style="display: none; color: #3b82f6; font-weight: 600;"></span>
+              <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
+                <option value="">Select Account</option>
+                <option value="Chequing">Chequing</option>
+                <option value="Savings">Savings</option>
+                <option value="Visa">Visa</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="Amex">Amex</option>
+              </select>
               <span class="v5-dot" id="v5-header-dot" style="display: none; color: #94a3b8;"> • </span>
               <span class="v5-status" id="v5-status-text" style="color: #6b7280;">Waiting to get started...</span>
             </p>
