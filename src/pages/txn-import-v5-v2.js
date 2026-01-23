@@ -6082,7 +6082,8 @@ window.updateV5PageHeader = function (brand, type, detection = null) {
     type = detection.subType || detection.tag;
   }
 
-  updateBrandDisplay({ brand, subType: type, ...(detection || {}) });
+  // Update live header with bank/tag
+  window.updateV5PageHeader(brand, type, detection);
 };
 
 /**
@@ -6211,5 +6212,5 @@ function attachBrandDropdownListeners() {
 attachBrandDropdownListeners();
 
 // Expose globally for backward compatibility
-window.updateBrandDisplay = updateBrandDisplay;
+// Note: updateBrandDisplay deprecated, use updateV5PageHeader instead
 
