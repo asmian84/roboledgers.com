@@ -4120,8 +4120,13 @@ window.parseV5Files = async function () {
     }
 
     if (window.updateV5PageHeader) {
-      // Pass the COMPLETE brandDetection object to enable Line 3 (metadata)
-      const detection = transactions[0]?.brandDetection || brandDetection;
+      // Use the brand metadata from transactions (injected by ParserRouter)
+      const detection = {
+        brand: brandDetection.brand,
+        subType: brandDetection.tag,
+        confidence: 1.0,
+        source: 'auto'
+      };
       window.updateV5PageHeader(detection);
     }
 
