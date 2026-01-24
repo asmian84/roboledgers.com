@@ -2354,9 +2354,7 @@ window.renderTxnImportV5Page = function () {
                 <option value="Tangerine">TANGERINE</option>
                 <option value="Amex">AMEX CANADA</option>
               </select>
-              <span id="v5-status-text" class="v5-status">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
-            </p>
-            <p class="v5-subtitle" style="margin-top: 0;">
+              <span id="v5-bank-dash" style="display: none;">&nbsp;-&nbsp;</span>
               <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
                 <option value="">SELECT ACCOUNT</option>
                 <option value="Chequing">CHEQUING</option>
@@ -2365,6 +2363,7 @@ window.renderTxnImportV5Page = function () {
                 <option value="Mastercard">MASTERCARD</option>
                 <option value="Amex">AMEX</option>
               </select>
+              <span id="v5-status-text" class="v5-status">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
             </p>
             <p id="v5-account-info-line" class="v5-account-info-line">
               <!-- Populated dynamically -->
