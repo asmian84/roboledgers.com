@@ -1735,6 +1735,54 @@ window.renderTxnImportV5Page = function () {
         color: #94a3b8;
       }
 
+      /* Single-line COA dropdown */
+      .glass-coa-select {
+        flex: 1;
+        max-width: 400px;
+        padding: 9px 14px;
+        border: 1.5px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        font-size: 0.875rem;
+        color: #1e293b;
+        transition: all 0.2s;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+      }
+
+      .glass-coa-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1),
+                    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .glass-coa-select option {
+        padding: 8px 12px;
+      }
+
+      .glass-coa-select optgroup {
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Apply button in single line */
+      .btn-bulk-apply {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .btn-bulk-apply:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+
       /* Categorize panel specific */
       .glass-coa-wrapper {
         display: flex;
@@ -2234,75 +2282,26 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- GLASSMORPHISM BULK ACTIONS BAR -->
+      <!-- GLASSMORPHISM BULK ACTIONS BAR (SINGLE LINE) -->
       <div class="bulk-actions-bar" id="v5-bulk-bar" style="display: none;">
-        <!-- Collapsed content -->
         <div class="glass-bulk-content">
           <span class="selection-label" id="v5-bulk-count">0 selected</span>
-          <button class="btn-bulk btn-bulk-categorize" onclick="showCategorizeInline()">
-            <i class="ph ph-tag"></i> Categorize
+          
+          <select id="glass-coa-dropdown" class="glass-coa-select">
+            <option value="">Choose account to categorize...</option>
+            <!-- Populated dynamically -->
+          </select>
+          
+          <button class="btn-bulk btn-bulk-apply" onclick="applyBulkCategorize()">
+            <i class="ph ph-check"></i> Apply Category
           </button>
-          <button class="btn-bulk btn-bulk-rename" onclick="showRenameInline()">
+          
+          <button class="btn-bulk btn-bulk-rename" onclick="promptBulkRename()">
             <i class="ph ph-pencil"></i> Rename
           </button>
-          <button class="btn-bulk btn-bulk-cancel" onclick="cancelBulk()">
+          
+          <button class="btn-bulk-cancel" onclick="cancelBulk()">
             ✕
-          </button>
-        </div>
-
-        <!-- Expandable Categorize Panel -->
-        <div class="glass-bulk-panel" id="glass-categorize-panel">
-          <div class="glass-panel-header">
-            <span class="glass-panel-title">📁 Bulk Categorize</span>
-            <button class="glass-panel-close" onclick="closePanels()">✕</button>
-          </div>
-          <div class="glass-coa-wrapper">
-            <input 
-              type="text" 
-              id="glass-coa-search" 
-              class="glass-input" 
-              placeholder="🔍 Search Chart of Accounts..."
-              oninput="filterGlassCOA(this.value)"
-            >
-            <select id="glass-coa-dropdown" class="glass-select" size="6">
-              <!-- Populated dynamically -->
-            </select>
-            <button class="glass-apply-btn" onclick="applyBulkCategorize()">
-              <i class="ph ph-check-circle"></i>
-              Apply to Selected Transactions
-            </button>
-          </div>
-        </div>
-
-        <!-- Expandable Rename Panel -->
-        <div class="glass-bulk-panel" id="glass-rename-panel">
-          <div class="glass-panel-header">
-            <span class="glass-panel-title">✏️ Bulk Search & Replace</span>
-            <button class="glass-panel-close" onclick="closePanels()">✕</button>
-          </div>
-          <div class="glass-rename-grid">
-            <div class="glass-rename-field">
-              <label class="glass-rename-label">Find</label>
-              <input 
-                type="text" 
-                id="glass-find-input" 
-                class="glass-input" 
-                placeholder="Text to find..."
-              >
-            </div>
-            <div class="glass-rename-field">
-              <label class="glass-rename-label">Replace</label>
-              <input 
-                type="text" 
-                id="glass-replace-input" 
-                class="glass-input" 
-                placeholder="Replace with..."
-              >
-            </div>
-          </div>
-          <button class="glass-apply-btn" onclick="applyBulkRename()">
-            <i class="ph ph-arrows-clockwise"></i>
-            Apply to Selected Descriptions
           </button>
         </div>
       </div>
@@ -7017,45 +7016,11 @@ async function onBankTagChange() {
 }
 
 // ========================================
-// GLASSMORPHISM INLINE BULK ACTIONS
+// GLASSMORPHISM INLINE BULK ACTIONS (SINGLE LINE)
 // ========================================
 
-/** Show Categorize Panel Inline */
-window.showCategorizeInline = function () {
-  console.log('🔵 [GLASS] showCategorizeInline() called');
-
-  // Close rename panel if open
-  const renamePanel = document.getElementById('glass-rename-panel');
-  if (renamePanel) {
-    renamePanel.classList.remove('active');
-    console.log('  ✓ Closed rename panel');
-  }
-
-  // Open categorize panel
-  const catPanel = document.getElementById('glass-categorize-panel');
-  if (!catPanel) {
-    console.error('  ❌ glass-categorize-panel not found!');
-    return;
-  }
-
-  catPanel.classList.add('active');
-  console.log('  ✓ Opened categorize panel');
-
-  // Populate COA dropdown
-  populateGlassCOA();
-
-  // Focus search input
-  setTimeout(() => {
-    const searchInput = document.getElementById('glass-coa-search');
-    if (searchInput) {
-      searchInput.focus();
-      console.log('  ✓ Focused search input');
-    }
-  }, 150);
-};
-
-/** Populate COA dropdown for glassmorphism panel */
-function populateGlassCOA() {
+/** Populate ALL COA accounts in dropdown (called on selection) */
+window.populateGlassCOA = function () {
   console.log('🔵 [GLASS] populateGlassCOA() called');
 
   const dropdown = document.getElementById('glass-coa-dropdown');
@@ -7090,12 +7055,13 @@ function populateGlassCOA() {
     ];
   }
 
+  // Categorize ALL accounts
   const cats = {
-    'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
-    'Liabilities': coa.filter(a => a.code >= 2000 && a.code < 3000),
-    'Equity': coa.filter(a => a.code >= 3000 && a.code < 4000),
-    'Revenue': coa.filter(a => a.code >= 4000 && a.code < 5000),
-    'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
+    'ASSETS': coa.filter(a => a.code >= 1000 && a.code < 2000),
+    'LIABILITIES': coa.filter(a => a.code >= 2000 && a.code < 3000),
+    'EQUITY': coa.filter(a => a.code >= 3000 && a.code < 4000),
+    'REVENUE': coa.filter(a => a.code >= 4000 && a.code < 5000),
+    'EXPENSES': coa.filter(a => a.code >= 5000 && a.code < 10000)
   };
 
   console.log('  📂 Category breakdown:');
@@ -7103,8 +7069,10 @@ function populateGlassCOA() {
     console.log(`    - ${cat}: ${cats[cat].length} accounts`);
   });
 
-  let html = '<option value="">-- Select Account --</option>';
+  // Build dropdown with ALL accounts
+  let html = '<option value="">Choose account to categorize...</option>';
   let totalOptions = 0;
+
   Object.keys(cats).forEach(cat => {
     if (cats[cat].length > 0) {
       html += `<optgroup label="${cat}">`;
@@ -7117,90 +7085,7 @@ function populateGlassCOA() {
   });
 
   dropdown.innerHTML = html;
-  dropdown.setAttribute('data-original', html); // Store for filtering
-  console.log(`  ✅ Populated dropdown with ${totalOptions} total accounts across ${Object.keys(cats).length} categories`);
-}
-
-/** Filter COA dropdown based on search */
-window.filterGlassCOA = function (searchTerm) {
-  console.log(`🔵 [GLASS] filterGlassCOA("${searchTerm}") called`);
-
-  const dropdown = document.getElementById('glass-coa-dropdown');
-  if (!dropdown) return;
-
-  const options = dropdown.querySelectorAll('option');
-  const optgroups = dropdown.querySelectorAll('optgroup');
-
-  const filter = searchTerm.toUpperCase();
-
-  // Hide/show options based on search
-  options.forEach(opt => {
-    if (!opt.value) return; // Skip placeholder
-    const text = opt.textContent || opt.innerText;
-    if (text.toUpperCase().indexOf(filter) > -1) {
-      opt.style.display = '';
-    } else {
-      opt.style.display = 'none';
-    }
-  });
-
-  // Hide empty optgroups
-  optgroups.forEach(group => {
-    const visibleOpts = Array.from(group.querySelectorAll('option')).filter(o => o.style.display !== 'none');
-    group.style.display = visibleOpts.length > 0 ? '' : 'none';
-  });
-
-  const visibleCount = Array.from(options).filter(o => o.value && o.style.display !== 'none').length;
-  console.log(`  ✓ ${visibleCount} accounts match "${searchTerm}"`);
-};
-
-/** Show Rename Panel Inline */
-window.showRenameInline = function () {
-  console.log('🔵 [GLASS] showRenameInline() called');
-
-  // Close categorize panel if open
-  const catPanel = document.getElementById('glass-categorize-panel');
-  if (catPanel) {
-    catPanel.classList.remove('active');
-    console.log('  ✓ Closed categorize panel');
-  }
-
-  // Open rename panel
-  const renamePanel = document.getElementById('glass-rename-panel');
-  if (!renamePanel) {
-    console.error('  ❌ glass-rename-panel not found!');
-    return;
-  }
-
-  renamePanel.classList.add('active');
-  console.log('  ✓ Opened rename panel');
-
-  // Focus find input
-  setTimeout(() => {
-    const findInput = document.getElementById('glass-find-input');
-    if (findInput) {
-      findInput.focus();
-      console.log('  ✓ Focused find input');
-    }
-  }, 150);
-};
-
-/** Close all panels */
-window.closePanels = function () {
-  console.log('🔵 [GLASS] closePanels() called');
-
-  const catPanel = document.getElementById('glass-categorize-panel');
-  const renamePanel = document.getElementById('glass-rename-panel');
-
-  if (catPanel) {
-    catPanel.classList.remove('active');
-    console.log('  ✓ Closed categorize panel');
-  }
-
-  if (renamePanel) {
-    renamePanel.classList.remove('active');
-    console.log('  ✓ Closed rename panel');
-  }
+  console.log(`  ✅ Populated dropdown with ${totalOptions} total accounts`);
 };
 
 /** Cancel bulk selection */
@@ -7212,18 +7097,21 @@ window.cancelBulk = function () {
     console.log('  ✓ Deselected all rows');
   }
 
-  // Close all panels
-  closePanels();
-
   // Hide bulk bar
   const bulkBar = document.getElementById('v5-bulk-bar');
   if (bulkBar) {
     bulkBar.style.display = 'none';
     console.log('  ✓ Hidden bulk bar');
   }
+
+  // Reset dropdown
+  const dropdown = document.getElementById('glass-coa-dropdown');
+  if (dropdown) {
+    dropdown.value = '';
+  }
 };
 
-/** Apply bulk categorize */
+/** Apply bulk categorize from dropdown selection */
 window.applyBulkCategorize = function () {
   console.log('🔵 [GLASS] applyBulkCategorize() called');
 
@@ -7231,7 +7119,7 @@ window.applyBulkCategorize = function () {
   const selectedCode = dropdown?.value;
 
   if (!selectedCode) {
-    alert('Please select an account first.');
+    alert('Please select an account from the dropdown first.');
     console.warn('  ⚠️ No account selected');
     return;
   }
@@ -7266,41 +7154,39 @@ window.applyBulkCategorize = function () {
   saveData();
   console.log('  💾 Data saved');
 
-  // Close panel and bar
-  closePanels();
+  // Hide bar
   const bulkBar = document.getElementById('v5-bulk-bar');
   if (bulkBar) bulkBar.style.display = 'none';
+
+  // Reset dropdown
+  dropdown.value = '';
 
   console.log(`✅ [GLASS] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
 };
 
-/** Apply bulk rename (search & replace) */
-window.applyBulkRename = function () {
-  console.log('🔵 [GLASS] applyBulkRename() called');
-
-  const findInput = document.getElementById('glass-find-input');
-  const replaceInput = document.getElementById('glass-replace-input');
-
-  const findText = findInput?.value || '';
-  const replaceText = replaceInput?.value || '';
-
-  if (!findText) {
-    alert('Please enter text to find.');
-    console.warn('  ⚠️ Find text is empty');
-    return;
-  }
-
-  console.log(`  🔍 Find: "${findText}"`);
-  console.log(`  ✏️ Replace: "${replaceText}"`);
+/** Prompt for bulk rename (simple) */
+window.promptBulkRename = function () {
+  console.log('🔵 [GLASS] promptBulkRename() called');
 
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
-  console.log(`  📋 Applying to ${selectedRows.length} selected rows`);
+  console.log(`  📋 ${selectedRows.length} rows selected`);
 
   if (selectedRows.length === 0) {
     alert('No rows selected.');
-    console.warn('  ⚠️ No rows to apply to');
+    console.warn('  ⚠️ No rows to rename');
     return;
   }
+
+  const findText = prompt('Find text in description:');
+  if (!findText) {
+    console.log('  ❌ User cancelled');
+    return;
+  }
+
+  const replaceText = prompt(`Replace "${findText}" with:`) || '';
+
+  console.log(`  🔍 Find: "${findText}"`);
+  console.log(`  ✏️ Replace: "${replaceText}"`);
 
   let updatedCount = 0;
   selectedRows.forEach((row, idx) => {
@@ -7323,8 +7209,7 @@ window.applyBulkRename = function () {
   saveData();
   console.log('  💾 Data saved');
 
-  // Close panel and bar
-  closePanels();
+  // Hide bar
   const bulkBar = document.getElementById('v5-bulk-bar');
   if (bulkBar) bulkBar.style.display = 'none';
 
