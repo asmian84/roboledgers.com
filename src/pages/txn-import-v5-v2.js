@@ -1771,6 +1771,53 @@ window.renderTxnImportV5Page = function () {
         letter-spacing: 0.5px;
       }
 
+      /* Inline input fields for rename */
+      .glass-input-inline {
+        flex: 1;
+        max-width: 200px;
+        padding: 9px 14px;
+        border: 1.5px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        font-size: 0.875rem;
+        color: #1e293b;
+        transition: all 0.2s;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .glass-input-inline:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1),
+                    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .glass-input-inline::placeholder {
+        color: #94a3b8;
+        font-size: 0.85rem;
+      }
+
+      /* State containers */
+      .bulk-state {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+      }
+
+      /* Delete button styling */
+      .btn-bulk-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      }
+
+      .btn-bulk-delete:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
       /* Apply button in single line */
       .btn-bulk-apply {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -2282,25 +2329,59 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- GLASSMORPHISM BULK ACTIONS BAR (SINGLE LINE) -->
+      <!-- GLASSMORPHISM BULK ACTIONS BAR (STATE-BASED) -->
       <div class="bulk-actions-bar" id="v5-bulk-bar" style="display: none;">
         <div class="glass-bulk-content">
           <span class="selection-label" id="v5-bulk-count">0 selected</span>
           
-          <select id="glass-coa-dropdown" class="glass-coa-select">
-            <option value="">Choose account to categorize...</option>
-            <!-- Populated dynamically -->
-          </select>
+          <!-- STATE 1: Initial - Show 3 action buttons -->
+          <div id="bulk-state-initial" class="bulk-state">
+            <button class="btn-bulk btn-bulk-categorize" onclick="enterCategorizeMode()">
+              <i class="ph ph-tag"></i> Categorize
+            </button>
+            <button class="btn-bulk btn-bulk-rename" onclick="enterRenameMode()">
+              <i class="ph ph-pencil"></i> Rename
+            </button>
+            <button class="btn-bulk btn-bulk-delete" onclick="bulkDeleteRows()">
+              <i class="ph ph-trash"></i> Delete
+            </button>
+          </div>
           
-          <button class="btn-bulk btn-bulk-apply" onclick="applyBulkCategorize()">
-            <i class="ph ph-check"></i> Apply Category
-          </button>
+          <!-- STATE 2: Categorize - Show dropdown + Apply -->
+          <div id="bulk-state-categorize" class="bulk-state" style="display: none;">
+            <select id="glass-coa-dropdown" class="glass-coa-select">
+              <option value="">Choose account to categorize...</option>
+              <!-- Populated dynamically -->
+            </select>
+            <button class="btn-bulk btn-bulk-apply" onclick="applyBulkCategorize()">
+              <i class="ph ph-check"></i> Apply
+            </button>
+          </div>
           
-          <button class="btn-bulk btn-bulk-rename" onclick="promptBulkRename()">
-            <i class="ph ph-pencil"></i> Rename
-          </button>
+          <!-- STATE 3: Rename - Show Find/Replace + Apply -->
+          <div id="bulk-state-rename" class="bulk-state" style="display: none;">
+            <input 
+              type="text" 
+              id="bulk-find-input" 
+              class="glass-input-inline" 
+              placeholder="Find (leave blank to rename all)..."
+              list="bulk-find-autocomplete"
+            >
+            <datalist id="bulk-find-autocomplete">
+              <!-- Populated with existing description values -->
+            </datalist>
+            <input 
+              type="text" 
+              id="bulk-replace-input" 
+              class="glass-input-inline" 
+              placeholder="Replace with..."
+            >
+            <button class="btn-bulk btn-bulk-apply" onclick="applyBulkRename()">
+              <i class="ph ph-check"></i> Apply
+            </button>
+          </div>
           
-          <button class="btn-bulk-cancel" onclick="cancelBulk()">
+          <button class="btn-bulk-cancel" onclick="cancelBulk()" title="Close and clear selection">
             ✕
           </button>
         </div>
@@ -7016,10 +7097,94 @@ async function onBankTagChange() {
 }
 
 // ========================================
-// GLASSMORPHISM INLINE BULK ACTIONS (SINGLE LINE)
+// GLASSMORPHISM INLINE BULK ACTIONS (STATE MACHINE)
 // ========================================
 
-/** Populate ALL COA accounts in dropdown (called on selection) */
+/** State machine for bulk actions */
+const BulkState = {
+  current: 'initial', // 'initial', 'categorize', 'rename'
+};
+
+/** Reset to initial state (show 3 buttons) */
+function resetToInitialState() {
+  console.log('🔵 [BULK] resetToInitialState()');
+  BulkState.current = 'initial';
+
+  document.getElementById('bulk-state-initial').style.display = 'flex';
+  document.getElementById('bulk-state-categorize').style.display = 'none';
+  document.getElementById('bulk-state-rename').style.display = 'none';
+}
+
+/** Enter Categorize Mode */
+window.enterCategorizeMode = function () {
+  console.log('🔵 [BULK] enterCategorizeMode()');
+  BulkState.current = 'categorize';
+
+  // Hide other states
+  document.getElementById('bulk-state-initial').style.display = 'none';
+  document.getElementById('bulk-state-rename').style.display = 'none';
+
+  // Show categorize state
+  document.getElementById('bulk-state-categorize').style.display = 'flex';
+
+  // Populate COA dropdown
+  populateGlassCOA();
+};
+
+/** Enter Rename Mode */
+window.enterRenameMode = function () {
+  console.log('🔵 [BULK] enterRenameMode()');
+  BulkState.current = 'rename';
+
+  // Hide other states
+  document.getElementById('bulk-state-initial').style.display = 'none';
+  document.getElementById('bulk-state-categorize').style.display = 'none';
+
+  // Show rename state
+  document.getElementById('bulk-state-rename').style.display = 'flex';
+
+  // Populate autocomplete for Find input with existing description values
+  populateFindAutocomplete();
+
+  // Focus Find input
+  setTimeout(() => {
+    const findInput = document.getElementById('bulk-find-input');
+    if (findInput) {
+      findInput.focus();
+      console.log('  ✓ Focused find input');
+    }
+  }, 100);
+};
+
+/** Populate autocomplete datalist with existing description values */
+function populateFindAutocomplete() {
+  console.log('🔵 [BULK] populateFindAutocomplete()');
+
+  const datalist = document.getElementById('bulk-find-autocomplete');
+  if (!datalist) {
+    console.error('  ❌ bulk-find-autocomplete not found!');
+    return;
+  }
+
+  // Get unique description values from grid data
+  const descriptions = new Set();
+  V5State.gridData.forEach(row => {
+    if (row.description && row.description.trim()) {
+      descriptions.add(row.description.trim());
+    }
+  });
+
+  // Populate datalist
+  let html = '';
+  descriptions.forEach(desc => {
+    html += `<option value="${desc}">`;
+  });
+
+  datalist.innerHTML = html;
+  console.log(`  ✓ Populated autocomplete with ${descriptions.size} unique descriptions`);
+}
+
+/** Populate ALL COA accounts in dropdown (called when entering categorize mode) */
 window.populateGlassCOA = function () {
   console.log('🔵 [GLASS] populateGlassCOA() called');
 
@@ -7090,12 +7255,15 @@ window.populateGlassCOA = function () {
 
 /** Cancel bulk selection */
 window.cancelBulk = function () {
-  console.log('🔵 [GLASS] cancelBulk() called');
+  console.log('🔵 [BULK] cancelBulk() called');
 
   if (V5State.gridApi) {
     V5State.gridApi.deselectAll();
     console.log('  ✓ Deselected all rows');
   }
+
+  // Reset to initial state
+  resetToInitialState();
 
   // Hide bulk bar
   const bulkBar = document.getElementById('v5-bulk-bar');
@@ -7106,14 +7274,18 @@ window.cancelBulk = function () {
 
   // Reset dropdown
   const dropdown = document.getElementById('glass-coa-dropdown');
-  if (dropdown) {
-    dropdown.value = '';
-  }
+  if (dropdown) dropdown.value = '';
+
+  // Clear rename inputs
+  const findInput = document.getElementById('bulk-find-input');
+  const replaceInput = document.getElementById('bulk-replace-input');
+  if (findInput) findInput.value = '';
+  if (replaceInput) replaceInput.value = '';
 };
 
 /** Apply bulk categorize from dropdown selection */
 window.applyBulkCategorize = function () {
-  console.log('🔵 [GLASS] applyBulkCategorize() called');
+  console.log('🔵 [BULK] applyBulkCategorize() called');
 
   const dropdown = document.getElementById('glass-coa-dropdown');
   const selectedCode = dropdown?.value;
@@ -7158,47 +7330,65 @@ window.applyBulkCategorize = function () {
   const bulkBar = document.getElementById('v5-bulk-bar');
   if (bulkBar) bulkBar.style.display = 'none';
 
-  // Reset dropdown
+  // Reset state
+  resetToInitialState();
   dropdown.value = '';
 
-  console.log(`✅ [GLASS] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
+  console.log(`✅ [BULK] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
 };
 
-/** Prompt for bulk rename (simple) */
-window.promptBulkRename = function () {
-  console.log('🔵 [GLASS] promptBulkRename() called');
+/** Apply bulk rename (find/replace with autocomplete) */
+window.applyBulkRename = function () {
+  console.log('🔵 [BULK] applyBulkRename() called');
+
+  const findInput = document.getElementById('bulk-find-input');
+  const replaceInput = document.getElementById('bulk-replace-input');
+
+  const findText = findInput?.value || '';
+  const replaceText = replaceInput?.value || '';
+
+  if (!replaceText) {
+    alert('Please enter replacement text.');
+    console.warn('  ⚠️ Replace text is empty');
+    return;
+  }
+
+  console.log(`  🔍 Find: "${findText}" (blank = rename all)`);
+  console.log(`  ✏️ Replace: "${replaceText}"`);
 
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
-  console.log(`  📋 ${selectedRows.length} rows selected`);
+  console.log(`  📋 Applying to ${selectedRows.length} selected rows`);
 
   if (selectedRows.length === 0) {
     alert('No rows selected.');
-    console.warn('  ⚠️ No rows to rename');
+    console.warn('  ⚠️ No rows to apply to');
     return;
   }
-
-  const findText = prompt('Find text in description:');
-  if (!findText) {
-    console.log('  ❌ User cancelled');
-    return;
-  }
-
-  const replaceText = prompt(`Replace "${findText}" with:`) || '';
-
-  console.log(`  🔍 Find: "${findText}"`);
-  console.log(`  ✏️ Replace: "${replaceText}"`);
 
   let updatedCount = 0;
-  selectedRows.forEach((row, idx) => {
-    const originalDesc = row.description || '';
-    if (originalDesc.includes(findText)) {
-      row.description = originalDesc.replace(new RegExp(findText, 'g'), replaceText);
+
+  if (findText.trim() === '') {
+    // If find is blank, replace ALL descriptions
+    console.log('  📝 Find is blank - replacing ALL descriptions');
+    selectedRows.forEach((row, idx) => {
+      const originalDesc = row.description || '';
+      row.description = replaceText;
       updatedCount++;
       console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: "${originalDesc}" → "${row.description}"`);
-    } else {
-      console.log(`    [${idx + 1}/${selectedRows.length}] No match in row ${row.id}`);
-    }
-  });
+    });
+  } else {
+    // Standard find & replace
+    selectedRows.forEach((row, idx) => {
+      const originalDesc = row.description || '';
+      if (originalDesc.includes(findText)) {
+        row.description = originalDesc.replace(new RegExp(findText, 'g'), replaceText);
+        updatedCount++;
+        console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: "${originalDesc}" → "${row.description}"`);
+      } else {
+        console.log(`    [${idx + 1}/${selectedRows.length}] No match in row ${row.id}`);
+      }
+    });
+  }
 
   // Refresh grid
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
@@ -7213,9 +7403,66 @@ window.promptBulkRename = function () {
   const bulkBar = document.getElementById('v5-bulk-bar');
   if (bulkBar) bulkBar.style.display = 'none';
 
-  console.log(`✅ [GLASS] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
+  // Reset state
+  resetToInitialState();
+  findInput.value = '';
+  replaceInput.value = '';
+
+  console.log(`✅ [BULK] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
   alert(`Updated ${updatedCount} description(s).`);
 };
+
+/** Bulk delete selected rows */
+window.bulkDeleteRows = function () {
+  console.log('🔵 [BULK] bulkDeleteRows() called');
+
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  console.log(`  📋 ${selectedRows.length} rows selected for deletion`);
+
+  if (selectedRows.length === 0) {
+    alert('No rows selected.');
+    console.warn('  ⚠️ No rows to delete');
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to delete ${selectedRows.length} transaction(s)?`)) {
+    console.log('  ❌ User cancelled deletion');
+    return;
+  }
+
+  // Get IDs of selected rows
+  const idsToDelete = selectedRows.map(r => r.id);
+  console.log(`  🗑️ Deleting IDs: ${idsToDelete.join(', ')}`);
+
+  // Filter out deleted rows
+  const beforeCount = V5State.gridData.length;
+  V5State.gridData = V5State.gridData.filter(r => !idsToDelete.includes(r.id));
+  const afterCount = V5State.gridData.length;
+  const deletedCount = beforeCount - afterCount;
+
+  // Refresh grid
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  console.log(`  ✓ Deleted ${deletedCount} rows`);
+
+  // Recalculate balances
+  updateBalanceSummary();
+  console.log('  ✓ Balances recalculated');
+
+  // Save
+  saveData();
+  console.log('  💾 Data saved');
+
+  // Hide bar
+  const bulkBar = document.getElementById('v5-bulk-bar');
+  if (bulkBar) bulkBar.style.display = 'none';
+
+  // Reset state
+  resetToInitialState();
+
+  console.log(`✅ [BULK] Successfully deleted ${deletedCount} transactions`);
+  alert(`Deleted ${deletedCount} transaction(s).`);
+};
+
 
 // Attach event listeners once DOM elements exist
 function attachBrandDropdownListeners() {
