@@ -1771,6 +1771,122 @@ window.renderTxnImportV5Page = function () {
         letter-spacing: 0.5px;
       }
 
+      /* Custom Collapsible COA Dropdown */
+      .custom-coa-dropdown {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+      }
+
+      .custom-coa-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 14px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1.5px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: #1e293b;
+        transition: all 0.2s ease;
+      }
+
+      .custom-coa-trigger:hover {
+        border-color: #a855f7;
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+      }
+
+      .custom-coa-trigger i {
+        font-size: 1rem;
+        color: #64748b;
+        transition: transform 0.2s ease;
+      }
+
+      .custom-coa-trigger.open i {
+        transform: rotate(180deg);
+      }
+
+      .custom-coa-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        max-height: 320px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+      }
+
+      .coa-group {
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .coa-group:last-child {
+        border-bottom: none;
+      }
+
+      .coa-group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background:  linear-gradient(to right, #f8fafc, #f1f5f9);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #475569;
+        transition: background 0.2s ease;
+      }
+
+      .coa-group-header:hover {
+        background: linear-gradient(to right, #f1f5f9, #e2e8f0);
+      }
+
+      .coa-group-header i {
+        font-size: 0.9rem;
+        color: #64748b;
+        transition: transform 0.2s ease;
+      }
+
+      .coa-group-header.expanded i {
+        transform: rotate(180deg);
+      }
+
+      .coa-group-items {
+        display: none;
+        background: white;
+      }
+
+      .coa-group-items.expanded {
+        display: block;
+      }
+
+      .coa-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: #1e293b;
+        transition: all 0.15s ease;
+        border-left: 3px solid transparent;
+      }
+
+      .coa-item:hover {
+        background: #f8f9fa;
+        border-left-color: #a855f7;
+        padding-left: 20px;
+      }
+
+      .coa-item.selected {
+        background: #f3e8ff;
+        border-left-color: #a855f7;
+        font-weight: 600;
+      }
+
       /* Inline input fields for rename */
       .glass-input-inline {
         flex: 1;
@@ -2374,12 +2490,18 @@ window.renderTxnImportV5Page = function () {
             </button>
           </div>
           
-          <!-- STATE 2: Categorize - Show dropdown + Apply -->
+          <!-- STATE 2: Categorize - Show COA Custom Dropdown + Apply -->
           <div id="bulk-state-categorize" class="bulk-state" style="display: none;">
-            <select id="glass-coa-dropdown" class="glass-coa-select">
-              <option value="">Choose account to categorize...</option>
-              <!-- Populated dynamically -->
-            </select>
+            <!-- Custom Collapsible Dropdown -->
+            <div class="custom-coa-dropdown">
+              <div class="custom-coa-trigger" id="coa-dropdown-trigger" onclick="toggleCustomDropdown()">
+                <span id="coa-selected-text">Choose account to categorize...</span>
+                <i class="ph ph-caret-down"></i>
+              </div>
+              <div class="custom-coa-menu" id="coa-dropdown-menu" style="display: none;">
+                <!-- Populated by JavaScript -->
+              </div>
+            </div>
             <button class="btn-bulk btn-bulk-apply" onclick="applyBulkCategorize()">
               <i class="ph ph-check"></i> Apply
             </button>
@@ -7270,13 +7392,13 @@ function populateFindAutocomplete() {
   console.log(`  ✓ Populated autocomplete with ${descriptions.size} unique descriptions`);
 }
 
-/** Populate ALL COA accounts in dropdown (called when entering categorize mode) */
+/** Populate AND Show custom collapsible COA dropdown with ALL accounts */
 window.populateGlassCOA = function () {
-  console.log('🔵 [GLASS] populateGlassCOA() called');
+  console.log('🔵 [BULK] populateGlassCOA()');
 
-  const dropdown = document.getElementById('glass-coa-dropdown');
-  if (!dropdown) {
-    console.error('  ❌ glass-coa-dropdown not found!');
+  const menuContainer = document.getElementById('coa-dropdown-menu');
+  if (!menuContainer) {
+    console.error('  ❌ Custom dropdown menu container not found');
     return;
   }
 
@@ -7320,24 +7442,104 @@ window.populateGlassCOA = function () {
     console.log(`    - ${cat}: ${cats[cat].length} accounts`);
   });
 
-  // Build dropdown with ALL accounts
-  let html = '<option value="">Choose account to categorize...</option>';
-  let totalOptions = 0;
+  // Build custom dropdown HTML with collapsible groups
+  let html = '';
 
-  Object.keys(cats).forEach(cat => {
-    if (cats[cat].length > 0) {
-      html += `<optgroup label="${cat}">`;
-      cats[cat].forEach(a => {
-        html += `<option value="${a.code}" data-full="${a.code} - ${a.name}">${a.code} - ${a.name}</option>`;
-        totalOptions++;
-      });
-      html += '</optgroup>';
-    }
+  Object.keys(cats).forEach(groupName => {
+    const accounts = cats[groupName];
+    if (accounts.length === 0) return;
+
+    html += `
+      <div class="coa-group" data-group="${groupName}">
+        <div class="coa-group-header" onclick="toggleCOAGroup('${groupName}')">
+          <span>${groupName}</span>
+          <i class="ph ph-caret-down"></i>
+        </div>
+        <div class="coa-group-items" id="coa-group-${groupName}">
+          ${accounts.map(acc => `
+            <div class="coa-item" onclick="selectCOAAccount('${acc.code} - ${acc.name}')">
+              ${acc.code} - ${acc.name}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
   });
 
-  dropdown.innerHTML = html;
-  console.log(`  ✅ Populated dropdown with ${totalOptions} total accounts`);
+  menuContainer.innerHTML = html;
+  console.log('  ✓ Custom dropdown populated with collapsible groups (all collapsed by default)');
 };
+
+/** Toggle COA group expand/collapse */
+window.toggleCOAGroup = function (groupName) {
+  console.log(`🔵 [BULK] toggleCOAGroup(${groupName})`);
+
+  const header = document.querySelector(`.coa-group[data-group="${groupName}"] .coa-group-header`);
+  const items = document.getElementById(`coa-group-${groupName}`);
+
+  if (!header || !items) return;
+
+  const isExpanded = items.classList.contains('expanded');
+
+  if (isExpanded) {
+    // Collapse
+    items.classList.remove('expanded');
+    header.classList.remove('expanded');
+    console.log(`  ▲ Collapsed ${groupName}`);
+  } else {
+    // Expand
+    items.classList.add('expanded');
+    header.classList.add('expanded');
+    console.log(`  ▼ Expanded ${groupName}`);
+  }
+};
+
+/** Select a COA account from custom dropdown */
+window.selectCOAAccount = function (accountFullName) {
+  console.log(`🔵 [BULK] selectCOAAccount("${accountFullName}")`);
+
+  // Update trigger text
+  const triggerText = document.getElementById('coa-selected-text');
+  if (triggerText) {
+    triggerText.textContent = accountFullName;
+  }
+
+  // Store selection
+  window.selectedCOAAccount = accountFullName;
+
+  // Close dropdown
+  closeCustomDropdown();
+
+  console.log(`  ✓ Selected: ${accountFullName}`);
+};
+
+/** Open/close custom dropdown */
+window.toggleCustomDropdown = function () {
+  const trigger = document.getElementById('coa-dropdown-trigger');
+  const menu = document.getElementById('coa-dropdown-menu');
+
+  if (!trigger || !menu) return;
+
+  const isOpen = menu.style.display === 'block';
+
+  if (isOpen) {
+    closeCustomDropdown();
+  } else {
+    menu.style.display = 'block';
+    trigger.classList.add('open');
+    console.log('🔵 [BULK] Opened COA dropdown');
+  }
+};
+
+/** Close custom dropdown */
+function closeCustomDropdown() {
+  const trigger = document.getElementById('coa-dropdown-trigger');
+  const menu = document.getElementById('coa-dropdown-menu');
+
+  if (trigger) trigger.classList.remove('open');
+  if (menu) menu.style.display = 'none';
+  console.log('🔵 [BULK] Closed COA dropdown');
+}
 
 /** Cancel bulk selection */
 window.cancelBulk = function () {
