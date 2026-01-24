@@ -68,13 +68,77 @@ class BrandDetector {
                 institutionCode: null, // Not a traditional Canadian bank
                 domains: ['americanexpress.com', '@aexp.com'],
                 addressKeywords: []
+            },
+            {
+                id: 'NBC',
+                legalName: 'National Bank of Canada',
+                marketingNames: ['National Bank', 'NBC'],
+                institutionCode: '006',
+                domains: ['nbc.ca', '@nbc.ca'],
+                addressKeywords: []
+            },
+            {
+                id: 'HSBC',
+                legalName: 'HSBC Bank Canada',
+                marketingNames: ['HSBC'],
+                institutionCode: '016',
+                domains: ['hsbc.ca', '@hsbc.ca'],
+                addressKeywords: []
+            },
+            {
+                id: 'EQBank',
+                legalName: 'Equitable Bank',
+                marketingNames: ['EQ Bank'],
+                institutionCode: '623',
+                domains: ['eqbank.ca'],
+                addressKeywords: []
+            },
+            {
+                id: 'Simplii',
+                legalName: 'Simplii Financial',
+                marketingNames: ['Simplii'],
+                institutionCode: '010', // Share CIBC code
+                domains: ['simplii.com'],
+                addressKeywords: []
+            },
+            {
+                id: 'Manulife',
+                legalName: 'Manulife Bank of Canada',
+                marketingNames: ['Manulife Bank', 'Manulife'],
+                institutionCode: '540',
+                domains: ['manulifebank.ca'],
+                addressKeywords: []
+            },
+            {
+                id: 'CWB',
+                legalName: 'Canadian Western Bank',
+                marketingNames: ['CWB', 'Canadian Western'],
+                institutionCode: '030',
+                domains: ['cwb.com'],
+                addressKeywords: []
+            },
+            {
+                id: 'Laurentian',
+                legalName: 'Laurentian Bank of Canada',
+                marketingNames: ['Laurentian Bank'],
+                institutionCode: '039',
+                domains: ['laurentianbank.ca'],
+                addressKeywords: []
+            },
+            {
+                id: 'Central1',
+                legalName: 'Central 1 Credit Union',
+                marketingNames: ['Central 1'],
+                institutionCode: '809', // Also 828, 869
+                domains: ['central1.com'],
+                addressKeywords: []
             }
         ];
 
         // Account type keywords (unchanged from v1)
         this.bankAccountKeywords = [
             'chequing account', 'savings account', 'deposit account',
-            'plan deposit account', 'value assist',
+            'plan deposit account', 'value assist', 'business plan', 'community plan',
             'amounts debited from your account', 'amounts credited to your account',
             'opening balance', 'closing balance', 'direct deposit',
             'interac e-transfer', 'abm withdrawal', 'debit card purchase'
@@ -176,7 +240,7 @@ class BrandDetector {
     /**
      * Main detection method with weighted scoring
      */
-    async detectBrand(text) {
+    async detectBrand(text, filename = '') {
         const regions = this.splitRegions(text);
         const scores = {};
         const allEvidence = {};
@@ -225,14 +289,14 @@ class BrandDetector {
         for (const kw of this.bankAccountKeywords) {
             if (regions.full.includes(kw)) {
                 bankScore += 2;
-                console.log(`[DETECT] Bank keyword found: "${kw}"`);
+                // console.log(`[DETECT] Bank keyword found: "${kw}"`);
             }
         }
 
         for (const kw of this.creditCardKeywords) {
             if (regions.full.includes(kw)) {
                 ccScore += 2;
-                console.log(`[DETECT] CC keyword found: "${kw}"`);
+                // console.log(`[DETECT] CC keyword found: "${kw}"`);
             }
         }
 
@@ -246,9 +310,35 @@ class BrandDetector {
             ccScore += 10;
         }
 
-        let accountType = 'Chequing';
-        if (ccScore > bankScore) {
-            accountType = 'CreditCard';
+        // --- FILENAME SIGNALS (High Confidence) ---
+        // Override/boost based on explicit filename keywords
+        const fn = filename.toLowerCase();
+        let forcedType = null;
+
+        // Flexible matching for filename (handles spaces, underscores, dashes)
+        if (fn.includes('chequing') || /business[\s._-]*plan/.test(fn) || /community[\s._-]*plan/.test(fn) || fn.includes('saving')) {
+            forcedType = 'Chequing';
+            console.log('[DETECT] 🚨 FORCE OVERRIDE: Filename implies Chequing Account');
+        } else if (fn.includes('visa') || fn.includes('mastercard') || fn.includes('credit_card')) {
+            forcedType = 'CreditCard';
+            console.log('[DETECT] 🚨 FORCE OVERRIDE: Filename implies Credit Card');
+        }
+
+        // --- TEXT CONTENT HARD OVERRIDES (Highest Confidence) ---
+        // If the statement explicitly says "BUSINESS CHEQUING", it is one. 
+        // This trumps filename and soft scoring.
+        const fullText = regions.full;
+        if (fullText.includes('business chequing') || fullText.includes('business checking')) {
+            forcedType = 'Chequing';
+            console.log('[DETECT] 🚨 FORCE OVERRIDE: Text explicitly says "BUSINESS CHEQUING"');
+        }
+
+        let accountType = forcedType || 'Chequing';
+
+        if (!forcedType) {
+            if (ccScore > bankScore) {
+                accountType = 'CreditCard';
+            }
         }
 
         // Detect sub-type
@@ -267,17 +357,22 @@ class BrandDetector {
 
         const prefix = this.getPrefix(subType);
 
+        // --- NEW: Metadata Extraction (Account, Transit, Inst) ---
+        const metadata = this.extractAccountMetadata(regions.full, detectedBrand);
+
         // Calculate normalized confidence (0-1 scale)
         const confidence = Math.min(maxScore / 30, 1.0); // 30 points = 100% confidence
 
-        console.log(`[DETECT] Brand: ${detectedBrand}, Bank Score: ${bankScore}, CC Score: ${ccScore} → ${accountType} (${subType}), Prefix: ${prefix}`);
-        console.log(`[DETECT] Confidence: ${(confidence * 100).toFixed(0)}% (${maxScore.toFixed(1)} points)`);
+        // console.log(`[DETECT] Brand: ${detectedBrand}, Bank Score: ${bankScore}, CC Score: ${ccScore} → ${accountType} (${subType}), Prefix: ${prefix}`);
+        // console.log(`[DETECT] Confidence: ${(confidence * 100).toFixed(0)}% (${maxScore.toFixed(1)} points)`);
 
         return {
             brand: detectedBrand,
             fullBrandName: detectedBrand,
             legalName: winnerSignature?.legalName || detectedBrand,
-            institutionCode: winnerSignature?.institutionCode || null,
+            institutionCode: metadata.institutionCode || winnerSignature?.institutionCode || null,
+            transit: metadata.transit || null,
+            accountNumber: metadata.accountNumber || null,
             accountType,
             subType,
             prefix,
@@ -290,6 +385,50 @@ class BrandDetector {
     }
 
     /**
+     * Extract Transit and Account numbers using weighted regex
+     */
+    extractAccountMetadata(text, brand) {
+        const metadata = {
+            transit: null,
+            accountNumber: null,
+            institutionCode: null
+        };
+
+        // 1. Institution Code (If not already known)
+        const instMap = {
+            'RBC': '003', 'TD': '004', 'BMO': '001', 'CIBC': '010',
+            'Scotiabank': '002', 'Tangerine': '614', 'NBC': '006',
+            'HSBC': '016', 'EQBank': '623', 'Simplii': '010', 'Manulife': '540',
+            'CWB': '030', 'Laurentian': '039', 'Central1': '809'
+        };
+        metadata.institutionCode = instMap[brand] || null;
+
+        // 2. Transit Number (usually 5 digits)
+        // Looking for "Transit 12345" or "Branch 12345"
+        const transitRegex = /(?:transit|branch|br\.)\s*(?:no\.?|#)?\s*(\d{5})/i;
+        const transitMatch = text.match(transitRegex);
+        if (transitMatch) metadata.transit = transitMatch[1];
+
+        // 3. Account Number
+        // Looking for "Account 1234-567" or "Folio 1234567"
+        // TD/RBC often use 7-digits. Amex/Credit cards use 15-16.
+        const accRegexes = [
+            /(?:account|folio|acct\.?)\s*(?:no\.?|#)?\s*(\d{4,16}[-\s]?\d{0,5})/i,
+            /account\s+ending\s+in\s+(\d{4,5})/i
+        ];
+
+        for (const regex of accRegexes) {
+            const match = text.match(regex);
+            if (match) {
+                metadata.accountNumber = match[1].replace(/\s/g, '');
+                break;
+            }
+        }
+
+        return metadata;
+    }
+
+    /**
      * Detect brand with learning system integration
      * Checks learned associations first, falls back to automated detection
      */
@@ -297,7 +436,7 @@ class BrandDetector {
         // Ensure learning service is available
         if (!window.bankLearningService) {
             console.warn('[DETECT] Learning service not available, using standard detection');
-            return this.detectBrand(text);
+            return this.detectBrand(text, filename);
         }
 
         // 1. Generate fingerprint
@@ -306,7 +445,7 @@ class BrandDetector {
         // 2. Check learned associations FIRST
         const learned = window.bankLearningService.recall(fingerprint);
         if (learned) {
-            console.log(`[DETECT] ✅ Using learned association: ${learned.brand} ${learned.accountType} (uploaded ${learned.uploadCount}x)`);
+            // console.log(`[DETECT] ✅ Using learned association: ${learned.brand} ${learned.accountType} (uploaded ${learned.uploadCount}x)`);
 
             // Return learned choice with full metadata
             return {
@@ -327,7 +466,7 @@ class BrandDetector {
         }
 
         // 3. Fall back to automated detection
-        const autoDetected = await this.detectBrand(text);
+        const autoDetected = await this.detectBrand(text, filename);
         autoDetected.source = 'auto_detected';
         autoDetected.fingerprint = fingerprint; // Store for later learning
 

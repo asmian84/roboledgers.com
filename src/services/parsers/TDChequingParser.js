@@ -23,6 +23,7 @@ SMART PARSING RULES:
      */
     async parse(statementText) {
         console.log('⚡ TD Chequing: Starting regex-based parsing...');
+        console.log('[TD-DEBUG] First 500 chars of text:', statementText.substring(0, 500));
 
         const lines = statementText.split('\n');
         const transactions = [];
@@ -36,8 +37,8 @@ SMART PARSING RULES:
         let pendingDescription = '';
         let lastMonth = null;
 
-        // Date regex: "JAN 15", "FEB02", etc.
-        const dateRegex = /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(\d{1,2})/i;
+        // Date regex: "JAN 15", "FEB02" (flexible spacing, no start anchor)
+        const dateRegex = /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(\d{1,2})/i;
 
         console.log(`[TD] Starting parse with ${lines.length} lines, year: ${this.currentYear}`);
 
@@ -45,11 +46,26 @@ SMART PARSING RULES:
             const trimmed = line.trim();
             if (!trimmed || trimmed.length < 5) continue;
 
-            // Check if line starts with a date
+            // FILTER: Skip Aggregates, Headers, and Garbage
+            if (trimmed.match(/AVER\.\s*CR\.\s*BAL|MIN\.\s*BAL|Statement\s*of\s*Account|Account\s*Type|Total\s*Credits|Total\s*Debits/i)) continue;
+            if (trimmed.match(/DAILY\s*CHQ\s*BAL|SERVICE\s*CHARGES|INTEREST\s*PAID|OVERDRAFT\s*INTEREST/i)) continue;
+            if (trimmed.match(/CAD\s*EVERY\s*DAY|CAD\s*BASIC|BUSINESS\s*CHEQUING/i)) continue;
+            if (trimmed.match(/Description\s*Cheque|Date\s*Balance/i)) continue; // Table headers
+            if (trimmed.match(/^(Debits|Credits)\s+\d/i)) continue; // Counts like "Debits 5"
+
+            console.log('[TD-DEBUG] Line:', trimmed);
+
+            // Find date anywhere in the line
             const dateMatch = trimmed.match(dateRegex);
+
             if (dateMatch) {
+                // If we found a date
                 const monthName = dateMatch[1];
                 const day = dateMatch[2];
+                const matchIndex = dateMatch.index;
+
+                // Determine Format: Personal (Date First) vs Business (Date Middle/Fourth Column)
+                const isDateFirst = matchIndex === 0;
 
                 // Year rollover detection
                 const monthIndex = this.getMonthIndex(monthName);
@@ -61,33 +77,48 @@ SMART PARSING RULES:
 
                 currentDate = this.formatDate(day, monthName, this.currentYear);
 
-                // Remove date from line to get description
-                const lineAfterDate = trimmed.substring(dateMatch[0].length).trim();
+                if (isDateFirst) {
+                    // STANDARD PERSONAL FORMAT: Date | Description | Amounts...
+                    // Remove date from line to get description part
+                    const lineAfterDate = trimmed.substring(dateMatch[0].length).trim();
+                    console.log('[TD-DEBUG] Mode: Date-First. Remainder:', lineAfterDate);
 
-                // Try to extract transaction
-                const extracted = this.extractTransaction(lineAfterDate, currentDate);
-                if (extracted) {
-                    transactions.push(extracted);
-                } else if (lineAfterDate) {
-                    pendingDescription = lineAfterDate;
+                    const extracted = this.extractTransaction(lineAfterDate, currentDate);
+                    if (extracted) {
+                        transactions.push(extracted);
+                    } else if (lineAfterDate) {
+                        pendingDescription = lineAfterDate;
+                    }
+
+                } else {
+                    // BUSINESS FORMAT: Description | Debit/Credit | Date | Balance
+                    // e.g. "Monthly Fee 19.00 AUG 31 10,062.72"
+                    console.log('[TD-DEBUG] Mode: Business (Date Middle). Processing...');
+
+                    const extracted = this.extractBusinessTransaction(trimmed, dateMatch, currentDate);
+                    if (extracted) {
+                        transactions.push(extracted);
+                    }
                 }
+
             } else if (currentDate) {
-                // No date - could be continuation or new transaction for same date
+                // No date - continuation line?
+                // For Business Format, continuations are harder because amounts might align to columns.
+                // Fallback to standard extraction just in case
                 const extracted = this.extractTransaction(trimmed, currentDate);
                 if (extracted) {
-                    // Merge pending description if exists
                     if (pendingDescription) {
                         extracted.description = pendingDescription + ' ' + extracted.description;
-                        // CRITICAL: Re-clean concatenated description
                         extracted.description = this.cleanTDDescription(extracted.description);
                         pendingDescription = '';
                     }
                     transactions.push(extracted);
                 } else {
-                    // Accumulate multi-line description
+                    // Accumulate description logic
                     if (pendingDescription) {
                         pendingDescription += ' ' + trimmed;
-                    } else {
+                    } else if (trimmed.match(/^[A-Za-z]/)) {
+                        // Only accumulate if it looks like text, not numbers
                         pendingDescription = trimmed;
                     }
                 }
@@ -96,6 +127,73 @@ SMART PARSING RULES:
 
         console.log(`[TD] Parsing complete. Found ${transactions.length} transactions.`);
         return { transactions };
+    }
+
+    /**
+     * Extract transaction for Business Format (Desc | Amt | Date | Bal)
+     */
+    extractBusinessTransaction(line, dateMatch, dateStr) {
+        // Line structure: [Pre-Date Part] [Date] [Post-Date Part]
+        // Pre-Date: "Description Amount(s)"
+        // Post-Date: "Balance"
+
+        const preDate = line.substring(0, dateMatch.index).trim();
+        const postDate = line.substring(dateMatch.index + dateMatch[0].length).trim();
+
+        // 1. Extract Balance from Post-Date (should be the last number)
+        // postDate example: "10,062.72" or empty
+        const postAmounts = postDate.match(/([\d,]+\.\d{2})/g);
+        let balance = 0;
+        if (postAmounts && postAmounts.length > 0) {
+            balance = parseFloat(postAmounts[postAmounts.length - 1].replace(/,/g, ''));
+        }
+
+        // 2. Extract Transaction Amount from Pre-Date
+        // preDate example: "Monthly Fee 19.00" or "Deposit 500.00"
+        // The transaction amount is usually the LAST number in the pre-date string.
+        const preAmounts = preDate.match(/([\d,]+\.\d{2})/g);
+
+        if (!preAmounts || preAmounts.length === 0) {
+            // No amount found?
+            console.log('[TD-DEBUG] No amounts found in pre-date section:', preDate);
+            return null;
+        }
+
+        // The txn amount is the last one found before the date
+        const amountStr = preAmounts[preAmounts.length - 1];
+        const amount = parseFloat(amountStr.replace(/,/g, ''));
+
+        // 3. Extract Description
+        // Remove the amount from the pre-date string
+        let description = preDate.substring(0, preDate.lastIndexOf(amountStr)).trim();
+
+        description = this.cleanTDDescription(description);
+
+        // 4. Determine Debit vs Credit
+        // In Business format (Desc | Debit | Credit | Date | Balance), position matters.
+        // But since we lost column alignment in text extraction, we often rely on:
+        // A) Keyword heuristics
+        // B) Balance Delta logic (if we had previous balance, which we don't robustly here)
+
+        // Heuristic: Check keywords first
+        let isCredit = this.isCredit(description);
+
+        // Refined Heuristic for Business Format: 
+        // If there are TWO amounts in preDate, 1st = Debit, 2nd = Credit?
+        // Actually, usually only one is populated. 
+        // We really need to know if it's a debit or credit. 
+
+        // Let's rely on keywords + "OD" logic if applicable.
+        // Note: For now, keywords are safest unless we track running balance.
+
+        return {
+            date: dateStr,
+            description: description,
+            amount: amount,
+            debit: isCredit ? 0 : amount,
+            credit: isCredit ? amount : 0,
+            balance: balance
+        };
     }
 
     /**

@@ -193,7 +193,7 @@ SMART PARSING RULES:
   }
 
   cleanRBCDescription(desc) {
-    console.log('[RBC] cleanRBCDescription CALLED with:', JSON.stringify(desc));
+    // console.log('[RBC] cleanRBCDescription CALLED with:', JSON.stringify(desc));
     // =====================================================
     // RBC DESCRIPTION CLEANUP & REFORMATTING
     // Goal: Convert "Type Name Garbage" → "Name, Type"
@@ -218,6 +218,29 @@ SMART PARSING RULES:
     desc = desc.replace(/\b\d{6,}\b/gi, ''); // Long numbers
     desc = desc.replace(/\b(\d{5,})\s+\1\b/gi, ''); // Duplicate numbers
 
+    // 2.2. SYSTEMATIC GARBAGE REMOVAL
+    // Removes the long bank address prefix found in many RBC transactions
+    const bagServiceRegex = /ROYAL\s+BANK\s+OF\s+CANADA\s+P\.O\.\s+BAG\s+SERVICE\s+\d+\s+AB\s+T2P\s+2M7\s+to\s+/gi;
+    if (bagServiceRegex.test(desc)) {
+      desc = desc.replace(bagServiceRegex, 'RBC ').trim();
+    }
+
+    // 2.5. SPECIFIC OVERRIDES (High Priority)
+    const descUpper = desc.toUpperCase();
+
+    // Rule for Debit Memo: "Debit Memo Client request [details]" -> "[details], Debit Memo - Client request"
+    if (descUpper.startsWith('DEBIT MEMO CLIENT REQUEST')) {
+      const details = desc.substring('DEBIT MEMO CLIENT REQUEST'.length).trim();
+      if (details) {
+        return `${details}, Debit Memo - Client request`;
+      }
+    }
+
+    // Rule for Account Fees: "ROYAL BANK OF CANADA ... to Account Fees: $" -> "RBC Account Fees: $"
+    if (descUpper.includes('TO ACCOUNT FEES: $')) {
+      return `RBC Account Fees: $`;
+    }
+
     // 3. PREFIX MATCHING (RBC Format: "Name, Type")
     // RBC-specific transaction type prefixes
     // NOTE: Unlike Scotia which uses "Type, Name", RBC uses "Name, Type"
@@ -232,18 +255,17 @@ SMART PARSING RULES:
     // Check for prefix match and reformat to "Name, Type"
     // Use simple string matching instead of regex for reliability
     let matched = false;
-    const descUpper = desc.toUpperCase();
 
     // DEBUG: Show what we're trying to match
     if (descUpper.includes('TRANSFER') || descUpper.includes('AUTODEPOSIT')) {
-      console.log('[DEBUG] Checking desc:', descUpper.substring(0, 60));
+      // console.log('[DEBUG] Checking desc:', descUpper.substring(0, 60));
     }
 
     for (const type of typePrefixes) {
       const searchStr = type + ' ';
       if (descUpper.startsWith(searchStr)) {
         // DEBUG: Show successful match
-        console.log('[DEBUG] ✓ MATCHED:', type);
+        // console.log('[DEBUG] ✓ MATCHED:', type);
 
         // Found a match - extract everything after the prefix
         const name = desc.substring(type.length).trim();
@@ -251,7 +273,7 @@ SMART PARSING RULES:
           // Format as "Name, Type" (RBC style)
           const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
           desc = `${name}, ${formattedType}`;
-          console.log('[DEBUG] Result:', desc.substring(0, 60));
+          // console.log('[DEBUG] Result:', desc.substring(0, 60));
           matched = true;
         }
         break;

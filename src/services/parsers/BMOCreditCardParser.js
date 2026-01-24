@@ -17,7 +17,7 @@ class BMOCreditCardParser extends BaseBankParser {
         if (yearMatch) currentYear = parseInt(yearMatch[1]);
 
         // Date: "Apr 01", "May 16"
-        const dateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
+        const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
         const monthMap = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
 
         for (let i = 0; i < lines.length; i++) {

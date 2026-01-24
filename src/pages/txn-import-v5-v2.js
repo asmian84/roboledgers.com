@@ -1516,6 +1516,293 @@ window.renderTxnImportV5Page = function () {
       }
       
       /* ========================================
+         GLASSMORPHISM BULK ACTIONS BAR
+         ======================================== */
+      .bulk-actions-bar {
+        position: fixed;
+        bottom: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        color: #1e293b;
+        padding: 0;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 
+                    0 2px 8px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        z-index: 9999;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: glassSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        min-width: 380px;
+        max-width: 90vw;
+      }
+
+      @keyframes glassSlideUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(30px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0) scale(1);
+        }
+      }
+
+      .bulk-actions-bar:hover {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 
+                    0 4px 12px rgba(0, 0, 0, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        transform: translateX(-50%) translateY(-2px);
+      }
+
+      /* Main collapsed content */
+      .glass-bulk-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+      }
+
+      .selection-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        padding-right: 12px;
+        border-right: 1.5px solid rgba(148, 163, 184, 0.3);
+      }
+
+      .btn-bulk {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .btn-bulk:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-bulk:active {
+        transform: translateY(0);
+      }
+
+      .btn-bulk i {
+        font-size: 1.1rem;
+      }
+
+      .btn-bulk-categorize {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      }
+
+      .btn-bulk-rename {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      }
+
+      .btn-bulk-rename:hover {
+        background: linear-gradient(135deg, #475569 0%, #334155 100%);
+        box-shadow: 0 4px 12px rgba(71, 85, 105, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-bulk-cancel {
+        background: rgba(148, 163, 184, 0.15);
+        color: #64748b;
+        padding: 8px 12px;
+        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: none;
+      }
+
+      .btn-bulk-cancel:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+      }
+
+      /* Expandable panel */
+      .glass-bulk-panel {
+        display: none;
+        padding: 16px 20px;
+        border-top: 1.5px solid rgba(148, 163, 184, 0.2);
+        background: rgba(248, 250, 252, 0.6);
+        border-radius: 0 0 16px 16px;
+        animation: panelExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes panelExpand {
+        from {
+          opacity: 0;
+          max-height: 0;
+          padding-top: 0;
+          padding-bottom: 0;
+        }
+        to {
+          opacity: 1;
+          max-height: 500px;
+          padding-top: 16px;
+          padding-bottom: 16px;
+        }
+      }
+
+      .glass-bulk-panel.active {
+        display: block;
+      }
+
+      /* Panel header */
+      .glass-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .glass-panel-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .glass-panel-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.3rem;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+
+      .glass-panel-close:hover {
+        background: rgba(148, 163, 184, 0.15);
+        color: #64748b;
+      }
+
+      /* Inputs in panel */
+      .glass-input,
+      .glass-select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        font-size: 0.9rem;
+        color: #1e293b;
+        transition: all 0.2s;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .glass-input:focus,
+      .glass-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1),
+                    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .glass-input::placeholder {
+        color: #94a3b8;
+      }
+
+      /* Categorize panel specific */
+      .glass-coa-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* Rename panel specific */
+      .glass-rename-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .glass-rename-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .glass-rename-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      /* Apply button in panel */
+      .glass-apply-btn {
+        width: 100%;
+        margin-top: 12px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 11px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .glass-apply-btn:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .glass-apply-btn:active {
+        transform: translateY(0);
+      }
+
+      .glass-apply-btn i {
+        font-size: 1.1rem;
+      }
+      
+      /* ========================================
          PART 4: BANK STATEMENT PRINT VIEW
          ======================================== */
       
@@ -1949,18 +2236,77 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- PHASE 1: BULK OPERATIONS BAR (Modern Floating Pill) -->
+      <!-- GLASSMORPHISM BULK ACTIONS BAR -->
       <div class="bulk-actions-bar" id="v5-bulk-bar" style="display: none;">
-        <span class="selection-label" id="v5-bulk-count">0 selected</span>
-        <button class="btn-bulk btn-bulk-categorize" onclick="bulkCategorizeV5()">
-          <i class="ph ph-tag"></i> Categorize
-        </button>
-        <button class="btn-bulk btn-bulk-categorize" onclick="bulkRenameV5()" style="background: #475569;">
-          <i class="ph ph-pencil"></i> Rename
-        </button>
-        <button class="btn-bulk btn-bulk-cancel" onclick="cancelBulkSelection()">
-          ✕
-        </button>
+        <!-- Collapsed content -->
+        <div class="glass-bulk-content">
+          <span class="selection-label" id="v5-bulk-count">0 selected</span>
+          <button class="btn-bulk btn-bulk-categorize" onclick="showCategorizeInline()">
+            <i class="ph ph-tag"></i> Categorize
+          </button>
+          <button class="btn-bulk btn-bulk-rename" onclick="showRenameInline()">
+            <i class="ph ph-pencil"></i> Rename
+          </button>
+          <button class="btn-bulk btn-bulk-cancel" onclick="cancelBulk()">
+            ✕
+          </button>
+        </div>
+
+        <!-- Expandable Categorize Panel -->
+        <div class="glass-bulk-panel" id="glass-categorize-panel">
+          <div class="glass-panel-header">
+            <span class="glass-panel-title">📁 Bulk Categorize</span>
+            <button class="glass-panel-close" onclick="closePanels()">✕</button>
+          </div>
+          <div class="glass-coa-wrapper">
+            <input 
+              type="text" 
+              id="glass-coa-search" 
+              class="glass-input" 
+              placeholder="🔍 Search Chart of Accounts..."
+              oninput="filterGlassCOA(this.value)"
+            >
+            <select id="glass-coa-dropdown" class="glass-select" size="6">
+              <!-- Populated dynamically -->
+            </select>
+            <button class="glass-apply-btn" onclick="applyBulkCategorize()">
+              <i class="ph ph-check-circle"></i>
+              Apply to Selected Transactions
+            </button>
+          </div>
+        </div>
+
+        <!-- Expandable Rename Panel -->
+        <div class="glass-bulk-panel" id="glass-rename-panel">
+          <div class="glass-panel-header">
+            <span class="glass-panel-title">✏️ Bulk Search & Replace</span>
+            <button class="glass-panel-close" onclick="closePanels()">✕</button>
+          </div>
+          <div class="glass-rename-grid">
+            <div class="glass-rename-field">
+              <label class="glass-rename-label">Find</label>
+              <input 
+                type="text" 
+                id="glass-find-input" 
+                class="glass-input" 
+                placeholder="Text to find..."
+              >
+            </div>
+            <div class="glass-rename-field">
+              <label class="glass-rename-label">Replace</label>
+              <input 
+                type="text" 
+                id="glass-replace-input" 
+                class="glass-input" 
+                placeholder="Replace with..."
+              >
+            </div>
+          </div>
+          <button class="glass-apply-btn" onclick="applyBulkRename()">
+            <i class="ph ph-arrows-clockwise"></i>
+            Apply to Selected Descriptions
+          </button>
+        </div>
       </div>
 
 
@@ -6671,6 +7017,292 @@ async function onBankTagChange() {
   // Update confidence badge
   updateConfidenceBadge(1.0, 'user_override');
 }
+
+// ========================================
+// GLASSMORPHISM INLINE BULK ACTIONS
+// ========================================
+
+/** Show Categorize Panel Inline */
+window.showCategorizeInline = function () {
+  console.log('🔵 [GLASS] showCategorizeInline() called');
+
+  // Close rename panel if open
+  const renamePanel = document.getElementById('glass-rename-panel');
+  if (renamePanel) {
+    renamePanel.classList.remove('active');
+    console.log('  ✓ Closed rename panel');
+  }
+
+  // Open categorize panel
+  const catPanel = document.getElementById('glass-categorize-panel');
+  if (!catPanel) {
+    console.error('  ❌ glass-categorize-panel not found!');
+    return;
+  }
+
+  catPanel.classList.add('active');
+  console.log('  ✓ Opened categorize panel');
+
+  // Populate COA dropdown
+  populateGlassCOA();
+
+  // Focus search input
+  setTimeout(() => {
+    const searchInput = document.getElementById('glass-coa-search');
+    if (searchInput) {
+      searchInput.focus();
+      console.log('  ✓ Focused search input');
+    }
+  }, 150);
+};
+
+/** Populate COA dropdown for glassmorphism panel */
+function populateGlassCOA() {
+  console.log('🔵 [GLASS] populateGlassCOA() called');
+
+  const dropdown = document.getElementById('glass-coa-dropdown');
+  if (!dropdown) {
+    console.error('  ❌ glass-coa-dropdown not found!');
+    return;
+  }
+
+  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  console.log(`  📊 Loaded ${coa.length} COA entries from localStorage`);
+
+  const cats = {
+    'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
+    'Liabilities': coa.filter(a => a.code >= 2000 && a.code < 3000),
+    'Equity': coa.filter(a => a.code >= 3000 && a.code < 4000),
+    'Revenue': coa.filter(a => a.code >= 4000 && a.code < 5000),
+    'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
+  };
+
+  let html = '<option value="">-- Select Account --</option>';
+  Object.keys(cats).forEach(cat => {
+    if (cats[cat].length > 0) {
+      html += `<optgroup label="${cat}">`;
+      cats[cat].forEach(a => {
+        html += `<option value="${a.code}" data-full="${a.code} - ${a.name}">${a.code} - ${a.name}</option>`;
+      });
+      html += '</optgroup>';
+    }
+  });
+
+  dropdown.innerHTML = html;
+  dropdown.setAttribute('data-original', html); // Store for filtering
+  console.log('  ✓ Populated dropdown with categorized accounts');
+}
+
+/** Filter COA dropdown based on search */
+window.filterGlassCOA = function (searchTerm) {
+  console.log(`🔵 [GLASS] filterGlassCOA("${searchTerm}") called`);
+
+  const dropdown = document.getElementById('glass-coa-dropdown');
+  if (!dropdown) return;
+
+  const options = dropdown.querySelectorAll('option');
+  const optgroups = dropdown.querySelectorAll('optgroup');
+
+  const filter = searchTerm.toUpperCase();
+
+  // Hide/show options based on search
+  options.forEach(opt => {
+    if (!opt.value) return; // Skip placeholder
+    const text = opt.textContent || opt.innerText;
+    if (text.toUpperCase().indexOf(filter) > -1) {
+      opt.style.display = '';
+    } else {
+      opt.style.display = 'none';
+    }
+  });
+
+  // Hide empty optgroups
+  optgroups.forEach(group => {
+    const visibleOpts = Array.from(group.querySelectorAll('option')).filter(o => o.style.display !== 'none');
+    group.style.display = visibleOpts.length > 0 ? '' : 'none';
+  });
+
+  const visibleCount = Array.from(options).filter(o => o.value && o.style.display !== 'none').length;
+  console.log(`  ✓ ${visibleCount} accounts match "${searchTerm}"`);
+};
+
+/** Show Rename Panel Inline */
+window.showRenameInline = function () {
+  console.log('🔵 [GLASS] showRenameInline() called');
+
+  // Close categorize panel if open
+  const catPanel = document.getElementById('glass-categorize-panel');
+  if (catPanel) {
+    catPanel.classList.remove('active');
+    console.log('  ✓ Closed categorize panel');
+  }
+
+  // Open rename panel
+  const renamePanel = document.getElementById('glass-rename-panel');
+  if (!renamePanel) {
+    console.error('  ❌ glass-rename-panel not found!');
+    return;
+  }
+
+  renamePanel.classList.add('active');
+  console.log('  ✓ Opened rename panel');
+
+  // Focus find input
+  setTimeout(() => {
+    const findInput = document.getElementById('glass-find-input');
+    if (findInput) {
+      findInput.focus();
+      console.log('  ✓ Focused find input');
+    }
+  }, 150);
+};
+
+/** Close all panels */
+window.closePanels = function () {
+  console.log('🔵 [GLASS] closePanels() called');
+
+  const catPanel = document.getElementById('glass-categorize-panel');
+  const renamePanel = document.getElementById('glass-rename-panel');
+
+  if (catPanel) {
+    catPanel.classList.remove('active');
+    console.log('  ✓ Closed categorize panel');
+  }
+
+  if (renamePanel) {
+    renamePanel.classList.remove('active');
+    console.log('  ✓ Closed rename panel');
+  }
+};
+
+/** Cancel bulk selection */
+window.cancelBulk = function () {
+  console.log('🔵 [GLASS] cancelBulk() called');
+
+  if (V5State.gridApi) {
+    V5State.gridApi.deselectAll();
+    console.log('  ✓ Deselected all rows');
+  }
+
+  // Close all panels
+  closePanels();
+
+  // Hide bulk bar
+  const bulkBar = document.getElementById('v5-bulk-bar');
+  if (bulkBar) {
+    bulkBar.style.display = 'none';
+    console.log('  ✓ Hidden bulk bar');
+  }
+};
+
+/** Apply bulk categorize */
+window.applyBulkCategorize = function () {
+  console.log('🔵 [GLASS] applyBulkCategorize() called');
+
+  const dropdown = document.getElementById('glass-coa-dropdown');
+  const selectedCode = dropdown?.value;
+
+  if (!selectedCode) {
+    alert('Please select an account first.');
+    console.warn('  ⚠️ No account selected');
+    return;
+  }
+
+  const selectedOption = dropdown.options[dropdown.selectedIndex];
+  const fullAccountName = selectedOption.getAttribute('data-full') || selectedOption.text;
+
+  console.log(`  📁 Selected account: ${fullAccountName}`);
+
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  console.log(`  📋 Applying to ${selectedRows.length} selected rows`);
+
+  if (selectedRows.length === 0) {
+    alert('No rows selected.');
+    console.warn('  ⚠️ No rows to apply to');
+    return;
+  }
+
+  // Apply to all selected rows
+  selectedRows.forEach((row, idx) => {
+    row.account = fullAccountName;
+    row.category = fullAccountName.split(' - ')[1] || fullAccountName;
+    console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: ${fullAccountName}`);
+  });
+
+  // Refresh grid
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  V5State.gridApi.deselectAll();
+  console.log('  ✓ Grid refreshed, selections cleared');
+
+  // Save
+  saveData();
+  console.log('  💾 Data saved');
+
+  // Close panel and bar
+  closePanels();
+  const bulkBar = document.getElementById('v5-bulk-bar');
+  if (bulkBar) bulkBar.style.display = 'none';
+
+  console.log(`✅ [GLASS] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
+};
+
+/** Apply bulk rename (search & replace) */
+window.applyBulkRename = function () {
+  console.log('🔵 [GLASS] applyBulkRename() called');
+
+  const findInput = document.getElementById('glass-find-input');
+  const replaceInput = document.getElementById('glass-replace-input');
+
+  const findText = findInput?.value || '';
+  const replaceText = replaceInput?.value || '';
+
+  if (!findText) {
+    alert('Please enter text to find.');
+    console.warn('  ⚠️ Find text is empty');
+    return;
+  }
+
+  console.log(`  🔍 Find: "${findText}"`);
+  console.log(`  ✏️ Replace: "${replaceText}"`);
+
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  console.log(`  📋 Applying to ${selectedRows.length} selected rows`);
+
+  if (selectedRows.length === 0) {
+    alert('No rows selected.');
+    console.warn('  ⚠️ No rows to apply to');
+    return;
+  }
+
+  let updatedCount = 0;
+  selectedRows.forEach((row, idx) => {
+    const originalDesc = row.description || '';
+    if (originalDesc.includes(findText)) {
+      row.description = originalDesc.replace(new RegExp(findText, 'g'), replaceText);
+      updatedCount++;
+      console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: "${originalDesc}" → "${row.description}"`);
+    } else {
+      console.log(`    [${idx + 1}/${selectedRows.length}] No match in row ${row.id}`);
+    }
+  });
+
+  // Refresh grid
+  V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  V5State.gridApi.deselectAll();
+  console.log('  ✓ Grid refreshed, selections cleared');
+
+  // Save
+  saveData();
+  console.log('  💾 Data saved');
+
+  // Close panel and bar
+  closePanels();
+  const bulkBar = document.getElementById('v5-bulk-bar');
+  if (bulkBar) bulkBar.style.display = 'none';
+
+  console.log(`✅ [GLASS] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
+  alert(`Updated ${updatedCount} description(s).`);
+};
 
 // Attach event listeners once DOM elements exist
 function attachBrandDropdownListeners() {

@@ -51,19 +51,20 @@ class ParserRouter {
     /**
      * Parse a bank statement by detecting brand and routing
      * @param {string} statementText - Full PDF text
+     * @param {string} filename - Original filename for learning matching
      * @returns {Promise<Object>} Parsed transactions + metadata
      */
-    async parseStatement(statementText) {
+    async parseStatement(statementText, filename = '') {
         console.log('🔍 Step 1: Detecting bank brand...');
 
-        // Step 1: Detect brand
-        const detection = await window.brandDetector.detectBrand(statementText);
+        // Step 1: Detect brand (with Learning System)
+        const detection = await window.brandDetector.detectWithLearning(statementText, filename);
 
         console.log(`✅ Detected: ${detection.brand} ${detection.accountType} (${detection.confidence})`);
         console.log(`📍 Routing to: ${detection.parserName}`);
 
         // Step 2: Get the specific parser
-        const parserKey = `${detection.brand}${detection.accountType}`;
+        const parserKey = detection.parserName; // Use the parserName from detection (might be learned)
         const parser = this.parsers[parserKey];
 
         if (!parser) {

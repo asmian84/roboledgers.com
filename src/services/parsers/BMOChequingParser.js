@@ -34,8 +34,8 @@ BMO CHEQUING FORMAT:
             currentYear = parseInt(yearMatch[1]);
         }
 
-        // Date pattern: "Apr 01", "May 16", etc.
-        const dateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
+        // Date pattern: "Apr 01", "May 16", etc. (Flexible, no start anchor)
+        const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
 
         // Month mapping
         const monthMap = {
@@ -98,8 +98,8 @@ BMO CHEQUING FORMAT:
                         const tx = this.parseLineWithAmounts(combinedLine, dateMatch[0], isoDate, combinedAmounts);
                         if (tx) {
                             transactions.push(tx);
-                            console.log('[BMO] ✓ Multi-line:', tx.description.substring(0, 25),
-                                'D:', tx.debit, 'C:', tx.credit);
+                            // console.log('[BMO] ✓ Multi-line:', tx.description.substring(0, 25),
+                            //     'D:', tx.debit, 'C:', tx.credit);
                             foundTx = true;
                         }
                         i += lookAhead;
@@ -116,8 +116,8 @@ BMO CHEQUING FORMAT:
             const tx = this.parseLineWithAmounts(line, dateMatch[0], isoDate, amountStrings);
             if (tx) {
                 transactions.push(tx);
-                console.log('[BMO] ✓ Parsed:', tx.description.substring(0, 25),
-                    'D:', tx.debit, 'C:', tx.credit);
+                // console.log('[BMO] ✓ Parsed:', tx.description.substring(0, 25),
+                //     'D:', tx.debit, 'C:', tx.credit);
             }
         }
 

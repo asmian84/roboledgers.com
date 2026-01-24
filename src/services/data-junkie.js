@@ -349,7 +349,7 @@ class DataJunkie {
                 throw new Error('ParserRouter not found on window. Ensure modules are loaded in index.html.');
             }
 
-            const result = await router.parseStatement(fullText);
+            const result = await router.parseStatement(fullText, file.name);
 
             // Adapt to expected format
             parsed = {
