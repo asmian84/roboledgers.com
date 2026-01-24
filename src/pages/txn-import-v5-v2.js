@@ -7405,27 +7405,11 @@ window.populateGlassCOA = function () {
   let coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
   console.log(`  📊 Loaded ${coa.length} COA entries from localStorage`);
 
-  // FALLBACK: If no COA found, use default accounts
+  // If no COA found, alert user
   if (coa.length === 0) {
-    console.warn('  ⚠️ No COA in localStorage, using fallback accounts');
-    coa = [
-      { code: 1000, name: 'Cash and Cash Equivalents' },
-      { code: 1100, name: 'Accounts Receivable' },
-      { code: 1500, name: 'Inventory' },
-      { code: 2000, name: 'Accounts Payable' },
-      { code: 2100, name: 'Credit Card Payable' },
-      { code: 3000, name: 'Owner\'s Equity' },
-      { code: 4000, name: 'Sales Revenue' },
-      { code: 4100, name: 'Service Revenue' },
-      { code: 5000, name: 'Cost of Goods Sold' },
-      { code: 5100, name: 'Rent Expense' },
-      { code: 5110, name: 'Meals and Entertainment' },
-      { code: 5120, name: 'Office Supplies' },
-      { code: 5200, name: 'Utilities' },
-      { code: 5300, name: 'Insurance' },
-      { code: 5400, name: 'Professional Fees' },
-      { code: 5500, name: 'Bank Charges' }
-    ];
+    console.error('  ❌ No COA in localStorage - please configure Chart of Accounts first');
+    alert('No Chart of Accounts found. Please configure your accounts first.');
+    return;
   }
 
   // Categorize ALL accounts
