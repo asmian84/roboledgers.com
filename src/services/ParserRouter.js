@@ -104,7 +104,8 @@ class ParserRouter {
                 const progressFill = document.getElementById('v5-progress-fill');
                 const progressMsg = document.getElementById('v5-progress-message');
 
-                if (statusEl) statusEl.textContent = 'Validating data...';
+                // Removed "Validating data..." text per user request
+                // if (statusEl) statusEl.textContent = 'Validating data...';
 
                 // Only show progress bar if not already visible (prevent flicker during batch uploads)
                 if (progressContainer && progressContainer.style.display !== 'flex') {
@@ -113,7 +114,8 @@ class ParserRouter {
                     progressContainer.dataset.showTime = Date.now();
                 }
 
-                if (progressMsg) progressMsg.textContent = 'Validating and auto-fixing transaction data...';
+                // Removed validation message per user request
+                // if (progressMsg) progressMsg.textContent = 'Validating and auto-fixing transaction data...';
 
                 result = window.validationEngine.validate(result, (current, total) => {
                     if (progressFill) {
