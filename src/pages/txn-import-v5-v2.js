@@ -7402,35 +7402,57 @@ window.populateGlassCOA = function () {
     return;
   }
 
-  let coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
-  console.log(`  📊 Loaded ${coa.length} COA entries from localStorage`);
+  // CRITICAL: Use exact same data source as grid's Account column dropdown
+  const rawDefault = window.DEFAULT_CHART_OF_ACCOUNTS || [];
+  let rawCustom = [];
+  try {
+    rawCustom = JSON.parse(localStorage.getItem('ab3_custom_coa') || '[]');
+  } catch (e) {
+    console.warn('  ⚠️ Error loading custom COA:', e);
+  }
 
-  // If no COA found, alert user
-  if (coa.length === 0) {
-    console.error('  ❌ No COA in localStorage - please configure Chart of Accounts first');
+  const all = [...rawDefault, ...rawCustom];
+  console.log(`  📊 Loaded ${rawDefault.length} default + ${rawCustom.length} custom = ${all.length} total accounts`);
+
+  if (all.length === 0) {
+    console.error('  ❌ No COA found - please configure Chart of Accounts first');
     alert('No Chart of Accounts found. Please configure your accounts first.');
     return;
   }
 
-  // Categorize ALL accounts
-  const cats = {
-    'ASSETS': coa.filter(a => a.code >= 1000 && a.code < 2000),
-    'LIABILITIES': coa.filter(a => a.code >= 2000 && a.code < 3000),
-    'EQUITY': coa.filter(a => a.code >= 3000 && a.code < 4000),
-    'REVENUE': coa.filter(a => a.code >= 4000 && a.code < 5000),
-    'EXPENSES': coa.filter(a => a.code >= 5000 && a.code < 10000)
+  // Group accounts by type (matching getGroupedCoA logic)
+  const groups = {
+    'ASSETS': [],
+    'LIABILITIES': [],
+    'EQUITY': [],
+    'REVENUE': [],
+    'EXPENSES': []
   };
 
+  all.forEach(acc => {
+    if (!acc.name || acc.name.toString().toLowerCase().includes("invalid")) return;
+
+    const type = (acc.type || '').toLowerCase();
+    const cat = (acc.category || '').toLowerCase();
+    const displayName = acc.code ? acc.code + ' - ' + acc.name : acc.name;
+
+    if (type.includes('asset') || cat.includes('asset')) groups['ASSETS'].push(displayName);
+    else if (type.includes('liabil') || cat.includes('liabil')) groups['LIABILITIES'].push(displayName);
+    else if (type.includes('equity') || cat.includes('equity')) groups['EQUITY'].push(displayName);
+    else if (type.includes('revenue') || type.includes('income') || cat.includes('revenue')) groups['REVENUE'].push(displayName);
+    else if (type.includes('expense') || cat.includes('expense')) groups['EXPENSES'].push(displayName);
+  });
+
   console.log('  📂 Category breakdown:');
-  Object.keys(cats).forEach(cat => {
-    console.log(`    - ${cat}: ${cats[cat].length} accounts`);
+  Object.keys(groups).forEach(groupName => {
+    console.log(`    - ${groupName}: ${groups[groupName].length} accounts`);
   });
 
   // Build custom dropdown HTML with collapsible groups
   let html = '';
 
-  Object.keys(cats).forEach(groupName => {
-    const accounts = cats[groupName];
+  Object.keys(groups).forEach(groupName => {
+    const accounts = groups[groupName];
     if (accounts.length === 0) return;
 
     html += `
@@ -7441,8 +7463,8 @@ window.populateGlassCOA = function () {
         </div>
         <div class="coa-group-items" id="coa-group-${groupName}">
           ${accounts.map(acc => `
-            <div class="coa-item" onclick="selectCOAAccount('${acc.code} - ${acc.name}')">
-              ${acc.code} - ${acc.name}
+            <div class="coa-item" onclick="selectCOAAccount('${acc.replace(/'/g, "\\'")}')">
+              ${acc}
             </div>
           `).join('')}
         </div>
@@ -7451,7 +7473,7 @@ window.populateGlassCOA = function () {
   });
 
   menuContainer.innerHTML = html;
-  console.log('  ✓ Custom dropdown populated with collapsible groups (all collapsed by default)');
+  console.log(`  ✓ Custom dropdown populated with ${all.length} accounts in ${Object.keys(groups).filter(g => groups[g].length > 0).length} groups (all collapsed)`);
 };
 
 /** Toggle COA group expand/collapse */
