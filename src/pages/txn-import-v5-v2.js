@@ -1080,6 +1080,15 @@ window.renderTxnImportV5Page = function () {
         font-weight: 500 !important;
         display: inline-block;
       }
+
+      /* Brand/Tag Dropdowns - Dynamic Width to prevent excessive spacing */
+      #v5-bank-brand-select,
+      #v5-account-tag-select {
+        width: fit-content !important;
+        min-width: auto !important;
+        max-width: 200px;
+        padding-right: 1.5rem !important; /* Space for dropdown arrow */
+      }
       
       .v5-search-wrapper input {
         padding: 6px 10px;
