@@ -29,7 +29,7 @@ BMO CHEQUING FORMAT:
         let currentYear = new Date().getFullYear();
 
         // Try to extract year from statement header
-        const yearMatch = text.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*(\d{4})/i);
+        const yearMatch = statementText.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*(\d{4})/i);
         if (yearMatch) {
             currentYear = parseInt(yearMatch[1]);
         }
