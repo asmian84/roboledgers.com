@@ -1516,46 +1516,44 @@ window.renderTxnImportV5Page = function () {
       }
       
       /* ========================================
-         GLASSMORPHISM BULK ACTIONS BAR
+         GLASSMORPHISM BULK ACTIONS BAR (INLINE)
          ======================================== */
       .bulk-actions-bar {
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(-50%);
+        position: relative;
+        width: 100%;
         background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         color: #1e293b;
         padding: 0;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 
-                    0 2px 8px rgba(0, 0, 0, 0.08),
+        border-radius: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 
                     inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        z-index: 9999;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        animation: glassSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        min-width: 380px;
-        max-width: 90vw;
+        border-top: 1.5px solid rgba(148, 163, 184, 0.3);
+        border-bottom: 1.5px solid rgba(148, 163, 184, 0.3);
+        z-index: 100;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: glassSlideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        margin: 0;
       }
 
-      @keyframes glassSlideUp {
+      @keyframes glassSlideDown {
         from {
           opacity: 0;
-          transform: translateX(-50%) translateY(30px) scale(0.95);
+          max-height: 0;
+          transform: translateY(-10px);
         }
         to {
           opacity: 1;
-          transform: translateX(-50%) translateY(0) scale(1);
+          max-height: 500px;
+          transform: translateY(0);
         }
       }
 
       .bulk-actions-bar:hover {
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 
-                    0 4px 12px rgba(0, 0, 0, 0.1),
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1), 
                     inset 0 1px 0 rgba(255, 255, 255, 0.9);
-        transform: translateX(-50%) translateY(-2px);
       }
 
       /* Main collapsed content */
@@ -7066,8 +7064,31 @@ function populateGlassCOA() {
     return;
   }
 
-  const coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+  let coa = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
   console.log(`  📊 Loaded ${coa.length} COA entries from localStorage`);
+
+  // FALLBACK: If no COA found, use default accounts
+  if (coa.length === 0) {
+    console.warn('  ⚠️ No COA in localStorage, using fallback accounts');
+    coa = [
+      { code: 1000, name: 'Cash and Cash Equivalents' },
+      { code: 1100, name: 'Accounts Receivable' },
+      { code: 1500, name: 'Inventory' },
+      { code: 2000, name: 'Accounts Payable' },
+      { code: 2100, name: 'Credit Card Payable' },
+      { code: 3000, name: 'Owner\'s Equity' },
+      { code: 4000, name: 'Sales Revenue' },
+      { code: 4100, name: 'Service Revenue' },
+      { code: 5000, name: 'Cost of Goods Sold' },
+      { code: 5100, name: 'Rent Expense' },
+      { code: 5110, name: 'Meals and Entertainment' },
+      { code: 5120, name: 'Office Supplies' },
+      { code: 5200, name: 'Utilities' },
+      { code: 5300, name: 'Insurance' },
+      { code: 5400, name: 'Professional Fees' },
+      { code: 5500, name: 'Bank Charges' }
+    ];
+  }
 
   const cats = {
     'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
@@ -7077,12 +7098,19 @@ function populateGlassCOA() {
     'Expenses': coa.filter(a => a.code >= 5000 && a.code < 10000)
   };
 
+  console.log('  📂 Category breakdown:');
+  Object.keys(cats).forEach(cat => {
+    console.log(`    - ${cat}: ${cats[cat].length} accounts`);
+  });
+
   let html = '<option value="">-- Select Account --</option>';
+  let totalOptions = 0;
   Object.keys(cats).forEach(cat => {
     if (cats[cat].length > 0) {
       html += `<optgroup label="${cat}">`;
       cats[cat].forEach(a => {
         html += `<option value="${a.code}" data-full="${a.code} - ${a.name}">${a.code} - ${a.name}</option>`;
+        totalOptions++;
       });
       html += '</optgroup>';
     }
@@ -7090,7 +7118,7 @@ function populateGlassCOA() {
 
   dropdown.innerHTML = html;
   dropdown.setAttribute('data-original', html); // Store for filtering
-  console.log('  ✓ Populated dropdown with categorized accounts');
+  console.log(`  ✅ Populated dropdown with ${totalOptions} total accounts across ${Object.keys(cats).length} categories`);
 }
 
 /** Filter COA dropdown based on search */
