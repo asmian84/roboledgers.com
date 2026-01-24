@@ -7523,7 +7523,7 @@ function executeBulkRename(findText, replaceText, selectedRows) {
   if (replaceInput) replaceInput.value = '';
 
   console.log(`✅ [BULK] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
-  alert(`Updated ${updatedCount} description(s).`);
+  // Removed alert - confirmation is inline
 };
 
 /** Bulk delete selected rows */
@@ -7580,7 +7580,7 @@ function executeBulkDelete(selectedRows) {
   resetToInitialState();
 
   console.log(`✅ [BULK] Successfully deleted ${deletedCount} transactions`);
-  alert(`Deleted ${deletedCount} transaction(s).`);
+  // Removed alert - confirmation is inline
 };
 
 
