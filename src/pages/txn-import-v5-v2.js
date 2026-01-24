@@ -7122,13 +7122,13 @@ function updateBrandDisplay(detection) {
     if (dash) dash.classList.add('v5-manual-color');
   }
 
-  // Show EVERYTHING inline
+  // Show dropdowns, keep status HIDDEN per user request
   bankSelect.style.display = 'inline-block';
   tagSelect.style.display = 'inline-block';
   if (dash) dash.style.display = 'inline-block';
-  status.style.display = 'inline-flex';
+  status.style.display = 'none'; // Keep hidden - no status text needed
 
-  // Update confidence badge
+  // Update confidence badge (which also hides status)
   updateConfidenceBadge(detection.confidence || 0.7, detection.source);
 
   // Line 3: Account Info
