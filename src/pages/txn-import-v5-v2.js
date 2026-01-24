@@ -7310,6 +7310,12 @@ window.applyBulkCategorize = function () {
     return;
   }
 
+  // Confirm before applying
+  if (!confirm(`Apply "${fullAccountName}" to ${selectedRows.length} transaction(s)?`)) {
+    console.log('  ❌ User cancelled categorization');
+    return;
+  }
+
   // Apply to all selected rows
   selectedRows.forEach((row, idx) => {
     row.account = fullAccountName;
