@@ -7560,9 +7560,10 @@ window.cancelBulk = function () {
     console.log('  ✓ Hidden bulk bar');
   }
 
-  // Reset dropdown
-  const dropdown = document.getElementById('glass-coa-dropdown');
-  if (dropdown) dropdown.value = '';
+  // Reset custom dropdown selection
+  window.selectedCOAAccount = null;
+  const triggerText = document.getElementById('coa-selected-text');
+  if (triggerText) triggerText.textContent = 'Choose account to categorize...';
 
   // Clear rename inputs
   const findInput = document.getElementById('bulk-find-input');
@@ -7575,17 +7576,14 @@ window.cancelBulk = function () {
 window.applyBulkCategorize = function () {
   console.log('🔵 [BULK] applyBulkCategorize() called');
 
-  const dropdown = document.getElementById('glass-coa-dropdown');
-  const selectedCode = dropdown?.value;
+  // Get selected account from custom dropdown
+  const fullAccountName = window.selectedCOAAccount;
 
-  if (!selectedCode) {
+  if (!fullAccountName || fullAccountName === 'Choose account to categorize...') {
     alert('Please select an account from the dropdown first.');
     console.warn('  ⚠️ No account selected');
     return;
   }
-
-  const selectedOption = dropdown.options[dropdown.selectedIndex];
-  const fullAccountName = selectedOption.getAttribute('data-full') || selectedOption.text;
 
   console.log(`  📁 Selected account: ${fullAccountName}`);
 
