@@ -1829,6 +1829,33 @@ window.renderTxnImportV5Page = function () {
                     inset 0 1px 0 rgba(255, 255, 255, 0.3);
       }
 
+      /* Confirmation state buttons */
+      .btn-bulk-yes {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .btn-bulk-yes:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-bulk-no {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      }
+
+      .btn-bulk-no:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .confirm-message {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+      }
+
 
       /* Categorize panel specific */
       .glass-coa-wrapper {
@@ -2378,6 +2405,17 @@ window.renderTxnImportV5Page = function () {
             >
             <button class="btn-bulk btn-bulk-apply" onclick="applyBulkRename()">
               <i class="ph ph-check"></i> Apply
+            </button>
+          </div>
+          
+          <!-- STATE 4: Confirmation - Show confirmation message + Yes/No -->
+          <div id="bulk-state-confirm" class="bulk-state" style="display: none;">
+            <span class="confirm-message" id="bulk-confirm-message">Are you sure?</span>
+            <button class="btn-bulk btn-bulk-yes" onclick="confirmBulkAction()">
+              <i class="ph ph-check"></i> Yes
+            </button>
+            <button class="btn-bulk btn-bulk-no" onclick="cancelConfirmation()">
+              <i class="ph ph-x"></i> Cancel
             </button>
           </div>
           
@@ -7102,17 +7140,21 @@ async function onBankTagChange() {
 
 /** State machine for bulk actions */
 const BulkState = {
-  current: 'initial', // 'initial', 'categorize', 'rename'
+  current: 'initial', // 'initial', 'categorize', 'rename', 'confirm'
+  pendingAction: null, // Function to call when confirmed
+  pendingMessage: '', // Confirmation message
 };
 
 /** Reset to initial state (show 3 buttons) */
 function resetToInitialState() {
   console.log('🔵 [BULK] resetToInitialState()');
   BulkState.current = 'initial';
+  BulkState.pendingAction = null;
 
   document.getElementById('bulk-state-initial').style.display = 'flex';
   document.getElementById('bulk-state-categorize').style.display = 'none';
   document.getElementById('bulk-state-rename').style.display = 'none';
+  document.getElementById('bulk-state-confirm').style.display = 'none';
 }
 
 /** Enter Categorize Mode */
@@ -7123,6 +7165,7 @@ window.enterCategorizeMode = function () {
   // Hide other states
   document.getElementById('bulk-state-initial').style.display = 'none';
   document.getElementById('bulk-state-rename').style.display = 'none';
+  document.getElementById('bulk-state-confirm').style.display = 'none';
 
   // Show categorize state
   document.getElementById('bulk-state-categorize').style.display = 'flex';
@@ -7139,6 +7182,7 @@ window.enterRenameMode = function () {
   // Hide other states
   document.getElementById('bulk-state-initial').style.display = 'none';
   document.getElementById('bulk-state-categorize').style.display = 'none';
+  document.getElementById('bulk-state-confirm').style.display = 'none';
 
   // Show rename state
   document.getElementById('bulk-state-rename').style.display = 'flex';
@@ -7154,6 +7198,48 @@ window.enterRenameMode = function () {
       console.log('  ✓ Focused find input');
     }
   }, 100);
+};
+
+/** Enter Confirmation Mode */
+function enterConfirmMode(message, action) {
+  console.log('🔵 [BULK] enterConfirmMode()');
+  BulkState.current = 'confirm';
+  BulkState.pendingAction = action;
+  BulkState.pendingMessage = message;
+
+  // Hide other states
+  document.getElementById('bulk-state-initial').style.display = 'none';
+  document.getElementById('bulk-state-categorize').style.display = 'none';
+  document.getElementById('bulk-state-rename').style.display = 'none';
+
+  // Show confirm state
+  const confirmState = document.getElementById('bulk-state-confirm');
+  if (confirmState) {
+    confirmState.style.display = 'flex';
+    const confirmMessageElement = document.getElementById('bulk-confirm-message');
+    if (confirmMessageElement) {
+      confirmMessageElement.innerHTML = message;
+    }
+  }
+}
+
+/** Execute pending action from confirmation */
+window.confirmBulkAction = function () {
+  console.log('🔵 [BULK] confirmBulkAction() - YES clicked');
+  if (BulkState.pendingAction) {
+    BulkState.pendingAction();
+    BulkState.pendingAction = null;
+  } else {
+    console.warn('  ⚠️ No pending action');
+  }
+};
+
+/** Cancel confirmation and return to appropriate state */
+window.cancelConfirmation = function () {
+  console.log('🔵 [BULK] cancelConfirmation() - Cancel clicked');
+  // Return to the previous state (categorize or rename)
+  // For simplicity, just reset to initial
+  resetToInitialState();
 };
 
 /** Populate autocomplete datalist with existing description values */
@@ -7310,11 +7396,16 @@ window.applyBulkCategorize = function () {
     return;
   }
 
-  // Confirm before applying
-  if (!confirm(`Apply "${fullAccountName}" to ${selectedRows.length} transaction(s)?`)) {
-    console.log('  ❌ User cancelled categorization');
-    return;
-  }
+  // Show inline confirmation
+  enterConfirmMode(
+    `Apply "${fullAccountName}" to ${selectedRows.length} transaction(s)?`,
+    () => executeBulkCategorize(fullAccountName, selectedRows)
+  );
+};
+
+/** Execute bulk categorize after confirmation */
+function executeBulkCategorize(fullAccountName, selectedRows) {
+  console.log(`  📁 Executing categorize: ${fullAccountName}`);
 
   // Apply to all selected rows
   selectedRows.forEach((row, idx) => {
@@ -7326,6 +7417,7 @@ window.applyBulkCategorize = function () {
   // Refresh grid
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
   V5State.gridApi.deselectAll();
+  V5State.gridApi.refreshCells({ force: true }); // Added refreshCells
   console.log('  ✓ Grid refreshed, selections cleared');
 
   // Save
@@ -7338,7 +7430,8 @@ window.applyBulkCategorize = function () {
 
   // Reset state
   resetToInitialState();
-  dropdown.value = '';
+  const dropdown = document.getElementById('glass-coa-dropdown'); // Re-declare dropdown for scope
+  if (dropdown) dropdown.value = '';
 
   console.log(`✅ [BULK] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
 };
@@ -7371,6 +7464,18 @@ window.applyBulkRename = function () {
     return;
   }
 
+  // Show inline confirmation
+  const confirmMsg = findText.trim() === ''
+    ? `Replace ALL ${selectedRows.length} descriptions with "${replaceText}"?`
+    : `Find & replace "${findText}" in ${selectedRows.length} transaction(s)?`;
+
+  enterConfirmMode(confirmMsg, () => executeBulkRename(findText, replaceText, selectedRows));
+};
+
+/** Execute bulk rename after confirmation */
+function executeBulkRename(findText, replaceText, selectedRows) {
+  console.log(`  ✏️ Executing rename: "${findText}" → "${replaceText}"`);
+
   let updatedCount = 0;
 
   if (findText.trim() === '') {
@@ -7399,6 +7504,7 @@ window.applyBulkRename = function () {
   // Refresh grid
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
   V5State.gridApi.deselectAll();
+  V5State.gridApi.refreshCells({ force: true }); // Added refreshCells
   console.log('  ✓ Grid refreshed, selections cleared');
 
   // Save
@@ -7411,8 +7517,10 @@ window.applyBulkRename = function () {
 
   // Reset state
   resetToInitialState();
-  findInput.value = '';
-  replaceInput.value = '';
+  const findInput = document.getElementById('bulk-find-input'); // Re-declare for scope
+  const replaceInput = document.getElementById('bulk-replace-input'); // Re-declare for scope
+  if (findInput) findInput.value = '';
+  if (replaceInput) replaceInput.value = '';
 
   console.log(`✅ [BULK] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
   alert(`Updated ${updatedCount} description(s).`);
@@ -7431,10 +7539,15 @@ window.bulkDeleteRows = function () {
     return;
   }
 
-  if (!confirm(`Are you sure you want to delete ${selectedRows.length} transaction(s)?`)) {
-    console.log('  ❌ User cancelled deletion');
-    return;
-  }
+  enterConfirmMode(
+    `Are you sure you want to delete ${selectedRows.length} transaction(s)?`,
+    () => executeBulkDelete(selectedRows)
+  );
+};
+
+/** Execute bulk delete after confirmation */
+function executeBulkDelete(selectedRows) {
+  console.log('  🗑️ Executing bulk delete');
 
   // Get IDs of selected rows
   const idsToDelete = selectedRows.map(r => r.id);
@@ -7448,7 +7561,8 @@ window.bulkDeleteRows = function () {
 
   // Refresh grid
   V5State.gridApi.setGridOption('rowData', V5State.gridData);
-  console.log(`  ✓ Deleted ${deletedCount} rows`);
+  V5State.gridApi.refreshCells({ force: true });
+  console.log(`  ✓ Deleted ${deletedCount} rows, grid refreshed`);
 
   // Recalculate balances
   updateBalanceSummary();
