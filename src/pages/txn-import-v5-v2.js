@@ -2344,6 +2344,15 @@ window.renderTxnImportV5Page = function () {
           <div class="v5-title-text">
             <h1>Transactions</h1>
             <p class="v5-subtitle">
+              <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
+                <option value="">SELECT ACCOUNT</option>
+                <option value="Chequing">CHEQUING</option>
+                <option value="Savings">SAVINGS</option>
+                <option value="Visa">VISA</option>
+                <option value="Mastercard">MASTERCARD</option>
+                <option value="Amex">AMEX</option>
+              </select>
+              <span id="v5-bank-dash" style="display: none;">&nbsp;-&nbsp;</span>
               <select id="v5-bank-brand-select" class="v5-inline-dropdown" style="display: none;">
                 <option value="">SELECT BANK</option>
                 <option value="TD">TD CANADA TRUST</option>
@@ -2353,15 +2362,6 @@ window.renderTxnImportV5Page = function () {
                 <option value="Scotiabank">SCOTIABANK</option>
                 <option value="Tangerine">TANGERINE</option>
                 <option value="Amex">AMEX CANADA</option>
-              </select>
-              <span id="v5-bank-dash" style="display: none;">&nbsp;-&nbsp;</span>
-              <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
-                <option value="">SELECT ACCOUNT</option>
-                <option value="Chequing">CHEQUING</option>
-                <option value="Savings">SAVINGS</option>
-                <option value="Visa">VISA</option>
-                <option value="Mastercard">MASTERCARD</option>
-                <option value="Amex">AMEX</option>
               </select>
               <span id="v5-status-text" class="v5-status">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
             </p>
@@ -7185,26 +7185,8 @@ function updateConfidenceBadge(confidence, source) {
   const status = document.getElementById('v5-status-text');
   if (!status) return;
 
-  // Remove any existing confidence classes
-  status.className = 'v5-status';
-
-  if (source === 'user_learned') {
-    status.innerHTML = '🎓 LEARNED';
-    status.classList.add('confidence-learned');
-  } else if (source === 'user_override' || source === 'manual') {
-    status.innerHTML = '✓ MANUAL';
-    status.classList.add('confidence-learned'); // Reuse purple for manual/learned
-    status.style.color = '#8b5cf6';
-  } else if (confidence >= 0.95) {
-    status.innerHTML = '✓ AUTO-DETECTED';
-    status.classList.add('confidence-high');
-  } else if (confidence >= 0.70) {
-    status.innerHTML = '⚠ VERIFY';
-    status.classList.add('confidence-medium');
-  } else {
-    status.innerHTML = '❌ SELECT';
-    status.classList.add('confidence-low');
-  }
+  // HIDE badge completely per user request
+  status.style.display = 'none';
 }
 
 /**
