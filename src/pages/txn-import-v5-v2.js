@@ -1009,22 +1009,23 @@ window.renderTxnImportV5Page = function () {
         display: flex;
         align-items: center;
         gap: 8px;
-      /* Main Header - Match Analytics/Data Import Style */
+      }
+      /* Main Header - Clean Background with Gradient Text */
       .v5-main-header {
-        background: white;
-        padding: 16px 24px; /* Match Analytics padding */
-        border-bottom: 1px solid #e5e7eb;
+        background: #ffffff;
+        padding: 16px 24px;
+        border-bottom: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
         position: sticky;
         top: 0;
         z-index: 100;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         box-sizing: border-box !important;
-        height: 102px !important; /* Fixed height to match other pages */
-        min-height: 102px !important;
-        max-height: 102px !important;
+        height: 100px !important; /* Reverted to 100px */
+        min-height: 100px !important;
+        max-height: 100px !important;
       }
       
       .v5-title-section {
@@ -1048,16 +1049,36 @@ window.renderTxnImportV5Page = function () {
       
       .v5-title-text h1 {
         margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 1.12rem;
+        font-weight: 500;
+        letter-spacing: -0.5px;
+        color: #000000 !important; /* Robust Black */
       }
       
       .v5-subtitle {
-        font-size: 0.8rem;
-        color: #64748b;
-        margin: 2px 0 0 0;
+        font-size: 0.84rem !important;
+        margin: 2px 0 0 0 !important;
+        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0 !important;
+        text-transform: uppercase !important;
+        min-height: 1.5rem;
+        color: #003580 !important; /* Default Navy for manual/placeholder */
       }
+
+      /* Premium Emerald for Auto-Detected Brand/Tag */
+      .v5-auto-detected {
+        color: #059669 !important; /* Robust Emerald Solid (Gradient-clip fails on select) */
+        font-weight: 500 !important;
+        display: inline-block;
+      }
+      
+      /* Standard Black for manually edited or placeholder text */
+      .v5-manual-color {
+        color: #000000 !important;
+        font-weight: 500 !important;
+        display: inline-block;
       }
       
       .v5-search-wrapper input {
@@ -1129,22 +1150,24 @@ window.renderTxnImportV5Page = function () {
         background: #fef3c7;
         border-bottom: 1px solid #fbbf24;
         padding: 1rem 1.5rem;
-        .v5-ref-input-wrapper,
-        .v5-search-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          height: 40px; /* Consistent height */
-        }
-        
-        .v5-ref-input-wrapper input,
-        .v5-search-wrapper input {
-          height: 32px;
-          padding: 6px 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 14px;
-        }
+      }
+      
+      .v5-inline-bar .v5-ref-input-wrapper,
+      .v5-inline-bar .v5-search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px; /* Consistent height */
+      }
+      
+      .v5-inline-bar .v5-ref-input-wrapper input,
+      .v5-inline-bar .v5-search-wrapper input {
+        height: 32px;
+        padding: 6px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
       
       .btn-inline-apply {
         padding: 0.5rem 1rem;
@@ -1621,63 +1644,159 @@ window.renderTxnImportV5Page = function () {
         }
       }
 
-      /* BANK/TAG DROPDOWNS - Stealth Style */
+      /* BANK/TAG DROPDOWNS - "True Blended" Style (Matches mockup exactly) */
       .v5-inline-dropdown {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background: transparent;
-        border: none;
-        color: #3b82f6; /* RoboLedgers Blue */
-        font-weight: 600;
-        font-size: 1.1rem;
-        font-family: 'Inter', sans-serif;
-        cursor: pointer;
-        padding: 0 16px 0 0; /* Space for arrow */
-        margin: 0;
-        outline: none;
-        background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="10" height="10" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path d="M2 4l4 4 4-4" stroke="%233b82f6" stroke-width="2" fill="none" stroke-linecap="round"/></svg>');
-        background-repeat: no-repeat;
-        background-position: right center;
-        background-size: 10px;
-        transition: all 0.2s ease;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: inherit !important; /* Use navy from subtitle */
+        font-weight: inherit !important;
+        font-size: inherit !important;
+        font-family: inherit !important;
+        cursor: pointer !important;
+        outline: none !important;
+        text-transform: uppercase !important;
+        height: auto !important;
+        line-height: 1 !important;
         display: inline-block;
-        vertical-align: middle;
+        vertical-align: baseline !important;
+        width: auto !important;
+        transition: opacity 0.2s ease !important;
       }
 
       .v5-inline-dropdown:hover {
-        color: #2563eb;
-        background-color: rgba(59, 130, 246, 0.05);
-        border-radius: 4px;
+        opacity: 0.7 !important;
+        text-decoration: underline dotted !important;
       }
 
       .v5-inline-dropdown:focus {
-        background-color: rgba(59, 130, 246, 0.1);
-        border-radius: 4px;
+        outline: none !important;
       }
 
-      /* Confidence badge styling */
+      /* Confidence badge styling - "Mockup Pill" style */
       .v5-status {
-        font-size: 0.85rem;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-weight: 500;
+        display: inline-flex !important;
+        align-items: center !important;
+        font-size: 0.72rem !important;
+        padding: 0 !important;
+        border-radius: 4px !important;
+        font-weight: 500 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.8px !important;
+        margin-left: 0 !important; /* No margin when it's just a status message */
+        vertical-align: middle !important;
+        color: #94a3b8 !important; /* Lighter gray for "WAITING" */
       }
-      .v5-status.confidence-high {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981 !important;
-      }
-      .v5-status.confidence-medium {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b !important;
-      }
+
+      /* Apply pill styles only when a confidence class is added */
+      .v5-status.confidence-high,
+      .v5-status.confidence-learned,
+      .v5-status.confidence-medium,
       .v5-status.confidence-low {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444 !important;
+        padding: 3px 10px !important;
+        margin-left: 12px !important;
+        font-weight: 800 !important;
+        color: white !important; /* Default, overridden by specific classes */
       }
+
+      .v5-status.confidence-high {
+        background: #059669 !important;
+        color: white !important;
+        display: inline-flex !important;
+      }
+
+      .v5-status.confidence-medium {
+        display: none !important; /* Remove VERIFY text as requested */
+      }
+
+      .v5-status.confidence-low {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+      }
+
       .v5-status.confidence-learned {
-        background: rgba(139, 92, 246, 0.1);
-        color: #8b5cf6 !important;
+        background: #f3e8ff !important;
+        color: #6b21a8 !important;
+      }
+
+      /* Metadata line styling */
+      .v5-account-info-line {
+        font-size: 0.58rem !important;
+        color: #64748b !important;
+        margin-top: 6px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        font-weight: 500 !important;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .v5-account-info-line b {
+        color: #64748b !important;
+        font-weight: 700 !important;
+      }
+      .v5-account-info-line span.sep {
+        margin: 0 4px;
+        color: #cbd5e1;
+      }
+
+      /* PROGRESS CONTAINER - Stable Layout */
+      .v5-progress-container {
+        display: none; /* Default hidden */
+        padding: 1.5rem;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+      }
+      
+      .v5-progress-container.v5-active {
+        display: block !important;
+        animation: none !important; /* No animation to prevent flicker */
+      }
+      
+      .v5-progress-content {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      
+      #v5-progress-message {
+        text-align: center;
+        margin-bottom: 0.75rem;
+        font-weight: 500;
+        color: #4b5563;
+        font-size: 0.9rem;
+      }
+      
+      .v5-progress-bar {
+        height: 8px;
+        background: #f3f4f6;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .v5-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        width: 0%;
+        transition: width 0.2s ease;
+      }
+      
+      @keyframes v5-dots {
+        0% { content: ''; }
+        25% { content: '.'; }
+        50% { content: '..'; }
+        75% { content: '...'; }
+        100% { content: ''; }
+      }
+      .v5-loading-dots::after {
+        content: '';
+        animation: v5-dots 2s infinite;
+        display: inline-block;
+        width: 12px;
+        text-align: left;
       }
     </style>
 
@@ -1694,25 +1813,28 @@ window.renderTxnImportV5Page = function () {
             <h1>Transactions</h1>
             <p class="v5-subtitle">
               <select id="v5-bank-brand-select" class="v5-inline-dropdown" style="display: none;">
-                <option value="">Select Bank</option>
-                <option value="TD">TD</option>
-                <option value="RBC">RBC</option>
+                <option value="">SELECT BANK</option>
+                <option value="TD">TD CANADA TRUST</option>
+                <option value="RBC">RBC ROYAL BANK</option>
                 <option value="BMO">BMO</option>
                 <option value="CIBC">CIBC</option>
-                <option value="Scotiabank">Scotiabank</option>
-                <option value="Amex">Amex Canada</option>
+                <option value="Scotiabank">SCOTIABANK</option>
+                <option value="Tangerine">TANGERINE</option>
+                <option value="Amex">AMEX CANADA</option>
               </select>
-              <span id="v5-bank-dash" style="display: none; color: #94a3b8;"> - </span>
+              <span id="v5-bank-dash" style="display: none;">&nbsp;-&nbsp;</span>
               <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
-                <option value="">Select Account</option>
-                <option value="Chequing">Chequing</option>
-                <option value="Savings">Savings</option>
-                <option value="Visa">Visa</option>
-                <option value="Mastercard">Mastercard</option>
-                <option value="Amex">Amex</option>
+                <option value="">SELECT ACCOUNT</option>
+                <option value="Chequing">CHEQUING</option>
+                <option value="Savings">SAVINGS</option>
+                <option value="Visa">VISA</option>
+                <option value="Mastercard">MASTERCARD</option>
+                <option value="Amex">AMEX</option>
               </select>
-              <span class="v5-dot" id="v5-header-dot" style="display: none; color: #94a3b8;"> • </span>
-              <span class="v5-status" id="v5-status-text" style="color: #6b7280;">Waiting to get started...</span>
+              <span id="v5-status-text" class="v5-status">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
+            </p>
+            <p id="v5-account-info-line" class="v5-account-info-line">
+              <!-- Populated dynamically -->
             </p>
           </div>
         </div>
@@ -1827,26 +1949,18 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- PHASE 1: BULK OPERATIONS BAR (Conditional) -->
-      <div class="v5-bulk-bar" id="v5-bulk-bar" style="display: none;">
-        <div class="v5-bulk-info">
-          <i class="ph ph-check-square"></i>
-          <span id="v5-bulk-count">0 items selected</span>
-        </div>
-        <div class="v5-bulk-actions">
-          <button class="btn-bulk" onclick="bulkCategorizeV5()">
-            <i class="ph ph-tag"></i>
-            Bulk Categorize
-          </button>
-          <button class="btn-bulk" onclick="bulkRenameV5()">
-            <i class="ph ph-pencil"></i>
-            Bulk Rename
-          </button>
-          <button class="btn-bulk-cancel" onclick="cancelBulkSelection()">
-            <i class="ph ph-x"></i>
-            Cancel
-          </button>
-        </div>
+      <!-- PHASE 1: BULK OPERATIONS BAR (Modern Floating Pill) -->
+      <div class="bulk-actions-bar" id="v5-bulk-bar" style="display: none;">
+        <span class="selection-label" id="v5-bulk-count">0 selected</span>
+        <button class="btn-bulk btn-bulk-categorize" onclick="bulkCategorizeV5()">
+          <i class="ph ph-tag"></i> Categorize
+        </button>
+        <button class="btn-bulk btn-bulk-categorize" onclick="bulkRenameV5()" style="background: #475569;">
+          <i class="ph ph-pencil"></i> Rename
+        </button>
+        <button class="btn-bulk btn-bulk-cancel" onclick="cancelBulkSelection()">
+          ✕
+        </button>
       </div>
 
 
@@ -2350,32 +2464,39 @@ function updateRowBalance(row) {
 }
 
 window.recalculateAllBalances = function () {
-  if (!V5State.gridData || V5State.gridData.length === 0) return;
+  const openingVal = parseFloat(V5State.openingBalance) || 0;
+  let runningBalance = openingVal;
 
-  const isCreditCard = V5State.accountType === 'CREDIT_CARD';
-
-  let runningBalance = parseFloat(V5State.openingBalance) || 0;
-
-  V5State.gridData.forEach(txn => {
-    // Support both capitalized and lowercase field names
-    const debit = parseFloat(txn.Debit || txn.debit) || 0;
-    const credit = parseFloat(txn.Credit || txn.credit) || 0;
-
-    // Universal formula: Opening - Debit (outflow) + Credit (inflow) = Ending
-    runningBalance = runningBalance - debit + credit;
-
-    txn.balance = parseFloat(runningBalance.toFixed(2)); // Round to avoid floating point errors
-  });
-
-  // Refresh grid to show updated balances
   if (V5State.gridApi) {
-    // USE SPREAD to ensure AG Grid detects change
-    V5State.gridApi.setGridOption('rowData', [...V5State.gridData]);
-    // console.log('✅ Grid rowData updated (V2 Restoration)');
+    // Recalculate based on VISIBLE / SORTED order (Live Basis)
+    let seq = 1;
+    V5State.gridApi.forEachNodeAfterFilterAndSort((node) => {
+      const txn = node.data;
+      const debit = parseFloat(txn.debit || txn.Debit) || 0;
+      const credit = parseFloat(txn.credit || txn.Credit) || 0;
+
+      runningBalance = runningBalance - debit + credit;
+      txn.balance = parseFloat(runningBalance.toFixed(2));
+      txn.Balance = txn.balance;
+
+      // Dynamic Ref# Sequencing (001, 002, 003...) - Resets on sort/filter
+      txn.refNumber = String(seq++).padStart(3, '0');
+    });
+
+    // Refresh balance and refNumber columns
+    V5State.gridApi.refreshCells({ columns: ['balance', 'refNumber'], force: true });
+  } else {
+    // Fallback if grid not ready
+    V5State.gridData.forEach(txn => {
+      const debit = parseFloat(txn.debit || txn.Debit) || 0;
+      const credit = parseFloat(txn.credit || txn.Credit) || 0;
+      runningBalance = runningBalance - debit + credit;
+      txn.balance = parseFloat(runningBalance.toFixed(2));
+      txn.Balance = txn.balance;
+    });
   }
 
-  // Update reconciliation card
-  window.updateReconciliationCard?.();
+  if (window.updateReconciliationCard) window.updateReconciliationCard();
 };
 
 window.swapDebitCredit = function (rowIndex) {
@@ -2484,7 +2605,7 @@ function updateV5SelectionUI() {
   const bulkRenameBtn = document.getElementById('v5-bulk-rename-btn');
   const clearBtn = document.getElementById('v5-clear-btn');
 
-  if (selectedCount > 0) {
+  if (selectedCount > 1) {
     selectionInfo.style.display = 'block';
     selectionCount.textContent = `${selectedCount} selected`;
     bulkCategorizeBtn.style.display = 'flex';
@@ -3123,15 +3244,54 @@ window.bulkCategorizeV5 = function () {
 
   const m = document.createElement('div');
   m.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000';
-  m.innerHTML = `<div style="background:white;border-radius:8px;padding:2rem;width:500px;max-width:90vw">
-<h2 style="margin:0 0 1rem 0">Bulk Categorize</h2>
-<p style="color:#6b7280;margin-bottom:1.5rem">${selectedRows.length} items selected</p>
-<div style="margin-bottom:1.5rem"><label style="display:block;font-weight:600;margin-bottom:0.5rem">Account:</label>${opts}</div>
-<div style="display:flex;gap:0.5rem;justify-content:flex-end">
-<button onclick="this.closest('div[style*=fixed]').remove()" style="padding:0.5rem 1rem;border:1px solid #d1d5db;background:white;border-radius:6px;cursor:pointer">Cancel</button>
-<button onclick="window.applyBulkCat()" style="padding:0.5rem 1rem;border:none;background:#3b82f6;color:white;border-radius:6px;cursor:pointer">Apply</button>
-</div></div>`;
+  m.innerHTML = `<div style="background:white;border-radius:12px;padding:24px;width:500px;max-width:90vw;box-shadow:0 10px 25px rgba(0,0,0,0.1)">
+    <h2 style="margin:0 0 8px 0;font-size:20px;font-weight:700">Bulk Categorize</h2>
+    <p style="color:#64748b;margin:0 0 20px 0;font-size:14px">${selectedRows.length} items selected</p>
+    
+    <div style="margin-bottom:16px">
+        <input type="text" id="bulk-cat-search" placeholder="Search accounts (e.g. 'meals')..." 
+               style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;margin-bottom:8px"
+               onkeyup="filterBulkDropdown()">
+        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#475569">Choose Account:</label>
+        ${opts}
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 20px;border:1px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-weight:500;color:#475569">Cancel</button>
+        <button onclick="window.applyBulkCat()" style="padding:10px 20px;border:none;background:#3b82f6;color:white;border-radius:8px;cursor:pointer;font-weight:600">Apply Category</button>
+    </div>
+  </div>`;
   document.body.appendChild(m);
+
+  // Focus search
+  setTimeout(() => document.getElementById('bulk-cat-search').focus(), 100);
+
+  // Search Filter Logic
+  window.filterBulkDropdown = function () {
+    const input = document.getElementById('bulk-cat-search');
+    const filter = input.value.toUpperCase();
+    const select = document.getElementById('bulk-acct');
+    const options = select.getElementsByTagName('option');
+    const groups = select.getElementsByTagName('optgroup');
+
+    // Expand all groups logic (browser handles search usually, but we can try to help)
+    // Browsers often limit <select> styling. A custom UL/LI is better for full search, 
+    // but standard select with native search is often sufficient. 
+    // However, to strictly meet "search opens dropdown" we would need a custom widget.
+    // For now, this filter helps visual matching if we implemented a custom list, 
+    // but with standard <select>, we can only filter by hiding options or relying on browser.
+    // OPTIMIZATION: Just let browser native search work on the focused select, 
+    // OR implement option hiding.
+
+    for (let i = 0; i < options.length; i++) {
+      const txtValue = options[i].textContent || options[i].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        options[i].style.display = "";
+      } else {
+        options[i].style.display = "none";
+      }
+    }
+  };
 };
 
 window.applyBulkCat = function () {
@@ -3258,25 +3418,85 @@ window.clearV5Files = function () {
 window.parseV5Files = async function () {
   if (V5State.selectedFiles.length === 0) return;
 
+  // Re-entry Guard: Prevent multiple parsing triggers
+  if (V5State.isProcessing) {
+    console.warn('⚠️ Parsing already in progress, ignoring duplicate trigger.');
+    return;
+  }
+
   V5State.isProcessing = true;
-  document.getElementById('v5-progress-container').style.display = 'block';
+
+  // Use class-based toggle for stability
+  const progressContainer = document.getElementById('v5-progress-container');
+  if (progressContainer) {
+    progressContainer.classList.add('v5-active');
+    // Ensure inline style doesn't override class
+    progressContainer.style.display = '';
+  }
 
   try {
-    // Use ProcessingEngine for background parsing
-    const transactions = await window.ProcessingEngine.parseFiles(
-      V5State.selectedFiles,
-      updateV5Progress
-    );
+    // Use ProcessingEngine for background parsing - LOOPING TO PRESERVE FILE SOURCE
+    let allTransactions = [];
+
+    // Process files sequentially to ensure we can tag them correctly
+    for (let i = 0; i < V5State.selectedFiles.length; i++) {
+      const file = V5State.selectedFiles[i];
+      updateV5Progress(i, V5State.selectedFiles.length, `Parsing ${file.name}...`);
+
+      try {
+        // Parse single file
+        const fileTxns = await window.ProcessingEngine.parseFiles([file], () => { });
+
+        // Generate ID for this specific file
+        const fileId = `file-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
+        const fileType = file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'csv';
+
+        // Tag transactions immediately with THIS file's info
+        fileTxns.forEach(txn => {
+          txn.sourceFileId = fileId;
+          txn.sourceFileName = file.name;
+          txn.sourceFileBlob = file; // Store blob for opening
+          txn.sourceFileType = fileType;
+        });
+
+        allTransactions = allTransactions.concat(fileTxns);
+
+        // Add to import history (one entry per file)
+        // Save to history using proper function
+        const currentHistory = getImportHistory();
+        currentHistory.unshift({
+          id: fileId,
+          filename: file.name,
+          date: new Date().toISOString(),
+          count: fileTxns.length,
+          status: 'Success'
+        });
+        if (currentHistory.length > 20) currentHistory.pop();
+        localStorage.setItem('ab_import_history', JSON.stringify(currentHistory));
+        V5State.recentImports = currentHistory; // Keep in sync
+
+      } catch (fileErr) {
+        console.error(`❌ Failed to parse ${file.name}:`, fileErr);
+        // Continue with other files...
+      }
+    }
+
+    // If no transactions found after all files
+    if (allTransactions.length === 0) {
+      throw new Error('No transactions found in selected files');
+    }
+
+    const transactions = allTransactions;
 
     // CRITICAL: Capture brand detection BEFORE categorization wipes it
     const firstTxn = transactions[0] || {};
 
-    console.log('🔍 DEBUG: First transaction FULL:', firstTxn);
-    console.log('🔍 DEBUG: firstTxn._brand:', firstTxn._brand);
-    console.log('🔍 DEBUG: firstTxn._bank:', firstTxn._bank);
-    console.log('🔍 DEBUG: firstTxn._tag:', firstTxn._tag);
-    console.log('🔍 DEBUG: firstTxn._accountType:', firstTxn._accountType);
-    console.log('🔍 DEBUG: firstTxn._prefix:', firstTxn._prefix);
+    // console.log('🔍 DEBUG: First transaction FULL:', firstTxn);
+    // console.log('🔍 DEBUG: firstTxn._brand:', firstTxn._brand);
+    // console.log('🔍 DEBUG: firstTxn._bank:', firstTxn._bank);
+    // console.log('🔍 DEBUG: firstTxn._tag:', firstTxn._tag);
+    // console.log('🔍 DEBUG: firstTxn._accountType:', firstTxn._accountType);
+    // console.log('🔍 DEBUG: firstTxn._prefix:', firstTxn._prefix);
 
     const brandDetection = {
       brand: firstTxn._brand || firstTxn._bank || 'Unknown Bank',
@@ -3295,43 +3515,6 @@ window.parseV5Files = async function () {
       }
     );
 
-    // ============================================
-    // PHASE 3: ATTACH SOURCE METADATA TO EACH ROW
-    // ============================================
-    const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const file = V5State.selectedFiles[0]; // Get first file
-
-    // DEBUG: Log categorized structure
-    console.group('🔍 DEBUG: Categorized Data');
-    console.log('categorized length:', categorized.length);
-    console.log('First transaction:', categorized[0]);
-    console.log('First txn._bank:', categorized[0]?._bank);
-    console.log('First txn._tag:', categorized[0]?._tag);
-    console.groupEnd();
-
-    const fileType = file.name.endsWith('.pdf') ? 'pdf' : 'csv';
-
-    categorized.forEach(row => {
-      row.sourceFileId = fileId;
-      row.sourceFileName = file.name;
-      row.sourceFileBlob = file;
-      row.sourceFileType = fileType;
-    });
-
-    // Add to import history
-    // Save to history using proper function
-    const currentHistory = getImportHistory();
-    currentHistory.unshift({
-      id: fileId,
-      filename: file.name,
-      date: new Date().toISOString(),
-      count: categorized.length,
-      status: 'Success'
-    });
-    if (currentHistory.length > 20) currentHistory.pop();
-    localStorage.setItem('ab_import_history', JSON.stringify(currentHistory));
-    V5State.recentImports = currentHistory; // Keep in sync
-
     // Load into grid
     V5State.gridData = categorized;
 
@@ -3348,22 +3531,14 @@ window.parseV5Files = async function () {
       V5State.refPrefix = detectedPrefix;
       console.log(`🏷️ Ref# prefix set to: ${detectedPrefix}`);
       // Update the UI input field if it exists
-      const refInput = document.getElementById('popup-ref-input');
+      const refInput = document.getElementById('v5-ref-input');
       if (refInput) refInput.value = detectedPrefix;
     }
 
-    // DEBUG: Show what we're about to pass to header
-    console.group('📊 DEBUG: Extracted Bank/Tag');
-    console.log('detectedBank:', detectedBank);
-    console.log('detectedTag:', detectedTag);
-    console.log('detectedPrefix:', detectedPrefix);
-    console.log('Source: categorized[0]._bank =', categorized[0]?._bank);
-    console.log('Source: categorized[0]._tag =', categorized[0]?._tag);
-    console.groupEnd();
-
     if (window.updateV5PageHeader) {
-      // Pass brand/tag (brandDetection not available in this flow)
-      window.updateV5PageHeader(detectedBank, detectedTag);
+      // Pass the COMPLETE brandDetection object to enable Line 3 (metadata)
+      const detection = transactions[0]?.brandDetection || brandDetection;
+      window.updateV5PageHeader(detection);
     }
 
     console.log(`📊 Detected: ${detectedBank} - ${detectedTag} (Prefix: ${detectedPrefix})`);
@@ -3507,7 +3682,18 @@ window.parseV5Files = async function () {
       console.error('❌ renderV5History NOT found');
     }
 
-    // Clear files
+    // Clear files (but CACHE them first for viewer!)
+    if (!V5State.fileCache) V5State.fileCache = [];
+    if (V5State.selectedFiles) {
+      console.log('📦 Caching files for viewer access before clearing UI...');
+      V5State.selectedFiles.forEach(f => {
+        // Avoid duplicates in cache
+        if (!V5State.fileCache.some(existing => existing.name === f.name)) {
+          V5State.fileCache.push(f);
+        }
+      });
+    }
+
     clearV5Files();
 
     // Success - data loaded into grid
@@ -3542,7 +3728,10 @@ window.parseV5Files = async function () {
     }
   } finally {
     V5State.isProcessing = false;
-    document.getElementById('v5-progress-container').style.display = 'none';
+    const progressContainer = document.getElementById('v5-progress-container');
+    if (progressContainer) {
+      progressContainer.classList.remove('v5-active');
+    }
   }
 };
 
@@ -3733,9 +3922,7 @@ window.initV5Grid = function () {
   setupHoverActionButton();
 
   const gridOptions = {
-    // ESSENTIAL: Enable ID tracking so AG Grid knows which row is which
     getRowId: (params) => params.data.id,
-
     columnDefs: [
       {
         colId: 'checkbox',
@@ -3747,13 +3934,12 @@ window.initV5Grid = function () {
         minWidth: 40,
         maxWidth: 40,
         resizable: false,
-        suppressSizeToFit: true // Constant small size
+        suppressSizeToFit: true
       },
       {
         colId: 'refNumber',
         headerName: 'Ref#',
         field: 'refNumber',
-        // WIDER: Accommodate 'CHQ-001'
         width: 120,
         minWidth: 120,
         suppressSizeToFit: true,
@@ -3782,30 +3968,29 @@ window.initV5Grid = function () {
         colId: 'description',
         headerName: 'Description',
         field: 'description',
-        // NO FLEX: Pure content-based sizing like Excel
-        minWidth: 200,
+        flex: 1, // ABSORB ALL REMAINING SPACE (Wall-to-Wall)
+        minWidth: 250,
         editable: true,
         cellEditor: 'agTextCellEditor',
         valueGetter: params => params.data.description || params.data.Description || '',
         cellRenderer: params => {
           const val = params.value || '';
-          if (!val.includes(',')) return val;
+          if (!val.includes(',')) return `<div style="word-break: break-all; white-space: normal;">${val}</div>`;
           const parts = val.split(',');
-          // parts[0] = Name, parts[1...] = Type
-          return `<div style="line-height: 1.3;">
+          return `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
           <div style="font-weight: 500;">${parts[0].trim()}</div>
           <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
         </div>`;
         },
-        autoHeight: true
+        autoHeight: true,
+        cellStyle: { 'white-space': 'normal', 'word-break': 'break-all' }
       },
       {
         colId: 'debit',
         headerName: 'Debit',
         field: 'debit',
-        // NO FLEX: Content-based sizing
         minWidth: 80,
-        suppressSizeToFit: true, // Prevent stretching
+        suppressSizeToFit: true,
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
         cellStyle: { color: '#EF4444', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
@@ -3824,7 +4009,7 @@ window.initV5Grid = function () {
           params.data.Debit = val;
           params.data.credit = 0;
           params.data.Credit = 0;
-          updateRowBalance(params.data);
+          window.recalculateAllBalances();
           return true;
         }
       },
@@ -3832,9 +4017,8 @@ window.initV5Grid = function () {
         colId: 'credit',
         headerName: 'Credit',
         field: 'credit',
-        // NO FLEX: Content-based sizing
         minWidth: 80,
-        suppressSizeToFit: true, // Prevent stretching
+        suppressSizeToFit: true,
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
         cellStyle: { color: '#10B981', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
@@ -3853,7 +4037,7 @@ window.initV5Grid = function () {
           params.data.Credit = val;
           params.data.debit = 0;
           params.data.Debit = 0;
-          updateRowBalance(params.data);
+          window.recalculateAllBalances();
           return true;
         }
       },
@@ -3861,36 +4045,53 @@ window.initV5Grid = function () {
         colId: 'balance',
         headerName: 'Balance',
         field: 'balance',
-        // NO FLEX: Content-based sizing
-        minWidth: 90,
-        suppressSizeToFit: true, // Prevent stretching
+        minWidth: 110, // Wider for running balance
+        suppressSizeToFit: true,
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
         editable: false,
         valueFormatter: params => parseFloat(params.value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-        cellStyle: {
-          color: '#111827', // Always black
-          'text-align': 'right',
-          'justify-content': 'flex-end',
-          'display': 'flex',
-          'align-items': 'center'
-        }
+        cellStyle: { color: '#111827', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' }
       },
+
       {
         colId: 'account',
         headerName: 'Account',
         field: 'account',
-        // Allow auto-size to expand to fit content
-        minWidth: 130,
+        minWidth: 160,
+        suppressSizeToFit: true,
         editable: true,
         cellEditor: GroupedAccountEditor,
         valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',
         valueFormatter: params => resolveAccountName(params.value)
+      },
+      {
+        colId: 'action',
+        headerName: 'Action',
+        width: 110,
+        minWidth: 110,
+        suppressMenu: true,
+        sortable: false,
+        filter: false,
+        resizable: false,
+        cellStyle: { 'text-align': 'center', 'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'padding': '0', 'border': 'none' },
+        cellRenderer: (params) => {
+          if (!params.data) return '';
+          return `
+            <div style="display:flex; gap:6px;">
+              <button onclick="event.stopPropagation(); window.viewSourcePDF('${params.data.id}')" title="View Source PDF" style="background:none; border:none; color:#6b7280; cursor:pointer; font-size:15px; padding:4px;">📄</button>
+              <button onclick="event.stopPropagation(); window.swapDebitCredit('${params.data.id}')" title="Swap Debit/Credit" style="background:none; border:none; color:#3b82f6; cursor:pointer; font-size:16px; padding:4px;">⇄</button>
+              <button onclick="event.stopPropagation(); window.deleteV5Row('${params.data.id}')" title="Delete Row" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px; padding:4px;">✕</button>
+            </div>
+          `;
+        }
       }
     ],
-
     rowData: V5State.gridData,
     headerHeight: 48,
+    rowHeight: 44,
+    rowSelection: 'multiple',
+    animateRows: true,
     defaultColDef: {
       sortable: true,
       filter: true,
@@ -3898,187 +4099,220 @@ window.initV5Grid = function () {
       minWidth: 50,
       suppressMenu: true
     },
-    suppressRowHoverHighlight: false,
-    suppressCellFocus: false,
-    suppressColumnVirtualisation: false,
-    suppressHorizontalScroll: false,
 
-    // MOUSE EVENTS FOR FLOATING BUTTON
-    onCellMouseOver: (params) => {
-      const btn = document.getElementById('v5-hover-btn');
-      if (!btn) return;
-
-      clearTimeout(window.v5HoverTimer);
-
-      // Only show if hovering a real row
-      if (!params.node || !params.node.data) return;
-
-      // Get row rect from DOM
-      const rowId = params.node.data.id;
-      // Use event target to find row - simpler than API lookup
-      const rowElement = params.event.target.closest('.ag-row');
-
-      if (rowElement) {
-        const rect = rowElement.getBoundingClientRect();
-
-        // Position at right edge of row, vertically centered
-        btn.style.top = `${rect.top + (rect.height / 2) - 14}px`; // Centered
-        btn.style.left = `${rect.right - 40}px`; // 40px from right
-        btn.style.display = 'flex';
-
-        // Store context
-        btn.dataset.rowId = rowId;
-        btn.dataset.sourceFileId = params.data.sourceFileId || '';
-        btn.dataset.sourceFileType = params.data.sourceFileType || '';
-        btn.dataset.sourceFileName = params.data.sourceFileName || '';
-      }
-    },
-
-    onCellMouseOut: (params) => {
-      // Delay hide to allow moving to button
-      window.v5HoverTimer = setTimeout(() => {
-        const btn = document.getElementById('v5-hover-btn');
-        if (btn) btn.style.display = 'none';
-      }, 300); // Stable 300ms delay
-    },
-
-    // Hide on scroll to prevent floating mismatch
-    onBodyScroll: () => {
-      const btn = document.getElementById('v5-hover-btn');
-      if (btn) btn.style.display = 'none';
-    },
-
-    // Default sort by Date
-    initialState: {
-      sort: {
-        sortModel: [{ colId: 'date', sort: 'asc' }]
-      }
-    },
-
-    rowSelection: 'multiple',
-    animateRows: true,
-
-    // Recalculate running balance whenever sort changes
+    // LIVE BALANCE RECALCULATION
     onSortChanged: (params) => {
-      setTimeout(() => {
-        const displayedRows = [];
-        params.api.forEachNodeAfterFilterAndSort(node => displayedRows.push(node.data));
-        displayedRows.forEach((row, index) => { row.refNumber = String(index + 1).padStart(3, '0'); });
-        params.api.refreshCells({ force: true });
-        if (V5State.gridData && V5State.gridData.length > 0) recalculateAllBalances();
-        saveData();
-      }, 200);
+      console.log('🔄 Sort changed - recalculating live balances');
+      window.recalculateAllBalances();
+    },
+    onFilterChanged: (params) => {
+      console.log('🔍 Filter changed - recalculating live balances');
+      window.recalculateAllBalances();
     },
     onCellValueChanged: (params) => {
       captureState();
       saveData();
-      if (params.colDef.field === 'category') {
+      if (params.colDef.field === 'account') {
         window.ProcessingEngine.learnFromUserAction('category_change', {
           description: params.data.description,
           newCategory: params.newValue
         });
       }
+      window.recalculateAllBalances();
     },
     onRowSelected: (event) => {
-      const selectedNodes = V5State.gridApi.getSelectedNodes();
-      const count = selectedNodes.length;
-      document.getElementById('v5-bulk-bar').style.display = count >= 2 ? 'flex' : 'none';
-      document.getElementById('v5-bulk-count').textContent = `${count} item${count > 1 ? 's' : ''} selected`;
-    },
-    onGridReady: (params) => {
-      console.log('✅ AG Grid onGridReady fired');
-      V5State.gridApi = params.api;
-      V5State.gridColumnApi = params.columnApi;
+      // DEBUG: Selection UI with modern floating bar
+      const selected = event.api.getSelectedRows();
+      console.log('🔘 Selection changed:', selected.length, 'items');
 
-      // HYBRID: Auto-size to content, then expand Description to fill remaining
-      const fitColumns = () => {
-        const api = params.api;
-        if (!api) return;
+      const modernBar = document.getElementById('v5-bulk-bar'); // Modern floating pill
+      const inlineBar = document.getElementById('v5-inline-bar'); // Old yellow strip
+      const bulkModeBar = document.getElementById('bulk-mode-bar');
+      const bulkCountSpan = document.getElementById('v5-bulk-count'); // For modern bar
 
-        api.autoSizeAllColumns();
+      console.log('📊 Elements found:', {
+        modernBar: !!modernBar,
+        inlineBar: !!inlineBar,
+        bulkModeBar: !!bulkModeBar,
+        bulkCountSpan: !!bulkCountSpan
+      });
 
-        // Expand Description to fill remaining space
-        setTimeout(() => {
-          const gridElement = document.querySelector('.ag-root-wrapper');
-          if (!gridElement) return;
+      // ALWAYS hide the old inline bar
+      if (inlineBar) {
+        inlineBar.style.display = 'none';
+        console.log('✅ Hid inline bar');
+      }
+      if (bulkModeBar) {
+        bulkModeBar.style.display = 'none';
+      }
 
-          const gridWidth = gridElement.clientWidth - 10; // Margin buffer
-          let totalWidth = 0;
-          api.getAllDisplayedColumns().forEach(c => {
-            totalWidth += c.getActualWidth();
-          });
-
-          const remaining = gridWidth - totalWidth;
-          if (remaining > 5) {
-            const descCol = api.getColumn('description');
-            if (descCol) {
-              api.setColumnWidth(descCol, descCol.getActualWidth() + remaining);
-            }
-          } else if (remaining < -10) {
-            // Oversized - force fit to eliminate horizontal scroll
-            // This is "Wall-to-Wall" mode
-            api.sizeColumnsToFit();
-          }
-        }, 150);
-      };
-
-      // Initial fit + retry after data might have settled
-      fitColumns();
-      setTimeout(fitColumns, 500);
-      setTimeout(fitColumns, 1500);
-
-      window.addEventListener('resize', () => fitColumns());
-    },
-
-    onGridSizeChanged: (params) => {
-      V5State.gridApi?.autoSizeAllColumns();
-      // Re-trigger fit legacy if needed - though onGridReady logic should suffice
-    },
-
-    onFirstDataRendered: (params) => {
-      console.log('Target: First data rendered - fitting columns');
-      // Re-trigger the robust fitColumns from onGridReady via a shared function if possible,
-      // but for now let's just trigger autoSize
-      params.api.autoSizeAllColumns();
-
-      // CRITICAL: Force row height recalculation for autoHeight columns (2-line descriptions)
-      params.api.resetRowHeights();
-
-      // Wait for rendering
-      setTimeout(() => {
-        const api = params.api;
-        const gridElement = document.querySelector('.ag-root-wrapper');
-        if (!gridElement || !api) return;
-
-        const gridWidth = gridElement.clientWidth - 20;
-        let totalWidth = 0;
-        api.getAllDisplayedColumns().forEach(c => totalWidth += c.getActualWidth());
-        const remaining = gridWidth - totalWidth;
-        if (remaining > 10) {
-          const descCol = api.getColumn('description');
-          if (descCol) api.setColumnWidth(descCol, descCol.getActualWidth() + remaining);
+      // Show/hide modern bar based on selection
+      if (selected.length > 1) {
+        if (modernBar) {
+          modernBar.style.display = 'flex';
+          console.log('✅ Showing modern bar');
+        } else {
+          console.error('❌ Modern bar (#v5-bulk-bar) not found!');
         }
-      }, 200);
+        if (bulkCountSpan) {
+          bulkCountSpan.textContent = `${selected.length} selected`;
+        }
+      } else {
+        if (modernBar) {
+          modernBar.style.display = 'none';
+          console.log('✅ Hiding modern bar (selection <= 1)');
+        }
+      }
+    },
+
+    onGridReady: (params) => {
+      V5State.gridApi = params.api;
+      console.log('✅ Grid Ready');
+
+      // EXCEL-STYLE FITTING: 
+      // 1. Auto-size all columns tightly to content
+      // 2. Expand only the Description column to fill remaining void
+      // 3. Ensure "Action" column is visible
+      params.api.autoSizeAllColumns();
+      setTimeout(() => params.api.sizeColumnsToFit(), 50);
+
+      window.recalculateAllBalances();
+      window.addEventListener('resize', () => {
+        params.api.sizeColumnsToFit();
+      });
+    },
+
+    onBodyScroll: () => {
+      // No-op
+    }
+  };
+
+  // RESTORED ACTION HELPERS (ID-Based)
+  // PDF VIEWER HELPER (DEBUG ENABLED)
+  window.viewSourcePDF = (rowId) => {
+    const row = V5State.gridData.find(r => r.id === rowId);
+    if (!row) {
+      console.error('❌ Row not found:', rowId);
+      return;
+    }
+
+    console.log('📄 Requesting PDF for row:', rowId);
+    console.log('   Target File:', row.sourceFileName);
+
+    // Debug State
+    console.log('   Memory State:', {
+      selectedFiles: V5State.selectedFiles ? V5State.selectedFiles.length : 0,
+      fileCache: V5State.fileCache ? V5State.fileCache.length : 0
+    });
+
+    if (row.sourceFileName) {
+      let file = null;
+      let source = 'none';
+
+      // 1. Check Active Selection
+      if (!file && V5State.selectedFiles) {
+        file = V5State.selectedFiles.find(f => f.name === row.sourceFileName);
+        if (file) source = 'selectedFiles';
+      }
+
+      // 2. Check File Cache
+      if (!file && V5State.fileCache) {
+        file = V5State.fileCache.find(f => f.name === row.sourceFileName);
+        if (file) source = 'fileCache';
+      }
+
+      if (file) {
+        console.log(`✅ File found in [${source}]:`, file.name, file.size);
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, '_blank');
+        return;
+      }
+
+      // 3. Last Resort: BrainStorage
+      console.log('⚠️ File not in memory, checking BrainStorage...');
+      if (window.BrainStorage && window.BrainStorage.getFile) {
+        window.BrainStorage.getFile(row.sourceFileName).then(file => {
+          if (file) {
+            console.log('✅ File retrieved from BrainStorage');
+            const fileURL = URL.createObjectURL(file);
+            window.open(fileURL, '_blank');
+          } else {
+            console.error('❌ File not found in BrainStorage');
+            alert(`File "${row.sourceFileName}" not found in cache.\nPlease re-upload to view.`);
+          }
+        }).catch(e => {
+          console.error('❌ BrainStorage Error:', e);
+          alert(`Error retrieving file: ${e.message}`);
+        });
+        return;
+      }
+
+      alert(`File "${row.sourceFileName}" not found in current session.\n(Reloading the page clears file memory)`);
+    } else {
+      alert('No source file linked to this transaction.');
     }
   };
 
   // RESTORED ACTION HELPERS (ID-Based)
   window.deleteV5Row = (rowId) => {
-    if (!confirm('Are you sure you want to delete this transaction?')) return;
+    // Custom In-Page Confirmation
+    const existingModal = document.getElementById('v5-delete-modal');
+    if (existingModal) existingModal.remove();
 
-    // Find index in master data
+    const row = V5State.gridData.find(r => r.id === rowId);
+    if (!row) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'v5-delete-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+    `;
+    modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1f2937;">Delete Transaction?</h3>
+            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 14px;">
+                Are you sure you want to delete <strong>${row.description}</strong>? This cannot be undone unless you use the Undo function immediately.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="document.getElementById('v5-delete-modal').remove()" 
+                    style="padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Cancel
+                </button>
+                <button onclick="confirmDeleteV5Row('${rowId}')" 
+                    style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    Delete
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  window.confirmDeleteV5Row = (rowId) => {
+    document.getElementById('v5-delete-modal')?.remove();
+
+    // Find and remove
     const idx = V5State.gridData.findIndex(r => r.id === rowId);
-    if (idx === -1) { console.error('Row ID not found:', rowId); return; }
+    if (idx === -1) return;
 
-    // Remove from state
+    const deletedRow = V5State.gridData[idx];
+
+    // PUSH TO UNDO STACK
+    V5State.undoStack.push({
+      type: 'delete',
+      row: { ...deletedRow },
+      index: idx
+    });
+    updateUndoButton();
+
     V5State.gridData.splice(idx, 1);
 
-    // Efficient Update via Transaction
     const rowNode = V5State.gridApi.getRowNode(rowId);
     if (rowNode) {
       V5State.gridApi.applyTransaction({ remove: [rowNode.data] });
     } else {
-      // Fallback
       V5State.gridApi.setGridOption('rowData', V5State.gridData);
     }
 
@@ -4088,14 +4322,20 @@ window.initV5Grid = function () {
   };
 
   window.swapDebitCredit = (rowId) => {
-    // Find object reference in master data
     const row = V5State.gridData.find(r => r.id === rowId);
-    if (!row) { console.error('Row ID not found:', rowId); return; }
+    if (!row) return;
+
+    // PUSH TO UNDO STACK implies we want to reverse this later
+    // The "reverse" of a swap is just another swap on the same row!
+    V5State.undoStack.push({
+      type: 'swap',
+      rowId: rowId
+    });
+    updateUndoButton();
 
     const oldDebit = parseFloat(row.debit || 0);
     const oldCredit = parseFloat(row.credit || 0);
 
-    // Swap values
     row.debit = oldCredit;
     row.Debit = oldCredit;
     row.credit = oldDebit;
@@ -4104,16 +4344,56 @@ window.initV5Grid = function () {
 
     updateRowBalance(row);
 
-    // Update Grid (using ID transaction)
     const res = V5State.gridApi.applyTransaction({ update: [row] });
-
-    // Fallback if transaction fails
     if (!res || res.updated.length === 0) {
       V5State.gridApi.refreshCells({ force: true });
     }
 
     saveData();
     console.log('🔄 Swapped D/C for row ID:', rowId);
+  };
+
+  // ROBUST UNDO FUNCTION
+  window.undoLastAction = () => {
+    if (V5State.undoStack.length === 0) return;
+
+    const action = V5State.undoStack.pop();
+    updateUndoButton();
+    console.log('↩️ Undoing action:', action.type);
+
+    if (action.type === 'delete') {
+      const row = action.row;
+      // Insert back at original index if possible, or push
+      if (action.index >= 0 && action.index <= V5State.gridData.length) {
+        V5State.gridData.splice(action.index, 0, row);
+      } else {
+        V5State.gridData.push(row);
+      }
+
+      V5State.gridApi.applyTransaction({ add: [row], addIndex: action.index });
+      console.log('↩️ Restored deleted row:', row.id);
+
+    } else if (action.type === 'swap') {
+      // Just call swap again to reverse it
+      // But DON'T push to undo stack this time (to avoid loop)
+      // We manually swap logic here without calling window.swapDebitCredit
+      const row = V5State.gridData.find(r => r.id === action.rowId);
+      if (row) {
+        const oldDebit = parseFloat(row.debit || 0);
+        const oldCredit = parseFloat(row.credit || 0);
+        row.debit = oldCredit;
+        row.Debit = oldCredit;
+        row.credit = oldDebit;
+        row.Credit = oldDebit;
+        row.type = row.debit > 0 ? 'Debit' : 'Credit';
+
+        updateRowBalance(row);
+        V5State.gridApi.applyTransaction({ update: [row] });
+      }
+    }
+
+    recalculateAllBalances();
+    saveData();
   };
 
 
@@ -6055,14 +6335,26 @@ window.updateStatementBadge = function () {
 // FIX 6: Clean description - strip leading dates
 function cleanV5Description(desc) { if (!desc) return ''; return desc.replace(/^\d{1,2}\s+\w{3,9}\s+/i, '').replace(/^\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '').trim(); }
 
-// AUTO-UPPERCASE REF# INPUT
+// AUTO-UPPERCASE REF# INPUT + BIDIRECTIONAL SYNC
 document.addEventListener('DOMContentLoaded', () => {
   const refInput = document.getElementById('v5-ref-input');
   if (refInput) {
+    // 1. Force Uppercase
     refInput.addEventListener('input', (e) => {
-      e.target.value = e.target.value.toUpperCase();
-      V5State.refPrefix = e.target.value;
+      const val = e.target.value.toUpperCase();
+      e.target.value = val;
+
+      // 2. Update V5State prefix
+      if (window.V5State) {
+        window.V5State.refPrefix = val;
+        console.log(`🏷️ Ref# Sync: Prefix updated to ${val}`);
+      }
     });
+  }
+
+  // 3. Ensure Header stays in Neutral State on Load (Strictly hidden)
+  if (typeof updateBrandDisplay === 'function') {
+    updateBrandDisplay(null);
   }
 });
 
@@ -6163,51 +6455,130 @@ window.updateV5PageHeader = function (brand, type, detection = null) {
   }
 };
 
-/**
- * Main function to update dropdowns and confidence badge
- */
+// Main function to update dropdowns and confidence badge
 function updateBrandDisplay(detection) {
   const bankSelect = document.getElementById('v5-bank-brand-select');
   const tagSelect = document.getElementById('v5-account-tag-select');
   const dash = document.getElementById('v5-bank-dash');
-  const dot = document.getElementById('v5-header-dot');
   const status = document.getElementById('v5-status-text');
+  const infoLine = document.getElementById('v5-account-info-line');
 
   if (!bankSelect || !tagSelect || !status) {
     console.warn('[UI] Brand dropdown elements not found');
     return;
   }
 
+  // Reset classes to ensure clean state
+  bankSelect.classList.remove('v5-auto-detected', 'v5-manual-color');
+  tagSelect.classList.remove('v5-auto-detected', 'v5-manual-color');
+  if (dash) dash.classList.remove('v5-auto-detected', 'v5-manual-color');
+
   if (!detection || !detection.brand) {
-    // Hide dropdowns, show "Waiting..."
+    // Neutral State: ABSOLUTELY HIDE everything except "Waiting" status
     bankSelect.style.display = 'none';
     tagSelect.style.display = 'none';
     if (dash) dash.style.display = 'none';
-    dot.style.display = 'none';
-    status.textContent = 'Waiting to get started...';
+
+    status.innerHTML = 'WAITING TO GET STARTED<span class="v5-loading-dots"></span>';
     status.className = 'v5-status';
-    status.style.color = '#6b7280'; // Gray
+    status.style.display = 'inline-flex';
+
+    if (infoLine) {
+      infoLine.innerHTML = '';
+      infoLine.style.display = 'none';
+    }
+
+    // Explicitly hide dropdowns and clear values to be safe
+    bankSelect.value = '';
+    tagSelect.value = '';
+
     return;
   }
 
   // Store detection globally
   currentDetection = detection;
+  localStorage.setItem('v5_current_detection', JSON.stringify(detection));
+
+  // Sync Ref# Prefix if detected
+  if (detection.prefix && detection.prefix !== V5State.refPrefix) {
+    V5State.refPrefix = detection.prefix;
+    const refInput = document.getElementById('v5-ref-input');
+    if (refInput) {
+      refInput.value = detection.prefix;
+      console.log(`🏷️ Persisted Ref# Sync: ${detection.prefix}`);
+    }
+  }
 
   // Set dropdown values
   bankSelect.value = detection.brand;
   tagSelect.value = detection.subType || detection.accountType || detection.tag;
 
-  // Show dropdowns
-  bankSelect.style.display = 'inline';
-  tagSelect.style.display = 'inline';
-  if (dash) dash.style.display = 'inline';
-  dot.style.display = 'inline';
+  // Apply color class based on source
+  if (detection.source === 'auto_detected' || detection.source === 'auto' || !detection.source) {
+    bankSelect.classList.add('v5-auto-detected');
+    tagSelect.classList.add('v5-auto-detected');
+    if (dash) dash.classList.add('v5-auto-detected');
+  } else {
+    bankSelect.classList.add('v5-manual-color');
+    tagSelect.classList.add('v5-manual-color');
+    if (dash) dash.classList.add('v5-manual-color');
+  }
+
+  // Show EVERYTHING inline
+  bankSelect.style.display = 'inline-block';
+  tagSelect.style.display = 'inline-block';
+  if (dash) dash.style.display = 'inline-block';
+  status.style.display = 'inline-flex';
 
   // Update confidence badge
   updateConfidenceBadge(detection.confidence || 0.7, detection.source);
 
-  console.log('[UI] Updated brand display:', detection.brand, '-', detection.subType, '(confidence:', detection.confidence, ')');
+  // Line 3: Account Info
+  if (infoLine) {
+    const parts = [];
+    if (detection.accountNumber) parts.push(`ACCOUNT#: <b>${detection.accountNumber}</b>`);
+    if (detection.transit) parts.push(`TRANSIT#: <b>${detection.transit}</b>`);
+    if (detection.institutionCode) parts.push(`INST#: <b>${detection.institutionCode}</b>`);
+
+    if (parts.length > 0) {
+      infoLine.innerHTML = parts.join(' • ');
+      infoLine.style.display = 'flex';
+    } else {
+      infoLine.style.display = 'none';
+    }
+  }
+
 }
+
+/**
+ * RESTORER: Loads last detection from localStorage on boot
+ */
+window.restoreV5HeaderState = function () {
+  // Prevent flickering if we are in the middle of processing new files
+  if (V5State.isProcessing) return;
+
+  try {
+    const saved = localStorage.getItem('v5_current_detection');
+    if (saved) {
+      const detection = JSON.parse(saved);
+      // Only restore if it looks like a real detection and we have data in the grid
+      if (detection && detection.brand && V5State.gridData.length > 0) {
+        console.log('♻️ Restoring Header State:', detection.brand);
+        updateV5PageHeader(detection);
+      } else {
+        // Fallback to neutral state if no data or invalid detection
+        console.log('♻️ No active grid data - Enforcing neutral header state');
+        updateBrandDisplay(null);
+      }
+    } else {
+      updateBrandDisplay(null);
+    }
+  } catch (e) {
+    console.error('❌ Failed to restore header state:', e);
+    updateBrandDisplay(null);
+  }
+};
+
 
 /**
  * Update confidence badge text and color
@@ -6220,19 +6591,20 @@ function updateConfidenceBadge(confidence, source) {
   status.className = 'v5-status';
 
   if (source === 'user_learned') {
-    status.textContent = '🎓 Learned';
+    status.innerHTML = '🎓 LEARNED';
     status.classList.add('confidence-learned');
-  } else if (source === 'user_override') {
-    status.textContent = '✓ Manual';
-    status.classList.add('confidence-learned');
+  } else if (source === 'user_override' || source === 'manual') {
+    status.innerHTML = '✓ MANUAL';
+    status.classList.add('confidence-learned'); // Reuse purple for manual/learned
+    status.style.color = '#8b5cf6';
   } else if (confidence >= 0.95) {
-    status.textContent = '✓ Auto-detected';
+    status.innerHTML = '✓ AUTO-DETECTED';
     status.classList.add('confidence-high');
   } else if (confidence >= 0.70) {
-    status.textContent = '⚠ Verify';
+    status.innerHTML = '⚠ VERIFY';
     status.classList.add('confidence-medium');
   } else {
-    status.textContent = '❌ Select';
+    status.innerHTML = '❌ SELECT';
     status.classList.add('confidence-low');
   }
 }
@@ -6253,6 +6625,39 @@ async function onBankTagChange() {
 
   console.log('[UI] User changed bank/tag to:', bank, '-', tag);
 
+  // Update currentDetection object and persistence
+  if (currentDetection) {
+    currentDetection.brand = bank;
+    currentDetection.subType = tag;
+    currentDetection.source = 'user_override';
+    currentDetection.confidence = 1.0;
+
+    // Remove gradient and apply manual color on change
+    bankSelect.classList.remove('v5-auto-detected');
+    tagSelect.classList.remove('v5-auto-detected');
+    bankSelect.classList.add('v5-manual-color');
+    tagSelect.classList.add('v5-manual-color');
+
+    const dash = document.getElementById('v5-bank-dash');
+    if (dash) {
+      dash.classList.remove('v5-auto-detected');
+      dash.classList.add('v5-manual-color');
+    }
+
+    // Sync Ref# Prefix from signatures if bank changed
+    if (window.brandDetector && window.brandDetector.bankSignatures[bank]) {
+      const sig = window.brandDetector.bankSignatures[bank];
+      if (sig.prefix) {
+        currentDetection.prefix = sig.prefix;
+        if (window.updateRefPrefix) window.updateRefPrefix(sig.prefix);
+        const refInput = document.getElementById('v5-ref-input');
+        if (refInput) refInput.value = sig.prefix;
+      }
+    }
+
+    localStorage.setItem('v5_current_detection', JSON.stringify(currentDetection));
+  }
+
   // Learn this association
   if (window.bankLearningService && currentDetection?.fingerprint) {
     window.bankLearningService.learn(currentDetection.fingerprint, {
@@ -6263,11 +6668,8 @@ async function onBankTagChange() {
     console.log('[LEARNING] Saved user choice');
   }
 
-  // Update confidence to show it's user-selected
+  // Update confidence badge
   updateConfidenceBadge(1.0, 'user_override');
-
-  // TODO: Re-parse with correct parser if needed
-  // This would trigger a re-parse of the uploaded file with the new parser
 }
 
 // Attach event listeners once DOM elements exist
