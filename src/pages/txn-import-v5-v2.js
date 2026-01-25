@@ -1093,17 +1093,28 @@ window.renderTxnImportV5Page = function () {
         color: #003580;
         font-weight: 500;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 6px;
-        transition: all 0.2s ease;
+        padding: 4px 10px;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         white-space: nowrap;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+        border: 1px solid transparent;
       }
       
       .v5-breadcrumb-item:hover {
-        background: rgba(0, 53, 128, 0.05);
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(0, 53, 128, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         color: #2563eb;
+      }
+
+      .v5-breadcrumb-logo {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+        border-radius: 4px;
+        flex-shrink: 0;
       }
       
       .v5-breadcrumb-separator {
@@ -1694,6 +1705,25 @@ window.renderTxnImportV5Page = function () {
         box-shadow: none;
       }
 
+      .v5-popover-option {
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #1e293b;
+        font-size: 0.9rem;
+      }
+
+      .v5-popover-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
       .btn-bulk-cancel:hover {
         background: rgba(239, 68, 68, 0.12);
         color: #ef4444;
@@ -2647,7 +2677,7 @@ window.renderTxnImportV5Page = function () {
               <option value="xl">XL (16px)</option>
             </select>
           </div>
-          <button class="btn-bulk-cancel" onclick="window.closeV5Appearance()" style="margin-left: auto; min-width: 32px; padding: 6px; border-radius: 4px; background: transparent; border: 1px solid #cbd5e1; color: #64748b; font-size: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">
+          <button class="btn-bulk-cancel" onclick="window.closeV5Appearance()" style="margin-left: auto; min-width: 32px; padding: 6px; border: 1px solid #cbd5e1; color: #64748b; font-size: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">
             ✕
           </button>
         </div>
@@ -3919,7 +3949,6 @@ window.bulkCategorizeV5 = function () {
     // Expand all groups logic (browser handles search usually, but we can try to help)
     // Browsers often limit <select> styling. A custom UL/LI is better for full search, 
     // but standard select with native search is often sufficient. 
-    // However, to strictly meet "search opens dropdown" we would need a custom widget.
     // For now, this filter helps visual matching if we implemented a custom list, 
     // but with standard <select>, we can only filter by hiding options or relying on browser.
     // OPTIMIZATION: Just let browser native search work on the focused select, 
@@ -4592,8 +4621,10 @@ window.initV5Grid = function () {
         suppressSizeToFit: true,
         comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
         valueGetter: params => {
+          // STRICTLY DYNAMIC: Ensure no gaps by using row index
           const p = V5State.refPrefix || '';
-          return p ? `${p}-${params.data.refNumber}` : params.data.refNumber;
+          const num = String(params.node.rowIndex + 1).padStart(3, '0');
+          return p ? `${p}-${num}` : num;
         },
         cellStyle: { fontWeight: '600', color: '#6B7280' }
       },
@@ -6425,10 +6456,7 @@ function getV5ColumnDefs() {
       pinned: 'left',
       editable: true,
       valueGetter: (params) => {
-        // Check if manually set
-        if (params.data.refNumber) return params.data.refNumber;
-
-        // Auto-generate
+        // STRICTLY DYNAMIC: Always re-count based on row index to ensure no gaps
         const prefix = V5State.refPrefix || '';
         const num = String(params.node.rowIndex + 1).padStart(3, '0');
         return prefix ? `${prefix}-${num}` : num;
@@ -7098,6 +7126,17 @@ window.updateV5PageHeader = function (brand, type, detection = null) {
  * Breadcrumb Popover Logic
  */
 let currentPopoverType = null;
+const bankLogos = {
+  'TD': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
+  'RBC': 'https://upload.wikimedia.org/wikipedia/commons/b/b8/RBC_Royal_Bank_logo.svg',
+  'BMO': 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Bank_of_Montreal_logo.svg',
+  'CIBC': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/CIBC_logo.svg',
+  'Scotiabank': 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Scotiabank.svg',
+  'Tangerine': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Tangerine_Bank_logo.svg',
+  'Amex': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg',
+  'default': 'https://ph-duotone.com/bank.svg' // Fallback
+};
+
 const popoverOptions = {
   bank: [
     { value: 'TD', label: 'TD Canada Trust' },
@@ -7109,11 +7148,11 @@ const popoverOptions = {
     { value: 'Amex', label: 'American Express Can' }
   ],
   tag: [
-    { value: 'Chequing', label: 'Chequing' },
-    { value: 'Savings', label: 'Savings' },
-    { value: 'Visa', label: 'Visa' },
-    { value: 'Mastercard', label: 'Mastercard' },
-    { value: 'Amex', label: 'Amex' }
+    { value: 'Chequing', label: 'Chequing', icon: 'ph-money' },
+    { value: 'Savings', label: 'Savings', icon: 'ph-bank' },
+    { value: 'Visa', label: 'Visa', icon: 'ph-credit-card' },
+    { value: 'Mastercard', label: 'Mastercard', icon: 'ph-credit-card' },
+    { value: 'Amex', label: 'Amex', icon: 'ph-credit-card' }
   ]
 };
 
@@ -7155,7 +7194,14 @@ window.populateV5Popover = function (type, filter = '') {
   filtered.forEach(opt => {
     const div = document.createElement('div');
     div.className = `v5-popover-option ${opt.value === currentVal ? 'selected' : ''}`;
-    div.innerHTML = `<span>${opt.label}</span>`;
+
+    if (type === 'bank') {
+      const logoUrl = bankLogos[opt.value] || bankLogos.default;
+      div.innerHTML = `<img src="${logoUrl}" class="v5-popover-logo"> <span>${opt.label}</span>`;
+    } else {
+      div.innerHTML = `<i class="ph ${opt.icon || 'ph-tag'}"></i> <span>${opt.label}</span>`;
+    }
+
     div.onclick = () => selectV5PopoverOption(type, opt.value, opt.label);
     list.appendChild(div);
   });
@@ -7171,6 +7217,19 @@ window.selectV5PopoverOption = function (type, value, label) {
 
   labelEl.innerText = label;
   labelEl.dataset.value = value;
+
+  // Update Icon/Logo in breadcrumb
+  if (type === 'bank') {
+    const logoUrl = bankLogos[value] || bankLogos.default;
+    item.querySelector('i')?.replaceWith(Object.assign(document.createElement('img'), {
+      src: logoUrl,
+      className: 'v5-breadcrumb-logo'
+    }));
+    // If it was already an img, just update src
+    const existingImg = item.querySelector('img');
+    if (existingImg) existingImg.src = logoUrl;
+  }
+
   item.classList.remove('v5-auto-detected');
 
   document.getElementById('v5-header-popover').style.display = 'none';
@@ -7237,6 +7296,16 @@ function updateBrandDisplay(detection) {
 
   const bankLabelEl = bankItem.querySelector('.v5-breadcrumb-label');
   const tagLabelEl = tagItem.querySelector('.v5-breadcrumb-label');
+
+  // Update Bank Logo
+  const logoUrl = bankLogos[bankVal] || bankLogos.default;
+  const existingBankIcon = bankItem.querySelector('i, .v5-breadcrumb-logo');
+  if (existingBankIcon) {
+    const newLogo = document.createElement('img');
+    newLogo.src = logoUrl;
+    newLogo.className = 'v5-breadcrumb-logo';
+    existingBankIcon.replaceWith(newLogo);
+  }
 
   bankLabelEl.innerText = bankOpt ? bankOpt.label : (bankVal || 'Select Bank');
   bankLabelEl.dataset.value = bankVal || '';
