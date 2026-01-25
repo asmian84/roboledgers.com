@@ -1023,9 +1023,8 @@ window.renderTxnImportV5Page = function () {
         z-index: 100;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         box-sizing: border-box !important;
-        height: 100px !important; /* Reverted to 100px */
-        min-height: 100px !important;
-        max-height: 100px !important;
+        height: 80px !important; /* Adjusted to be slightly more compact but fit content */
+        min-height: 80px !important;
       }
       
       .v5-title-section {
@@ -1062,7 +1061,7 @@ window.renderTxnImportV5Page = function () {
         display: flex !important;
         align-items: center !important;
         gap: 0 !important;
-        text-transform: uppercase !important;
+        /* text-transform: uppercase !important; REMOVED per user request for sentence case */
         min-height: 1.5rem;
         color: #003580 !important; /* Default Navy for manual/placeholder */
       }
@@ -1081,65 +1080,117 @@ window.renderTxnImportV5Page = function () {
         display: inline-block;
       }
 
-      /* Brand/Tag Dropdowns - Dynamic Width to prevent excessive spacing */
-      #v5-bank-brand-select,
-      #v5-account-tag-select {
-        width: fit-content !important;
-        min-width: auto !important;
-        max-width: 200px;
-        padding-right: 1.5rem !important; /* Space for dropdown arrow */
-      }
-      
-      .v5-search-wrapper input {
-        padding: 6px 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        height: 32px;
-        flex: 1;
-      }
-      
-      /* Appearance Controls in Bulk Bar - Horizontal Layout */
-      .v5-control-group {
+      /* --- Breadcrumb Popover UI --- */
+      .v5-breadcrumb {
         display: flex;
-        flex-direction: row;
         align-items: center;
-        gap: 6px; /* Tighter gap */
+        gap: 0;
+        font-family: 'Inter', sans-serif;
       }
       
-      .v5-control-group label {
-        font-size: 10px; /* Smaller label */
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-      }
-      
-      .v5-control-group select {
-        padding: 6px 12px;
-        border: 2px solid #3b82f6;
-        border-radius: 6px;
-        background: white;
-        font-size: 13px;
-        color: #1e293b;
+      .v5-breadcrumb-item {
+        display: none; /* Hide until data is loaded */
+        color: #003580;
+        font-weight: 500;
         cursor: pointer;
-        min-width: 130px;
-        transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        align-items: center;
+        gap: 6px;
       }
       
-      .v5-control-group select:hover {
-        border-color: #2563eb;
-        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      .v5-breadcrumb-item:hover {
+        background: rgba(0, 53, 128, 0.05);
+        color: #2563eb;
       }
       
-      .v5-control-group select:focus {
+      .v5-breadcrumb-separator {
+        display: none; /* Hide until data is loaded */
+        color: #94a3b8;
+        font-weight: 400;
+        margin: 0 4px;
+        user-select: none;
+      }
+      
+      .v5-breadcrumb-item.v5-auto-detected {
+        color: #059669; /* Emerald for auto-detection */
+      }
+      
+      .v5-breadcrumb-item.v5-auto-detected:hover {
+        background: rgba(5, 150, 105, 0.05);
+      }
+
+      /* Popover Container */
+      .v5-popover {
+        position: fixed; /* Use fixed to match getBoundingClientRect exactly */
+        z-index: 10000;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        width: 240px;
+        padding: 8px;
+        display: none;
+        flex-direction: column;
+        animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: top left;
+        transform: none !important; /* Prevent any unintended shifts */
+      }
+      
+      @keyframes popoverFadeIn {
+        from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      
+      .v5-popover-search {
+        padding: 8px 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
         outline: none;
-        border-color: #1d4ed8;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background: rgba(255, 255, 255, 0.5);
       }
       
+      .v5-popover-search:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      .v5-popover-list {
+        max-height: 300px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .v5-popover-option {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.1s;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .v5-popover-option:hover {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+      }
+      
+      .v5-popover-option.selected {
+        background: #3b82f6;
+        color: white;
+      }
+
       /* Bulk Operations Bar - Super Snug, Increased Height */
       .v5-bulk-bar {
         display: flex;
@@ -2342,30 +2393,20 @@ window.renderTxnImportV5Page = function () {
             <i class="ph ph-arrow-square-down"></i>
           </div>
           <div class="v5-title-text">
-            <h1>Transactions</h1>
-            <p class="v5-subtitle">
-              <select id="v5-account-tag-select" class="v5-inline-dropdown" style="display: none;">
-                <option value="">SELECT ACCOUNT</option>
-                <option value="Chequing">CHEQUING</option>
-                <option value="Savings">SAVINGS</option>
-                <option value="Visa">VISA</option>
-                <option value="Mastercard">MASTERCARD</option>
-                <option value="Amex">AMEX</option>
-              </select>
-              <span id="v5-bank-dash" style="display: none;">-</span>
-              <select id="v5-bank-brand-select" class="v5-inline-dropdown" style="display: none;">
-                <option value="">SELECT BANK</option>
-                <option value="TD">TD CANADA TRUST</option>
-                <option value="RBC">RBC ROYAL BANK</option>
-                <option value="BMO">BMO</option>
-                <option value="CIBC">CIBC</option>
-                <option value="Scotiabank">SCOTIABANK</option>
-                <option value="Tangerine">TANGERINE</option>
-                <option value="Amex">AMEX CANADA</option>
-              </select>
-              <span id="v5-status-text" class="v5-status">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
-            </p>
-            <p id="v5-account-info-line" class="v5-account-info-line">
+            <h1 style="margin-bottom: 4px;">Transactions</h1>
+            <div class="v5-breadcrumb" id="v5-header-breadcrumb">
+              <div class="v5-breadcrumb-item" id="v5-breadcrumb-bank" onclick="showV5Popover('bank', event)">
+                <i class="ph ph-bank"></i>
+                <span class="v5-breadcrumb-label" data-value="">Select Bank</span>
+              </div>
+              <span class="v5-breadcrumb-separator">/</span>
+              <div class="v5-breadcrumb-item" id="v5-breadcrumb-tag" onclick="showV5Popover('tag', event)">
+                <i class="ph ph-tag"></i>
+                <span class="v5-breadcrumb-label" data-value="">Select Account</span>
+              </div>
+              <span id="v5-status-text" class="v5-status" style="margin-left: 12px;">WAITING TO GET STARTED<span class="v5-loading-dots"></span></span>
+            </div>
+            <p id="v5-account-info-line" class="v5-account-info-line" style="margin-top: 4px; font-size: 0.75rem; color: #64748b; font-family: 'Inter', sans-serif;">
               <!-- Populated dynamically -->
             </p>
           </div>
@@ -2947,6 +2988,14 @@ window.renderTxnImportV5Page = function () {
         <!-- Grid will be initialized here -->
       </div>
       
+    </div> <!-- Close .txn-import-v5-container -->
+
+    <!-- Popover Elements (Shared) - Moved outside sticky header for fixed positioning -->
+    <div id="v5-header-popover" class="v5-popover">
+      <input type="text" class="v5-popover-search" placeholder="Search..." oninput="window.filterV5Popover(this.value)">
+      <div class="v5-popover-list" id="v5-popover-list">
+        <!-- Populated dynamically -->
+      </div>
     </div>
   `;
 };
@@ -5767,6 +5816,7 @@ window.popOutV5Grid = function () {
         .btn-icon:hover {
           background: #f8fafc;
           border-color: #cbd5e1;
+          color: #0f172a;
         }
 
         /* ===== AG-GRID UI REFINEMENTS (BLUE HEADER) ===== */
@@ -6425,15 +6475,10 @@ window.exportV5Excel = function () {
   console.log(`📊 Excel export: ${fileName}`);
 };
 
-// ==================================================
-// PART 4: BANK STATEMENT PRINT VIEW
-// ==================================================
-
 window.printV5Preview = function () {
-  // Inject statement header before printing
   const header = document.createElement('div');
   header.className = 'print-statement-header';
-  header.style.display = 'none'; // Hidden on screen, shown in print
+  header.style.display = 'none';
 
   const gridData = V5State.gridData || [];
   const dates = gridData.map(t => new Date(t.Date || t.date)).filter(d => !isNaN(d));
@@ -6449,16 +6494,8 @@ window.printV5Preview = function () {
   `;
 
   document.body.prepend(header);
-
-  // Trigger print
   window.print();
-
-  // Clean up after print
-  setTimeout(() => {
-    header.remove();
-  }, 100);
-
-  console.log('🖨️ Bank statement print preview opened');
+  setTimeout(() => header.remove(), 100);
 };
 
 window.showV5Appearance = function () {
@@ -6637,6 +6674,9 @@ window.initTxnImportV5Grid = async function () {
   console.log('ℹ️ No cached data found - showing empty state');
   const emptyState = document.getElementById('v5-empty-state');
   if (emptyState) emptyState.style.display = 'flex';
+
+  // Ensure neutral header state on boot if no data is loaded
+  updateBrandDisplay(null);
 };
 
 // HELPER: Actually apply the data
@@ -6678,6 +6718,9 @@ window.confirmV5Recovery = async function (shouldRestore) {
 
     const emptyState = document.getElementById('v5-empty-state');
     if (emptyState) emptyState.style.display = 'flex';
+
+    // Ensure neutral header state when starting fresh
+    updateBrandDisplay(null);
   }
 
   delete window._pendingV5Restoration;
@@ -6951,9 +6994,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3. Ensure Header stays in Neutral State on Load (Strictly hidden)
-  if (typeof updateBrandDisplay === 'function') {
-    updateBrandDisplay(null);
-  }
+  // This is now handled by initTxnImportV5Grid
 });
 
 // ESC key to close bulk bar
@@ -7053,49 +7094,130 @@ window.updateV5PageHeader = function (brand, type, detection = null) {
   }
 };
 
+/**
+ * Breadcrumb Popover Logic
+ */
+let currentPopoverType = null;
+const popoverOptions = {
+  bank: [
+    { value: 'TD', label: 'TD Canada Trust' },
+    { value: 'RBC', label: 'Royal Bank of Canada' },
+    { value: 'BMO', label: 'Bank of Montreal' },
+    { value: 'CIBC', label: 'CIBC Canada' },
+    { value: 'Scotiabank', label: 'Scotiabank of Canada' },
+    { value: 'Tangerine', label: 'Tangerine Bank' },
+    { value: 'Amex', label: 'American Express Can' }
+  ],
+  tag: [
+    { value: 'Chequing', label: 'Chequing' },
+    { value: 'Savings', label: 'Savings' },
+    { value: 'Visa', label: 'Visa' },
+    { value: 'Mastercard', label: 'Mastercard' },
+    { value: 'Amex', label: 'Amex' }
+  ]
+};
+
+window.showV5Popover = function (type, event) {
+  event.stopPropagation();
+  const popover = document.getElementById('v5-header-popover');
+  const searchInput = popover.querySelector('.v5-popover-search');
+
+  if (currentPopoverType === type && popover.style.display === 'flex') {
+    popover.style.display = 'none';
+    return;
+  }
+
+  currentPopoverType = type;
+  window.populateV5Popover(type);
+
+  // Position popover below the clicked item
+  // Using fixed coordinates relative to viewport
+  const rect = event.currentTarget.getBoundingClientRect();
+  popover.style.top = `${rect.bottom + 8}px`;
+  popover.style.left = `${rect.left}px`;
+  popover.style.display = 'flex';
+
+  searchInput.value = '';
+  setTimeout(() => searchInput.focus(), 10);
+};
+
+window.populateV5Popover = function (type, filter = '') {
+  const list = document.getElementById('v5-popover-list');
+  const options = popoverOptions[type];
+  const currentVal = document.querySelector(`#v5-breadcrumb-${type} .v5-breadcrumb-label`).dataset.value;
+
+  list.innerHTML = '';
+  const filtered = options.filter(opt =>
+    opt.label.toLowerCase().includes(filter.toLowerCase()) ||
+    opt.value.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  filtered.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = `v5-popover-option ${opt.value === currentVal ? 'selected' : ''}`;
+    div.innerHTML = `<span>${opt.label}</span>`;
+    div.onclick = () => selectV5PopoverOption(type, opt.value, opt.label);
+    list.appendChild(div);
+  });
+};
+
+window.filterV5Popover = function (term) {
+  window.populateV5Popover(currentPopoverType, term);
+};
+
+window.selectV5PopoverOption = function (type, value, label) {
+  const item = document.getElementById(`v5-breadcrumb-${type}`);
+  const labelEl = item.querySelector('.v5-breadcrumb-label');
+
+  labelEl.innerText = label;
+  labelEl.dataset.value = value;
+  item.classList.remove('v5-auto-detected');
+
+  document.getElementById('v5-header-popover').style.display = 'none';
+  console.log(`✅ Selected ${type}: ${value} (${label})`);
+
+  // Trigger onBankTagChange replacement logic
+  const brand = document.querySelector('#v5-breadcrumb-bank .v5-breadcrumb-label').dataset.value;
+  const tag = document.querySelector('#v5-breadcrumb-tag .v5-breadcrumb-label').dataset.value;
+
+  if (brand && tag) {
+    if (window.onBankTagChange) window.onBankTagChange();
+    else if (window.updateV5PageHeader) window.updateV5PageHeader({ brand, subType: tag, source: 'manual' });
+  }
+};
+
+// Close popover when clicking outside
+document.addEventListener('click', (e) => {
+  const popover = document.getElementById('v5-header-popover');
+  if (popover && !popover.contains(e.target)) {
+    popover.style.display = 'none';
+  }
+});
+
 // Main function to update dropdowns and confidence badge
 function updateBrandDisplay(detection) {
-  const bankSelect = document.getElementById('v5-bank-brand-select');
-  const tagSelect = document.getElementById('v5-account-tag-select');
-  const dash = document.getElementById('v5-bank-dash');
+  const bankItem = document.getElementById('v5-breadcrumb-bank');
+  const tagItem = document.getElementById('v5-breadcrumb-tag');
   const status = document.getElementById('v5-status-text');
   const infoLine = document.getElementById('v5-account-info-line');
 
-  if (!bankSelect || !tagSelect || !status) {
-    console.warn('[UI] Brand dropdown elements not found');
-    return;
-  }
-
-  // Reset classes to ensure clean state
-  bankSelect.classList.remove('v5-auto-detected', 'v5-manual-color');
-  tagSelect.classList.remove('v5-auto-detected', 'v5-manual-color');
-  if (dash) dash.classList.remove('v5-auto-detected', 'v5-manual-color');
-
-  if (!detection || !detection.brand) {
-    // Neutral State: ABSOLUTELY HIDE everything except "Waiting" status
-    bankSelect.style.display = 'none';
-    tagSelect.style.display = 'none';
-    if (dash) dash.style.display = 'none';
-
-    status.innerHTML = 'WAITING TO GET STARTED<span class="v5-loading-dots"></span>';
-    status.className = 'v5-status';
-    status.style.display = 'inline-flex';
-
-    if (infoLine) {
-      infoLine.innerHTML = '';
-      infoLine.style.display = 'none';
-    }
-
-    // Explicitly hide dropdowns and clear values to be safe
-    bankSelect.value = '';
-    tagSelect.value = '';
-
-    return;
-  }
+  if (!bankItem || !tagItem) return;
 
   // Store detection globally
-  currentDetection = detection;
+  window.V5State.currentDetection = detection;
   localStorage.setItem('v5_current_detection', JSON.stringify(detection));
+
+  if (!detection || !detection.brand) {
+    bankItem.style.display = 'none';
+    tagItem.style.display = 'none';
+    // Use the specific separator class
+    document.querySelectorAll('.v5-breadcrumb-separator').forEach(s => s.style.display = 'none');
+
+    status.innerHTML = 'WAITING TO GET STARTED<span class="v5-loading-dots"></span>';
+    status.style.display = 'inline-flex';
+    if (infoLine) infoLine.style.display = 'none';
+    return;
+  }
 
   // Sync Ref# Prefix if detected
   if (detection.prefix && detection.prefix !== V5State.refPrefix) {
@@ -7107,37 +7229,42 @@ function updateBrandDisplay(detection) {
     }
   }
 
-  // Set dropdown values
-  bankSelect.value = detection.brand;
-  tagSelect.value = detection.subType || detection.accountType || detection.tag;
+  const bankVal = detection.brand;
+  const tagVal = detection.subType || detection.accountType || detection.tag;
 
-  // Apply color class based on source
-  if (detection.source === 'auto_detected' || detection.source === 'auto' || !detection.source) {
-    bankSelect.classList.add('v5-auto-detected');
-    tagSelect.classList.add('v5-auto-detected');
-    if (dash) dash.classList.add('v5-auto-detected');
+  const bankOpt = popoverOptions.bank.find(o => o.value === bankVal);
+  const tagOpt = popoverOptions.tag.find(o => o.value === tagVal);
+
+  const bankLabelEl = bankItem.querySelector('.v5-breadcrumb-label');
+  const tagLabelEl = tagItem.querySelector('.v5-breadcrumb-label');
+
+  bankLabelEl.innerText = bankOpt ? bankOpt.label : (bankVal || 'Select Bank');
+  bankLabelEl.dataset.value = bankVal || '';
+
+  tagLabelEl.innerText = tagOpt ? tagOpt.label : (tagVal || 'Select Account');
+  tagLabelEl.dataset.value = tagVal || '';
+
+  const isAuto = (detection.source === 'auto_detected' || detection.source === 'auto' || !detection.source);
+  if (isAuto) {
+    bankItem.classList.add('v5-auto-detected');
+    tagItem.classList.add('v5-auto-detected');
   } else {
-    bankSelect.classList.add('v5-manual-color');
-    tagSelect.classList.add('v5-manual-color');
-    if (dash) dash.classList.add('v5-manual-color');
+    bankItem.classList.remove('v5-auto-detected');
+    tagItem.classList.remove('v5-auto-detected');
   }
 
-  // Show dropdowns, keep status HIDDEN per user request
-  bankSelect.style.display = 'inline-block';
-  tagSelect.style.display = 'inline-block';
-  if (dash) dash.style.display = 'inline-block';
-  status.style.display = 'none'; // Keep hidden - no status text needed
+  bankItem.style.display = 'flex';
+  tagItem.style.display = 'flex';
+  document.querySelectorAll('.v5-breadcrumb-separator').forEach(s => s.style.display = 'inline');
+  status.style.display = 'none';
 
-  // Update confidence badge (which also hides status)
   updateConfidenceBadge(detection.confidence || 0.7, detection.source);
 
-  // Line 3: Account Info
   if (infoLine) {
     const parts = [];
     if (detection.accountNumber) parts.push(`ACCOUNT#: <b>${detection.accountNumber}</b>`);
     if (detection.transit) parts.push(`TRANSIT#: <b>${detection.transit}</b>`);
     if (detection.institutionCode) parts.push(`INST#: <b>${detection.institutionCode}</b>`);
-
     if (parts.length > 0) {
       infoLine.innerHTML = parts.join(' • ');
       infoLine.style.display = 'flex';
@@ -7145,7 +7272,6 @@ function updateBrandDisplay(detection) {
       infoLine.style.display = 'none';
     }
   }
-
 }
 
 /**
@@ -7177,6 +7303,8 @@ window.restoreV5HeaderState = function () {
   }
 };
 
+window.updateV5PageHeader = updateBrandDisplay;
+
 
 /**
  * Update confidence badge text and color
@@ -7192,55 +7320,43 @@ function updateConfidenceBadge(confidence, source) {
 /**
  * Handle bank/tag dropdown changes
  */
-async function onBankTagChange() {
-  const bankSelect = document.getElementById('v5-bank-brand-select');
-  const tagSelect = document.getElementById('v5-account-tag-select');
+window.onBankTagChange = async function () {
+  const bankLabel = document.querySelector('#v5-breadcrumb-bank .v5-breadcrumb-label');
+  const tagLabel = document.querySelector('#v5-breadcrumb-tag .v5-breadcrumb-label');
 
-  if (!bankSelect || !tagSelect) return;
+  if (!bankLabel || !tagLabel) return;
 
-  const bank = bankSelect.value;
-  const tag = tagSelect.value;
+  const bank = bankLabel.dataset.value;
+  const tag = tagLabel.dataset.value;
 
   if (!bank || !tag) return;
 
-  console.log('[UI] User changed bank/tag to:', bank, '-', tag);
+  console.log('[UI] Breadcrumb selection change detected:', bank, '-', tag);
 
-  // Update currentDetection object and persistence
-  if (currentDetection) {
-    currentDetection.brand = bank;
-    currentDetection.subType = tag;
-    currentDetection.source = 'user_override';
-    currentDetection.confidence = 1.0;
+  // Update V5State and persistence
+  const detection = window.V5State.currentDetection || {};
+  detection.brand = bank;
+  detection.subType = tag;
+  detection.source = 'user_override';
+  detection.confidence = 1.0;
 
-    // Remove gradient and apply manual color on change
-    bankSelect.classList.remove('v5-auto-detected');
-    tagSelect.classList.remove('v5-auto-detected');
-    bankSelect.classList.add('v5-manual-color');
-    tagSelect.classList.add('v5-manual-color');
+  window.V5State.currentDetection = detection;
+  localStorage.setItem('v5_current_detection', JSON.stringify(detection));
 
-    const dash = document.getElementById('v5-bank-dash');
-    if (dash) {
-      dash.classList.remove('v5-auto-detected');
-      dash.classList.add('v5-manual-color');
+  // Sync Ref# Prefix from signatures if bank changed
+  if (window.brandDetector && window.brandDetector.bankSignatures) {
+    const sig = window.brandDetector.bankSignatures.find(s => s.id === bank);
+    if (sig && sig.prefix) {
+      detection.prefix = sig.prefix;
+      if (window.updateRefPrefix) window.updateRefPrefix(sig.prefix);
+      const refInput = document.getElementById('v5-ref-input');
+      if (refInput) refInput.value = sig.prefix;
     }
-
-    // Sync Ref# Prefix from signatures if bank changed
-    if (window.brandDetector && window.brandDetector.bankSignatures[bank]) {
-      const sig = window.brandDetector.bankSignatures[bank];
-      if (sig.prefix) {
-        currentDetection.prefix = sig.prefix;
-        if (window.updateRefPrefix) window.updateRefPrefix(sig.prefix);
-        const refInput = document.getElementById('v5-ref-input');
-        if (refInput) refInput.value = sig.prefix;
-      }
-    }
-
-    localStorage.setItem('v5_current_detection', JSON.stringify(currentDetection));
   }
 
   // Learn this association
-  if (window.bankLearningService && currentDetection?.fingerprint) {
-    window.bankLearningService.learn(currentDetection.fingerprint, {
+  if (window.bankLearningService && detection.fingerprint) {
+    window.bankLearningService.learn(detection.fingerprint, {
       brand: bank,
       accountType: tag,
       parserName: `${bank}${tag}`
@@ -7250,6 +7366,11 @@ async function onBankTagChange() {
 
   // Update confidence badge
   updateConfidenceBadge(1.0, 'user_override');
+
+  // Trigger grid refresh or other updates if needed
+  if (window.V5State.gridApi) {
+    // maybe refresh cells to show new tag/brand?
+  }
 }
 
 // ========================================
@@ -7786,24 +7907,7 @@ function executeBulkDelete(selectedRows) {
 };
 
 
-// Attach event listeners once DOM elements exist
-function attachBrandDropdownListeners() {
-  const bankSelect = document.getElementById('v5-bank-brand-select');
-  const tagSelect = document.getElementById('v5-account-tag-select');
-
-  if (bankSelect && tagSelect) {
-    bankSelect.addEventListener('change', onBankTagChange);
-    tagSelect.addEventListener('change', onBankTagChange);
-    console.log('[UI] ✅ Bank/tag dropdown handlers attached');
-  } else {
-    // Retry after a short delay (DOM might not be ready)
-    setTimeout(attachBrandDropdownListeners, 100);
-  }
-}
-
-// Initialize listeners
-attachBrandDropdownListeners();
-
 // Expose globally for backward compatibility
 // Note: updateBrandDisplay deprecated, use updateV5PageHeader instead
+window.updateBrandDisplay = updateBrandDisplay;
 
