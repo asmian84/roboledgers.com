@@ -23,6 +23,22 @@ CIBC CHEQUING FORMAT:
         const lines = statementText.split('\n');
         const transactions = [];
 
+        // EXTRACT METADATA (Institution, Transit, Account)
+        // CIBC format from screenshot:
+        // Account number 10-57618
+        // Branch transit number 04729
+        const transitMatch = statementText.match(/Branch transit number\s*(\d{5})/i);
+        const acctMatch = statementText.match(/Account number\s*([\d-]{5,})/i);
+        const fileMetadata = {
+            _inst: '010', // CIBC Institution Code
+            _transit: transitMatch ? transitMatch[1] : '-----',
+            _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            _brand: 'CIBC',
+            _bank: 'CIBC',
+            _tag: 'Chequing'
+        };
+        console.log('[CIBC] Extracted Metadata:', fileMetadata);
+
         // Extract year from statement
         const yearMatch = statementText.match(/20\d{2}/);
         this.currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -148,7 +164,11 @@ CIBC CHEQUING FORMAT:
             amount: debit || credit,
             debit: debit,
             credit: credit,
-            balance: balance
+            balance: balance,
+            _inst: '010',
+            _brand: 'CIBC',
+            _bank: 'CIBC',
+            _tag: 'Chequing'
         };
     }
 

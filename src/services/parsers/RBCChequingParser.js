@@ -30,6 +30,19 @@ SMART PARSING RULES:
     const lines = text.split('\n');
     const transactions = [];
 
+    // EXTRACT METADATA (Institution, Transit, Account)
+    // RBC format from screenshot: Account number: 06498 100-231-0
+    const transitAcctMatch = text.match(/Account number:?\s*(\d{5})\s+([\d-]{7,})/i);
+    const fileMetadata = {
+      _inst: '003', // RBC Institution Code
+      _transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
+      _acct: transitAcctMatch ? transitAcctMatch[2].replace(/[-\s]/g, '') : '-----',
+      _brand: 'RBC',
+      _bank: 'RBC',
+      _tag: 'Chequing'
+    };
+    console.log('[RBC] Extracted Metadata:', fileMetadata);
+
     // Extract year from statement - look for "January 1, 2024" or "February 5, 2024" patterns
     // CRITICAL: Be specific to avoid matching random 4-digit numbers
     const yearPatterns = [
@@ -173,7 +186,11 @@ SMART PARSING RULES:
       amount: amount,
       debit: isCredit ? 0 : amount,
       credit: isCredit ? amount : 0,
-      balance: balance
+      balance: balance,
+      _inst: '003',
+      _brand: 'RBC',
+      _bank: 'RBC',
+      _tag: 'Chequing'
     };
   }
 

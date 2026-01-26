@@ -83,7 +83,10 @@ class ParserRouter {
             subType: detection.subType || detection.accountType,
             prefix: detection.prefix || 'TXN',
             tag: detection.tag || detection.accountType,
-            confidence: detection.confidence
+            confidence: detection.confidence,
+            institutionCode: detection.institutionCode || result.transactions[0]?._inst || '---',
+            transit: detection.transit || result.transactions[0]?._transit || '-----',
+            accountNumber: detection.accountNumber || result.transactions[0]?._acct || '-----'
         };
 
         // CRITICAL FIX: Inject brand into EACH transaction so it survives array flattening
@@ -93,6 +96,9 @@ class ParserRouter {
             tx._accountType = detection.accountType; // e.g. "Chequing"
             tx._prefix = detection.prefix || 'TXN'; // e.g. "CHQ"
             tx._tag = detection.tag || detection.accountType; // e.g. "Chequing"
+            tx._inst = tx._inst || detection.institutionCode || '---';
+            tx._transit = tx._transit || detection.transit || '-----';
+            tx._acct = tx._acct || detection.accountNumber || '-----';
         });
 
         // Step 5: Run Validation Engine (silent auto-fix)

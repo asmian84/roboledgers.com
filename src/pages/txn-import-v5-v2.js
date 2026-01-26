@@ -3094,6 +3094,17 @@ window.renderTxnImportV5Page = function () {
       
       <!-- Action Bar - Only shown when grid has data -->
       <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
+        <!-- Expand/Collapse All Buttons (Left) -->
+        <div class="v5-expand-collapse-btns" style="display: flex; gap: 8px;">
+          <button class="btn-action-secondary" onclick="window.expandAllV5()">
+            <i class="ph ph-caret-down"></i>
+            Expand All
+          </button>
+          <button class="btn-action-secondary" onclick="window.collapseAllV5()">
+            <i class="ph ph-caret-up"></i>
+            Collapse All
+          </button>
+        </div>
         
         <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
@@ -7989,28 +8000,18 @@ window.showV5AssignmentBanner = function () {
     select.innerHTML = html;
   }
 
-  // Make it collapsible - DEFAULT COLLAPSED
+  // Make it ALWAYS visible
   const dropdownGroup = document.getElementById('v5-banner-assign-dropdown-wrapper');
   if (dropdownGroup) {
-    dropdownGroup.style.display = 'none';
+    dropdownGroup.style.display = 'flex';
+  }
+  const submitBtn = document.getElementById('btn-complete-assignment');
+  if (submitBtn) {
+    submitBtn.style.display = 'inline-block';
   }
 
-  // Add Toggle Button if missing
-  if (!document.getElementById('v5-banner-toggle')) {
-    const btn = document.createElement('button');
-    btn.id = 'v5-banner-toggle';
-    btn.innerHTML = 'Show Alignment Options ▾';
-    btn.className = 'v5-nav-toggle-btn';
-    btn.style.cssText = 'background:none; border:1px solid #d1d5db; border-radius:4px; padding:2px 8px; font-size:12px; cursor:pointer; margin-left:12px; color:#4b5563;';
-    btn.onclick = () => {
-      const isHidden = dropdownGroup.style.display === 'none';
-      dropdownGroup.style.display = isHidden ? 'flex' : 'none';
-      const submitBtn = document.getElementById('btn-complete-assignment');
-      if (submitBtn) submitBtn.style.display = isHidden ? 'inline-block' : 'none';
-      btn.innerHTML = isHidden ? 'Hide Alignment Options ▴' : 'Show Alignment Options ▾';
-    };
-    banner.querySelector('.banner-right')?.appendChild(btn);
-  }
+  // Remove toggle button if it somehow still exists from legacy calls
+  document.getElementById('v5-banner-toggle')?.remove();
 
   banner.style.display = 'flex';
 };

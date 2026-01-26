@@ -28,6 +28,21 @@ SMART PARSING RULES:
         const lines = statementText.split('\n');
         const transactions = [];
 
+        // EXTRACT METADATA (Institution, Transit, Account)
+        // TD format from screenshot: Branch No. 9083, Account No. 0928-5217856
+        const transitMatch = statementText.match(/(?:Branch No\.|Transit)[:#]?\s*(\d{4,5})/i);
+        const acctMatch = statementText.match(/(?:Account No\.|Account)[:#]?\s*([\d-]{7,})/i);
+
+        const fileMetadata = {
+            _inst: '004', // TD Institution Code
+            _transit: transitMatch ? transitMatch[1] : '-----',
+            _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            _brand: 'TD',
+            _bank: 'TD',
+            _tag: 'Chequing'
+        };
+        console.log('[TD] Extracted Metadata:', fileMetadata);
+
         // Extract year from statement (usually at top)
         const yearMatch = statementText.match(/20\d{2}/);
         this.currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -192,7 +207,11 @@ SMART PARSING RULES:
             amount: amount,
             debit: isCredit ? 0 : amount,
             credit: isCredit ? amount : 0,
-            balance: balance
+            balance: balance,
+            _inst: '004',
+            _brand: 'TD',
+            _bank: 'TD',
+            _tag: 'Chequing'
         };
     }
 
@@ -256,7 +275,11 @@ SMART PARSING RULES:
             amount: debit || credit,
             debit: debit,
             credit: credit,
-            balance: balance
+            balance: balance,
+            _inst: '004',
+            _brand: 'TD',
+            _bank: 'TD',
+            _tag: 'Chequing'
         };
     }
 

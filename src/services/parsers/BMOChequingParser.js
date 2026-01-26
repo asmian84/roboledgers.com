@@ -33,8 +33,17 @@ BMO CHEQUING FORMAT:
         }
 
         // EXTRACT METADATA (Transit, Account Number)
-        const transitMatch = statementText.match(/Transit:?\s*(\d{5})/i);
-        const acctMatch = statementText.match(/Account:?\s*(\d{4}[-\s]?\d{4}|\d{7,})/i);
+        let transitMatch = statementText.match(/Transit:?\s*(\d{5})/i);
+        let acctMatch = statementText.match(/Account:?\s*(?:number)?\s*(\d{4}[-\s]?\d{4}|\d{7,})/i);
+
+        // BMO Alternative format from screenshot: # 2515 1994-226
+        if (!transitMatch || !acctMatch) {
+            const bmoAltMatch = statementText.match(/#\s*(\d{4,5})\s*([\d-]{7,})/);
+            if (bmoAltMatch) {
+                if (!transitMatch) transitMatch = [bmoAltMatch[0], bmoAltMatch[1]];
+                if (!acctMatch) acctMatch = [bmoAltMatch[0], bmoAltMatch[2]];
+            }
+        }
 
         const fileMetadata = {
             _inst: '001', // BMO Institution Code

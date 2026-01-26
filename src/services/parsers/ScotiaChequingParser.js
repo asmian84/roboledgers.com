@@ -26,6 +26,23 @@ SMART PARSING RULES:
     const lines = text.split('\n');
     const transactions = [];
 
+    // EXTRACT METADATA (Institution, Transit, Account)
+    // Scotia format from screenshot: Account Number: 02469 01458 15
+    // user: first 5 digits = transit, rest = account
+    const combinedMatch = text.match(/Account Number:?\s*(\d{5})\s+([\d\s-]{7,})/i);
+    const transitMatch = combinedMatch ? [combinedMatch[0], combinedMatch[1]] : text.match(/(?:Transit|Branch)[:#]?\s*(\d{5})/i);
+    const acctMatch = combinedMatch ? [combinedMatch[0], combinedMatch[2]] : text.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+
+    const fileMetadata = {
+      _inst: '002', // Scotiabank Institution Code
+      _transit: transitMatch ? transitMatch[1] : '-----',
+      _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+      _brand: 'Scotiabank',
+      _bank: 'Scotiabank',
+      _tag: 'Chequing'
+    };
+    console.log('[SCOTIA] Extracted Metadata:', fileMetadata);
+
     // Date patterns
     const dateRegex1 = /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)[a-z]*\s+\d{1,2}/i;
     const dateRegex2 = /^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})/;
@@ -177,7 +194,11 @@ SMART PARSING RULES:
       amount: amount,
       debit: isCredit ? 0 : amount,
       credit: isCredit ? amount : 0,
-      balance: balance
+      balance: balance,
+      _inst: '002',
+      _brand: 'Scotiabank',
+      _bank: 'Scotiabank',
+      _tag: 'Chequing'
     };
 
     transactions.push(tx);
