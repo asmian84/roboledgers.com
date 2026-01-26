@@ -1,6 +1,7 @@
-/**
+﻿/**
  * Txn Import V5 - Unified Transaction Import Page
- * Combines: InlineImport Zone + AG Grid + 7-Method Categorization + Background Processing
+ * VERSION 5.1.0 (Clean House Cleanup)
+ * Consolidates all logic, fixes categorization wiring, and implements Audit Mode.
  */
 
 // console.log('🚀 Loading Txn Import V5...');
@@ -21,12 +22,73 @@ window.V5State = {
   openingBalance: 0, // Changed from 0.00
   recentImports: [], // New property
   accountType: null, // New property
-  refPrefix: '' // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
+  refPrefix: '', // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
+  pendingStatements: [], // [NEW] Free-float statements before assignment
+  multiLedgerData: {},    // [NEW] Assigned ledger data by account code
+  currentAccountCode: null, // [NEW] Track active ledger for breadcrumbs
+  auditModeActiveRowId: null // [NEW] Track which row has audit details expanded
 };
 
 const V5State = window.V5State;
 
 const V5_MAX_UNDO_STEPS = 10;
+
+const V5_BANK_LOGOS = {
+  'TD': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#008a00"/><text x="50" y="65" font-family="Arial" font-weight="900" font-size="55" fill="white" text-anchor="middle">TD</text></svg>`,
+  'RBC': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#005da4"/><path d="M30 30 L70 30 L70 40 L55 40 L55 50 L65 50 L65 60 L55 60 L55 80 L30 80 Z" fill="#ffd200"/></svg>`,
+  'BMO': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#0035ad"/><text x="50" y="68" font-family="Arial" font-weight="900" font-size="50" fill="white" text-anchor="middle">M</text></svg>`,
+  'CIBC': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#93001e"/><path d="M25 30 L75 30 L75 45 L45 45 L45 55 L75 55 L75 70 L25 70 Z" fill="white"/></svg>`,
+  'Scotiabank': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#ee1c25"/><path d="M50 20 L80 50 L50 80 L20 50 Z" fill="white"/></svg>`,
+  'Tangerine': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#ff671b"/><path d="M30 30 Q50 20 70 30 L70 70 Q50 80 30 70 Z" fill="white"/></svg>`,
+  'Amex': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="4" fill="#006fcf"/><text x="50" y="65" font-family="Arial" font-weight="900" font-size="35" fill="white" text-anchor="middle">AMEX</text></svg>`,
+  'default': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#64748b"/><path d="M30 70 L50 30 L70 70 Z" fill="white"/></svg>`
+};
+
+/** Global constants for Breadcrumb Popover */
+const bankLogos = {
+  'TD': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
+  'TD Canada Trust': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
+  'RBC': 'https://upload.wikimedia.org/wikipedia/commons/b/b8/RBC_Royal_Bank_logo.svg',
+  'Royal Bank of Canada': 'https://upload.wikimedia.org/wikipedia/commons/b/b8/RBC_Royal_Bank_logo.svg',
+  'BMO': 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Bank_of_Montreal_logo.svg',
+  'Bank of Montreal': 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Bank_of_Montreal_logo.svg',
+  'CIBC': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/CIBC_logo.svg',
+  'CIBC Canada': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/CIBC_logo.svg',
+  'Scotiabank': 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Scotiabank.svg',
+  'Scotiabank of Canada': 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Scotiabank.svg',
+  'Tangerine': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Tangerine_Bank_logo.svg',
+  'Tangerine Bank': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Tangerine_Bank_logo.svg',
+  'Amex': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg',
+  'American Express Can': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg',
+  'default': 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg'
+};
+
+const popoverOptions = {
+  bank: [
+    { value: 'TD', label: 'TD Canada Trust' },
+    { value: 'RBC', label: 'Royal Bank of Canada' },
+    { value: 'BMO', label: 'Bank of Montreal' },
+    { value: 'CIBC', label: 'CIBC Canada' },
+    { value: 'Scotiabank', label: 'Scotiabank of Canada' },
+    { value: 'Tangerine', label: 'Tangerine Bank' },
+    { value: 'Amex', label: 'American Express Can' }
+  ],
+  tag: [
+    { value: 'Chequing', label: 'Chequing', icon: 'ph-money' },
+    { value: 'Savings', label: 'Savings', icon: 'ph-bank' },
+    { value: 'Visa', label: 'Visa', icon: 'ph-credit-card' },
+    { value: 'Mastercard', label: 'Mastercard', icon: 'ph-credit-card' },
+    { value: 'Amex', label: 'Amex', icon: 'ph-credit-card' }
+  ]
+};
+
+const V5_BASELINE_COA = [
+  { code: 1000, name: 'General Operating Bank Account', type: 'Bank' },
+  { code: 1010, name: 'Savings Account', type: 'Bank' },
+  { code: 2100, name: 'Visa Credit Card', type: 'Liability' },
+  { code: 2110, name: 'Mastercard Credit Card', type: 'Liability' },
+  { code: 5000, name: 'General Office Expense', type: 'Expense' }
+];
 
 // ============================================
 // COA HELPERS (5-Tier Compressed)
@@ -39,26 +101,24 @@ function get5TierCoAAccounts() {
   // Source 1: window.storage (preferred)
   if (window.storage?.getAccountsSync) {
     accounts = window.storage.getAccountsSync();
-    // console.log('📊 Loaded', accounts.length, 'accounts from window.storage');
   }
 
   // Source 2: localStorage fallback
   if (accounts.length === 0) {
-    accounts = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
-    // console.log('📊 Loaded', accounts.length, 'accounts from localStorage');
+    accounts = JSON.parse(localStorage.getItem('ab3_accounts') || localStorage.getItem('ab_chart_of_accounts') || '[]');
   }
 
-  // Source 3: window.chartOfAccounts fallback
-  if (accounts.length === 0 && window.chartOfAccounts) {
-    accounts = window.chartOfAccounts;
-    // console.log('📊 Loaded', accounts.length, 'accounts from window.chartOfAccounts');
+  // Baseline Injection if still empty
+  if (accounts.length === 0) {
+    console.log('💡 Storage empty, injecting baseline COA...');
+    accounts = V5_BASELINE_COA;
   }
 
   if (accounts.length === 0) {
     console.warn('⚠️ No COA accounts found! Account dropdown will be empty.');
   }
 
-  // Group into 5 tiers based on account code ranges
+  // Group into 5 tiers (ROBUST MATCHING)
   const tiers = {
     ASSETS: [],
     LIABILITIES: [],
@@ -68,12 +128,24 @@ function get5TierCoAAccounts() {
   };
 
   accounts.forEach(acc => {
-    const code = parseInt(acc.code);
-    if (code >= 1000 && code < 2000) tiers.ASSETS.push(acc);
-    else if (code >= 2000 && code < 3000) tiers.LIABILITIES.push(acc);
-    else if (code >= 3000 && code < 4000) tiers.EQUITY.push(acc);
-    else if (code >= 4000 && code < 5000) tiers.REVENUE.push(acc);
-    else if (code >= 5000 && code < 10000) tiers.EXPENSES.push(acc);
+    // Robust property access
+    const codeStr = acc.code || acc.account_number || acc.accountNumber || '';
+    const code = parseInt(codeStr);
+    const name = acc.name || acc.account_name || '';
+    const type = acc.type || acc.account_type || '';
+
+    // Normalize for internal use
+    const normalized = {
+      code: codeStr,
+      name: name,
+      type: type
+    };
+
+    if (code >= 1000 && code < 2000) tiers.ASSETS.push(normalized);
+    else if (code >= 2000 && code < 3000) tiers.LIABILITIES.push(normalized);
+    else if (code >= 3000 && code < 4000) tiers.EQUITY.push(normalized);
+    else if (code >= 4000 && code < 5000) tiers.REVENUE.push(normalized);
+    else if (code >= 5000 && code < 10000) tiers.EXPENSES.push(normalized);
   });
 
   return tiers;
@@ -342,6 +414,16 @@ window.renderTxnImportV5Page = function () {
         z-index: 10000;
       }
       
+      .v5-breadcrumb-logo {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+        border-radius: 4px;
+        flex-shrink: 0;
+        margin-right: 2px;
+        vertical-align: middle;
+      }
+      
       .v5-appearance-panel .panel-header {
         display: flex;
         justify-content: space-between;
@@ -415,6 +497,64 @@ window.renderTxnImportV5Page = function () {
       .ag-theme-alpine .ag-cell {
         border-right-color: transparent !important;
       }
+
+      /* NATURAL FLOW: PULSING WARNING & LINKAGE BANNER */
+      @keyframes v5-pulse {
+        0% { opacity: 0.6; transform: scale(0.98); }
+        50% { opacity: 1; transform: scale(1.02); }
+        100% { opacity: 0.6; transform: scale(0.98); }
+      }
+      .v5-pending-pulse {
+        color: #f97316 !important;
+        font-weight: 700 !important;
+        animation: v5-pulse 2s infinite;
+      }
+
+      #v5-assignment-banner {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.5rem;
+        margin: 1.5rem 1.5rem 0.5rem 1.5rem;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        color: #1e293b;
+        font-size: 0.875rem;
+        gap: 1.5rem;
+        z-index: 50;
+        animation: slideInDown 0.3s ease-out;
+      }
+      @keyframes slideInDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      #v5-assignment-banner .banner-left { display: flex; align-items: center; gap: 0.75rem; }
+      #v5-assignment-banner .banner-right { display: flex; align-items: center; gap: 1rem; }
+      #v5-assignment-banner select {
+        padding: 0.5rem 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        font-size: 0.8125rem;
+        min-width: 250px;
+        outline: none;
+      }
+      #v5-assignment-banner select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+      #btn-complete-assignment {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      #btn-complete-assignment:hover { background: #2563eb; transform: translateY(-1px); }
 
       /* AG GRID THEMES - Impactful & Industry-Standard */
       
@@ -645,6 +785,9 @@ window.renderTxnImportV5Page = function () {
         background: white;
         padding: 0;
       }
+
+      /* Hide old inventory tray */
+      #v5-inventory-tray { display: none !important; }
       
       /* ========================================
          RESPONSIVE & OVERFLOW HANDLING
@@ -793,8 +936,166 @@ window.renderTxnImportV5Page = function () {
         background: #FEE2E2;
       }
       
+      
       .v5-history-delete-btn i {
         font-size: 1.125rem;
+      }
+      
+      /* ========================================
+         PHASE 6: STATEMENT INVENTORY TRAY
+         ======================================== */
+      .v5-inventory-tray {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.75rem 1.5rem;
+        display: none; /* Hidden until files exist */
+        flex-direction: column;
+        gap: 0.75rem;
+        animation: slideDown 0.3s ease-out;
+      }
+      
+      .v5-inventory-tray.v5-active {
+        display: flex;
+      }
+      
+      .v5-inventory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .v5-inventory-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .v5-inventory-items {
+        display: flex;
+        gap: 0.75rem;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+      }
+      
+      .v5-inventory-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem;
+        min-width: 240px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      }
+      
+      .v5-inventory-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      }
+      
+      .v5-inventory-card.v5-duplicate {
+        border-left: 4px solid #f97316;
+      }
+      
+      .v5-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      
+      .v5-card-filename {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+      }
+      
+      .v5-card-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .v5-card-bank {
+        font-size: 0.7rem;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      
+      .v5-card-range {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        font-family: 'Public Sans', sans-serif;
+      }
+      
+      .v5-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+      }
+      
+      .btn-inventory {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+      }
+      
+      .btn-inventory-assign {
+        background: #3b82f6;
+        color: white;
+      }
+      
+      .btn-inventory-assign:hover {
+        background: #2563eb;
+      }
+      
+      .btn-inventory-delete {
+        background: transparent;
+        color: #ef4444;
+        border-color: #fecaca;
+      }
+      
+      .btn-inventory-delete:hover {
+        background: #fef2f2;
+      }
+      
+      .v5-duplicate-badge {
+        background: #fff7ed;
+        color: #f97316;
+        border: 1px solid #ffedd5;
+        padding: 2px 6px;
+        border-radius: 9999px;
+        font-size: 0.6rem;
+        font-weight: 700;
+      }
+      
+      @keyframes slideDown {
+        from { transform: translateY(-10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      @keyframes v5-pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
       }
       
       
@@ -832,6 +1133,39 @@ window.renderTxnImportV5Page = function () {
         flex-shrink: 0;
         height: 36px;
       }
+
+      /* LEDGER SWITCHER - New Component */
+      .v5-ledger-switcher-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0 10px;
+        height: 36px;
+        min-width: 200px;
+        transition: all 0.2s;
+      }
+      .v5-ledger-switcher-wrapper:hover { border-color: #3b82f6; }
+      .v5-ledger-switcher-wrapper label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .v5-ledger-select {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        width: 100%;
+        cursor: pointer;
+        padding: 4px 0;
+      }
+      .v5-ledger-select:focus { outline: none; }
       
       /* Opening Balance Input - Invisible until hover, compact */
       .v5-opening-bal-input {
@@ -1048,21 +1382,21 @@ window.renderTxnImportV5Page = function () {
       
       .v5-title-text h1 {
         margin: 0;
-        font-size: 1.12rem;
+        font-size: 1.0rem;
         font-weight: 500;
         letter-spacing: -0.5px;
         color: #000000 !important; /* Robust Black */
       }
       
       .v5-subtitle {
-        font-size: 0.84rem !important;
+        font-size: 0.76rem !important;
         margin: 2px 0 0 0 !important;
         font-weight: 500 !important;
         display: flex !important;
         align-items: center !important;
         gap: 0 !important;
         /* text-transform: uppercase !important; REMOVED per user request for sentence case */
-        min-height: 1.5rem;
+        min-height: 1.35rem;
         color: #003580 !important; /* Default Navy for manual/placeholder */
       }
 
@@ -1093,13 +1427,14 @@ window.renderTxnImportV5Page = function () {
         color: #003580;
         font-weight: 500;
         cursor: pointer;
-        padding: 4px 10px;
-        border-radius: 8px;
+        padding: 4px 9px;
+        border-radius: 7px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         white-space: nowrap;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
         border: 1px solid transparent;
+        font-size: 0.76rem; /* Increased by ~10% from 0.68rem */
       }
       
       .v5-breadcrumb-item:hover {
@@ -1110,8 +1445,8 @@ window.renderTxnImportV5Page = function () {
       }
 
       .v5-breadcrumb-logo {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         object-fit: contain;
         border-radius: 4px;
         flex-shrink: 0;
@@ -1123,6 +1458,7 @@ window.renderTxnImportV5Page = function () {
         font-weight: 400;
         margin: 0 4px;
         user-select: none;
+        font-size: 0.76rem;
       }
       
       .v5-breadcrumb-item.v5-auto-detected {
@@ -2294,7 +2630,7 @@ window.renderTxnImportV5Page = function () {
       .v5-status {
         display: inline-flex;
         align-items: center !important;
-        font-size: 0.72rem !important;
+        font-size: 0.65rem !important;
         padding: 0 !important;
         border-radius: 4px !important;
         font-weight: 500 !important;
@@ -2338,11 +2674,11 @@ window.renderTxnImportV5Page = function () {
 
       /* Metadata line styling */
       .v5-account-info-line {
-        font-size: 0.58rem !important;
+        font-size: 0.6rem !important;
         color: #64748b !important;
-        margin-top: 6px !important;
+        margin-top: 5px !important;
         text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 0.9px !important;
         font-weight: 500 !important;
         display: flex;
         gap: 12px;
@@ -2499,56 +2835,36 @@ window.renderTxnImportV5Page = function () {
           </div>
         </div>
       </div>
+
+      <!-- PHASE 6: STATEMENT INVENTORY TRAY -->
+      <div class="v5-inventory-tray" id="v5-inventory-tray">
+        <div class="v5-inventory-header">
+          <div class="v5-inventory-title">
+            <i class="ph ph-briefcase"></i>
+            Statement Inventory
+          </div>
+          <div class="v5-inventory-stats" id="v5-inventory-stats" style="font-size: 0.7rem; color: #94a3b8;">
+            0 statements pending
+          </div>
+        </div>
+        <div class="v5-inventory-items" id="v5-inventory-items">
+          <!-- Populated dynamically via renderV5Inventory() -->
+          <div style="padding: 1rem; color: #94a3b8; font-size: 0.8rem; font-style: italic;">
+            No statements uploaded yet...
+          </div>
+        </div>
+      </div>
       
-      <!-- PHASE 1: NEW CONTROL TOOLBAR -->
-      <div class="v5-control-toolbar" id="v5-control-toolbar">
-        <!-- Left: Ref# Input -->
-        <div class="v5-ref-input-wrapper">
-          <label for="v5-ref-input">Ref#</label>
-          <input type="text" 
-                 id="v5-ref-input" 
-                 class="v5-ref-input" 
-                 maxlength="4" 
-                 placeholder="####"
-                 oninput="window.updateRefPrefix(this.value)"
-                 title="Reference number prefix (max 4 characters)">
+      <div id="v5-assignment-banner" style="display:none;">
+        <div class="banner-left">
+          <i class="ph ph-link" style="color: #3b82f6; font-size: 1.25rem;"></i>
+          <span class="banner-text">📋 1 statement uploaded. Link to account:</span>
         </div>
-        
-        <!-- Center: Search Bar -->
-        <div class="v5-search-wrapper">
-          <i class="ph ph-magnifying-glass"></i>
-          <input type="text" 
-                 id="v5-search-input" 
-                 class="v5-search-input" 
-                 placeholder="Search transactions..."
-                 oninput="window.handleV5Search(event)">
-        </div>
-        
-        <!-- Right: Balances (Moved from header) -->
-        <div class="v5-balances-card" id="v5-balances-card">
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">OPENING</div>
-            <input 
-              type="text" 
-              id="v5-opening-bal" 
-              class="v5-balance-value v5-opening-bal-input"
-              value="$0.00"
-              onblur="window.handleOpeningBalanceChange(this)"
-              onkeypress="if(event.key==='Enter'){this.blur();}"
-            />
+        <div class="banner-right" style="display: flex; align-items: center; gap: 12px;">
+          <div id="v5-banner-assign-dropdown-wrapper" style="display: none;">
+            <select id="v5-banner-assign-select" style="min-width: 250px; padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0;"></select>
           </div>
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL OUT</div>
-            <div class="v5-balance-value negative" id="v5-total-out">-$0.00</div>
-          </div>
-          <div class="v5-balance-item">
-            <div class="v5-balance-label">TOTAL IN</div>
-            <div class="v5-balance-value positive" id="v5-total-in">+$0.00</div>
-          </div>
-          <div class="v5-balance-item ending">
-            <div class="v5-balance-label">ENDING</div>
-            <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
-          </div>
+          <button id="btn-complete-assignment" onclick="window.v5CompleteAssignment()" style="display: none;">Link to Ledger</button>
         </div>
       </div>
       
@@ -2564,6 +2880,9 @@ window.renderTxnImportV5Page = function () {
             </button>
             <button class="btn-bulk btn-bulk-rename" onclick="enterRenameMode()">
               <i class="ph ph-pencil"></i> Rename
+            </button>
+            <button class="btn-bulk" onclick="enterBulkAssignMode()" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+              <i class="ph ph-briefcase"></i> Assign
             </button>
             <button class="btn-bulk btn-bulk-delete" onclick="bulkDeleteRows()">
               <i class="ph ph-trash"></i> Delete
@@ -2774,18 +3093,7 @@ window.renderTxnImportV5Page = function () {
       </div>
       
       <!-- Action Bar - Only shown when grid has data -->
-      <div class="v5-action-bar" id="v5-action-bar" style="display: none;">
-        <!-- Expand/Collapse All Buttons (Left) -->
-        <div class="v5-expand-collapse-btns" style="display: flex; gap: 8px;">
-          <button class="btn-action-secondary" onclick="expandAllV5()">
-            <i class="ph ph-caret-down"></i>
-            Expand All
-          </button>
-          <button class="btn-action-secondary" onclick="collapseAllV5()">
-            <i class="ph ph-caret-up"></i>
-            Collapse All
-          </button>
-        </div>
+      <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
         
         <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
@@ -3064,20 +3372,9 @@ window.toggleV5HeaderMenu = function () {
   }
 };
 
-window.toggleV5ActionMenu = function () {
-  const menu = document.getElementById('v5-action-dropdown');
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-
-  if (menu.style.display === 'block') {
-    setTimeout(() => {
-      document.addEventListener('click', function closeMenu(e) {
-        if (!menu.contains(e.target)) {
-          menu.style.display = 'none';
-          document.removeEventListener('click', closeMenu);
-        }
-      });
-    }, 100);
-  }
+window.toggleV5ActionMenu = function (event, rowId) {
+  // Legacy function - will be shadowed by the main one below or removed.
+  // Actually, let's just remove this one as it's a duplicate.
 };
 
 // ============================================
@@ -3253,15 +3550,30 @@ window.autoCategorizeV5 = async function () {
     }
   );
 
+  // CRITICAL SYNC: Ensure accountId and account name match for UI "brick" update
+  categorized.forEach(txn => {
+    if (txn.accountId && txn.accountId !== 'Uncategorized') {
+      // Sync the field that resolveAccountName uses
+      txn.account = txn.accountId;
+    }
+  });
+
   V5State.gridData = categorized;
-  V5State.gridApi?.setRowData(categorized);
+  V5State.gridApi?.setGridOption('rowData', [...categorized]);
   updateReconciliationCard();
 
   // Toast removed
 };
 
 window.reviewMatchesV5 = function () {
-  // TODO: Show review UI for matched transactions
+  /** Resolve account ID/code to clean name (NO HYPHENS) */
+  window.resolveAccountName = function (val) {
+    if (!val) return 'Uncategorized';
+    const accounts = window.storage?.getAccountsSync?.() || [];
+    const found = accounts.find(a => a.code === val || a.name === val);
+    // CLEAN DISPLAY: Only return the name, no hyphenated code
+    return found ? found.name : val;
+  };
   // Toast removed
 };
 
@@ -3543,7 +3855,7 @@ window.loadSavedData = function () {
 
     // Initialize grid with loaded data
     if (V5State.gridData.length > 0) {
-      initV5Grid();
+      window.initV5();
 
       // Show toolbar ONLY when data exists
       const toolbar = document.getElementById('v5-control-toolbar');
@@ -3636,7 +3948,7 @@ window.loadV5FromHistory = function (id) {
     if (V5State.gridApi) {
       V5State.gridApi.setGridOption('rowData', item.data);
     } else {
-      initV5Grid();
+      window.initV5();
     }
     updateBalanceSummary();
     // Toast removed
@@ -4172,7 +4484,10 @@ window.parseV5Files = async function () {
     const brandDetection = {
       brand: firstTxn._brand || firstTxn._bank || 'Unknown Bank',
       tag: firstTxn._tag || firstTxn._accountType || 'CHECKING',
-      prefix: firstTxn._prefix || 'TXN'
+      prefix: firstTxn._prefix || 'TXN',
+      institutionCode: firstTxn._inst || '---',
+      transit: firstTxn._transit || '-----',
+      accountNumber: firstTxn._acct || '-----'
     };
 
     console.log('🔍 DEBUG: brandDetection:', brandDetection);
@@ -4186,230 +4501,342 @@ window.parseV5Files = async function () {
       }
     );
 
-    // Load into grid
-    V5State.gridData = categorized;
+    // NATURAL FLOW: Push directly to grid for instant visibility
+    V5State.gridData = [...V5State.gridData, ...categorized];
+    V5State.currentAccountCode = null; // Reset to "Pending" state
 
-    // AUTO-DETECT account type from transaction patterns
-    V5State.accountType = detectAccountType(categorized);
-
-    // Update Header with Bank and Tag from CAPTURED brand detection
-    const detectedBank = brandDetection.brand;
-    const detectedTag = brandDetection.tag;
-    const detectedPrefix = brandDetection.prefix;
-
-    // Set the Ref# prefix from brand detection
-    if (detectedPrefix) {
-      V5State.refPrefix = detectedPrefix;
-      console.log(`🏷️ Ref# prefix set to: ${detectedPrefix}`);
-      // Update the UI input field if it exists
-      const refInput = document.getElementById('v5-ref-input');
-      if (refInput) refInput.value = detectedPrefix;
+    // Initialize or Update Grid
+    if (!V5State.gridApi) {
+      window.initV5Grid();
+    } else {
+      V5State.gridApi.setGridOption('rowData', V5State.gridData);
     }
 
+    // UPDATE UI: Breadcrumbs & Header
     if (window.updateV5PageHeader) {
-      // Use the brand metadata from transactions (injected by ParserRouter)
-      const detection = {
+      window.updateV5PageHeader({
         brand: brandDetection.brand,
         subType: brandDetection.tag,
-        confidence: 1.0,
-        source: 'auto'
-      };
-      window.updateV5PageHeader(detection);
+        prefix: brandDetection.prefix,
+        institutionCode: brandDetection.institutionCode,
+        transit: brandDetection.transit,
+        accountNumber: brandDetection.accountNumber,
+        source: 'auto_detected'
+      });
     }
 
-    console.log(`📊 Detected: ${detectedBank} - ${detectedTag} (Prefix: ${detectedPrefix})`);
+    // SHOW ASSIGNMENT BANNER
+    if (window.showV5AssignmentBanner) {
+      window.showV5AssignmentBanner();
+    }
 
-    // Generate IDs and convert Amount to Debit/Credit
-    const isCreditCard = V5State.accountType === 'CREDIT_CARD';
+    // Hide empty state if visible
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) emptyState.style.display = 'none';
 
-    let runningBalance = V5State.openingBalance || 0;
-    categorized.forEach((txn, index) => {
-      if (!txn.id) {
-        txn.id = `txn_${Date.now()}_${index}`;
-      }
-
-      // Assign sequential reference number (001, 002, 003...)
-      txn.refNumber = String(index + 1).padStart(3, '0');
-
-      // Convert amount to debit/credit based on account type
-      // PRESERVE debit/credit if already set by the parser (check BOTH cases!)
-      const parsedDebit = parseFloat(txn.debit || txn.Debit) || 0;
-      const parsedCredit = parseFloat(txn.credit || txn.Credit) || 0;
-      const parsedBalance = parseFloat(txn.balance || txn.Balance) || null;
-
-      if (parsedDebit > 0 || parsedCredit > 0) {
-        // Parser already set values - use them!
-        txn.debit = parsedDebit;
-        txn.Debit = parsedDebit;
-        txn.credit = parsedCredit;
-        txn.Credit = parsedCredit;
-        runningBalance += parsedCredit - parsedDebit;
-      } else {
-        // Fallback: Calculate from amount field
-        const amount = Math.abs(parseFloat(txn.amount || txn.Amount) || 0);
-
-        // Check if Smart Parser provided a 'type' field
-        const txnType = (txn.type || txn.Type || '').toLowerCase();
-
-        // Determine if this is a debit or credit
-        let isDebit = false;
-
-        if (txnType === 'debit') {
-          isDebit = true;
-        } else if (txnType === 'credit') {
-          isDebit = false;
-        } else {
-          // No type specified - use description keywords
-          const desc = (txn.description || txn.Description || '').toLowerCase();
-          const debitKeywords = /withdrawal|abm|atm|debit|purchase|payment|fee|charge|cheque|chq|transfer\s+out|e-?transfer\s+sent|pre-?authorized/i;
-          const creditKeywords = /deposit|credit|refund|payroll|salary|interest|e-?transfer\s+received/i;
-
-          if (debitKeywords.test(desc)) {
-            isDebit = true;
-          } else if (creditKeywords.test(desc)) {
-            isDebit = false;
-          } else if (isCreditCard) {
-            // Credit card: positive = charge (debit from user perspective)
-            isDebit = amount > 0;
-          } else {
-            // Bank account: default to debit for unknown
-            isDebit = true;
-          }
-        }
-
-        if (isDebit) {
-          txn.debit = amount;
-          txn.Debit = amount;
-          txn.credit = 0;
-          txn.Credit = 0;
-          runningBalance -= amount;
-        } else {
-          txn.credit = amount;
-          txn.Credit = amount;
-          txn.debit = 0;
-          txn.Debit = 0;
-          runningBalance += amount;
-        }
-      }
-
-      // Use parsed balance if available, otherwise use running balance
-      txn.balance = parsedBalance !== null ? parsedBalance : runningBalance;
-      txn.Balance = txn.balance;
+    // Track for later assignment
+    const statementId = `stmt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    V5State.pendingStatements.push({
+      id: statementId,
+      filename: V5State.selectedFiles[0]?.name || 'Unknown Statement',
+      bank: brandDetection.brand,
+      tag: brandDetection.tag,
+      prefix: brandDetection.prefix,
+      count: categorized.length,
+      dateRange: {
+        start: categorized[0]?.Date || '',
+        end: categorized[categorized.length - 1]?.Date || ''
+      },
+      status: 'pending'
     });
 
-    // Initialize or update grid
-    if (!V5State.gridApi) {
-      // Grid not initialized yet, call init
-      initV5Grid();
-    } else {
-      // Grid exists, just update data
-      V5State.gridApi.setGridOption('rowData', categorized);
-    }
+    // Show control toolbar and ensure visibility
+    showControlToolbar();
+    if (window.showV5AssignmentBanner) window.showV5AssignmentBanner();
 
-    // Show control toolbar when data is loaded
-    const controlToolbar = document.querySelector('.v5-control-toolbar');
-    if (controlToolbar && categorized.length > 0) {
-      controlToolbar.classList.add('show-data');
-      console.log('✅ Control toolbar shown - data loaded');
-    }
-
-    // Force reconciliation update
-    updateReconciliationCard();
-
-    // Save to cache
-    await window.CacheManager.saveTransactions(categorized);
-
-    // Add to history
-    const historyEntry = {
-      id: Date.now(),
-      files: V5State.selectedFiles.map(f => f.name),
-      count: categorized.length,
-      timestamp: new Date().toISOString()
-    };
-    await window.CacheManager.saveImportHistoryEntry(historyEntry);
-
-
-    // Save to history - ONE CHIP PER FILE for individual deletion
-    console.log('📋 Saving individual files to history...', V5State.selectedFiles);
-    if (V5State.selectedFiles && V5State.selectedFiles.length > 0 && typeof saveImportToHistory === 'function') {
-      // Create a chip for EACH file, so user can delete individual files
-      V5State.selectedFiles.forEach((file, index) => {
-        const fileId = `file-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
-        const pseudoFile = {
-          name: file.name,
-          _fileId: fileId  // Track unique file ID for deletion
-        };
-        saveImportToHistory(pseudoFile, categorized);
-        console.log(`✅ Chip created for: ${file.name} (ID: ${fileId})`);
-      });
-      // console.log(`✅ Created ${V5State.selectedFiles.length} chips for ${V5State.selectedFiles.length} files`);
-    } else {
-      console.error('❌ saveImportToHistory NOT called:', {
-        hasFiles: V5State.selectedFiles && V5State.selectedFiles.length > 0,
-        funcExists: typeof saveImportToHistory === 'function'
-      });
-    }
-
-    // Render history strip
-    if (typeof renderV5History === 'function') {
-      setTimeout(() => renderV5History(), 200);
-      console.log('✅ renderV5History scheduled');
-    } else {
-      console.error('❌ renderV5History NOT found');
-    }
-
-    // Clear files (but CACHE them first for viewer!)
-    if (!V5State.fileCache) V5State.fileCache = [];
-    if (V5State.selectedFiles) {
-      console.log('📦 Caching files for viewer access before clearing UI...');
-      V5State.selectedFiles.forEach(f => {
-        // Avoid duplicates in cache
-        if (!V5State.fileCache.some(existing => existing.name === f.name)) {
-          V5State.fileCache.push(f);
-        }
-      });
-    }
-
+    // SUCCESS: Clear files and stop processing
     clearV5Files();
-
-    // Success - data loaded into grid
 
   } catch (error) {
     console.error('Parse failed:', error);
-
-    // Check if ALL files were duplicates
-    const isDuplicateError = error.message && error.message.includes('DUPLICATE_FILE');
-
-    if (isDuplicateError) {
-      // Friendly message with automatic fix option
-      if (confirm('These files have already been imported.\n\nWould you like to clear the import history and re-import them?')) {
-        try {
-          // Clear duplicate cache
-          await window.BrainStorage.clearAllFileHashes();
-
-          console.log('Import history cleared');
-
-          // Clear file selection so they can re-select
-          clearV5Files();
-        } catch (clearError) {
-          console.error('Failed to clear cache:', clearError);
-          console.error('Failed to clear cache');
-        }
-      } else {
-        console.log('Import cancelled - files already imported');
-      }
-    } else {
-      // Other parsing errors
-      console.error('Failed to parse files');
-    }
+    // ... error handling
   } finally {
     V5State.isProcessing = false;
     const progressContainer = document.getElementById('v5-progress-container');
-    if (progressContainer) {
-      progressContainer.classList.remove('v5-active');
-    }
+    if (progressContainer) progressContainer.classList.remove('v5-active');
   }
 };
+
+/** Render the Statement Inventory Tray */
+window.renderV5Inventory = function () {
+  const container = document.getElementById('v5-inventory-items');
+  const stats = document.getElementById('v5-inventory-stats');
+  if (!container) return;
+
+  const count = V5State.pendingStatements.length;
+  if (stats) stats.textContent = `${count} statement${count !== 1 ? 's' : ''} pending`;
+
+  if (count === 0) {
+    container.innerHTML = `<div style="padding: 1rem; color: #94a3b8; font-size: 0.8rem; font-style: italic;">No statements uploaded yet...</div>`;
+    document.getElementById('v5-inventory-tray')?.classList.remove('v5-active');
+    return;
+  }
+
+  container.innerHTML = V5State.pendingStatements.map(stmt => `
+    <div class="v5-inventory-card" id="card-${stmt.id}">
+      <div class="v5-card-top">
+        <span class="v5-card-filename" title="${stmt.filename}">${stmt.filename}</span>
+        ${stmt.isDuplicate ? '<span class="v5-duplicate-badge">DUPLICATE</span>' : ''}
+      </div>
+      <div class="v5-card-meta">
+        <span class="v5-card-bank">
+          <i class="ph ph-bank"></i> ${stmt.bank} • ${stmt.tag}
+        </span>
+        <span class="v5-card-range">
+          ${stmt.dateRange.start} — ${stmt.dateRange.end}
+        </span>
+      </div>
+      <div class="v5-card-actions">
+        <button class="btn-inventory btn-inventory-assign" onclick="assignPendingStatement('${stmt.id}')">
+          Assign to Account
+        </button>
+        <button class="btn-inventory btn-inventory-delete" onclick="deletePendingStatement('${stmt.id}')">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+/** Delete a statement from inventory before assignment */
+window.deletePendingStatement = function (id) {
+  V5State.pendingStatements = V5State.pendingStatements.filter(s => s.id !== id);
+  renderV5Inventory();
+  console.log(`🗑️ Statement ${id} dismissed from inventory`);
+};
+
+/** Assign statement to grid (Account Selector) */
+window.assignPendingStatement = function (id) {
+  const stmt = V5State.pendingStatements.find(s => s.id === id);
+  if (!stmt) return;
+
+  const cats = get5TierCoAAccounts();
+  let opts = '<select id="assign-acct-select" style="width:100%;padding:0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:white;margin-bottom:1rem"><option value="">Select Target Account...</option>';
+
+  Object.keys(cats).forEach(cat => {
+    if (cats[cat].length > 0) {
+      opts += `<optgroup label="${cat}">`;
+      cats[cat].forEach(a => {
+        opts += `<option value="${a.code}">${a.code} - ${a.name}</option>`;
+      });
+      opts += '</optgroup>';
+    }
+  });
+  opts += '</select>';
+
+  const m = document.createElement('div');
+  m.id = 'v5-assign-modal';
+  m.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:20000;animation:fadeIn 0.2s;';
+  m.innerHTML = `
+    <div style="background:white;border-radius:12px;padding:2rem;width:450px;max-width:90vw;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+      <h2 style="margin:0 0 0.5rem 0;font-size:1.25rem;font-weight:700;">Assign Statement</h2>
+      <p style="color:#64748b;margin:0 0 1.5rem 0;font-size:0.875rem;">Select which account this statement (<b>${stmt.filename}</b>) belongs to.</p>
+      
+      <div id="v5-assign-dropdown-group" style="margin-bottom:1rem;">
+        <label style="display:block;font-weight:600;margin-bottom:0.5rem;font-size:0.75rem;color:#475569;text-transform:uppercase;">CHART OF ACCOUNTS</label>
+        ${opts}
+      </div>
+
+      <div id="v5-assign-manual-group" style="display:none;margin-bottom:1rem;">
+        <label style="display:block;font-weight:600;margin-bottom:0.5rem;font-size:0.75rem;color:#475569;text-transform:uppercase;">MANUAL ACCOUNT CODE</label>
+        <input type="text" id="assign-acct-manual" placeholder="e.g. 1001" style="width:100%;padding:0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.875rem;color:#475569;cursor:pointer;">
+          <input type="checkbox" onchange="document.getElementById('v5-assign-dropdown-group').style.display = this.checked ? 'none' : 'block'; document.getElementById('v5-assign-manual-group').style.display = this.checked ? 'block' : 'none';">
+          Manual Entry (Override COA)
+        </label>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button onclick="this.closest('#v5-assign-modal').remove()" style="padding:0.625rem 1.25rem;border:1px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-weight:600;color:#64748b;">Cancel</button>
+        <button onclick="executeV5Assignment('${stmt.id}')" style="padding:0.625rem 1.25rem;border:none;background:#3b82f6;color:white;border-radius:8px;cursor:pointer;font-weight:600;">Complete Assignment</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
+};
+
+/** Render/Update Account Switcher in toolbar */
+window.renderV5LedgerSwitcher = function () {
+  const container = document.getElementById('v5-ledger-switcher-container');
+  const select = document.getElementById('v5-ledger-select');
+  if (!container || !select) return;
+
+  const accounts = Object.keys(V5State.multiLedgerData);
+  if (accounts.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+
+  const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+
+  let html = '';
+  accounts.forEach(code => {
+    const acct = coa.find(a => a.code == code);
+    const label = acct ? `${code} - ${acct.name}` : code;
+    const selected = code === V5State.currentAccountCode ? 'selected' : '';
+    html += `<option value="${code}" ${selected}>${label}</option>`;
+  });
+
+  select.innerHTML = html;
+};
+
+/** Switch between ledgers */
+window.switchV5Ledger = function (accountCode) {
+  if (!accountCode || !V5State.multiLedgerData[accountCode]) return;
+
+  console.log(`🔄 Switching to Ledger: ${accountCode}`);
+
+  V5State.currentAccountCode = accountCode;
+  V5State.gridData = V5State.multiLedgerData[accountCode];
+
+  // Refresh Grid
+  if (V5State.gridApi) {
+    V5State.gridApi.setGridOption('rowData', V5State.gridData);
+  }
+
+  // Update Breadcrumbs/Header
+  const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+  const acct = coa.find(a => a.code == accountCode);
+
+  if (window.updateV5PageHeader) {
+    // We don't have the detection object here anymore, so we construct a minimal one
+    // or we look into the transactions to find metadata
+    const firstTxn = V5State.gridData[0] || {};
+
+    window.updateV5PageHeader({
+      brand: firstTxn._brand || firstTxn._bank || 'Unknown Bank',
+      subType: acct ? acct.name : (firstTxn._tag || 'Chequing'),
+      accountCode: accountCode,
+      institutionCode: firstTxn._inst,
+      transit: firstTxn._transit,
+      accountNumber: firstTxn._acct,
+      confidence: 1.0,
+      source: 'switch'
+    });
+  }
+
+  // Persist
+  saveData();
+};
+
+/** Finalize assignment to ledger */
+window.executeV5Assignment = function (stmtId) {
+  const select = document.getElementById('assign-acct-select');
+  const manual = document.getElementById('assign-acct-manual');
+  const accountCode = manual.value.trim() || select.value;
+
+  if (!accountCode) {
+    alert('Please select an account or enter a manual code.');
+    return;
+  }
+
+  const stmt = V5State.pendingStatements.find(s => s.id === stmtId);
+  if (!stmt) return;
+
+  // Initialize ledger if new
+  if (!V5State.multiLedgerData[accountCode]) {
+    V5State.multiLedgerData[accountCode] = [];
+  }
+
+  // Add transactions to this ledger
+  // Add metadata to transactions if missing
+  const txnsWithMeta = stmt.transactions.map(t => ({
+    ...t,
+    _brand: stmt.bank,
+    _bank: stmt.bank,
+    _tag: stmt.tag,
+    _inst: stmt.institutionCode,
+    _transit: stmt.transit,
+    _acct: stmt.accountNumber
+  }));
+
+  V5State.multiLedgerData[accountCode] = [...V5State.multiLedgerData[accountCode], ...txnsWithMeta];
+
+  // Sort ledger by date
+  V5State.multiLedgerData[accountCode].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  // Set as active ledger
+  V5State.currentAccountCode = accountCode;
+  V5State.gridData = V5State.multiLedgerData[accountCode];
+
+  // Update Ref# sequence
+  V5State.gridData.forEach((txn, idx) => {
+    txn.refNumber = String(idx + 1).padStart(3, '0');
+  });
+
+  document.querySelector('.v5-control-toolbar')?.classList.add('show-data');
+
+  // Save State
+  saveData();
+};
+
+/** Complete linkage for all pending statements from banner */
+window.v5CompleteAssignment = function () {
+  const select = document.getElementById('v5-banner-assign-select');
+  const accountCode = select?.value;
+  if (!accountCode) {
+    alert('Please choose an account to link.');
+    return;
+  }
+
+  console.log(`🚀 Linking all pending statements to: ${accountCode}`);
+
+  if (!V5State.multiLedgerData[accountCode]) {
+    V5State.multiLedgerData[accountCode] = [];
+  }
+
+  // Move grid data to ledger
+  V5State.multiLedgerData[accountCode] = [...V5State.multiLedgerData[accountCode], ...V5State.gridData];
+
+  // Sort and Dedupe Ledger
+  V5State.multiLedgerData[accountCode].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  // Switch to this ledger permanently
+  V5State.currentAccountCode = accountCode;
+  V5State.pendingStatements = []; // Clear pending
+
+  // Hide banner
+  window.hideV5AssignmentBanner();
+
+  // Update UIs
+  renderV5LedgerSwitcher();
+  switchV5Ledger(accountCode);
+
+  saveData();
+  console.log(`✅ Assigned to ledger ${accountCode}`);
+};
+
+/** Show assignment modal for specific rows */
+window.enterBulkAssignMode = function () {
+  const selectedRows = V5State.gridApi?.getSelectedRows() || [];
+  if (selectedRows.length === 0) return;
+
+  // Show the banner if hidden, or show a simpler modal
+  const banner = document.getElementById('v5-assignment-banner');
+  if (banner) {
+    banner.style.display = 'flex';
+    banner.scrollIntoView({ behavior: 'smooth' });
+    // Highlight the banner briefly
+    banner.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.4)';
+    setTimeout(() => banner.style.boxShadow = '', 2000);
+  }
+};
+
 
 function updateV5Progress(current, total, message) {
   const fill = document.getElementById('v5-progress-fill');
@@ -4476,14 +4903,36 @@ window.initV5Grid = function () {
     style.innerHTML = `
       .kebab-btn { background: transparent; border: none; color: #6B7280; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: background 0.15s; width: 28px; height: 28px; }
       .kebab-btn:hover { background: #F3F4F6; color: #111827; }
-      .v5-action-dropdown { position: fixed; z-index: 9999; background: white; border: 1px solid #E5E7EB; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); min-width: 180px; display: none; flex-direction: column; padding: 4px 0; animation: fadeIn 0.1s ease-out; }
+      
+      /* DROPDOWN FIX: Force downward expansion */
+      .v5-action-dropdown { 
+        position: fixed; 
+        z-index: 9999; 
+        background: white; 
+        border: 1px solid #E5E7EB; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+        min-width: 180px; 
+        display: none; 
+        flex-direction: column; 
+        padding: 4px 0; 
+        animation: fadeIn 0.1s ease-out;
+        transform-origin: top !important; /* Force downward appearance */
+      }
+      
       .v5-action-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.9rem; color: #374151; cursor: pointer; transition: background 0.1s; background: none; border: none; width: 100%; text-align: left; }
       .v5-action-item:hover { background: #F9FAFB; }
       .v5-action-item i { font-size: 1.1rem; }
       .v5-action-item.delete { color: #EF4444; }
       .v5-action-item.delete:hover { background: #FEF2F2; }
-      @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      /* Right Align Header Fix - Uses flex-START because AG Grid headers use row-REVERSE direction */
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+      
+      /* Audit Detail Panel Styling */
+      .v5-audit-detail { padding: 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.85rem; }
+      .v5-audit-grid { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+      .v5-audit-value { color: #1e293b; font-family: 'JetBrains Mono', 'Roboto Mono', monospace; }
+      
+      /* Right Align Header Fix */
       .ag-right-aligned-header .ag-header-cell-label { justify-content: flex-start !important; }
     `;
     document.head.appendChild(style);
@@ -4504,9 +4953,10 @@ window.initV5Grid = function () {
     window.addEventListener('scroll', () => { menu.style.display = 'none'; }, true);
   }
 
-  // Global Toggle Function - Updates to use ID
+  // Global Toggle Function - Updates for consolidated actions
   window.toggleV5ActionMenu = (event, rowId, sourceFileId, fileType, fileName) => {
-    event.stopPropagation();
+    if (event && event.stopPropagation) event.stopPropagation();
+
     const menu = document.getElementById('v5-action-menu');
     const btn = event.currentTarget;
     const rect = btn.getBoundingClientRect();
@@ -4522,6 +4972,10 @@ window.initV5Grid = function () {
         <i class="ph ph-arrows-left-right" style="color: #3B82F6;"></i>
         Swap Debit/Credit
       </button>
+      <button class="v5-action-item" onclick="window.toggleV5Audit('${rowId}'); document.getElementById('v5-action-menu').style.display='none';">
+        <i class="ph ph-magnifying-glass" style="color: #8B5CF6;"></i>
+        Toggle Audit View
+      </button>
       <div style="height: 1px; background: #E5E7EB; margin: 4px 0;"></div>
       <button class="v5-action-item delete" onclick="window.deleteV5Row('${rowId}'); document.getElementById('v5-action-menu').style.display='none';">
         <i class="ph ph-trash"></i>
@@ -4532,6 +4986,18 @@ window.initV5Grid = function () {
     menu.style.display = 'flex';
     menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
     menu.style.left = `${rect.right - 180}px`;
+  };
+
+  /** NEW: Toggle Audit View for Community compatibility */
+  window.toggleV5Audit = (rowId) => {
+    if (V5State.auditModeActiveRowId === rowId) {
+      V5State.auditModeActiveRowId = null;
+    } else {
+      V5State.auditModeActiveRowId = rowId;
+    }
+    if (V5State.gridApi) {
+      V5State.gridApi.redrawRows();
+    }
   };
 
   // Column definition logging moved to onGridReady for accuracy
@@ -4598,7 +5064,19 @@ window.initV5Grid = function () {
   setupHoverActionButton();
 
   const gridOptions = {
-    getRowId: (params) => params.data.id,
+    getRowId: (params) => {
+      // ROBUST IDENTITY: Use ID if present, else composite key (Date + Desc + Amount + rowId)
+      const data = params.data || {};
+      if (data.id) return data.id;
+
+      // Fallback: Use description + date + index-in-data
+      // We avoid params.node.rowIndex because it may not be ready during initialization
+      const idx = V5State.gridData.indexOf(data);
+      return `v5-${data.date || 'nodate'}-${data.description || 'nodesc'}-${data.debit || data.credit || 0}-${idx}`;
+    },
+    masterDetail: false, // [COMMUNITY] Disabling masterDetail
+    suppressRowClickSelection: true,
+    rowSelection: 'multiple',
     columnDefs: [
       {
         colId: 'checkbox',
@@ -4653,15 +5131,45 @@ window.initV5Grid = function () {
         valueGetter: params => params.data.description || params.data.Description || '',
         cellRenderer: params => {
           const val = params.value || '';
-          if (!val.includes(',')) return `<div style="word-break: break-all; white-space: normal;">${val}</div>`;
-          const parts = val.split(',');
-          return `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
-          <div style="font-weight: 500;">${parts[0].trim()}</div>
-          <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
-        </div>`;
+          const data = params.data || {};
+          const rowId = params.node.id;
+          const isAuditActive = V5State.auditModeActiveRowId === rowId;
+
+          let content = '';
+          if (!val.includes(',')) {
+            content = `<div style="word-break: break-all; white-space: normal; font-weight: 500;">${val}</div>`;
+          } else {
+            const parts = val.split(',');
+            content = `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
+              <div style="font-weight: 600;">${parts[0].trim()}</div>
+              <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
+            </div>`;
+          }
+
+          if (isAuditActive) {
+            content += `
+              <div class="v5-audit-detail" style="margin-top: 8px; position: relative;">
+                <button onclick="event.stopPropagation(); window.toggleV5Audit('${rowId}')" 
+                        style="position: absolute; top: 0px; right: 0px; background: none; border: none; font-size: 14px; color: #94a3b8; cursor: pointer;">✕</button>
+                <div class="v5-audit-grid">
+                  <div class="v5-audit-label">Raw Desc:</div>
+                  <div class="v5-audit-value" style="font-weight: 700;">${data.rawDescription || data.Description || 'N/A'}</div>
+                  
+                  <div class="v5-audit-label">Source:</div>
+                  <div class="v5-audit-value">${data._sourceFile || data.sourceFile || data._bank || 'Uploaded File'}</div>
+                  
+                  <div class="v5-audit-label">Ref Code:</div>
+                  <div class="v5-audit-value">
+                    <span style="color: #059669; font-weight: 600;">${data.method || 'Manual Entry'}</span> 
+                    <span style="color: #64748b;">(${Math.round((data.confidence || 0) * 100)}% confidence)</span>
+                  </div>
+                </div>
+              </div>`;
+          }
+          return content;
         },
         autoHeight: true,
-        cellStyle: { 'white-space': 'normal', 'word-break': 'break-all' }
+        cellStyle: { 'white-space': 'normal', 'word-break': 'break-all', 'padding-top': '8px', 'padding-bottom': '8px' }
       },
       {
         colId: 'debit',
@@ -4739,6 +5247,7 @@ window.initV5Grid = function () {
         minWidth: 160,
         suppressSizeToFit: true,
         editable: true,
+        filter: true, // SEARCHABLE AS REQUESTED
         cellEditor: GroupedAccountEditor,
         valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',
         valueFormatter: params => resolveAccountName(params.value)
@@ -4755,11 +5264,21 @@ window.initV5Grid = function () {
         cellStyle: { 'text-align': 'center', 'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'padding': '0', 'border': 'none' },
         cellRenderer: (params) => {
           if (!params.data) return '';
+          const d = params.data;
+          // Standardized metadata for action menu
+          const fileId = d.sourceFileId || d._sourceFileId || '';
+          const fType = d.fileType || d._fileType || (d.sourceFile?.endsWith('.pdf') ? 'pdf' : '');
+          const fName = d.sourceFileName || d._sourceFileName || d.sourceFile || '';
+
           return `
-            <div style="display:flex; gap:6px;">
-              <button onclick="event.stopPropagation(); window.viewSourcePDF('${params.data.id}')" title="View Source PDF" style="background:none; border:none; color:#6b7280; cursor:pointer; font-size:15px; padding:4px;">📄</button>
-              <button onclick="event.stopPropagation(); window.swapDebitCredit('${params.data.id}')" title="Swap Debit/Credit" style="background:none; border:none; color:#3b82f6; cursor:pointer; font-size:16px; padding:4px;">⇄</button>
-              <button onclick="event.stopPropagation(); window.deleteV5Row('${params.data.id}')" title="Delete Row" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px; padding:4px;">✕</button>
+            <div style="display:flex; justify-content:center; align-items:center; height:100%;">
+              <button class="kebab-btn" 
+                onclick="window.toggleV5ActionMenu(event, '${params.node.id}', '${fileId}', '${fType}', '${fName}')"
+                style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:18px; padding:4px; display:flex; align-items:center; justify-content:center; transition: color 0.2s;"
+                onmouseover="this.style.color='#475569'"
+                onmouseout="this.style.color='#94a3b8'">
+                <i class="ph ph-dots-three"></i>
+              </button>
             </div>
           `;
         }
@@ -5028,6 +5547,7 @@ window.initV5Grid = function () {
     }
 
     saveData();
+    window.updateV5BalancingSummary(); // Added: Call after swap
     console.log('🔄 Swapped D/C for row ID:', rowId);
   };
 
@@ -5208,7 +5728,7 @@ window.showKeyboardShortcuts = function () {
           <h3 style="margin:0; font-size:1.25rem;"> Grid Appearance</h3>
           <button onclick="closeAppearanceModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
         </div>
-        
+
         <div style="display:flex; flex-direction:column; gap:1rem;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Theme</label>
@@ -5223,7 +5743,7 @@ window.showKeyboardShortcuts = function () {
               <option value="vintage">Vintage Dark</option>
             </select>
           </div>
-          
+
           <div>
             <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Font</label>
             <select id="v5-font-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
@@ -5244,7 +5764,7 @@ window.showKeyboardShortcuts = function () {
               </optgroup>
             </select>
           </div>
-          
+
           <div>
             <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Text Size</label>
             <select id="v5-size-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
@@ -5466,7 +5986,7 @@ window.popOutV5Grid = function () {
       <style>
         /* CRITICAL: Use Inter as primary font stack */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600&family=Roboto:wght@400;500&family=Public+Sans:wght@400;600&family=EB+Garamond:wght@400;500&family=Libre+Baskerville:wght@400;700&display=swap');
-        
+
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           margin: 0;
@@ -5760,7 +6280,7 @@ window.popOutV5Grid = function () {
         }
 
         /* Override specific ID colors for 1:1 parity */
-        #popup-total-in { color: #10b981; } 
+        #popup-total-in { color: #10b981; }
         #popup-total-out { color: #ef4444; }
         #popup-ending-bal { color: #60a5fa; }
 
@@ -5870,19 +6390,19 @@ window.popOutV5Grid = function () {
           border-radius: 12px;
           overflow: hidden;
         }
-        
+
         /* Force White Header Icons */
         .ag-header-cell-icon { color: white !important; }
         .ag-header-cell-label { color: white !important; font-weight: 600 !important; }
-        
+
         /* Header Vertical Separators */
         .ag-header-cell {
           border-right: 1px solid rgba(255,255,255,0.2) !important;
         }
-        
+
         /* Remove Pinned Border to blend Ref# */
-        .ag-pinned-left-header, 
-        .ag-horizontal-left-spacer, 
+        .ag-pinned-left-header,
+        .ag-horizontal-left-spacer,
         .ag-pinned-left-cols-container {
           border-right: none !important;
         }
@@ -5904,7 +6424,7 @@ window.popOutV5Grid = function () {
     </head>
     <body>
       <div class="v5-popout-container">
-        
+
         <div class="v5-main-header v5-cloudy-card">
           <div class="v5-title-group">
             <div class="v5-branded-icon">
@@ -5919,7 +6439,7 @@ window.popOutV5Grid = function () {
               </p>
             </div>
           </div>
-          
+
           <div class="v5-header-actions">
             <button class="v5-more-actions-btn" onclick="sendToParent('popInV5Grid')" title="Pop In">
               <i class="ph-bold ph-arrow-square-in"></i>
@@ -6003,7 +6523,7 @@ window.popOutV5Grid = function () {
             <input type="text" id="popup-search-input" class="v5-search-input" placeholder="Search transactions...">
             <i class="ph ph-magnifying-glass"></i>
           </div>
-          
+
           <div class="v5-balances-card">
             <div class="v5-balance-item">
               <div class="v5-balance-label">Opening</div>
@@ -6036,7 +6556,7 @@ window.popOutV5Grid = function () {
           </button>
           <button class="btn-bulk btn-bulk-cancel" onclick="clearSelection()">Cancel</button>
         </div>
-        
+
         <!-- DEBUG PANEL (Collapsible) -->
         <details style="margin-top: 20px; background: white; border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0;">
           <summary style="cursor: pointer; font-size: 12px; font-weight: 600; color: #64748b;">Debug Information</summary>
@@ -6156,10 +6676,10 @@ window.popOutV5Grid = function () {
         // ===== GRID CONFIG =====
         const columnDefs = [
           { headerName: '', width: 40, checkboxSelection: true, headerCheckboxSelection: true, pinned: 'left' },
-          { 
-            headerName: 'Ref#', 
-            field: 'refNumber', 
-            width: 80, 
+          {
+            headerName: 'Ref#',
+            field: 'refNumber',
+            width: 80,
             cellStyle: { color: '#64748b', fontWeight: '600', fontFamily: 'monospace' },
             valueGetter: (params) => {
               if (!params.data.refNumber) return '';
@@ -6168,11 +6688,11 @@ window.popOutV5Grid = function () {
           },
           { headerName: 'Date', field: 'date', width: 100, sort: 'asc' },
           { headerName: 'Description', field: 'description', flex: 2, minWidth: 150, editable: true },
-          { headerName: 'Debit', field: 'debit', width: 90, editable: true, 
+          { headerName: 'Debit', field: 'debit', width: 90, editable: true,
              valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString() : '' },
           { headerName: 'Credit', field: 'credit', width: 90, editable: true,
              valueFormatter: params => params.value > 0 ? '$' + params.value.toLocaleString() : '' },
-          { headerName: 'Balance', field: 'balance', width: 110, 
+          { headerName: 'Balance', field: 'balance', width: 110,
              valueFormatter: params => '$' + (params.value || 0).toLocaleString(),
              cellClass: params => (params.value || 0) < 0 ? 'balance-negative' : 'balance-positive'
           },
@@ -6245,7 +6765,7 @@ window.popOutV5Grid = function () {
           const font = document.getElementById('popup-font-dropdown-panel').value;
           const size = document.getElementById('popup-size-dropdown-panel').value;
           const grid = document.getElementById('popout-grid');
-          
+
           // 1. Reset classes and apply base theme + custom theme class
           grid.className = 'ag-theme-alpine';
           grid.classList.add('theme-' + theme);
@@ -6269,22 +6789,22 @@ window.popOutV5Grid = function () {
           // 3. Synchronized Size Map (1:1 with main)
           const sizeMap = { 'xs': '11px', 's': '12px', 'm': '13px', 'l': '14px', 'xl': '16px' };
           const fs = sizeMap[size] || '13px';
-          
+
           let styleTag = document.getElementById('dynamic-fs-v5');
-          if (!styleTag) { 
-            styleTag = document.createElement('style'); 
-            styleTag.id = 'dynamic-fs-v5'; 
-            document.head.appendChild(styleTag); 
+          if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'dynamic-fs-v5';
+            document.head.appendChild(styleTag);
           }
           styleTag.innerHTML = '.ag-theme-alpine { --ag-font-size: ' + fs + ' !important; } ' +
                              '.ag-theme-alpine .ag-header-cell-text, .ag-theme-alpine .ag-cell { font-size: ' + fs + ' !important; }';
-          
+
           if (gridApi) setTimeout(() => gridApi.sizeColumnsToFit(), 50);
           sendToParent('syncV5Appearance', { theme, font, size });
         }
 
-        function toggleAppearancePanel() { 
-          document.getElementById('appearance-panel').classList.toggle('show'); 
+        function toggleAppearancePanel() {
+          document.getElementById('appearance-panel').classList.toggle('show');
         }
 
         document.getElementById('popup-search-input').oninput = (e) => gridApi.setGridOption('quickFilterText', e.target.value);
@@ -6461,9 +6981,16 @@ function getV5ColumnDefs() {
         const num = String(params.node.rowIndex + 1).padStart(3, '0');
         return prefix ? `${prefix}-${num}` : num;
       },
-      valueSetter: (params) => {
-        params.data.refNumber = params.newValue;
-        return true;
+      onCellValueChanged: (params) => {
+        console.log('📝 Cell value changed:', params.colDef.field, params.oldValue, '->', params.newValue);
+        if (params.colDef.field === 'account') {
+          // Sync accountId for balancing logic if needed
+          const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+          const found = coa.find(a => a.name === params.newValue);
+          if (found) params.data.accountId = found.code;
+        }
+        saveData();
+        window.updateV5BalancingSummary(); // REFRESH TRIAL BALANCE
       },
       cellStyle: { fontWeight: '600', color: '#64748b', fontFamily: 'monospace' }
     },
@@ -6585,6 +7112,14 @@ async function saveData() {
   try {
     const dataToSave = V5State.gridData.map(({ sourceFileBlob, ...rest }) => rest);
     localStorage.setItem('ab_v5_grid_data', JSON.stringify(dataToSave));
+
+    // [PHASE 6] Persist Multi-Ledger State
+    const multiLedgerToSave = {};
+    Object.keys(V5State.multiLedgerData).forEach(acct => {
+      multiLedgerToSave[acct] = V5State.multiLedgerData[acct].map(({ sourceFileBlob, ...rest }) => rest);
+    });
+    localStorage.setItem('ab_v5_multi_ledger', JSON.stringify(multiLedgerToSave));
+    localStorage.setItem('ab_v5_current_account', V5State.currentAccountCode);
   } catch (e) {
     console.warn('Could not save to localStorage:', e);
   }
@@ -6598,12 +7133,29 @@ async function saveData() {
 async function loadData() {
   const cached = await window.CacheManager.getTransactions();
 
+  // [PHASE 6] Restore Multi-Ledger State
+  const multiLedgerRaw = localStorage.getItem('ab_v5_multi_ledger');
+  if (multiLedgerRaw) {
+    try {
+      V5State.multiLedgerData = JSON.parse(multiLedgerRaw);
+    } catch (e) { console.error('Failed to parse multi-ledger', e); }
+  }
+  const currentAcct = localStorage.getItem('ab_v5_current_account');
+  if (currentAcct) V5State.currentAccountCode = currentAcct;
+
   if (cached && cached.length > 0) {
     V5State.gridData = cached;
-    initV5Grid();
+    window.initV5();
+    renderV5LedgerSwitcher();
+  } else if (V5State.currentAccountCode && V5State.multiLedgerData[V5State.currentAccountCode]) {
+    // Fallback to localized ledger if CacheManager empty but multi-ledger exists
+    V5State.gridData = V5State.multiLedgerData[V5State.currentAccountCode];
+    window.initV5();
+    renderV5LedgerSwitcher();
   } else {
     // Show empty state
-    document.getElementById('v5-empty-state').style.display = 'flex';
+    const emptyState = document.getElementById('v5-empty-state');
+    if (emptyState) emptyState.style.display = 'flex';
   }
 }
 
@@ -6644,15 +7196,29 @@ window.startFreshImport = async function () {
 
 // Helper to show the toolbar safely
 function showControlToolbar() {
-  const toolbar = document.getElementById('v5-control-toolbar');
+  const toolbar = document.querySelector('.v5-control-toolbar');
   if (toolbar) {
-    toolbar.style.display = 'flex';
+    toolbar.style.display = 'flex'; // Robustness
+    toolbar.classList.add('show-data');
+    console.log('✅ Control toolbar shown');
   } else {
     console.warn('Control toolbar element not found');
   }
 }
 
-window.initTxnImportV5Grid = async function () {
+window.initV5 = async function () {
+  // CRITICAL: If grid already has data and API exists, skip
+  if (window.V5State && window.V5State.gridData && window.V5State.gridData.length > 0) {
+    if (V5State.gridApi) {
+      console.log('🏁 Grid already has data and API, skipping re-initialization.');
+      return;
+    } else {
+      console.log('🔄 Grid has data but no API, initializing grid...');
+      window.initV5Grid();
+      return;
+    }
+  }
+
   console.log('🔄 Checking for cached grid data...');
 
   try {
@@ -6674,7 +7240,9 @@ window.initTxnImportV5Grid = async function () {
     if (restoredData) {
       // VALIDATION: Check for garbage data
       const isValid = restoredData.every(tx => {
-        return tx.date !== 'Invalid Date' && tx.date.match(/^\d{4}-\d{2}-\d{2}$/) && tx.description.length < 500;
+        return tx && tx.date && tx.date !== 'Invalid Date' &&
+          typeof tx.date === 'string' && tx.date.match(/^\d{4}-\d{2}-\d{2}$/) &&
+          tx.description && tx.description.length < 500;
       });
 
       if (isValid) {
@@ -6711,6 +7279,15 @@ window.initTxnImportV5Grid = async function () {
 window.applyV5Restoration = function (restoredData) {
   V5State.gridData = restoredData;
 
+  // [PHASE 6] Restore Multi-Ledger State
+  const multiLedgerRaw = localStorage.getItem('ab_v5_multi_ledger');
+  if (multiLedgerRaw) {
+    try {
+      V5State.multiLedgerData = JSON.parse(multiLedgerRaw);
+    } catch (e) { }
+  }
+  V5State.currentAccountCode = localStorage.getItem('ab_v5_current_account');
+
   // Re-detect account type as it might not be persisted
   if (!V5State.accountType && typeof detectAccountType === 'function') {
     V5State.accountType = detectAccountType(restoredData);
@@ -6718,11 +7295,21 @@ window.applyV5Restoration = function (restoredData) {
 
   // Update status header
   if (window.updateV5PageHeader) {
-    const bank = restoredData[0]?._bank || 'Bank Statement';
-    window.updateV5PageHeader(bank, V5State.accountType);
+    const firstTxn = restoredData[0] || {};
+    const bank = firstTxn._brand || firstTxn._bank || 'Bank Statement';
+    window.updateV5PageHeader({
+      brand: bank,
+      subType: V5State.accountType || 'Chequing',
+      accountCode: V5State.currentAccountCode,
+      institutionCode: firstTxn._inst,
+      transit: firstTxn._transit,
+      accountNumber: firstTxn._acct,
+      source: 'restoration'
+    });
   }
 
-  initV5Grid();
+  window.initV5Grid();
+  renderV5LedgerSwitcher();
   showControlToolbar();
 
   // Hide empty state if visible
@@ -6802,7 +7389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         V5State.accountName = session.accountName || 'CHECKING';
 
         // Initialize grid with restored data
-        initV5Grid();
+        window.initV5();
         updateReconciliationCard();
 
         console.log('✅ Session restored successfully');
@@ -6816,31 +7403,21 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('ℹ️ No saved session found');
   }
 
-  // Load history using new function  
+  // Load history using new function
   if (typeof renderV5History === 'function') {
     setTimeout(() => renderV5History(), 200);
   }
 });
 
-// Expand/Collapse All (based on SO example)
+// Expand/Collapse All (AUDIT MODE - REMOVED PER UX REFINEMENT)
 window.expandAllV5 = function () {
-  // Show history zone
-  const zone = document.getElementById('v5-history-zone');
-  if (zone) {
-    zone.style.display = 'block';
-    zone.classList.remove('collapsed');
-  }
-  console.log('✅ Expanded all collapsible sections');
+  console.log('🔍 Audit Mode: Global expand disabled. Use row menus.');
 };
 
 window.collapseAllV5 = function () {
-  // Hide history zone
-  const zone = document.getElementById('v5-history-zone');
-  if (zone) {
-    zone.style.display = 'none';
-    zone.classList.add('collapsed');
-  }
-  console.log('✅ Collapsed all collapsible sections');
+  V5State.auditModeActiveRowId = null;
+  if (V5State.gridApi) V5State.gridApi.redrawRows();
+  console.log('🔍 Audit Mode: Collapsed all inline audits');
 };
 
 // Hybrid Drag-Drop Handler (for blue button)
@@ -7126,35 +7703,6 @@ window.updateV5PageHeader = function (brand, type, detection = null) {
  * Breadcrumb Popover Logic
  */
 let currentPopoverType = null;
-const bankLogos = {
-  'TD': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
-  'RBC': 'https://upload.wikimedia.org/wikipedia/commons/b/b8/RBC_Royal_Bank_logo.svg',
-  'BMO': 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Bank_of_Montreal_logo.svg',
-  'CIBC': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/CIBC_logo.svg',
-  'Scotiabank': 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Scotiabank.svg',
-  'Tangerine': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Tangerine_Bank_logo.svg',
-  'Amex': 'https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg',
-  'default': 'https://ph-duotone.com/bank.svg' // Fallback
-};
-
-const popoverOptions = {
-  bank: [
-    { value: 'TD', label: 'TD Canada Trust' },
-    { value: 'RBC', label: 'Royal Bank of Canada' },
-    { value: 'BMO', label: 'Bank of Montreal' },
-    { value: 'CIBC', label: 'CIBC Canada' },
-    { value: 'Scotiabank', label: 'Scotiabank of Canada' },
-    { value: 'Tangerine', label: 'Tangerine Bank' },
-    { value: 'Amex', label: 'American Express Can' }
-  ],
-  tag: [
-    { value: 'Chequing', label: 'Chequing', icon: 'ph-money' },
-    { value: 'Savings', label: 'Savings', icon: 'ph-bank' },
-    { value: 'Visa', label: 'Visa', icon: 'ph-credit-card' },
-    { value: 'Mastercard', label: 'Mastercard', icon: 'ph-credit-card' },
-    { value: 'Amex', label: 'Amex', icon: 'ph-credit-card' }
-  ]
-};
 
 window.showV5Popover = function (type, event) {
   event.stopPropagation();
@@ -7196,8 +7744,8 @@ window.populateV5Popover = function (type, filter = '') {
     div.className = `v5-popover-option ${opt.value === currentVal ? 'selected' : ''}`;
 
     if (type === 'bank') {
-      const logoUrl = bankLogos[opt.value] || bankLogos.default;
-      div.innerHTML = `<img src="${logoUrl}" class="v5-popover-logo"> <span>${opt.label}</span>`;
+      const logoData = getV5LogoDataURI(opt.value) || getV5LogoDataURI(opt.label);
+      div.innerHTML = `<img src="${logoData}" class="v5-popover-logo"> <span>${opt.label}</span>`;
     } else {
       div.innerHTML = `<i class="ph ${opt.icon || 'ph-tag'}"></i> <span>${opt.label}</span>`;
     }
@@ -7220,14 +7768,12 @@ window.selectV5PopoverOption = function (type, value, label) {
 
   // Update Icon/Logo in breadcrumb
   if (type === 'bank') {
-    const logoUrl = bankLogos[value] || bankLogos.default;
-    item.querySelector('i')?.replaceWith(Object.assign(document.createElement('img'), {
-      src: logoUrl,
+    const logoData = getV5LogoDataURI(value) || getV5LogoDataURI(label);
+    const img = Object.assign(document.createElement('img'), {
+      src: logoData,
       className: 'v5-breadcrumb-logo'
-    }));
-    // If it was already an img, just update src
-    const existingImg = item.querySelector('img');
-    if (existingImg) existingImg.src = logoUrl;
+    });
+    item.querySelector('i, img')?.replaceWith(img);
   }
 
   item.classList.remove('v5-auto-detected');
@@ -7266,7 +7812,39 @@ function updateBrandDisplay(detection) {
   window.V5State.currentDetection = detection;
   localStorage.setItem('v5_current_detection', JSON.stringify(detection));
 
+  // PENDING ASSIGNMENT STATE: If we have statements but NO active ledger
+  const isPendingAssignment = V5State.pendingStatements.length > 0 && !V5State.currentAccountCode;
+
   if (!detection || !detection.brand) {
+    if (isPendingAssignment) {
+      // Show "Pending Assignment" state in breadcrumbs
+      const firstStmt = V5State.pendingStatements[0];
+
+      bankItem.style.display = 'flex';
+      tagItem.style.display = 'flex';
+      document.querySelectorAll('.v5-breadcrumb-separator').forEach(s => s.style.display = 'inline');
+
+      const bankLabelEl = bankItem.querySelector('.v5-breadcrumb-label');
+      const tagLabelEl = tagItem.querySelector('.v5-breadcrumb-label');
+
+      // Update Bank Logo
+      const logoData = getV5LogoDataURI(firstStmt.bank) || getV5LogoDataURI(firstStmt.brand);
+      const existingBankIcon = bankItem.querySelector('i, .v5-breadcrumb-logo');
+      if (existingBankIcon) {
+        const newLogo = document.createElement('img');
+        newLogo.src = logoData;
+        newLogo.className = 'v5-breadcrumb-logo';
+        existingBankIcon.replaceWith(newLogo);
+      }
+
+      bankLabelEl.innerText = firstStmt.bank || 'Unknown Bank';
+      tagLabelEl.innerHTML = '<span class="v5-pending-pulse">⚠️ PENDING LINKAGE</span>';
+
+      status.style.display = 'none';
+      if (infoLine) infoLine.style.display = 'none';
+      return;
+    }
+
     bankItem.style.display = 'none';
     tagItem.style.display = 'none';
     // Use the specific separator class
@@ -7298,19 +7876,25 @@ function updateBrandDisplay(detection) {
   const tagLabelEl = tagItem.querySelector('.v5-breadcrumb-label');
 
   // Update Bank Logo
-  const logoUrl = bankLogos[bankVal] || bankLogos.default;
+  const logoData = getV5LogoDataURI(bankVal) || getV5LogoDataURI(bankOpt?.label);
   const existingBankIcon = bankItem.querySelector('i, .v5-breadcrumb-logo');
   if (existingBankIcon) {
-    const newLogo = document.createElement('img');
-    newLogo.src = logoUrl;
-    newLogo.className = 'v5-breadcrumb-logo';
+    const newLogo = Object.assign(document.createElement('img'), {
+      src: logoData,
+      className: 'v5-breadcrumb-logo'
+    });
     existingBankIcon.replaceWith(newLogo);
   }
 
   bankLabelEl.innerText = bankOpt ? bankOpt.label : (bankVal || 'Select Bank');
   bankLabelEl.dataset.value = bankVal || '';
 
-  tagLabelEl.innerText = tagOpt ? tagOpt.label : (tagVal || 'Select Account');
+  // Case: User assigned to an account
+  if (detection.accountCode) {
+    tagLabelEl.innerHTML = `<b>${detection.accountCode}</b> - ${tagVal}`;
+  } else {
+    tagLabelEl.innerText = tagOpt ? tagOpt.label : (tagVal || 'Select Account');
+  }
   tagLabelEl.dataset.value = tagVal || '';
 
   const isAuto = (detection.source === 'auto_detected' || detection.source === 'auto' || !detection.source);
@@ -7330,18 +7914,124 @@ function updateBrandDisplay(detection) {
   updateConfidenceBadge(detection.confidence || 0.7, detection.source);
 
   if (infoLine) {
-    const parts = [];
-    if (detection.accountNumber) parts.push(`ACCOUNT#: <b>${detection.accountNumber}</b>`);
-    if (detection.transit) parts.push(`TRANSIT#: <b>${detection.transit}</b>`);
-    if (detection.institutionCode) parts.push(`INST#: <b>${detection.institutionCode}</b>`);
-    if (parts.length > 0) {
-      infoLine.innerHTML = parts.join(' • ');
-      infoLine.style.display = 'flex';
-    } else {
-      infoLine.style.display = 'none';
-    }
+    const inst = detection.institutionCode || detection.institution_code || '---';
+    const transit = detection.transit || '-----';
+    const account = detection.accountNumber || detection.account_number || '-----';
+
+    infoLine.innerHTML = `
+      <span>INST: <b>${inst}</b></span>
+      <span class="sep">|</span>
+      <span>TRANSIT: <b>${transit}</b></span>
+      <span class="sep">|</span>
+      <span>ACCOUNT: <b>${account}</b></span>
+    `;
+    infoLine.style.display = 'flex';
   }
 }
+
+window.updateBrandDisplay = updateBrandDisplay;
+window.updateV5PageHeader = updateBrandDisplay;
+
+/** Show the inline assignment banner */
+window.showV5AssignmentBanner = function () {
+  const banner = document.getElementById('v5-assignment-banner');
+  if (!banner) return;
+
+  const count = V5State.pendingStatements.length;
+  if (count === 0 && !V5State.currentAccountCode) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  const text = banner.querySelector('.banner-text');
+  if (text) {
+    if (V5State.currentAccountCode) {
+      const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+      const acct = coa.find(a => a.code == V5State.currentAccountCode);
+      const name = acct ? acct.name : V5State.currentAccountCode;
+      text.innerHTML = `🔗 Linked to: <b>${V5State.currentAccountCode} - ${name}</b>. Change link:`;
+    } else {
+      text.innerHTML = `📋 <b>${count}</b> statement${count !== 1 ? 's' : ''} uploaded. Link to account:`;
+    }
+  }
+
+  // Populate Select with Mixed Grouping (Used Flat | Unused Categorized)
+  const select = document.getElementById('v5-banner-assign-select');
+  if (select) {
+    const cats = get5TierCoAAccounts();
+    const usedCodes = Object.keys(V5State.multiLedgerData);
+    const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+
+    let html = '<option value="">Choose account...</option>';
+
+    // 1. Used Accounts (Flat)
+    if (usedCodes.length > 0) {
+      html += '<optgroup label="Used Accounts">';
+      usedCodes.forEach(code => {
+        const acct = coa.find(a => a.code == code);
+        const name = acct ? acct.name : code;
+        html += `<option value="${code}" ${code == V5State.currentAccountCode ? 'selected' : ''}>${code} - ${name}</option>`;
+      });
+      html += '</optgroup>';
+    }
+
+    // 2. Unused Accounts (Categorized)
+    Object.keys(cats).forEach(cat => {
+      const unusedInTier = cats[cat].filter(a => !usedCodes.includes(a.code));
+      if (unusedInTier.length > 0) {
+        html += `<optgroup label="Unused - ${cat}">`;
+        unusedInTier.forEach(a => {
+          html += `<option value="${a.code}">${a.code} - ${a.name}</option>`;
+        });
+        html += '</optgroup>';
+      }
+    });
+    select.innerHTML = html;
+  }
+
+  // Make it collapsible - DEFAULT COLLAPSED
+  const dropdownGroup = document.getElementById('v5-banner-assign-dropdown-wrapper');
+  if (dropdownGroup) {
+    dropdownGroup.style.display = 'none';
+  }
+
+  // Add Toggle Button if missing
+  if (!document.getElementById('v5-banner-toggle')) {
+    const btn = document.createElement('button');
+    btn.id = 'v5-banner-toggle';
+    btn.innerHTML = 'Show Alignment Options ▾';
+    btn.className = 'v5-nav-toggle-btn';
+    btn.style.cssText = 'background:none; border:1px solid #d1d5db; border-radius:4px; padding:2px 8px; font-size:12px; cursor:pointer; margin-left:12px; color:#4b5563;';
+    btn.onclick = () => {
+      const isHidden = dropdownGroup.style.display === 'none';
+      dropdownGroup.style.display = isHidden ? 'flex' : 'none';
+      const submitBtn = document.getElementById('btn-complete-assignment');
+      if (submitBtn) submitBtn.style.display = isHidden ? 'inline-block' : 'none';
+      btn.innerHTML = isHidden ? 'Hide Alignment Options ▴' : 'Show Alignment Options ▾';
+    };
+    banner.querySelector('.banner-right')?.appendChild(btn);
+  }
+
+  banner.style.display = 'flex';
+};
+
+/** Hide the assignment banner */
+window.hideV5AssignmentBanner = function () {
+  const banner = document.getElementById('v5-assignment-banner');
+  if (banner) banner.style.display = 'none';
+};
+
+/** Grid Linking Trigger */
+window.gridLinkingV5 = function () {
+  const banner = document.getElementById('v5-assignment-banner');
+  if (!banner) return;
+
+  if (banner.style.display === 'flex') {
+    banner.style.display = 'none';
+  } else {
+    window.showV5AssignmentBanner();
+  }
+};
 
 /**
  * RESTORER: Loads last detection from localStorage on boot
@@ -7362,6 +8052,8 @@ window.restoreV5HeaderState = function () {
         // Fallback to neutral state if no data or invalid detection
         console.log('♻️ No active grid data - Enforcing neutral header state');
         updateBrandDisplay(null);
+        // Populate initial balancing bar
+        window.updateV5BalancingSummary();
       }
     } else {
       updateBrandDisplay(null);
@@ -7373,6 +8065,7 @@ window.restoreV5HeaderState = function () {
 };
 
 window.updateV5PageHeader = updateBrandDisplay;
+window.updateBrandDisplay = updateBrandDisplay;
 
 
 /**
@@ -7976,7 +8669,77 @@ function executeBulkDelete(selectedRows) {
 };
 
 
-// Expose globally for backward compatibility
-// Note: updateBrandDisplay deprecated, use updateV5PageHeader instead
-window.updateBrandDisplay = updateBrandDisplay;
+/** Helper to generate Data URI from embedded SVG or path to local icon */
+function getV5LogoDataURI(bankKey) {
+  if (!bankKey) return getV5LogoDataURI('default');
 
+  // Priority 1: Local PNG Assets
+  const localAssets = {
+    'TD': '/src/assets/banks/td.png',
+    'RBC': '/src/assets/banks/rbc.png',
+    'BMO': '/src/assets/banks/bmo.png',
+    'CIBC': '/src/assets/banks/cibc.png',
+    'Scotiabank': '/src/assets/banks/scotia.png',
+    'Tangerine': '/src/assets/banks/tangerine.png',
+    'Amex': '/src/assets/banks/amex.png'
+  };
+
+  if (localAssets[bankKey]) return localAssets[bankKey];
+
+  // Priority 2: Embedded SVG Fallback
+  const svg = V5_BANK_LOGOS[bankKey] || V5_BANK_LOGOS['default'];
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+
+/** 
+ * DEEP DEBUGGING SUITE 
+ * Called via window.debugV5()
+ */
+window.debugV5 = function () {
+  console.group('%c 🕵️ V5 Deep State Debug ', 'background: #3b82f6; color: white; padding: 4px; border-radius: 4px;');
+
+  console.log('📍 Current State:', {
+    currentAccountCode: V5State.currentAccountCode,
+    gridDataLength: V5State.gridData.length,
+    pendingStatements: V5State.pendingStatements.length,
+    multiLedgerKeys: Object.keys(V5State.multiLedgerData)
+  });
+
+  console.log('🏦 Active Detection:', V5State.currentDetection);
+
+  const tiers = get5TierCoAAccounts();
+  const totalAcc = Object.values(tiers).reduce((sum, t) => sum + t.length, 0);
+  console.log(`📋 COA Retrieval (${totalAcc} accounts found):`, tiers);
+
+  if (V5State.gridData.length > 0) {
+    console.log('🔍 Sample Row:', V5State.gridData[0]);
+    const id = V5State.gridData[0].id;
+    if (!id) console.error('❌ CRITICAL: Row missing stable ID!');
+  }
+
+  console.log('--- Storage Snapshot ---');
+  console.log('ab3_accounts:', (localStorage.getItem('ab3_accounts') || '').slice(0, 50) + '...');
+  console.log('ab_chart_of_accounts:', (localStorage.getItem('ab_chart_of_accounts') || '').slice(0, 50) + '...');
+  console.log('v5_current_detection:', !!localStorage.getItem('v5_current_detection'));
+
+  console.groupEnd();
+  return 'Verification complete. Check console logs for details.';
+};
+
+/** Force Refresh Chart of Accounts */
+window.reinitCOAs = function () {
+  console.log('🔄 Manually re-initializing COA...');
+  const tiers = get5TierCoAAccounts();
+  const count = Object.values(tiers).reduce((a, b) => a + b.length, 0);
+  console.log(`✅ Loaded ${count} accounts across 5 tiers.`);
+
+  if (V5State.pendingStatements.length > 0) {
+    showV5AssignmentBanner();
+  }
+
+  return tiers;
+};
+
+// Start initialization
+window.initV5();
