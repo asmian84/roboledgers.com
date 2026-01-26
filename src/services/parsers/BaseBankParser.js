@@ -43,6 +43,9 @@ class BaseBankParser {
                 bank: this.bankName,
                 accountType: this.accountType,
                 accountHolder: 'Unknown',
+                institutionCode: '---',
+                transit: '-----',
+                accountNumber: '-----',
                 transactions: []
             };
 
@@ -52,6 +55,9 @@ class BaseBankParser {
                 bank: this.bankName,
                 accountType: this.accountType,
                 accountHolder: 'Unknown',
+                institutionCode: '---',
+                transit: '-----',
+                accountNumber: '-----',
                 transactions: []
             };
         }

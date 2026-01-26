@@ -28,11 +28,24 @@ BMO CHEQUING FORMAT:
         const transactions = [];
         let currentYear = new Date().getFullYear();
 
-        // Try to extract year from statement header
-        const yearMatch = statementText.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*(\d{4})/i);
         if (yearMatch) {
             currentYear = parseInt(yearMatch[1]);
         }
+
+        // EXTRACT METADATA (Transit, Account Number)
+        const transitMatch = statementText.match(/Transit:?\s*(\d{5})/i);
+        const acctMatch = statementText.match(/Account:?\s*(\d{4}[-\s]?\d{4}|\d{7,})/i);
+
+        const fileMetadata = {
+            _inst: '001', // BMO Institution Code
+            _transit: transitMatch ? transitMatch[1] : '-----',
+            _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            _brand: 'BMO',
+            _bank: 'BMO',
+            _tag: 'Chequing'
+        };
+
+        console.log('[BMO] Extracted Metadata:', fileMetadata);
 
         // Date pattern: "Apr 01", "May 16", etc. (Flexible, no start anchor)
         const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
@@ -194,7 +207,8 @@ BMO CHEQUING FORMAT:
             amount: debit || credit,
             debit: debit,
             credit: credit,
-            balance: balance
+            balance: balance,
+            ...fileMetadata
         };
     }
 
