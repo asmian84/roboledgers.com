@@ -26,7 +26,52 @@ window.V5State = {
   pendingStatements: [], // [NEW] Free-float statements before assignment
   multiLedgerData: {},    // [NEW] Assigned ledger data by account code
   currentAccountCode: null, // [NEW] Track active ledger for breadcrumbs
-  auditModeActiveRowId: null // [NEW] Track which row has audit details expanded
+  auditModeActiveRowId: null, // [NEW] Track which row has audit details expanded
+
+  // [PHASE 2] Settings Panel Configuration
+  settings: {
+    appearance: {
+      theme: 'light',
+      fontSize: 14,
+      rowDensity: 'comfortable' // compact | comfortable | spacious
+    },
+    columns: {
+      visible: ['date', 'description', 'debit', 'credit', 'balance', 'account', 'refNumber'],
+      salesTax: false, // GST ITC (2155) / GST Collected (2160)
+      foreignBalance: false // Show foreign currency amounts with live rates
+    },
+    autoCategorize: {
+      enabled: true,
+      confidenceThreshold: 75,
+      showScores: false,
+      reviewBeforeApply: false
+    },
+    importPrefs: {
+      defaultRefPrefix: 'REF', // Default, auto-updates to detected bank
+      dateFormat: 'MM/DD/YYYY',
+      province: 'ON', // Default to Ontario
+      autoExpandRows: false
+    },
+    currency: {
+      home: 'CAD',
+      foreignPairs: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
+      rates: {}, // Populated from API
+      lastUpdated: null,
+      autoRefresh: true,
+      refreshInterval: 3600000 // 1 hour in ms
+    },
+    performance: {
+      rowsPerPage: 100,
+      virtualization: true,
+      autoSaveInterval: 60000 // 1 minute
+    },
+    exportFormat: 'xlsx',
+    validation: {
+      duplicateDetection: true,
+      balanceAlerts: true,
+      negativeWarnings: true
+    }
+  }
 };
 
 const V5State = window.V5State;
@@ -44,7 +89,22 @@ const V5_BANK_LOGOS = {
   'default': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#64748b"/><path d="M30 70 L50 30 L70 70 Z" fill="white"/></svg>`
 };
 
-/** Global constants for Breadcrumb Popover */
+const V5_CANADIAN_TAX_RATES = {
+  'AB': { total: 0.05, label: 'Alberta (5% GST)' },
+  'BC': { total: 0.12, label: 'British Columbia (5% GST + 7% PST)' },
+  'MB': { total: 0.12, label: 'Manitoba (5% GST + 7% PST)' },
+  'NB': { total: 0.15, label: 'New Brunswick (15% HST)' },
+  'NL': { total: 0.15, label: 'Newfoundland and Labrador (15% HST)' },
+  'NS': { total: 0.15, label: 'Nova Scotia (15% HST)' },
+  'ON': { total: 0.13, label: 'Ontario (13% HST)' },
+  'PE': { total: 0.15, label: 'Prince Edward Island (15% HST)' },
+  'QC': { total: 0.14975, label: 'Quebec (5% GST + 9.975% QST)' },
+  'SK': { total: 0.11, label: 'Saskatchewan (5% GST + 6% PST)' },
+  'NT': { total: 0.05, label: 'Northwest Territories (5% GST)' },
+  'NU': { total: 0.05, label: 'Nunavut (5% GST)' },
+  'YT': { total: 0.05, label: 'Yukon (5% GST)' }
+};
+
 const bankLogos = {
   'TD': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
   'TD Canada Trust': 'https://upload.wikimedia.org/wikipedia/commons/a/a4/TD_logo.svg',
@@ -227,9 +287,261 @@ function updateUndoButton() {
 }
 
 
-// ============================================
-// SEARCH/FILTER FUNCTION
-// ============================================
+// Column Visibility Wiring
+window.toggleV5Column = function (columnId, visible) {
+  console.log('[Settings:Columns] Toggling column:', columnId, 'to', visible);
+
+  if (!V5State.gridApi) return;
+
+  V5State.gridApi.setColumnVisible(columnId, visible);
+
+  // Keep state in sync
+  const visibleCols = V5State.settings.columns.visible;
+  if (visible && !visibleCols.includes(columnId)) {
+    visibleCols.push(columnId);
+  } else if (!visible) {
+    V5State.settings.columns.visible = visibleCols.filter(c => c !== columnId);
+  }
+}
+
+window.toggleV5SalesTax = function (enabled) {
+  console.log('[Settings:Columns] Toggling Sales Tax Column:', enabled);
+  V5State.settings.columns.salesTax = enabled;
+  // TODO: Implement dynamic column addition for GST
+  if (V5State.gridApi) {
+    // For now just refresh, actual logic in Phase 3
+    V5State.gridApi.refreshHeader();
+  }
+}
+
+window.toggleV5ForeignBalance = function (enabled) {
+  console.log('[Settings:Columns] Toggling Foreign Balance Column:', enabled);
+  V5State.settings.columns.foreignBalance = enabled;
+  if (V5State.gridApi) {
+    V5State.gridApi.refreshHeader();
+  }
+}
+
+// Auto-Cat Wiring
+window.toggleV5AutoCat = function (enabled) {
+  console.log('[Settings:AutoCat] Auto-categorization enabled:', enabled);
+  V5State.settings.autoCategorize.enabled = enabled;
+}
+
+window.updateV5ConfidenceThreshold = function (val) {
+  console.log('[Settings:AutoCat] Confidence threshold set to:', val + '%');
+  V5State.settings.autoCategorize.confidenceThreshold = parseInt(val);
+  const displayVal = document.getElementById('v5-confidence-value');
+  if (displayVal) displayVal.textContent = val + '%';
+}
+
+// Utility to sync UI controls with V5State values
+window.syncV5SettingsUI = function () {
+  console.log('[Settings:Init] Syncing UI with current state');
+  const s = V5State.settings;
+  if (!s) return;
+
+  // Appearance
+  const themeEl = document.getElementById('v5-setting-theme');
+  if (themeEl) themeEl.value = s.appearance.theme;
+
+  const fontEl = document.getElementById('v5-setting-fontsize');
+  if (fontEl) {
+    fontEl.value = s.appearance.fontSize;
+    const fontDisplay = document.getElementById('v5-fontsize-value');
+    if (fontDisplay) fontDisplay.textContent = s.appearance.fontSize + 'px';
+  }
+
+  const densityEls = document.getElementsByName('row-density');
+  densityEls.forEach(el => {
+    if (el.value === s.appearance.rowDensity) el.checked = true;
+  });
+
+  // Columns
+  const cols = s.columns?.visible || [];
+  if (document.getElementById('col-date')) document.getElementById('col-date').checked = cols.includes('date');
+  if (document.getElementById('col-description')) document.getElementById('col-description').checked = cols.includes('description');
+  if (document.getElementById('col-debit')) document.getElementById('col-debit').checked = cols.includes('debit');
+  if (document.getElementById('col-credit')) document.getElementById('col-credit').checked = cols.includes('credit');
+  if (document.getElementById('col-balance')) document.getElementById('col-balance').checked = cols.includes('balance');
+  if (document.getElementById('col-account')) document.getElementById('col-account').checked = cols.includes('account');
+  if (document.getElementById('col-refnumber')) document.getElementById('col-refnumber').checked = cols.includes('refNumber');
+
+  if (document.getElementById('col-salestax')) document.getElementById('col-salestax').checked = s.columns.salesTax;
+  if (document.getElementById('col-foreign')) document.getElementById('col-foreign').checked = s.columns.foreignBalance;
+
+  // Auto-Cat
+  if (document.getElementById('v5-setting-autocat-enabled'))
+    document.getElementById('v5-setting-autocat-enabled').checked = s.autoCategorize.enabled;
+
+  const confEl = document.getElementById('v5-setting-confidence');
+  if (confEl) {
+    confEl.value = s.autoCategorize.confidenceThreshold;
+    const confDisplay = document.getElementById('v5-confidence-value');
+    if (confDisplay) confDisplay.textContent = s.autoCategorize.confidenceThreshold + '%';
+  }
+
+  if (document.getElementById('v5-setting-show-scores'))
+    document.getElementById('v5-setting-show-scores').checked = s.autoCategorize.showScores;
+  if (document.getElementById('v5-setting-review-before'))
+    document.getElementById('v5-setting-review-before').checked = s.autoCategorize.reviewBeforeApply;
+
+  // Preferences
+  const refPrefix = (s.importPrefs?.defaultRefPrefix || 'REF');
+  if (document.getElementById('v5-setting-refprefix'))
+    document.getElementById('v5-setting-refprefix').value = refPrefix;
+
+  // Also sync the toolbar input (Phase 5 request)
+  if (document.getElementById('v5-ref-prefix'))
+    document.getElementById('v5-ref-prefix').value = refPrefix;
+
+  if (document.getElementById('v5-setting-dateformat'))
+    document.getElementById('v5-setting-dateformat').value = (s.importPrefs?.dateFormat || 'MM/DD/YYYY');
+  if (document.getElementById('v5-setting-province'))
+    document.getElementById('v5-setting-province').value = (s.importPrefs?.province || 'ON');
+  if (document.getElementById('v5-setting-autoexpand'))
+    document.getElementById('v5-setting-autoexpand').checked = s.importPrefs?.autoExpandRows || false;
+
+  // Advanced
+  if (document.getElementById('v5-setting-rowsperpage'))
+    document.getElementById('v5-setting-rowsperpage').value = s.performance.rowsPerPage;
+  if (document.getElementById('v5-setting-virtualization'))
+    document.getElementById('v5-setting-virtualization').checked = s.performance.virtualization;
+
+  const autosaveEls = document.getElementsByName('autosave');
+  autosaveEls.forEach(el => {
+    if (parseInt(el.value) === s.performance.autoSaveInterval) el.checked = true;
+  });
+
+  if (document.getElementById('v5-setting-duplicates'))
+    document.getElementById('v5-setting-duplicates').checked = s.validation.duplicateDetection;
+  if (document.getElementById('v5-setting-balance-alerts'))
+    document.getElementById('v5-setting-balance-alerts').checked = s.validation.balanceAlerts;
+  if (document.getElementById('v5-setting-negative-warnings'))
+    document.getElementById('v5-setting-negative-warnings').checked = s.validation.negativeWarnings;
+
+  // Export Format
+  if (document.getElementById('v5-setting-exportformat'))
+    document.getElementById('v5-setting-exportformat').value = s.exportFormat || 'xlsx';
+}
+
+// Global Application logic
+window.applyAllV5Settings = function () {
+  console.log('[Settings:Apply] Applying all settings to live grid');
+  const s = V5State.settings;
+  if (!s || !V5State.gridApi) return;
+
+  // 1. Theme
+  window.applyV5Theme(s.appearance.theme);
+
+  // 2. Font Size
+  window.applyV5FontSize(s.appearance.fontSize);
+
+  // 3. Row Density
+  window.applyV5RowDensity(s.appearance.rowDensity);
+
+  // 4. Column Visibility
+  const allCols = ['checkbox', 'refNumber', 'date', 'description', 'debit', 'credit', 'balance', 'account', 'salesTax', 'foreignBalance'];
+  allCols.forEach(c => {
+    if (c === 'checkbox') return; // Always visible
+    let visible = false;
+    if (c === 'salesTax') visible = s.columns.salesTax;
+    else if (c === 'foreignBalance') visible = s.columns.foreignBalance;
+    else visible = s.columns.visible.includes(c);
+
+    V5State.gridApi.setColumnVisible(c, visible);
+  });
+
+  // 5. Pagination
+  V5State.gridApi.setGridOption('paginationPageSize', s.performance.rowsPerPage);
+
+  console.log('[Settings:Apply] All settings applied');
+}
+
+// Handler function implementations
+window.toggleV5ShowScores = val => { V5State.settings.autoCategorize.showScores = val; };
+window.toggleV5ReviewBefore = val => { V5State.settings.autoCategorize.reviewBeforeApply = val; };
+window.setV5DefaultRefPrefix = val => {
+  window.updateRefPrefix(val);
+};
+window.setV5DateFormat = val => { V5State.settings.importPrefs.dateFormat = val; if (V5State.gridApi) V5State.gridApi.refreshCells({ columns: ['date'], force: true }); };
+window.toggleV5AutoExpand = val => { V5State.settings.importPrefs.autoExpandRows = val; };
+window.setV5RowsPerPage = val => {
+  V5State.settings.performance.rowsPerPage = val;
+  if (V5State.gridApi) V5State.gridApi.setGridOption('paginationPageSize', val);
+};
+window.toggleV5Virtualization = val => { V5State.settings.performance.virtualization = val; };
+window.setV5AutoSaveInterval = val => { V5State.settings.performance.autoSaveInterval = val; };
+window.toggleV5DuplicateDetection = val => { V5State.settings.validation.duplicateDetection = val; };
+window.toggleV5BalanceAlerts = val => { V5State.settings.validation.balanceAlerts = val; };
+window.toggleV5NegativeWarnings = val => { V5State.settings.validation.negativeWarnings = val; };
+window.setV5Province = val => {
+  V5State.settings.importPrefs.province = val;
+  if (V5State.gridApi) {
+    V5State.gridApi.refreshCells({ columns: ['salesTax'], force: true });
+  }
+};
+window.toggleV5CurrencyPair = (code, val) => {
+  const pairs = V5State.settings.currency.foreignPairs;
+  if (val && !pairs.includes(code)) pairs.push(code);
+  else if (!val) V5State.settings.currency.foreignPairs = pairs.filter(p => p !== code);
+};
+
+window.refreshV5ExchangeRates = async function () {
+  console.log('[Settings:Currency] Fetching latest rates...');
+  const label = document.getElementById('v5-rates-updated');
+  if (label) label.textContent = 'Updating...';
+
+  try {
+    // Mock API call for now
+    const mockRates = { 'USD': 0.74, 'EUR': 0.68, 'GBP': 0.58, 'JPY': 110.5, 'AUD': 1.12 };
+    V5State.settings.currency.rates = mockRates;
+    V5State.settings.currency.lastUpdated = new Date().toLocaleString();
+
+    if (label) label.textContent = 'Last updated: ' + V5State.settings.currency.lastUpdated;
+    if (V5State.gridApi) V5State.gridApi.refreshHeader();
+    console.log('[Settings:Currency] Rates updated:', mockRates);
+  } catch (e) {
+    console.error('Rate update failed:', e);
+    if (label) label.textContent = 'Error updating rates';
+  }
+};
+
+window.resetV5SettingsToDefaults = function () {
+  if (!confirm('Are you sure you want to reset all settings to defaults?')) return;
+  localStorage.removeItem('v5_settings_v4');
+  location.reload();
+};
+
+window.saveV5Settings = function () {
+  console.log('[Settings:Storage] Saving settings to localStorage');
+  try {
+    localStorage.setItem('v5_settings_v4', JSON.stringify(V5State.settings));
+    if (window.showToast) window.showToast('Settings saved successfully', 'success');
+    window.closeV5SettingsPanel();
+    // Apply immediately to grid
+    window.applyAllV5Settings();
+  } catch (e) {
+    console.error('[Settings:Storage] Save failed:', e);
+  }
+}
+
+window.loadV5SettingsFromStorage = function () {
+  console.log('[Settings:Storage] Loading settings');
+  try {
+    const saved = localStorage.getItem('v5_settings_v4');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Merge with defaults
+      V5State.settings = Object.assign({}, V5State.settings, parsed);
+      console.log('[Settings:Storage] Settings loaded');
+      // Apply immediately
+      if (V5State.gridApi) window.applyAllV5Settings();
+    }
+  } catch (e) {
+    console.warn('[Settings:Storage] Load failed, using defaults');
+  }
+}
 
 window.filterV5Grid = function (searchText) {
   if (!V5State.gridApi) return;
@@ -251,13 +563,6 @@ window.filterV5ByRef = function (refText) {
   V5State.gridApi.setFilterModel(filterModel);
 }
 
-// Update Ref# prefix and refresh grid
-window.updateRefPrefix = function (value) {
-  V5State.refPrefix = value.toUpperCase().trim();
-  if (V5State.gridApi) {
-    V5State.gridApi.refreshCells({ columns: ['refNumber'], force: true });
-  }
-}
 
 // Toggle expand/collapse all with single button
 window.toggleExpandCollapseAll = function () {
@@ -285,16 +590,142 @@ window.toggleExpandCollapseAll = function () {
   }
 }
 
-// Settings panel placeholder
+// Settings panel - Open the Phase 2 slide-in panel
 window.toggleV5Settings = function () {
-  const menu = document.getElementById('v5-dropdown-menu');
+  console.log('[Settings:Init] Opening settings panel');
+  window.openV5SettingsPanel();
+}
 
-  if (menu) {
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+window.openV5SettingsPanel = function () {
+  const panel = document.getElementById('v5-settings-panel');
+  if (!panel) return;
+
+  console.log('[Settings:Init] Displaying panel');
+  panel.style.display = 'flex';
+  // Small timeout to allow display change before triggering animation
+  setTimeout(() => {
+    panel.classList.add('active');
+  }, 10);
+
+  // Sync UI with current state
+  window.syncV5SettingsUI();
+}
+
+window.closeV5SettingsPanel = function () {
+  const panel = document.getElementById('v5-settings-panel');
+  if (!panel) return;
+
+  console.log('[Settings:Init] Closing panel');
+  panel.classList.remove('active');
+  // Wait for animation to finish before hiding
+  setTimeout(() => {
+    panel.style.display = 'none';
+  }, 300);
+}
+
+window.switchV5SettingsTab = function (tabName, btn) {
+  console.log('[Settings:Tab] Switching to tab:', tabName);
+
+  // Update button active states (Sidebar or Tabs)
+  const allBtns = document.querySelectorAll('.v5-nav-item, .v5-tab-btn');
+  allBtns.forEach(b => b.classList.remove('active'));
+
+  if (btn) {
+    btn.classList.add('active');
   } else {
-    console.log('[V5] Settings panel - Coming in Phase 2');
-    alert('Settings: Grid Appearance, Undo, Start Over, History, Pop Out, Keyboard Shortcuts - Full panel coming in Phase 2!');
+    // Fallback search
+    allBtns.forEach(b => {
+      const dataTab = b.getAttribute('data-tab') || (b.getAttribute('onclick')?.includes(tabName) ? tabName : null);
+      if (dataTab === tabName) b.classList.add('active');
+    });
   }
+
+  // Update content
+  document.querySelectorAll('.v5-settings-tab-content').forEach(content => {
+    if (content.getAttribute('data-tab-content') === tabName) {
+      content.classList.add('active');
+    } else {
+      content.classList.remove('active');
+    }
+  });
+}
+
+// Appearance Wiring
+window.applyV5Theme = function (theme) {
+  console.log('[Settings:Appearance] Applying theme:', theme);
+  V5State.settings.appearance.theme = theme;
+
+  const gridContainer = document.getElementById('v5-grid-container');
+  const container = document.querySelector('.txn-import-v5-container');
+  if (!gridContainer || !container) return;
+
+  // 1. Clear previous theme-related classes
+  const classesToRemove = [
+    'ag-theme-alpine', 'ag-theme-alpine-dark',
+    'v5-theme-frosted', 'v5-theme-swiss', 'v5-theme-midnight',
+    'theme-vanilla', 'theme-classic', 'theme-ledger-pad',
+    'theme-postit', 'theme-spectrum', 'theme-vintage', 'theme-rainbow',
+    'theme-subliminal', 'theme-subtle', 'theme-tracker', 'theme-webapp',
+    'theme-social', 'theme-wave', 'theme-default'
+  ];
+  gridContainer.classList.remove(...classesToRemove);
+  container.classList.remove('v5-layout-frosted', 'v5-layout-swiss', 'v5-layout-midnight');
+
+  // 2. Map theme to AG Grid and Custom classes
+  if (theme === 'dark') {
+    gridContainer.classList.add('ag-theme-alpine-dark');
+  } else if (['vanilla', 'classic', 'ledger-pad', 'postit', 'spectrum', 'vintage', 'rainbow', 'subliminal', 'subtle', 'tracker', 'webapp', 'social', 'wave', 'default'].includes(theme)) {
+    gridContainer.classList.add('ag-theme-alpine');
+    gridContainer.classList.add('theme-' + theme);
+  } else if (theme === 'frosted') {
+    gridContainer.classList.add('v5-theme-frosted');
+    container.classList.add('v5-layout-frosted');
+  } else if (theme === 'swiss') {
+    gridContainer.classList.add('v5-theme-swiss');
+    container.classList.add('v5-layout-swiss');
+  } else if (theme === 'midnight') {
+    gridContainer.classList.add('v5-theme-midnight');
+    container.classList.add('v5-layout-midnight');
+  } else {
+    // Default light
+    gridContainer.classList.add('ag-theme-alpine');
+  }
+}
+
+window.applyV5FontSize = function (size) {
+  console.log('[Settings:Appearance] Applying font size:', size + 'px');
+  V5State.settings.appearance.fontSize = size;
+
+  const displayVal = document.getElementById('v5-fontsize-value');
+  if (displayVal) displayVal.textContent = size + 'px';
+
+  const gridContainer = document.getElementById('v5-grid-container');
+  if (gridContainer) {
+    gridContainer.style.fontSize = size + 'px';
+    // Tell AG Grid to recalculate row heights if needed
+    if (V5State.gridApi) {
+      V5State.gridApi.resetRowHeights();
+    }
+  }
+}
+
+window.applyV5RowDensity = function (density) {
+  console.log('[Settings:Appearance] Applying row density:', density);
+  V5State.settings.appearance.rowDensity = density;
+
+  if (!V5State.gridApi) return;
+
+  const rowHeights = {
+    'compact': 30,
+    'comfortable': 42,
+    'spacious': 56
+  };
+
+  const height = rowHeights[density] || 42;
+  V5State.gridApi.forEachNode(node => {
+    node.setRowHeight(height);
+  });
+  V5State.gridApi.onRowHeightChanged();
 }
 
 // ============================================
@@ -713,13 +1144,109 @@ window.renderTxnImportV5Page = function () {
       .ag-theme-alpine.theme-rainbow .ag-row:nth-child(7n+7) { background: #9400d315; }
       
       .ag-theme-alpine.theme-spectrum { background: linear-gradient(135deg, #667eea22 0%, #764ba222 50%, #f093fb22 100%); }
-      .ag-theme-alpine.theme-subliminal { background: #1f2937; color: #e5e7eb; }
-      .ag-theme-alpine.theme-subliminal .ag-header { background: #111827; color: white; }
-      .ag-theme-alpine.theme-tracker { background: #f0fdf4; }
-      .ag-theme-alpine.theme-tracker .ag-row-even { background: #dcfce7; }
-      .ag-theme-alpine.theme-vanilla { background: #fef3c7; }
-      .ag-theme-alpine.theme-vintage { background: #d4a574; filter: sepia(0.3); }
-      .ag-theme-alpine.theme-wave { background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%); }
+      .ag-theme-alpine.theme-subliminal { 
+        --ag-background-color: #111827;
+        --ag-foreground-color: #e5e7eb;
+        --ag-header-background-color: #0f172a !important;
+        --ag-header-foreground-color: #38bdf8 !important;
+        --ag-border-color: #374151;
+      }
+      .ag-theme-alpine.theme-subtle {
+        --ag-background-color: #fcfcfc;
+        --ag-foreground-color: #64748b;
+        --ag-header-background-color: #f1f5f9 !important;
+        --ag-header-foreground-color: #475569 !important;
+        --ag-border-color: #e2e8f0;
+      }
+      .ag-theme-alpine.theme-tracker { 
+        --ag-background-color: #f0fdf4;
+        --ag-foreground-color: #14532d;
+        --ag-header-background-color: #dcfce7 !important;
+        --ag-header-foreground-color: #15803d !important;
+        --ag-border-color: #86efac;
+      }
+      .ag-theme-alpine.theme-vanilla { 
+        --ag-background-color: #fffef8;
+        --ag-foreground-color: #333333;
+        --ag-header-background-color: #f5f0e8 !important;
+        --ag-header-foreground-color: #5a5a5a !important;
+        --ag-border-color: #e0ddd5;
+      }
+      .ag-theme-alpine.theme-vintage { 
+        --ag-background-color: #262626;
+        --ag-foreground-color: #d4d4d4;
+        --ag-header-background-color: #171717 !important;
+        --ag-header-foreground-color: #f59e0b !important;
+        --ag-border-color: #404040;
+      }
+      .ag-theme-alpine.theme-wave { 
+        --ag-background-color: #f0f9ff;
+        --ag-foreground-color: #0c4a6e;
+        --ag-header-background-color: #e0f2fe !important;
+        --ag-header-foreground-color: #0ea5e9 !important;
+        --ag-border-color: #7dd3fc;
+      }
+      .ag-theme-alpine.theme-webapp {
+        --ag-background-color: #ffffff;
+        --ag-foreground-color: #1e293b;
+        --ag-header-background-color: #2563eb !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-border-color: #cbd5e1;
+        --ag-row-hover-color: #f1f5f9;
+        --ag-header-height: 48px;
+        --ag-header-column-separator-display: block;
+      }
+
+      /* --- NEW PHASE 2 PREMIUM THEMES --- */
+
+      /* 1. Frosted Finance (Glassmorphism) */
+      .v5-layout-frosted {
+        background: radial-gradient(circle at top left, #1e40af, #7c3aed, #ec4899) !important;
+        background-attachment: fixed !important;
+      }
+      .v5-theme-frosted {
+        --ag-background-color: rgba(255, 255, 255, 0.1) !important;
+        --ag-foreground-color: #ffffff !important;
+        --ag-header-background-color: rgba(255, 255, 255, 0.2) !important;
+        --ag-header-foreground-color: #ffffff !important;
+        --ag-border-color: rgba(255, 255, 255, 0.2) !important;
+        --ag-row-hover-color: rgba(255, 255, 255, 0.15) !important;
+        border-radius: 25px !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        color: white !important;
+      }
+      .v5-theme-frosted .ag-header-cell-label { color: white !important; font-weight: 700 !important; }
+      .v5-theme-frosted .ag-row { border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }
+
+      /* 2. Swiss Minimalist (Clean & Airy) */
+      .v5-layout-swiss { background: #ffffff !important; font-family: 'Inter', sans-serif !important; }
+      .v5-theme-swiss {
+        --ag-background-color: #ffffff !important;
+        --ag-foreground-color: #000000 !important;
+        --ag-header-background-color: #ffffff !important;
+        --ag-header-foreground-color: #000000 !important;
+        --ag-border-color: #f3f4f6 !important;
+        --ag-row-hover-color: #f9fafb !important;
+        --ag-header-column-separator-display: none !important;
+      }
+      .v5-theme-swiss .ag-header { border-bottom: 2px solid #2563eb !important; }
+      .v5-theme-swiss .ag-cell { font-weight: 400 !important; }
+
+      /* 3. Midnight Executive (Exquisite Dark) */
+      .v5-layout-midnight { background: #000000 !important; }
+      .v5-theme-midnight {
+        --ag-background-color: #0d0d0d !important;
+        --ag-foreground-color: #e5e7eb !important;
+        --ag-header-background-color: #1a1a1a !important;
+        --ag-header-foreground-color: #d4af37 !important; /* Metallic Gold */
+        --ag-border-color: #262626 !important;
+        --ag-row-hover-color: #1f1f1f !important;
+      }
+      .v5-theme-midnight .ag-cell { font-family: 'Courier New', monospace !important; color: #a855f7 !important; } /* Neon Purple */
+      .v5-theme-midnight .ag-header-cell-label { color: #d4af37 !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
+      .v5-theme-midnight .ag-row { border-left: 2px solid transparent; }
+      .v5-theme-midnight .ag-row-hover { border-left: 2px solid #d4af37; }
 
       /* ========================================
          PHASE 2: NEW LAYOUT CSS - FINTECH STYLE
@@ -2947,6 +3474,104 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
+      <!-- Action Bar - Only shown when grid has data -->
+      <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
+        <!-- Far Left: Ref# Prefix Input -->
+        <div class="v5-ref-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
+          <input type="text" 
+                 id="v5-ref-prefix" 
+                 class="v5-ref-input" 
+                 placeholder="REF" 
+                 style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
+                 oninput="window.updateRefPrefix(this.value)">
+        </div>
+
+        <!-- Expand/Collapse Toggle (Single Button) -->
+        <button class="btn-action-secondary" id="v5-expand-toggle-btn" onclick="window.toggleExpandCollapseAll()">
+          <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
+          <span id="v5-expand-toggle-text">Expand All</span>
+        </button>
+        
+        <!-- Left: Selection Count (shown when selected) -->
+        <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
+          <span id="v5-selection-count">0 selected</span>
+        </div>
+        
+        <!-- Center: Bulk Actions (only shown when rows selected) -->
+        <div class="v5-actions-center">
+          <button class="btn-action" onclick="bulkCategorizeV5()" id="v5-bulk-categorize-btn" style="display: none;">
+            <i class="ph ph-tag"></i>
+            Bulk Categorize
+          </button>
+          
+          <button class="btn-action" onclick="bulkRenameV5()" id="v5-bulk-rename-btn" style="display: none;">
+            <i class="ph ph-pencil"></i>
+            Bulk Rename
+          </button>
+          
+          <button class="btn-action-secondary" onclick="clearV5Selection()" id="v5-clear-btn" style="display: none;">
+            <i class="ph ph-x"></i>
+            Clear
+          </button>
+          
+          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-auto-categorize-btn">
+            <i class="ph ph-magic-wand"></i>
+            Auto-Categorize
+          </button>
+        </div>
+        
+        <!-- Right: Search + Menu -->
+        <div class="v5-actions-right">
+          <!-- General Search -->
+          <div class="v5-search-compact">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" 
+                   id="v5-search-input" 
+                   placeholder="Search transactions..." 
+                   oninput="filterV5Grid(this.value)">
+          </div>
+          
+          <!-- Settings Icon with dropdown menu -->
+          <div style="position: relative; overflow: visible;">
+            <button class="btn-icon" onclick="window.toggleV5Settings()" title="Settings">
+              <i class="ph ph-gear"></i>
+            </button>
+            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; min-width: 200px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 9999;">
+              <button class="menu-item" onclick="window.showV5Appearance(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-palette"></i>
+                Grid Appearance
+              </button>
+              <button class="menu-item" onclick="undoV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                Undo
+              </button>
+              <button class="menu-item" onclick="startOverV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                Start Over
+              </button>
+              <button class="menu-item" onclick="toggleV5History(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                Toggle History
+              </button>
+              <button class="menu-item" onclick="popOutV5Grid(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrow-square-out"></i>
+                Pop Out Grid
+              </button>
+              <button class="menu-item" onclick="showKeyboardShortcuts(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-question"></i>
+                Keyboard Shortcuts
+              </button>
+              <hr style="margin: 8px 0; border: none; border-top: 1px solid #e5e7eb;">
+              <button class="menu-item" onclick="window.showV5SettingsPanel(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-gear"></i>
+                Advanced Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="v5-assignment-banner" style="display:none;">
         <div class="banner-left">
           <i class="ph ph-link" style="color: #3b82f6; font-size: 1.25rem;"></i>
@@ -3197,98 +3822,6 @@ window.renderTxnImportV5Page = function () {
         </div>
       </div>
       
-      <!-- Action Bar - Only shown when grid has data -->
-      <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
-        <!-- Far Left: Ref# Prefix Input -->
-        <div class="v5-ref-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
-          <input type="text" 
-                 id="v5-ref-prefix" 
-                 class="v5-ref-input" 
-                 placeholder="AMEX" 
-                 style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
-                 oninput="window.updateRefPrefix(this.value)">
-        </div>
-
-        <!-- Expand/Collapse Toggle (Single Button) -->
-        <button class="btn-action-secondary" id="v5-expand-toggle-btn" onclick="window.toggleExpandCollapseAll()">
-          <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
-          <span id="v5-expand-toggle-text">Expand All</span>
-        </button>
-        
-        <!-- Left: Selection Count (shown when selected) -->
-        <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
-          <span id="v5-selection-count">0 selected</span>
-        </div>
-        
-        <!-- Center: Bulk Actions (only shown when rows selected) -->
-        <div class="v5-actions-center">
-          <button class="btn-action" onclick="bulkCategorizeV5()" id="v5-bulk-categorize-btn" style="display: none;">
-            <i class="ph ph-tag"></i>
-            Bulk Categorize
-          </button>
-          
-          <button class="btn-action" onclick="bulkRenameV5()" id="v5-bulk-rename-btn" style="display: none;">
-            <i class="ph ph-pencil"></i>
-            Bulk Rename
-          </button>
-          
-          <button class="btn-action-secondary" onclick="clearV5Selection()" id="v5-clear-btn" style="display: none;">
-            <i class="ph ph-x"></i>
-            Clear
-          </button>
-          
-          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-auto-categorize-btn">
-            <i class="ph ph-magic-wand"></i>
-            Auto-Categorize
-          </button>
-        </div>
-        
-        <!-- Right: Search + Menu -->
-        <div class="v5-actions-right">
-          <!-- General Search -->
-          <div class="v5-search-compact">
-            <i class="ph ph-magnifying-glass"></i>
-            <input type="text" 
-                   id="v5-search-input" 
-                   placeholder="Search transactions..." 
-                   oninput="filterV5Grid(this.value)">
-          </div>
-          
-          <!-- Settings Icon with dropdown menu -->
-          <div style="position: relative; overflow: visible;">
-            <button class="btn-icon" onclick="window.toggleV5Settings()" title="Settings">
-              <i class="ph ph-gear"></i>
-            </button>
-            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; min-width: 200px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 9999;">
-              <button class="menu-item" onclick="window.showV5Appearance(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-palette"></i>
-                Grid Appearance
-              </button>
-              <button class="menu-item" onclick="undoV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-arrow-counter-clockwise"></i>
-                Undo
-              </button>
-              <button class="menu-item" onclick="startOverV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-arrows-counter-clockwise"></i>
-                Start Over
-              </button>
-              <button class="menu-item" onclick="toggleV5History(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-clock-counter-clockwise"></i>
-                Toggle History
-              </button>
-              <button class="menu-item" onclick="popOutV5Grid(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-arrow-square-out"></i>
-                Pop Out Grid
-              </button>
-              <button class="menu-item" onclick="showKeyboardShortcuts(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <i class="ph ph-question"></i>
-                Keyboard Shortcuts
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
       
       <!-- Drag & Drop Overlay (shown when dragging files over entire page) -->
       <div id="v5-drop-overlay" class="v5-drop-overlay" style="display: none;"
@@ -3475,7 +4008,806 @@ window.renderTxnImportV5Page = function () {
         <!-- Grid will be initialized here -->
       </div>
       
-    </div> <!-- Close .txn-import-v5-container -->
+    </div>
+
+    <!-- [PHASE 2] Settings Panel - Slide-in from Right -->
+    <div id="v5-settings-panel" class="v5-settings-panel" style="display: none;">
+      <div class="v5-settings-overlay" onclick="window.closeV5SettingsPanel()"></div>
+      
+      <div class="v5-settings-drawer">
+        <!-- Header -->
+        <div class="v5-settings-header">
+          <h2>Settings</h2>
+          <button class="v5-settings-close" onclick="window.closeV5SettingsPanel()">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+
+        <!-- Top Navigation Tabs (Restored to Drawer) -->
+        <nav class="v5-settings-tabs">
+          <button class="v5-tab-btn active" onclick="window.switchV5SettingsTab('appearance', this)">
+            Appearance
+          </button>
+          <button class="v5-tab-btn" onclick="window.switchV5SettingsTab('columns', this)">
+            Columns
+          </button>
+          <button class="v5-tab-btn" onclick="window.switchV5SettingsTab('autocat', this)">
+            Auto-Cat
+          </button>
+          <button class="v5-tab-btn" onclick="window.switchV5SettingsTab('preferences', this)">
+            Preferences
+          </button>
+          <button class="v5-tab-btn" onclick="window.switchV5SettingsTab('advanced', this)">
+            Advanced
+          </button>
+        </nav>
+
+        <div class="v5-settings-body">
+          
+          <!-- TAB: Appearance -->
+          <div class="v5-settings-tab-content active" data-tab-content="appearance">
+            <div class="v5-settings-section">
+              <h3>Grid Appearance</h3>
+              
+              <div class="v5-setting-item">
+                <label>Theme</label>
+                <select id="v5-setting-theme" onchange="window.applyV5Theme(this.value)">
+                  <option value="light">Light Theme</option>
+                  <option value="dark">Dark Theme</option>
+                  <option value="classic">Classic Blue</option>
+                  <option value="default">Default Grey</option>
+                  <option value="ledger-pad">Ledger Pad (Green)</option>
+                  <option value="postit">Post-it Note</option>
+                  <option value="rainbow">Rainbow</option>
+                  <option value="social">Social Blue</option>
+                  <option value="spectrum">Spectrum (Excel)</option>
+                  <option value="subliminal">Subliminal Dark</option>
+                  <option value="subtle">Subtle Neutral</option>
+                  <option value="tracker">Tracker Green</option>
+                  <option value="vanilla">Vanilla (Caseware)</option>
+                  <option value="vintage">Vintage Gold</option>
+                  <option value="wave">Wave Blue</option>
+                  <option value="webapp">WebApp Modern</option>
+                  <optgroup label="Experimental Designs">
+                    <option value="frosted">Frosted Finance</option>
+                    <option value="swiss">Swiss Minimalist</option>
+                    <option value="midnight">Midnight Executive</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="v5-setting-item">
+                <label>Font Size</label>
+                <div class="v5-slider-container">
+                  <input type="range" id="v5-setting-fontsize" min="12" max="18" value="14" 
+                         oninput="window.applyV5FontSize(this.value)">
+                  <span id="v5-fontsize-value">14px</span>
+                </div>
+              </div>
+
+              <div class="v5-setting-item">
+                <label>Row Density</label>
+                <div class="v5-radio-group">
+                  <label class="v5-radio-label">
+                    <input type="radio" name="row-density" value="compact" onchange="window.applyV5RowDensity(this.value)">
+                    <span>Compact</span>
+                  </label>
+                  <label class="v5-radio-label">
+                    <input type="radio" name="row-density" value="comfortable" checked onchange="window.applyV5RowDensity(this.value)">
+                    <span>Comfortable</span>
+                  </label>
+                  <label class="v5-radio-label">
+                    <input type="radio" name="row-density" value="spacious" onchange="window.applyV5RowDensity(this.value)">
+                    <span>Spacious</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Columns -->
+          <div class="v5-settings-tab-content" data-tab-content="columns">
+            <div class="v5-settings-section">
+              <h3>Column Visibility</h3>
+              <p class="v5-setting-desc">Show or hide columns in the transaction grid</p>
+              
+              <div class="v5-toggle-list">
+                <label class="v5-toggle-item">
+                  <span>Date</span>
+                  <input type="checkbox" id="col-date" checked onchange="window.toggleV5Column('date', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Description</span>
+                  <input type="checkbox" id="col-description" checked onchange="window.toggleV5Column('description', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Debit</span>
+                  <input type="checkbox" id="col-debit" checked onchange="window.toggleV5Column('debit', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Credit</span>
+                  <input type="checkbox" id="col-credit" checked onchange="window.toggleV5Column('credit', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Balance</span>
+                  <input type="checkbox" id="col-balance" checked onchange="window.toggleV5Column('balance', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Account</span>
+                  <input type="checkbox" id="col-account" checked onchange="window.toggleV5Column('account', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Ref#</span>
+                  <input type="checkbox" id="col-refnumber" checked onchange="window.toggleV5Column('refNumber', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+              </div>
+
+              <h3 style="margin-top: 24px;">Additional Columns</h3>
+              <div class="v5-toggle-list">
+                <label class="v5-toggle-item">
+                  <span>Sales Tax (GST)</span>
+                  <input type="checkbox" id="col-salestax" onchange="window.toggleV5SalesTax(this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Foreign Balance</span>
+                  <input type="checkbox" id="col-foreign" onchange="window.toggleV5ForeignBalance(this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Auto-Categorization -->
+          <div class="v5-settings-tab-content" data-tab-content="autocat">
+            <div class="v5-settings-section">
+              <h3>Auto-Categorization Settings</h3>
+              
+              <label class="v5-toggle-item">
+                <span>Enable Auto-Categorize</span>
+                <input type="checkbox" id="v5-setting-autocat-enabled" checked onchange="window.toggleV5AutoCat(this.checked)">
+                <span class="v5-toggle-switch"></span>
+              </label>
+
+              <div class="v5-setting-item" style="margin-top: 16px;">
+                <label>Confidence Threshold</label>
+                <div class="v5-slider-container">
+                  <input type="range" id="v5-setting-confidence" min="50" max="95" value="75" 
+                         oninput="window.updateV5ConfidenceThreshold(this.value)">
+                  <span id="v5-confidence-value">75%</span>
+                </div>
+                <p class="v5-setting-desc">Only auto-assign if confidence is above this threshold</p>
+              </div>
+
+              <div class="v5-checkbox-group">
+                <label class="v5-checkbox-label">
+                  <input type="checkbox" id="v5-setting-show-scores" onchange="window.toggleV5ShowScores(this.checked)">
+                  <span>Show confidence scores in grid</span>
+                </label>
+                <label class="v5-checkbox-label">
+                  <input type="checkbox" id="v5-setting-review-before" onchange="window.toggleV5ReviewBefore(this.checked)">
+                  <span>Review before apply</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Preferences -->
+          <div class="v5-settings-tab-content" data-tab-content="preferences">
+            <div class="v5-settings-section">
+              <h3>Import Preferences</h3>
+              
+              <div class="v5-setting-item">
+                <label>Default Ref# Prefix</label>
+                <input type="text" id="v5-setting-refprefix" value="REF" 
+                       placeholder="REF" 
+                       onchange="window.setV5DefaultRefPrefix(this.value)"
+                       style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                <p class="v5-setting-desc">Auto-updates when bank is detected</p>
+              </div>
+
+              <div class="v5-setting-item">
+                <label>Date Format</label>
+                <select id="v5-setting-dateformat" onchange="window.setV5DateFormat(this.value)">
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                </select>
+              </div>
+
+              <div class="v5-setting-item">
+                <label>Province (Tax Calculation)</label>
+                <select id="v5-setting-province" onchange="window.setV5Province(this.value)">
+                  <option value="AB">Alberta (5% GST)</option>
+                  <option value="BC">British Columbia (12%)</option>
+                  <option value="MB">Manitoba (12%)</option>
+                  <option value="NB">New Brunswick (15% HST)</option>
+                  <option value="NL">Newfoundland (15% HST)</option>
+                  <option value="NS">Nova Scotia (15% HST)</option>
+                  <option value="ON">Ontario (13% HST)</option>
+                  <option value="PE">PEI (15% HST)</option>
+                  <option value="QC">Quebec (14.975%)</option>
+                  <option value="SK">Saskatchewan (11%)</option>
+                  <option value="NT">NW Territories (5%)</option>
+                  <option value="NU">Nunavut (5%)</option>
+                  <option value="YT">Yukon (5%)</option>
+                </select>
+                <p class="v5-setting-desc">Used for the Sales Tax column calculations (Amount / (1+r) * r)</p>
+              </div>
+
+              <label class="v5-checkbox-label">
+                <input type="checkbox" id="v5-setting-autoexpand" onchange="window.toggleV5AutoExpand(this.checked)">
+                <span>Auto-expand rows on import</span>
+              </label>
+            </div>
+
+            <div class="v5-settings-section">
+              <h3>Currency Settings</h3>
+              
+              <div class="v5-setting-item">
+                <label>Home Currency</label>
+                <select id="v5-setting-homecurrency" disabled>
+                  <option value="CAD" selected>CAD - Canadian Dollar</option>
+                </select>
+                <p class="v5-setting-desc">Currently locked to CAD</p>
+              </div>
+
+              <div class="v5-setting-item">
+                <label>Foreign Currency Pairs</label>
+                <div class="v5-checkbox-group">
+                  <label class="v5-checkbox-label">
+                    <input type="checkbox" value="USD" checked onchange="window.toggleV5CurrencyPair('USD', this.checked)">
+                    <span>USD - US Dollar</span>
+                  </label>
+                  <label class="v5-checkbox-label">
+                    <input type="checkbox" value="EUR" checked onchange="window.toggleV5CurrencyPair('EUR', this.checked)">
+                    <span>EUR - Euro</span>
+                  </label>
+                  <label class="v5-checkbox-label">
+                    <input type="checkbox" value="GBP" checked onchange="window.toggleV5CurrencyPair('GBP', this.checked)">
+                    <span>GBP - British Pound</span>
+                  </label>
+                  <label class="v5-checkbox-label">
+                    <input type="checkbox" value="JPY" checked onchange="window.toggleV5CurrencyPair('JPY', this.checked)">
+                    <span>JPY - Japanese Yen</span>
+                  </label>
+                  <label class="v5-checkbox-label">
+                    <input type="checkbox" value="AUD" checked onchange="window.toggleV5CurrencyPair('AUD', this.checked)">
+                    <span>AUD - Australian Dollar</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="v5-setting-item">
+                <button class="btn-secondary" onclick="window.refreshV5ExchangeRates()" 
+                        style="width: 100%; padding: 10px;">
+                  <i class="ph ph-arrows-clockwise"></i> Refresh Exchange Rates
+                </button>
+                <p class="v5-setting-desc" id="v5-rates-updated">Last updated: Never</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Advanced -->
+          <div class="v5-settings-tab-content" data-tab-content="advanced">
+            <div class="v5-settings-section">
+              <h3>Performance</h3>
+              
+              <div class="v5-setting-item">
+                <label>Rows Per Page</label>
+                <select id="v5-setting-rowsperpage" onchange="window.setV5RowsPerPage(parseInt(this.value))">
+                  <option value="50">50</option>
+                  <option value="100" selected>100</option>
+                  <option value="200">200</option>
+                  <option value="500">500</option>
+                </select>
+              </div>
+
+              <label class="v5-toggle-item">
+                <span>Enable Virtualization</span>
+                <input type="checkbox" id="v5-setting-virtualization" checked onchange="window.toggleV5Virtualization(this.checked)">
+                <span class="v5-toggle-switch"></span>
+              </label>
+              <p class="v5-setting-desc">Improves performance for large datasets (1000+ rows)</p>
+
+              <div class="v5-setting-item" style="margin-top: 16px;">
+                <label>Auto-save Interval</label>
+                <div class="v5-radio-group">
+                  <label class="v5-radio-label">
+                    <input type="radio" name="autosave" value="30000" onchange="window.setV5AutoSaveInterval(parseInt(this.value))">
+                    <span>30s</span>
+                  </label>
+                  <label class="v5-radio-label">
+                    <input type="radio" name="autosave" value="60000" checked onchange="window.setV5AutoSaveInterval(parseInt(this.value))">
+                    <span>1min</span>
+                  </label>
+                  <label class="v5-radio-label">
+                    <input type="radio" name="autosave" value="300000" onchange="window.setV5AutoSaveInterval(parseInt(this.value))">
+                    <span>5min</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="v5-settings-section">
+              <h3>Validation & Alerts</h3>
+              
+              <div class="v5-toggle-list">
+                <label class="v5-toggle-item">
+                  <span>Duplicate Detection</span>
+                  <input type="checkbox" id="v5-setting-duplicates" checked onchange="window.toggleV5DuplicateDetection(this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Balance Reconciliation Alerts</span>
+                  <input type="checkbox" id="v5-setting-balance-alerts" checked onchange="window.toggleV5BalanceAlerts(this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Negative Balance Warnings</span>
+                  <input type="checkbox" id="v5-setting-negative-warnings" checked onchange="window.toggleV5NegativeWarnings(this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="v5-settings-section">
+              <h3>Export Format</h3>
+              
+              <div class="v5-setting-item">
+                <label>Format</label>
+                <select id="v5-setting-exportformat">
+                  <option value="xlsx">XLSX (Excel) - Preferred</option>
+                  <option value="standard">Standard CSV</option>
+                  <option value="quickbooks">QuickBooks Format</option>
+                  <option value="sage">Sage Format</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="btn-secondary" onclick="window.exportV5WithFilters()" style="flex: 1; padding: 8px;">
+                  Export with Filters
+                </button>
+                <button class="btn-secondary" onclick="window.exportV5AllData()" style="flex: 1; padding: 8px;">
+                  Export All Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        </div><!-- end v5-settings-body -->
+
+        <!-- Footer -->
+        <div class="v5-settings-footer">
+          <button class="btn-secondary" onclick="window.resetV5SettingsToDefaults()">
+            Reset to Defaults
+          </button>
+          <button class="btn-primary" onclick="window.saveV5Settings()">
+            Save Settings
+          </button>
+        </div>
+
+      </div><!-- end v5-settings-drawer -->
+    </div><!-- end v5-settings-panel -->
+
+    <!-- CSS for Settings Panel -->
+    <style>
+      /* Settings Panel - Overlay and Drawer */
+      .v5-settings-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10000;
+        display: flex;
+        justify-content: flex-end; /* Slide from right */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .v5-settings-panel.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .v5-settings-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+      }
+
+      .v5-settings-drawer {
+        position: absolute; /* Change relative to absolute */
+        top: 0;
+        right: 0; /* Anchored to right edge */
+        width: 450px; /* Narrower width */
+        max-width: 100vw;
+        height: 100%;
+        background: white;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 10001;
+        overflow: hidden;
+      }
+
+      .v5-settings-panel.active .v5-settings-drawer {
+        transform: translateX(0);
+      }
+
+      /* Header */
+      .v5-settings-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 24px 32px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .v5-settings-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .v5-settings-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+
+      .v5-settings-close:hover {
+        background: #f1f5f9;
+        color: #111827;
+      }
+
+      /* Top Navigation Tabs (Restored to Drawer) */
+      .v5-settings-tabs {
+        display: flex;
+        padding: 0 12px; /* Reduced from 16px/32px to fix truncation */
+        justify-content: flex-start;
+        gap: 12px; /* Reduced gap from 16px/24px to fit 450px width */
+        background: white;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .v5-settings-tabs::-webkit-scrollbar { display: none; }
+
+      .v5-tab-btn {
+        padding: 16px 0;
+        border: none;
+        background: none;
+        font-size: 15px;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+
+      .v5-tab-btn:hover {
+        color: #111827;
+      }
+
+      .v5-tab-btn.active {
+        color: #2563eb;
+      }
+
+      .v5-tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #2563eb;
+      }
+
+      /* Body */
+      .v5-settings-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 32px;
+      }
+
+      .v5-settings-tab-content {
+        display: none;
+      }
+
+      .v5-settings-tab-content.active {
+        display: block;
+      }
+
+      /* Footer */
+      .v5-settings-footer {
+        padding: 24px 32px;
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center; /* Prevent vertical stretch */
+        gap: 12px;
+        margin-top: auto;
+      }
+
+      /* Sections */
+      .v5-settings-section {
+        margin-bottom: 32px;
+      }
+
+      .v5-settings-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .v5-settings-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 16px 0;
+      }
+
+      /* Setting Items */
+      .v5-setting-item {
+        margin-bottom: 20px;
+      }
+
+      .v5-setting-item label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      .v5-setting-item select,
+      .v5-setting-item input[type="text"] {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      .v5-setting-item select:focus,
+      .v5-setting-item input[type="text"]:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .v5-setting-desc {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 4px 0 0 0;
+      }
+
+      /* Slider */
+      .v5-slider-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .v5-slider-container input[type="range"] {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #e5e7eb;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      .v5-slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .v5-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+      }
+
+      .v5-slider-container span {
+        font-size: 14px;
+        font-weight: 600;
+        color: #3b82f6;
+        min-width: 50px;
+        text-align: right;
+      }
+
+      /* Radio Group */
+      .v5-radio-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .v5-radio-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .v5-radio-label:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+      }
+
+      .v5-radio-label input {
+        margin: 0;
+      }
+
+      .v5-radio-label span {
+        font-size: 14px;
+        color: #374151;
+      }
+
+      /* Toggle List */
+      .v5-toggle-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .v5-toggle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .v5-toggle-item:hover {
+        background: #f3f4f6;
+      }
+
+      .v5-toggle-item span:first-child {
+        font-size: 14px;
+        color: #374151;
+        font-weight: 500;
+      }
+
+      .v5-toggle-item input[type="checkbox"] {
+        display: none;
+      }
+
+      .v5-toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        background: #d1d5db;
+        border-radius: 12px;
+        transition: background 0.2s;
+      }
+
+      .v5-toggle-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+
+      .v5-toggle-item input[type="checkbox"]:checked + .v5-toggle-switch {
+        background: #3b82f6;
+      }
+
+      .v5-toggle-item input[type="checkbox"]:checked + .v5-toggle-switch::after {
+        transform: translateX(20px);
+      }
+
+      /* Checkbox Group */
+      .v5-checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .v5-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .v5-checkbox-label input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      .v5-checkbox-label span {
+        font-size: 14px;
+        color: #374151;
+      }
+
+      /* Footer */
+      .v5-settings-footer {
+        display: flex;
+        gap: 12px;
+        padding: 16px 24px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+      }
+
+      .v5-settings-footer button {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-secondary {
+        background: white;
+        border: 1px solid #d1d5db;
+        color: #374151;
+      }
+
+      .btn-secondary:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+      }
+
+      .btn-primary {
+        background: #3b82f6;
+        border: none;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+    </style>
 
     <!-- Popover Elements (Shared) - Moved outside sticky header for fixed positioning -->
     <div id="v5-header-popover" class="v5-popover">
@@ -3961,14 +5293,30 @@ window.cancelStartOverInline = function () {
 
 // Update Ref# prefix and refresh grid
 window.updateRefPrefix = function (value) {
-  V5State.refPrefix = value.toUpperCase().trim();
+  const prefix = (value || '').toUpperCase().trim();
+  V5State.refPrefix = prefix;
+
+  // Ensure settings are updated
+  if (V5State.settings && V5State.settings.importPrefs) {
+    V5State.settings.importPrefs.defaultRefPrefix = prefix;
+  }
+
+  // Sync toolbar input if needed (if it wasn't the trigger)
+  const toolbarInput = document.getElementById('v5-ref-prefix');
+  if (toolbarInput && toolbarInput.value.toUpperCase() !== prefix) {
+    toolbarInput.value = prefix;
+  }
+
+  // Sync settings panel input if open
+  const settingsInput = document.getElementById('v5-setting-refprefix');
+  if (settingsInput && settingsInput.value.toUpperCase() !== prefix) {
+    settingsInput.value = prefix;
+  }
 
   // Refresh grid to show new Ref# values
   if (V5State.gridApi) {
     V5State.gridApi.refreshCells({ columns: ['refNumber'], force: true });
   }
-
-  // console.log(`✅ Ref# prefix updated: "${V5State.refPrefix}"`);
 };
 
 // ============================================
@@ -5365,6 +6713,9 @@ window.initV5Grid = function () {
   setupHoverActionButton();
 
   const gridOptions = {
+    pagination: true,
+    paginationPageSize: V5State.settings.performance.rowsPerPage,
+    rowBuffer: V5State.settings.performance.virtualization ? 10 : 0,
     getRowId: (params) => {
       // ROBUST IDENTITY: Use ID if present, else composite key (Date + Desc + Amount + rowId)
       const data = params.data || {};
@@ -5526,6 +6877,42 @@ window.initV5Grid = function () {
           params.data.Debit = 0;
           window.recalculateAllBalances();
           return true;
+        }
+      },
+      {
+        colId: 'salesTax',
+        headerName: 'Sales Tax',
+        field: 'salesTax',
+        width: 120,
+        hide: !V5State.settings.columns.salesTax,
+        valueGetter: params => {
+          const d = params.data.debit || 0;
+          const c = params.data.credit || 0;
+          const amt = d > 0 ? -d : c;
+
+          // Localization Fix: Use province-specific rates
+          const province = V5State.settings.importPrefs?.province || 'ON';
+          const rate = V5_CANADIAN_TAX_RATES[province]?.total || 0.13;
+
+          // Internal formula: Amount / (1 + rate) * rate
+          // Example for 13%: Amount * 13 / 113
+          return (amt / (1 + rate) * rate).toFixed(2);
+        },
+        valueFormatter: params => '$' + Math.abs(params.value).toLocaleString()
+      },
+      {
+        colId: 'foreignBalance',
+        headerName: 'Foreign Bal',
+        field: 'foreignBalance',
+        width: 140,
+        hide: !V5State.settings.columns.foreignBalance,
+        valueGetter: params => {
+          const baseBal = params.data.balance || 0;
+          const rate = V5State.settings.currency.rates['USD'] || 0.74; // Demo USD rate
+          return (baseBal * rate).toFixed(2);
+        },
+        valueFormatter: params => {
+          return 'USD ' + parseFloat(params.value).toLocaleString();
         }
       },
       {
@@ -7509,6 +8896,8 @@ function showControlToolbar() {
 }
 
 window.initV5 = async function () {
+  // PHASE 2: Load settings first
+  window.loadV5SettingsFromStorage();
   // CRITICAL: If grid already has data and API exists, skip
   if (window.V5State && window.V5State.gridData && window.V5State.gridData.length > 0) {
     if (V5State.gridApi) {
