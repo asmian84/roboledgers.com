@@ -70,6 +70,16 @@ window.V5State = {
       duplicateDetection: true,
       balanceAlerts: true,
       negativeWarnings: true
+    },
+    shortcuts: {
+      refBox: true,
+      expandAll: true,
+      autoCat: true,
+      search: true,
+      undo: false,
+      history: false,
+      startOver: false,
+      popout: false
     }
   }
 };
@@ -420,6 +430,14 @@ window.syncV5SettingsUI = function () {
   if (document.getElementById('v5-setting-negative-warnings'))
     document.getElementById('v5-setting-negative-warnings').checked = s.validation.negativeWarnings;
 
+  // [NEW] Shortcuts
+  if (s.shortcuts) {
+    Object.keys(s.shortcuts).forEach(key => {
+      const el = document.getElementById(`v5-setting-shortcut-${key}`);
+      if (el) el.checked = s.shortcuts[key];
+    });
+  }
+
   // Export Format
   if (document.getElementById('v5-setting-exportformat'))
     document.getElementById('v5-setting-exportformat').value = s.exportFormat || 'xlsx';
@@ -455,6 +473,18 @@ window.applyAllV5Settings = function () {
   // 5. Pagination
   V5State.gridApi.setGridOption('paginationPageSize', s.performance.rowsPerPage);
 
+  // [NEW] 6. Shortcuts Visibility
+  if (s.shortcuts) {
+    Object.keys(s.shortcuts).forEach(key => {
+      const el = document.getElementById(`v5-shortcut-${key}`);
+      if (el) {
+        // Use flex for search and refBox, inline-flex for buttons
+        const isFlex = ['search', 'refBox'].includes(key);
+        el.style.display = s.shortcuts[key] ? (isFlex ? 'flex' : 'inline-flex') : 'none';
+      }
+    });
+  }
+
   console.log('[Settings:Apply] All settings applied');
 }
 
@@ -485,6 +515,18 @@ window.toggleV5CurrencyPair = (code, val) => {
   const pairs = V5State.settings.currency.foreignPairs;
   if (val && !pairs.includes(code)) pairs.push(code);
   else if (!val) V5State.settings.currency.foreignPairs = pairs.filter(p => p !== code);
+};
+
+window.toggleV5Shortcut = (key, val) => {
+  if (!V5State.settings.shortcuts) V5State.settings.shortcuts = {};
+  V5State.settings.shortcuts[key] = val;
+
+  // Apply immediately via CSS
+  const el = document.getElementById(`v5-shortcut-${key}`);
+  if (el) {
+    const isFlex = ['search', 'refBox'].includes(key);
+    el.style.display = val ? (isFlex ? 'flex' : 'inline-flex') : 'none';
+  }
 };
 
 window.refreshV5ExchangeRates = async function () {
@@ -3477,7 +3519,7 @@ window.renderTxnImportV5Page = function () {
       <!-- Action Bar - Only shown when grid has data -->
       <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
         <!-- Far Left: Ref# Prefix Input -->
-        <div class="v5-ref-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
+        <div class="v5-ref-input-wrapper" id="v5-shortcut-refBox" style="display: flex; align-items: center; gap: 8px;">
           <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
           <input type="text" 
                  id="v5-ref-prefix" 
@@ -3488,9 +3530,23 @@ window.renderTxnImportV5Page = function () {
         </div>
 
         <!-- Expand/Collapse Toggle (Single Button) -->
-        <button class="btn-action-secondary" id="v5-expand-toggle-btn" onclick="window.toggleExpandCollapseAll()">
+        <button class="btn-action-secondary" id="v5-shortcut-expandAll" onclick="window.toggleExpandCollapseAll()">
           <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
           <span id="v5-expand-toggle-text">Expand All</span>
+        </button>
+
+        <!-- New Primary Shortcuts (Hidden by default in V5State) -->
+        <button class="btn-icon-secondary" id="v5-shortcut-undo" onclick="undoV5()" title="Undo" style="display: none;">
+          <i class="ph ph-arrow-counter-clockwise"></i>
+        </button>
+        <button class="btn-icon-secondary" id="v5-shortcut-history" onclick="toggleV5History()" title="History" style="display: none;">
+          <i class="ph ph-clock-counter-clockwise"></i>
+        </button>
+        <button class="btn-icon-secondary" id="v5-shortcut-startOver" onclick="startOverV5()" title="Start Over" style="display: none;">
+          <i class="ph ph-arrows-counter-clockwise"></i>
+        </button>
+        <button class="btn-icon-secondary" id="v5-shortcut-popout" onclick="popOutV5Grid()" title="Pop Out Grid" style="display: none;">
+          <i class="ph ph-arrow-square-out"></i>
         </button>
         
         <!-- Left: Selection Count (shown when selected) -->
@@ -3515,7 +3571,7 @@ window.renderTxnImportV5Page = function () {
             Clear
           </button>
           
-          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-auto-categorize-btn">
+          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-shortcut-autoCat">
             <i class="ph ph-magic-wand"></i>
             Auto-Categorize
           </button>
@@ -3524,7 +3580,7 @@ window.renderTxnImportV5Page = function () {
         <!-- Right: Search + Menu -->
         <div class="v5-actions-right">
           <!-- General Search -->
-          <div class="v5-search-compact">
+          <div class="v5-search-compact" id="v5-shortcut-search">
             <i class="ph ph-magnifying-glass"></i>
             <input type="text" 
                    id="v5-search-input" 
@@ -4380,9 +4436,55 @@ window.renderTxnImportV5Page = function () {
                 </button>
               </div>
             </div>
-          </div>
 
-        </div>
+            <div class="v5-settings-section">
+              <h3>Action Bar Shortcuts</h3>
+              <p class="v5-setting-desc">Toggle tools in the top toolbar</p>
+              
+              <div class="v5-toggle-list">
+                <label class="v5-toggle-item">
+                  <span>Ref# Box</span>
+                  <input type="checkbox" id="v5-setting-shortcut-refBox" onchange="window.toggleV5Shortcut('refBox', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Expand/Collapse</span>
+                  <input type="checkbox" id="v5-setting-shortcut-expandAll" onchange="window.toggleV5Shortcut('expandAll', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Auto-Categorize</span>
+                  <input type="checkbox" id="v5-setting-shortcut-autoCat" onchange="window.toggleV5Shortcut('autoCat', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Search Bar</span>
+                  <input type="checkbox" id="v5-setting-shortcut-search" onchange="window.toggleV5Shortcut('search', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Undo Button</span>
+                  <input type="checkbox" id="v5-setting-shortcut-undo" onchange="window.toggleV5Shortcut('undo', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>History Toggle</span>
+                  <input type="checkbox" id="v5-setting-shortcut-history" onchange="window.toggleV5Shortcut('history', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Start Over</span>
+                  <input type="checkbox" id="v5-setting-shortcut-startOver" onchange="window.toggleV5Shortcut('startOver', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+                <label class="v5-toggle-item">
+                  <span>Pop Out Grid</span>
+                  <input type="checkbox" id="v5-setting-shortcut-popout" onchange="window.toggleV5Shortcut('popout', this.checked)">
+                  <span class="v5-toggle-switch"></span>
+                </label>
+              </div>
+            </div>
+          </div>
 
         </div><!-- end v5-settings-body -->
 
