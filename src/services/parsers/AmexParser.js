@@ -21,8 +21,13 @@ AMEX FORMAT:
 
         // EXTRACT METADATA (Institution, Transit, Account)
         // Amex format often: XXXX XXXXX6 91001 or Account Number: 1234-567890-12345
-        const acctMatch = statementText.match(/(?:Account Number|Credit Card)[:#]?\s*(?:XXXX\s*XXXXXX\d?\s*|[\d-]{7,})(\d{5,6})/i)
+        // Flexible regex for X's and account number parts
+        const acctMatch = statementText.match(/(?:Account Number|Credit Card)[:#]?\s*(?:X{4,}\s*X{5,}\d?\s*|[\d-]{7,})(\d{5,6})/i)
             || statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+
+        // EXTRACTION FOR CARD TYPE (Platinum, Gold, etc)
+        const cardTypeMatch = statementText.match(/(?:The\s+)?(?:Business\s+)?(Platinum|Gold|Silver|Standard|Green)(?:\s+Card)?(?:\s+Statement)?/i);
+        const cardType = cardTypeMatch ? cardTypeMatch[1] : 'Amex';
 
         const metadata = {
             _inst: '303', // Amex Institution Code
@@ -33,7 +38,8 @@ AMEX FORMAT:
             accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'Amex',
             _bank: 'American Express',
-            _tag: 'Amex'
+            _tag: cardType, // Use specific card type for tag
+            _cardType: cardType
         };
         console.warn('🏁 [AMEX] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
@@ -108,6 +114,9 @@ AMEX FORMAT:
             const descEndIdx = remainder.lastIndexOf(rawAmt);
             let description = remainder.substring(0, descEndIdx).trim();
 
+            // REMOVE LEADING SLASHES (Rogue delimiters sometimes captured)
+            description = description.replace(/^\/+\s*/, '').trim();
+
             // CLEAN DESCRIPTION
             description = this.cleanCreditDescription(description, [
                 "PAYMENT THANK YOU", "PURCHASE", "CASH ADVANCE",
@@ -118,7 +127,8 @@ AMEX FORMAT:
             const absAmount = Math.abs(amount);
 
             transactions.push({
-                refNum: `AMEX ${String(txnCounter++).padStart(3, '0')}`,
+                refNum: `AMEX-${String(txnCounter++).padStart(3, '0')}`,
+                _refNum: `AMEX-${String(txnCounter - 1).padStart(3, '0')}`, // Set both to be safe
                 date: isoDate,
                 description,
                 amount: absAmount,

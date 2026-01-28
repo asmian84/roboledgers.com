@@ -237,6 +237,66 @@ window.filterV5Grid = function (searchText) {
   V5State.gridApi.setQuickFilter(searchText);
 }
 
+window.filterV5ByRef = function (refText) {
+  if (!V5State.gridApi) return;
+
+  const filterModel = V5State.gridApi.getFilterModel() || {};
+  if (refText) {
+    // We use 'contains' for flexible matching (e.g. typing "005")
+    filterModel.refNumber = { filterType: 'text', type: 'contains', filter: refText };
+  } else {
+    delete filterModel.refNumber;
+  }
+
+  V5State.gridApi.setFilterModel(filterModel);
+}
+
+// Update Ref# prefix and refresh grid
+window.updateRefPrefix = function (value) {
+  V5State.refPrefix = value.toUpperCase().trim();
+  if (V5State.gridApi) {
+    V5State.gridApi.refreshCells({ columns: ['refNumber'], force: true });
+  }
+}
+
+// Toggle expand/collapse all with single button
+window.toggleExpandCollapseAll = function () {
+  if (!V5State.gridApi) return;
+
+  const btn = document.getElementById('v5-expand-toggle-btn');
+  const icon = document.getElementById('v5-expand-toggle-icon');
+  const text = document.getElementById('v5-expand-toggle-text');
+
+  // Check current state (if icon is caret-down, we're in "collapsed" state)
+  const isCollapsed = icon.classList.contains('ph-caret-down');
+
+  if (isCollapsed) {
+    // Expand all
+    V5State.gridApi.forEachNode(node => node.setExpanded(true));
+    icon.classList.remove('ph-caret-down');
+    icon.classList.add('ph-caret-up');
+    text.textContent = 'Collapse All';
+  } else {
+    // Collapse all
+    V5State.gridApi.forEachNode(node => node.setExpanded(false));
+    icon.classList.remove('ph-caret-up');
+    icon.classList.add('ph-caret-down');
+    text.textContent = 'Expand All';
+  }
+}
+
+// Settings panel placeholder
+window.toggleV5Settings = function () {
+  const menu = document.getElementById('v5-dropdown-menu');
+
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  } else {
+    console.log('[V5] Settings panel - Coming in Phase 2');
+    alert('Settings: Grid Appearance, Undo, Start Over, History, Pop Out, Keyboard Shortcuts - Full panel coming in Phase 2!');
+  }
+}
+
 // ============================================
 // ============================================
 // Phase 2 account editor will go here
@@ -2864,37 +2924,7 @@ window.renderTxnImportV5Page = function () {
         
         <!-- Right: Action Icons -->
         <div class="v5-header-actions">
-          <div class="v5-menu-wrapper" style="position:relative;">
-            <button class="btn-icon v5-menu-toggle" onclick="toggleV5Menu(event)">
-              <i class="ph ph-dots-three-vertical"></i>
-            </button>
-            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none;">
-              <button class="menu-item" onclick="window.showV5Appearance(); toggleV5Menu(event);">
-                <i class="ph ph-palette"></i>
-                Grid Appearance
-              </button>
-              <button class="menu-item" onclick="undoV5(); toggleV5Menu(event);">
-                <i class="ph ph-arrow-counter-clockwise"></i>
-                Undo
-              </button>
-              <button class="menu-item" onclick="startOverV5(); toggleV5Menu(event);">
-                <i class="ph ph-arrows-counter-clockwise"></i>
-                Start Over
-              </button>
-              <button class="menu-item" onclick="toggleV5History(); toggleV5Menu(event);">
-                <i class="ph ph-clock-counter-clockwise"></i>
-                Toggle History
-              </button>
-              <button class="menu-item" onclick="popOutV5Grid(); toggleV5Menu(event);">
-                <i class="ph ph-arrow-square-out"></i>
-                Pop Out Grid
-              </button>
-              <button class="menu-item" onclick="showKeyboardShortcuts(); toggleV5Menu(event);">
-                <i class="ph ph-question"></i>
-                Keyboard Shortcuts
-              </button>
-            </div>
-          </div>
+          <!-- Kebab menu removed - all options moved to Settings gear -->
         </div>
       </div>
 
@@ -3169,17 +3199,22 @@ window.renderTxnImportV5Page = function () {
       
       <!-- Action Bar - Only shown when grid has data -->
       <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
-        <!-- Expand/Collapse All Buttons (Left) -->
-        <div class="v5-expand-collapse-btns" style="display: flex; gap: 8px;">
-          <button class="btn-action-secondary" onclick="window.expandAllV5()">
-            <i class="ph ph-caret-down"></i>
-            Expand All
-          </button>
-          <button class="btn-action-secondary" onclick="window.collapseAllV5()">
-            <i class="ph ph-caret-up"></i>
-            Collapse All
-          </button>
+        <!-- Far Left: Ref# Prefix Input -->
+        <div class="v5-ref-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
+          <input type="text" 
+                 id="v5-ref-prefix" 
+                 class="v5-ref-input" 
+                 placeholder="AMEX" 
+                 style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
+                 oninput="window.updateRefPrefix(this.value)">
         </div>
+
+        <!-- Expand/Collapse Toggle (Single Button) -->
+        <button class="btn-action-secondary" id="v5-expand-toggle-btn" onclick="window.toggleExpandCollapseAll()">
+          <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
+          <span id="v5-expand-toggle-text">Expand All</span>
+        </button>
         
         <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
@@ -3211,6 +3246,7 @@ window.renderTxnImportV5Page = function () {
         
         <!-- Right: Search + Menu -->
         <div class="v5-actions-right">
+          <!-- General Search -->
           <div class="v5-search-compact">
             <i class="ph ph-magnifying-glass"></i>
             <input type="text" 
@@ -3219,10 +3255,37 @@ window.renderTxnImportV5Page = function () {
                    oninput="filterV5Grid(this.value)">
           </div>
           
-          <div class="v5-menu-wrapper">
-            <button class="btn-icon" onclick="toggleV5ActionMenu()" title="More Actions" id="v5-action-menu-btn">
-              <i class="ph ph-dots-three-vertical"></i>
+          <!-- Settings Icon with dropdown menu -->
+          <div style="position: relative; overflow: visible;">
+            <button class="btn-icon" onclick="window.toggleV5Settings()" title="Settings">
+              <i class="ph ph-gear"></i>
             </button>
+            <div class="v5-dropdown-menu" id="v5-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; min-width: 200px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 9999;">
+              <button class="menu-item" onclick="window.showV5Appearance(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-palette"></i>
+                Grid Appearance
+              </button>
+              <button class="menu-item" onclick="undoV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                Undo
+              </button>
+              <button class="menu-item" onclick="startOverV5(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrows-counter-clockwise"></i>
+                Start Over
+              </button>
+              <button class="menu-item" onclick="toggleV5History(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                Toggle History
+              </button>
+              <button class="menu-item" onclick="popOutV5Grid(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-arrow-square-out"></i>
+                Pop Out Grid
+              </button>
+              <button class="menu-item" onclick="showKeyboardShortcuts(); window.toggleV5Settings();" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; width: 100%; border: none; background: none; cursor: pointer; font-size: 14px; color: #334155;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                <i class="ph ph-question"></i>
+                Keyboard Shortcuts
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -5337,8 +5400,7 @@ window.initV5Grid = function () {
         suppressSizeToFit: true,
         comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
         valueGetter: params => {
-          if (params.data._refNum) return params.data._refNum;
-          // STRICTLY DYNAMIC: Ensure no gaps by using row index
+          // PRIORITY: Use the Ref# input box value as THE source of truth
           const p = V5State.refPrefix || '';
           const num = String(params.node.rowIndex + 1).padStart(3, '0');
           return p ? `${p}-${num}` : num;
@@ -8134,16 +8196,32 @@ function updateBrandDisplay(detection) {
     existingBankIcon.replaceWith(newLogo);
   }
 
-  bankLabelEl.innerText = bankOpt ? bankOpt.label : (bankVal || 'Select Bank');
-  bankLabelEl.dataset.value = bankVal || '';
+  // SPECIAL AMEX BRANDING: "American Express / Amex Platinum"
+  if (bankVal === 'Amex' || bankVal === 'American Express') {
+    bankLabelEl.innerText = 'American Express';
+    bankLabelEl.dataset.value = 'American Express';
 
-  // Case: User assigned to an account
-  if (detection.accountCode) {
-    tagLabelEl.innerHTML = `<b>${detection.accountCode}</b> - ${tagVal}`;
+    const cardType = detection._cardType || detection.tag || detection.subType || 'Amex';
+    const tagDisplay = cardType.toLowerCase().includes('amex') ? cardType : `Amex ${cardType}`;
+
+    if (detection.accountCode) {
+      tagLabelEl.innerHTML = `<b>${detection.accountCode}</b> - ${tagDisplay}`;
+    } else {
+      tagLabelEl.innerText = tagDisplay;
+    }
+    tagLabelEl.dataset.value = cardType;
   } else {
-    tagLabelEl.innerText = tagOpt ? tagOpt.label : (tagVal || 'Select Account');
+    bankLabelEl.innerText = bankOpt ? bankOpt.label : (bankVal || 'Select Bank');
+    bankLabelEl.dataset.value = bankVal || '';
+
+    // Case: User assigned to an account
+    if (detection.accountCode) {
+      tagLabelEl.innerHTML = `<b>${detection.accountCode}</b> - ${tagVal}`;
+    } else {
+      tagLabelEl.innerText = tagOpt ? tagOpt.label : (tagVal || 'Select Account');
+    }
+    tagLabelEl.dataset.value = tagVal || '';
   }
-  tagLabelEl.dataset.value = tagVal || '';
 
   const isAuto = (detection.source === 'auto_detected' || detection.source === 'auto' || !detection.source);
   if (isAuto) {
@@ -8179,10 +8257,14 @@ function updateBrandDisplay(detection) {
 
     if (isCreditCard) {
       // CLEAN UI FOR CREDIT CARDS
+      const bankDisplay = (bankVal === 'Amex' || bankVal === 'American Express') ? 'American Express' : bankVal;
+      const cardType = detection._cardType || detection.tag || detection.subType || 'Credit Card';
+      const tagDisplay = (bankVal === 'Amex' || bankVal === 'American Express') && !cardType.toLowerCase().includes('amex') ? `Amex ${cardType}` : cardType;
+
       infoLine.innerHTML = `
         <span style="font-weight: 600; color: #334155; opacity: 0.8;">
           <i class="ph ph-credit-card" style="margin-right: 4px;"></i>
-          ${bankVal} / ${tagVal}
+          ${bankDisplay} / ${tagDisplay}
         </span>
       `;
     } else {
