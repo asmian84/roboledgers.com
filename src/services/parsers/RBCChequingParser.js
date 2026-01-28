@@ -30,18 +30,68 @@ SMART PARSING RULES:
     const lines = text.split('\n');
     const transactions = [];
 
+    // LOUD DIAGNOSTIC: Use console.error so it shows up in Red and is impossible to miss
+    console.warn('⚡ [EXTREME-RBC] Starting metadata extraction for RBC...');
+    console.error('📄 [DEBUG-RBC] First 2000 characters of statement text (RED for visibility):');
+    console.log(text.substring(0, 2000));
+
     // EXTRACT METADATA (Institution, Transit, Account)
-    // RBC format from screenshot: Account number: 06498 100-231-0
-    const transitAcctMatch = text.match(/Account number:?\s*(\d{5})\s+([\d-]{7,})/i);
-    const fileMetadata = {
+    // RBC variation from screenshot: "Account number:     01259 100-244-3"
+    let transitAcctMatch = text.match(/Account\s+number:?\s+(\d{5})\s+([\d-]{7,})/i);
+
+    // EXTREME FALLBACK: If standard match fails, use a proximity search
+    if (!transitAcctMatch) {
+      console.warn('⚠️ [RBC] Standard label match failed. Starting proximity search...');
+      const labelIndex = text.search(/Account\s+number/i);
+      if (labelIndex !== -1) {
+        const probeString = text.substring(labelIndex, labelIndex + 200);
+        console.log(`🔍 [RBC] Probing text near label: "${probeString.replace(/\n/g, ' ')}"`);
+        const m = probeString.match(/(\d{5})\s+([\d-]{7,})/i) || probeString.match(/(\d{5})[\s\n]+([\d-]{7,})/i);
+        if (m) {
+          console.error('✅ [RBC] Recovered metadata via proximity match:', m[0]);
+          transitAcctMatch = m;
+        }
+      }
+    }
+
+    // ULTIMATE AGGRESSIVE SCAN: Scan first 5000 chars for ANY "5-digit [space] 7+digit/dash" pattern
+    if (!transitAcctMatch) {
+      console.warn('⚠️ [RBC] Proximity match failed. Scanning first 5000 chars for raw patterns...');
+      const patterns = [
+        /(\d{5})\s+([\d-]{7,})/i,
+        /(\d{5})[\r\n\s]+([\d-]{7,})/i,
+        /Transit\s+(\d{5})/i
+      ];
+      for (const p of patterns) {
+        const m = text.substring(0, 5000).match(p);
+        if (m) {
+          console.error('✅ [RBC] Raw pattern match found:', m[0]);
+          transitAcctMatch = m;
+          break;
+        }
+      }
+    }
+
+    // FILENAME FALLBACK: If text extraction fails, look at the filename (e.g., ...-2443...)
+    let fallbackAcct = '-----';
+    if (!transitAcctMatch) {
+      console.error('❌ [RBC] ALL text-based metadata extraction failed. Checking filename fallback...');
+      const filenameMatch = text.match(/Filename:\s*.*?-(\d{4})/i) || text.match(/(\d{4})\s*20\d{2}\.pdf/i);
+      if (filenameMatch) fallbackAcct = `...${filenameMatch[1]}`;
+    }
+
+    this.metadata = {
       _inst: '003', // RBC Institution Code
       _transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
-      _acct: transitAcctMatch ? transitAcctMatch[2].replace(/[-\s]/g, '') : '-----',
+      _acct: transitAcctMatch ? (transitAcctMatch[2] ? transitAcctMatch[2].replace(/[-\s]/g, '') : fallbackAcct) : fallbackAcct,
+      institutionCode: '003',
+      transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
+      accountNumber: transitAcctMatch ? (transitAcctMatch[2] || fallbackAcct) : fallbackAcct,
       _brand: 'RBC',
       _bank: 'RBC',
       _tag: 'Chequing'
     };
-    console.log('[RBC] Extracted Metadata:', fileMetadata);
+    console.warn('🏁 [RBC] Extraction Phase Complete. Transit:', this.metadata.transit, 'Acct:', this.metadata.accountNumber);
 
     // Extract year from statement - look for "January 1, 2024" or "February 5, 2024" patterns
     // CRITICAL: Be specific to avoid matching random 4-digit numbers
@@ -145,7 +195,7 @@ SMART PARSING RULES:
     }
 
     console.log(`[RBC] Parsing complete. Found ${transactions.length} transactions.`);
-    return { transactions };
+    return { transactions, metadata: this.metadata };
   }
 
   /**
@@ -187,7 +237,9 @@ SMART PARSING RULES:
       debit: isCredit ? 0 : amount,
       credit: isCredit ? amount : 0,
       balance: balance,
-      _inst: '003',
+      _inst: this.metadata?.institutionCode || '003',
+      _transit: this.metadata?.transit || '-----',
+      _acct: this.metadata?.accountNumber || '-----',
       _brand: 'RBC',
       _bank: 'RBC',
       _tag: 'Chequing'

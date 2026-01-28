@@ -28,20 +28,28 @@ SMART PARSING RULES:
         const lines = statementText.split('\n');
         const transactions = [];
 
+        // LOUD DIAGNOSTIC
+        console.warn('⚡ [EXTREME-TD] Starting metadata extraction for TD...');
+        console.error('📄 [DEBUG-TD] First 1000 characters (RED for visibility):');
+        console.log(statementText.substring(0, 1000));
+
         // EXTRACT METADATA (Institution, Transit, Account)
-        // TD format from screenshot: Branch No. 9083, Account No. 0928-5217856
+        // TD format: Branch No. 9083, Account No. 0928-5217856
         const transitMatch = statementText.match(/(?:Branch No\.|Transit)[:#]?\s*(\d{4,5})/i);
         const acctMatch = statementText.match(/(?:Account No\.|Account)[:#]?\s*([\d-]{7,})/i);
 
-        const fileMetadata = {
+        const metadata = {
             _inst: '004', // TD Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            institutionCode: '004',
+            transit: transitMatch ? transitMatch[1] : '-----',
+            accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'TD',
             _bank: 'TD',
             _tag: 'Chequing'
         };
-        console.log('[TD] Extracted Metadata:', fileMetadata);
+        console.warn('🏁 [TD] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
         // Extract year from statement (usually at top)
         const yearMatch = statementText.match(/20\d{2}/);
@@ -141,7 +149,7 @@ SMART PARSING RULES:
         }
 
         console.log(`[TD] Parsing complete. Found ${transactions.length} transactions.`);
-        return { transactions };
+        return { transactions, metadata };
     }
 
     /**

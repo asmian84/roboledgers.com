@@ -28,6 +28,20 @@ Build a self-learning bookkeeping brain that:
 
 ---
 
+## ✅ Phase 1.1: Extreme Reliability & Metadata Wiring (COMPLETE)
+**Status:** ✅ Shipped (Jan 2026)  
+**Goal:** 100% accurate bank metadata & sub-ledger stability
+
+### Features
+- [x] **"Big 5" Metadata Support**: Automatic Transit/Account extraction for RBC, TD, BMO, CIBC, Scotiabank.
+- [x] **"Loud" Console Diagnostics**: Red/Warn block logs for transparent parsing visibility.
+- [x] **Extreme Proximity Scanning**: Recovers fragmented PDF metadata via proximity & raw pattern logic.
+- [x] **Sub-Ledger Integrity**: Case-normalized account creation to prevent storage validation crashes.
+- [x] **Metadata UI Highlighting**: Visual red alerts in UI if transit/account numbers are missing.
+- [x] **Dynamic Assignment UI**: Searchable, grouped COA dropdown in the assignment banner.
+
+---
+
 ## 🚧 Phase 2: Pattern Recognition (Q1 2026)
 **Goal:** One vendor = Many patterns
 

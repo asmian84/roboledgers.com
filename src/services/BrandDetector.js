@@ -413,14 +413,23 @@ class BrandDetector {
         // Looking for "Account 1234-567" or "Folio 1234567"
         // TD/RBC often use 7-digits. Amex/Credit cards use 15-16.
         const accRegexes = [
-            /(?:account|folio|acct\.?)\s*(?:no\.?|#)?\s*(\d{4,16}[-\s]?\d{0,5})/i,
+            /(?:account|folio|acct\.?)\s*(?:no\.?|#)?\s*(\d{4,16}(?:[-\s]\d{1,10}){0,3})/i,
             /account\s+ending\s+in\s+(\d{4,5})/i
         ];
 
         for (const regex of accRegexes) {
             const match = text.match(regex);
             if (match) {
-                metadata.accountNumber = match[1].replace(/\s/g, '');
+                const fullAcct = match[1].replace(/[-\s]/g, '');
+                metadata.accountNumber = fullAcct;
+
+                // NEW: 5+7 Split Logic for Canadian Banks (Scotia/Tangerine/etc)
+                // If we found a 12-digit account but have NO transit yet
+                if (fullAcct.length === 12 && !metadata.transit) {
+                    metadata.transit = fullAcct.substring(0, 5);
+                    metadata.accountNumber = fullAcct.substring(5);
+                    console.log(`[DETECT] Apply 5+7 split: ${metadata.transit} - ${metadata.accountNumber}`);
+                }
                 break;
             }
         }
@@ -433,14 +442,17 @@ class BrandDetector {
      * Checks learned associations first, falls back to automated detection
      */
     async detectWithLearning(text, filename = '') {
+        // 0. Extract basic metadata (Transit/Account) for robust fingerprinting
+        const metadataForFingerprint = this.extractAccountMetadata(text, 'Unknown');
+
         // Ensure learning service is available
         if (!window.bankLearningService) {
             console.warn('[DETECT] Learning service not available, using standard detection');
             return this.detectBrand(text, filename);
         }
 
-        // 1. Generate fingerprint
-        const fingerprint = await window.bankLearningService.generateFingerprint(text, filename);
+        // 1. Generate fingerprint with metadata
+        const fingerprint = await window.bankLearningService.generateFingerprint(text, filename, metadataForFingerprint);
 
         // 2. Check learned associations FIRST
         const learned = window.bankLearningService.recall(fingerprint);

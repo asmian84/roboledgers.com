@@ -1090,10 +1090,10 @@ class MerchantDictionary {
             return;
         }
 
-        let imported = 0;
-        if (imported === 0) console.log(`☁️ Cloud Sync: Updating local memory with ${merchants.length} records...`);
+        console.log(`☁️ Cloud Sync: Updating local memory with ${merchants.length} records...`);
 
-        for (const m of merchants) {
+        // Use bulkSave for performance (v31.0 optimization)
+        const merchantsToSave = merchants.map(m => {
             // NORMALIZATION: Handle legacy schema variations
             if (m.description_patterns && Array.isArray(m.description_patterns)) {
                 m.description_patterns = m.description_patterns.map(p => {
@@ -1109,29 +1109,25 @@ class MerchantDictionary {
                     return p;
                 });
             }
+            return m;
+        });
 
+        await this.bulkSaveMerchants(merchantsToSave, null, false);
+
+        // Rebuild pattern indexes in-memory
+        for (const m of merchantsToSave) {
             this.merchants.set(m.id, m);
-            await this.saveMerchant(m);
-
-            // Rebuild pattern indexes
             if (m.description_patterns && Array.isArray(m.description_patterns)) {
                 for (const p of m.description_patterns) {
                     if (!p || !p.pattern) continue;
-
                     this.patternIndex.set(p.pattern, m.id);
                     this.normalizedIndex.set(p.normalized_pattern, m.id);
-                    await this.savePatternCache({
-                        pattern: p.pattern,
-                        normalized: p.normalized_pattern,
-                        merchant_id: m.id
-                    });
                 }
             }
-            imported++;
         }
 
-        console.log(`✅ Successfully imported ${imported} merchants`);
-        return imported;
+        console.log(`✅ Successfully imported ${merchantsToSave.length} merchants`);
+        return merchantsToSave.length;
     }
 
     async rebuildPatternCache() {

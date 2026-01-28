@@ -14,10 +14,28 @@ BMO MASTERCARD FORMAT:
   }
 
   async parse(statementText) {
-    console.log('⚡ BMO Mastercard: Starting regex-based parsing...');
+    // LOUD DIAGNOSTIC
+    console.warn('⚡ [EXTREME-BMO-MC] Starting metadata extraction for BMO Mastercard...');
+    console.error('📄 [DEBUG-BMO-MC] First 1000 characters (RED for visibility):');
+    console.log(statementText.substring(0, 1000));
 
     const lines = statementText.split('\n');
     const transactions = [];
+
+    // EXTRACT METADATA (Institution, Transit, Account)
+    const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+    const metadata = {
+      _inst: '001', // BMO Institution Code
+      _transit: '-----',
+      _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+      institutionCode: '001',
+      transit: '-----',
+      accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+      _brand: 'BMO',
+      _bank: 'BMO Mastercard',
+      _tag: 'CreditCard'
+    };
+    console.warn('🏁 [BMO-MC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
     const yearMatch = statementText.match(/20\d{2}/);
     const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -62,7 +80,7 @@ BMO MASTERCARD FORMAT:
     }
 
     console.log(`[BMO-MC] Parsed ${transactions.length} transactions`);
-    return { transactions };
+    return { transactions, metadata };
   }
 
   cleanCreditDescription(desc, prefixes) {

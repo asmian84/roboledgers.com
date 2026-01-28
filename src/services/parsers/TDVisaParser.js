@@ -17,17 +17,28 @@ TD VISA FORMAT:
      * Parse TD Visa statement using regex
      */
     async parse(statementText) {
-        console.log('⚡ TD Visa: Starting regex-based parsing...');
+        // LOUD DIAGNOSTIC
+        console.warn('⚡ [EXTREME-TD-VISA] Starting metadata extraction for TD Visa...');
+        console.error('📄 [DEBUG-TD-VISA] First 1000 characters (RED for visibility):');
+        console.log(statementText.substring(0, 1000));
 
         const lines = statementText.split('\n');
         const transactions = [];
 
-        // Extract year
-        const yearMatch = statementText.match(/20\d{2}/);
-        const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
-
-        const dateRegex = /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{1,2})/i;
-        const monthMap = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+        // EXTRACT METADATA (Institution, Transit, Account)
+        const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+        const metadata = {
+            _inst: '004', // TD Institution Code
+            _transit: '-----',
+            _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            institutionCode: '004',
+            transit: '-----',
+            accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            _brand: 'TD',
+            _bank: 'TD Visa',
+            _tag: 'CreditCard'
+        };
+        console.warn('🏁 [TD-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
         for (const line of lines) {
             const trimmed = line.trim();
@@ -71,7 +82,7 @@ TD VISA FORMAT:
         }
 
         console.log(`[TD-VISA] Parsed ${transactions.length} transactions`);
-        return { transactions };
+        return { transactions, metadata };
     }
 
     cleanCreditDescription(desc, prefixes) {

@@ -202,6 +202,9 @@
                     statementPeriod: null,
                     previousBalance: null,
                     newBalance: null,
+                    institutionCode: null,
+                    transit: null,
+                    accountNumber: null,
                     currency: 'CAD'
                 };
 
@@ -289,6 +292,16 @@
                         break;
                     }
                 }
+
+                // NEW: Institution/Transit/Account specifically
+                const instMatch = text.match(/Institution\s+Number[:\s]+(\d{3})/i);
+                if (instMatch) metadata.institutionCode = instMatch[1];
+
+                const transitMatch = text.match(/(?:Transit|Branch)\s+(?:No\.?|#)?\s*(\d{5})/i);
+                if (transitMatch) metadata.transit = transitMatch[1];
+
+                const accountMatch = text.match(/(?:Account|Folio)\s+(?:No\.?|#)?\s*(\d{4,16})/i);
+                if (accountMatch) metadata.accountNumber = accountMatch[1].replace(/\s/g, '');
 
                 // Currency Detection
                 if (/USD|US\s+Dollar|United States/i.test(text)) {

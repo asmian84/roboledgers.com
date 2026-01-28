@@ -91,6 +91,34 @@ const V5_BASELINE_COA = [
 ];
 
 // ============================================
+// DATA IDENTITY (Blockchain-style signatures)
+// ============================================
+
+/**
+ * Generates a unique "block signature" for a transaction.
+ * Ensures perfect deduplication (Idempotency).
+ */
+function generateTransactionSignature(tx) {
+  const parts = [
+    tx.Date || '',
+    tx.Description || tx.Payee || '',
+    (tx.Amount || 0).toFixed(2),
+    tx._inst || '---',
+    tx._transit || '-----',
+    tx._acct || '-----'
+  ];
+  const raw = parts.join('|').toLowerCase().replace(/\s+/g, '');
+
+  // Simple hash for identity
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return 'txsig-' + Math.abs(hash).toString(36);
+}
+
+// ============================================
 // COA HELPERS (5-Tier Compressed)
 // ============================================
 
@@ -2239,13 +2267,42 @@ window.renderTxnImportV5Page = function () {
         top: calc(100% + 4px);
         left: 0;
         right: 0;
-        max-height: 320px;
-        overflow-y: auto;
+        max-height: 400px;
+        overflow: hidden; /* Search box stays at top */
+        display: flex;
+        flex-direction: column;
         background: white;
         border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-radius: 10px;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
         z-index: 1000;
+      }
+
+      .coa-search-box-wrapper {
+        padding: 8px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+      }
+
+      .coa-search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      .coa-search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .coa-list-scroll {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 350px;
       }
 
       .coa-group {
@@ -2259,28 +2316,33 @@ window.renderTxnImportV5Page = function () {
       .coa-group-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        background:  linear-gradient(to right, #f8fafc, #f1f5f9);
+        gap: 8px; /* Gap for the caret */
+        padding: 8px 12px;
+        background: #f8fafc;
         cursor: pointer;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: #475569;
-        transition: background 0.2s ease;
+        font-weight: 700;
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        transition: all 0.2s ease;
+        user-select: none;
+        border-top: 1px solid #f1f5f9;
       }
 
       .coa-group-header:hover {
-        background: linear-gradient(to right, #f1f5f9, #e2e8f0);
+        background: #f1f5f9;
+        color: #1e293b;
       }
 
       .coa-group-header i {
-        font-size: 0.9rem;
-        color: #64748b;
+        font-size: 10px;
+        color: #94a3b8;
         transition: transform 0.2s ease;
       }
 
       .coa-group-header.expanded i {
-        transform: rotate(180deg);
+        transform: rotate(90deg); /* Sideways to Down or vice versa */
       }
 
       .coa-group-items {
@@ -2293,10 +2355,10 @@ window.renderTxnImportV5Page = function () {
       }
 
       .coa-item {
-        padding: 10px 16px;
+        padding: 8px 16px 8px 32px; /* Indented from header */
         cursor: pointer;
         font-size: 0.85rem;
-        color: #1e293b;
+        color: #334155;
         transition: all 0.15s ease;
         border-left: 3px solid transparent;
       }
@@ -2794,7 +2856,7 @@ window.renderTxnImportV5Page = function () {
               <span class="upload-main">Drag and drop files here</span>
               <span class="upload-sub">Limit 200MB per file • PDF, CSV, Excel</span>
             </div>
-            <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('v5-file-input').click()">Browse files</button>
+            <button class="btn-browse" onclick="console.log('[DEBUG] Browse button clicked'); event.stopPropagation(); document.getElementById('v5-file-input').click()">Browse files</button>
           </div>
           <input type="file" id="v5-file-input" multiple accept=".pdf,.csv" 
                  style="display: none;" onchange="handleV5FileSelect(event)">
@@ -2861,8 +2923,21 @@ window.renderTxnImportV5Page = function () {
           <span class="banner-text">📋 1 statement uploaded. Link to account:</span>
         </div>
         <div class="banner-right" style="display: flex; align-items: center; gap: 12px;">
-          <div id="v5-banner-assign-dropdown-wrapper" style="display: none;">
-            <select id="v5-banner-assign-select" style="min-width: 250px; padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0;"></select>
+          <div id="v5-banner-assign-dropdown-wrapper" style="display: none; position: relative;">
+            <input type="hidden" id="v5-banner-assign-value" value="">
+            <div id="v5-banner-coa-trigger" class="custom-coa-trigger" onclick="window.toggleV5BannerCOADropdown()" style="min-width: 280px;">
+              <i class="ph ph-hand-pointing"></i>
+              <span id="v5-banner-coa-selected-text">Choose account...</span>
+              <i class="ph ph-caret-down"></i>
+            </div>
+            <div id="v5-banner-coa-menu" class="custom-coa-menu" style="display: none;">
+              <div class="coa-search-box-wrapper">
+                <input type="text" class="coa-search-input" placeholder="Search accounts..." oninput="window.filterV5BannerCOA(this.value)" onclick="event.stopPropagation()">
+              </div>
+              <div id="v5-banner-coa-list" class="coa-list-scroll">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
           </div>
           <button id="btn-complete-assignment" onclick="window.v5CompleteAssignment()" style="display: none;">Link to Ledger</button>
         </div>
@@ -4133,7 +4208,8 @@ window.populateCOADropdown = function (selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
-  const coa = get5TierCoAAccounts();
+  const cats = get5TierCoAAccounts();
+  const coa = Object.values(cats).flat();
 
   const roots = {
     'Assets': coa.filter(a => a.code >= 1000 && a.code < 2000),
@@ -4359,6 +4435,7 @@ window.handleV5DragLeave = function (e) {
 window.handleV5Drop = function (e) {
   e.preventDefault();
   e.stopPropagation();
+  console.log('[V5-V2] File(s) dropped');
 
   // Hide overlay
   document.getElementById('v5-drop-overlay').style.display = 'none';
@@ -4376,7 +4453,9 @@ window.handleV5Drop = function (e) {
 };
 
 window.handleV5FileSelect = function (e) {
+  console.log('[DEBUG] File input change event triggered');
   const files = Array.from(e.target.files);
+  console.log(`[V5-V2] ${files.length} file(s) selected via browse`);
   if (files.length === 0) return;
 
   V5State.selectedFiles = files;
@@ -4437,26 +4516,33 @@ window.parseV5Files = async function () {
       const file = V5State.selectedFiles[i];
       updateV5Progress(i, V5State.selectedFiles.length, `Parsing ${file.name}...`);
 
+      const startTime = performance.now();
+
       try {
         // Parse single file
         const fileTxns = await window.ProcessingEngine.parseFiles([file], () => { });
+
+        const endTime = performance.now();
+        console.log(`[V5-V2] File ${i + 1}/${V5State.selectedFiles.length} (${file.name}) took ${(endTime - startTime).toFixed(2)}ms`);
 
         // Generate ID for this specific file
         const fileId = `file-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
         const fileType = file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'csv';
 
         // Tag transactions immediately with THIS file's info
-        fileTxns.forEach(txn => {
+        fileTxns.forEach((txn, txnIdx) => {
+          // ENSURE UNIQUE ID FOR UI STATE (Audit Mode)
+          txn.id = `${fileId}-${txnIdx}`;
+
           txn.sourceFileId = fileId;
           txn.sourceFileName = file.name;
-          txn.sourceFileBlob = file; // Store blob for opening
+          txn.sourceFileBlob = file;
           txn.sourceFileType = fileType;
         });
 
         allTransactions = allTransactions.concat(fileTxns);
 
         // Add to import history (one entry per file)
-        // Save to history using proper function
         const currentHistory = getImportHistory();
         currentHistory.unshift({
           id: fileId,
@@ -4467,12 +4553,14 @@ window.parseV5Files = async function () {
         });
         if (currentHistory.length > 20) currentHistory.pop();
         localStorage.setItem('ab_import_history', JSON.stringify(currentHistory));
-        V5State.recentImports = currentHistory; // Keep in sync
+        V5State.recentImports = currentHistory;
 
       } catch (fileErr) {
         console.error(`❌ Failed to parse ${file.name}:`, fileErr);
-        // Continue with other files...
       }
+
+      // Yield to UI between files
+      await new Promise(r => setTimeout(r, 0));
     }
 
     // If no transactions found after all files
@@ -4498,10 +4586,22 @@ window.parseV5Files = async function () {
       prefix: firstTxn._prefix || 'TXN',
       institutionCode: firstTxn._inst || '---',
       transit: firstTxn._transit || '-----',
-      accountNumber: firstTxn._acct || '-----'
+      accountNumber: firstTxn._acct || '-----',
+      fingerprint: firstTxn._fingerprint || null
     };
 
-    console.log('🔍 DEBUG: brandDetection:', brandDetection);
+    console.log('🔍 [V5-V2] Brand Detection Debug:');
+    console.table(brandDetection);
+
+    // VERIFY FIRST TRANSACTION METADATA
+    if (transactions.length > 0) {
+      console.log('🔍 [V5-V2] First Transaction Sample:', {
+        desc: firstTxn.Description || firstTxn.description,
+        inst: firstTxn._inst,
+        transit: firstTxn._transit,
+        acct: firstTxn._acct
+      });
+    }
 
     // Categorize using all 7 methods
     updateV5Progress(0, 1, 'Categorizing transactions...');
@@ -4511,6 +4611,27 @@ window.parseV5Files = async function () {
         updateV5Progress(progress, 100, message);
       }
     );
+
+    // Track for later assignment
+    const statementId = `stmt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    V5State.pendingStatements.push({
+      id: statementId,
+      filename: V5State.selectedFiles[0]?.name || 'Unknown Statement',
+      bank: brandDetection.brand,
+      tag: brandDetection.tag,
+      prefix: brandDetection.prefix,
+      institutionCode: brandDetection.institutionCode,
+      transit: brandDetection.transit,
+      accountNumber: brandDetection.accountNumber,
+      fingerprint: brandDetection.fingerprint,
+      count: categorized.length,
+      dateRange: {
+        start: categorized[0]?.Date || '',
+        end: categorized[categorized.length - 1]?.Date || ''
+      },
+      status: 'pending',
+      transactions: categorized // Store transactions in the statement object!
+    });
 
     // NATURAL FLOW: Push directly to grid for instant visibility
     V5State.gridData = [...V5State.gridData, ...categorized];
@@ -4536,30 +4657,9 @@ window.parseV5Files = async function () {
       });
     }
 
-    // SHOW ASSIGNMENT BANNER
-    if (window.showV5AssignmentBanner) {
-      window.showV5AssignmentBanner();
-    }
-
     // Hide empty state if visible
     const emptyState = document.getElementById('v5-empty-state');
     if (emptyState) emptyState.style.display = 'none';
-
-    // Track for later assignment
-    const statementId = `stmt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    V5State.pendingStatements.push({
-      id: statementId,
-      filename: V5State.selectedFiles[0]?.name || 'Unknown Statement',
-      bank: brandDetection.brand,
-      tag: brandDetection.tag,
-      prefix: brandDetection.prefix,
-      count: categorized.length,
-      dateRange: {
-        start: categorized[0]?.Date || '',
-        end: categorized[categorized.length - 1]?.Date || ''
-      },
-      status: 'pending'
-    });
 
     // Show control toolbar and ensure visibility
     showControlToolbar();
@@ -4796,40 +4896,163 @@ window.executeV5Assignment = function (stmtId) {
   saveData();
 };
 
+/**
+ * Helper to get or create a sub-account for a specific bank statement.
+ * Maps (Bank, Transit, AccountNumber) -> Sub-Account Code.
+ */
+window.getOrCreateSubAccount = function (parentCode, statement) {
+  const bank = statement.bank || 'Unknown Bank';
+  const transit = statement.transit || '-----';
+  const acctNum = statement.accountNumber || '-----';
+  const last4 = acctNum.length > 4 ? acctNum.slice(-4) : acctNum;
+
+  // 1. Check existing mappings in localStorage
+  const mappings = JSON.parse(localStorage.getItem('v5_subledger_mappings') || '{}');
+  const mappingKey = `${bank}_${transit}_${acctNum}`.replace(/\s+/g, '_');
+
+  if (mappings[mappingKey]) {
+    console.log(`[SubLedger] Found existing mapping: ${mappingKey} -> ${mappings[mappingKey]}`);
+    return mappings[mappingKey];
+  }
+
+  // 2. If no mapping, create a new sub-account under parentCode
+  console.log(`[SubLedger] Creating new sub-account for ${bank} ...${last4} under parent ${parentCode}`);
+
+  const cats = window.get5TierCoAAccounts();
+  const allAccounts = Object.values(cats).flat(); // FLATTEN THE OBJECT INTO A SINGLE ARRAY
+  const parentBase = Math.floor(parseInt(parentCode) / 1000) * 1000;
+
+  // Find next available code (parentCode + 1, +2, etc.)
+  let nextCode = parseInt(parentCode) + 1;
+  while (allAccounts.some(a => (a.code || a.account_number) == String(nextCode))) {
+    nextCode++;
+  }
+
+  const newAccountName = `${bank} ...${last4}`;
+  const newAccount = {
+    code: String(nextCode),
+    account_number: acctNum, // Store full number for global search
+    name: newAccountName,
+    type: (allAccounts.find(a => (a.code || a.account_number) == parentCode)?.type || 'asset').toLowerCase(),
+    parent_code: parentCode
+  };
+
+  // 3. Persist new account to storage
+  if (window.storage?.createAccount) {
+    window.storage.createAccount(newAccount);
+  } else {
+    // Fallback if storage service isn't available/ready
+    const localCoA = JSON.parse(localStorage.getItem('ab3_accounts') || '[]');
+    localCoA.push(newAccount);
+    localStorage.setItem('ab3_accounts', JSON.stringify(localCoA));
+  }
+
+  // 4. Save mapping
+  mappings[mappingKey] = String(nextCode);
+  localStorage.setItem('v5_subledger_mappings', JSON.stringify(mappings));
+
+  // 5. Sync to Cloud (Silent)
+  if (window.supabaseService && window.supabaseService.isOnline) {
+    window.supabaseService.from('subledger_mappings').upsert([{
+      key: mappingKey,
+      account_code: String(nextCode),
+      metadata: { bank, transit, acctNum }
+    }]).then(() => console.log('[SubLedger] Synced mapping to cloud'));
+  }
+
+  return String(nextCode);
+};
+
 /** Complete linkage for all pending statements from banner */
 window.v5CompleteAssignment = function () {
-  const select = document.getElementById('v5-banner-assign-select');
-  const accountCode = select?.value;
-  if (!accountCode) {
+  const valInput = document.getElementById('v5-banner-assign-value');
+  const selectedCode = valInput?.value;
+  if (!selectedCode) {
     alert('Please choose an account to link.');
     return;
   }
 
-  console.log(`🚀 Linking all pending statements to: ${accountCode}`);
+  console.log(`🚀 Processing assignment for ${V5State.pendingStatements.length} statements to: ${selectedCode}`);
 
-  if (!V5State.multiLedgerData[accountCode]) {
-    V5State.multiLedgerData[accountCode] = [];
-  }
+  // We need to process each statement. 
+  // If selectedCode is a "Parent" (multiples of 1000 usually), we create sub-accounts.
+  // Otherwise, we just use the selectedCode.
 
-  // Move grid data to ledger
-  V5State.multiLedgerData[accountCode] = [...V5State.multiLedgerData[accountCode], ...V5State.gridData];
+  const isParent = parseInt(selectedCode) % 1000 === 0;
 
-  // Sort and Dedupe Ledger
-  V5State.multiLedgerData[accountCode].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+  V5State.pendingStatements.forEach(stmt => {
+    let targetCode = selectedCode;
 
-  // Switch to this ledger permanently
-  V5State.currentAccountCode = accountCode;
+    if (isParent) {
+      targetCode = window.getOrCreateSubAccount(selectedCode, stmt);
+    }
+
+    console.log(`[Assignment] Statement ${stmt.filename} -> Account ${targetCode}`);
+
+    if (!V5State.multiLedgerData[targetCode]) {
+      V5State.multiLedgerData[targetCode] = [];
+    }
+
+    // Add transactions from this specific statement to the target ledger
+    const txnsWithMeta = stmt.transactions.map(t => {
+      const augmented = {
+        ...t,
+        _brand: stmt.bank,
+        _bank: stmt.bank,
+        _tag: stmt.tag,
+        _inst: stmt.institutionCode,
+        _transit: stmt.transit,
+        _acct: stmt.accountNumber,
+        _parentAcct: isParent ? selectedCode : (allAccounts.find(a => (a.code || a.account_number) == targetCode)?.parent_code || null)
+      };
+      // Assign the unique "Block Signature"
+      augmented._sig = generateTransactionSignature(augmented);
+      return augmented;
+    });
+
+    V5State.multiLedgerData[targetCode] = [...V5State.multiLedgerData[targetCode], ...txnsWithMeta];
+
+    // Switch to the LAST processed ledger as the current view
+    V5State.currentAccountCode = targetCode;
+
+    // Learn this association for future auto-detection
+    if (window.bankLearningService && stmt.fingerprint) {
+      window.bankLearningService.learn(stmt.fingerprint, {
+        brand: stmt.bank,
+        accountType: stmt.tag,
+        accountCode: targetCode,
+        parserName: `${stmt.bank}${stmt.tag}`
+      });
+      console.log(`[LEARNING] Associated fingerprint with account ${targetCode}`);
+    }
+  });
+
+  // Sort and Dedupe All Ledgers that were touched (Using Blockchain-style Signatures)
+  Object.keys(V5State.multiLedgerData).forEach(code => {
+    // 1. Sort by Date
+    V5State.multiLedgerData[code].sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+    // 2. Dedupe using the unique transaction signature
+    V5State.multiLedgerData[code] = V5State.multiLedgerData[code].filter((txn, index, self) =>
+      index === self.findIndex((t) => (
+        (t._sig && t._sig === txn._sig) ||
+        (!t._sig && t.Date === txn.Date && t.Payee === txn.Payee && t.Amount === txn.Amount)
+      ))
+    );
+  });
+
   V5State.pendingStatements = []; // Clear pending
+  V5State.gridData = V5State.multiLedgerData[V5State.currentAccountCode] || [];
 
   // Hide banner
   window.hideV5AssignmentBanner();
 
   // Update UIs
   renderV5LedgerSwitcher();
-  switchV5Ledger(accountCode);
+  switchV5Ledger(V5State.currentAccountCode);
 
   saveData();
-  console.log(`✅ Assigned to ledger ${accountCode}`);
+  console.log(`✅ All statements assigned and processed.`);
 };
 
 /** Show assignment modal for specific rows */
@@ -5000,12 +5223,16 @@ window.initV5Grid = function () {
   };
 
   /** NEW: Toggle Audit View for Community compatibility */
+  /** NEW: Toggle Audit View for Community compatibility */
   window.toggleV5Audit = (rowId) => {
-    if (V5State.auditModeActiveRowId === rowId) {
-      V5State.auditModeActiveRowId = null;
+    if (!V5State.auditModeActiveRowIds) V5State.auditModeActiveRowIds = [];
+
+    if (V5State.auditModeActiveRowIds.includes(rowId)) {
+      V5State.auditModeActiveRowIds = V5State.auditModeActiveRowIds.filter(id => id !== rowId);
     } else {
-      V5State.auditModeActiveRowId = rowId;
+      V5State.auditModeActiveRowIds.push(rowId);
     }
+
     if (V5State.gridApi) {
       V5State.gridApi.redrawRows();
     }
@@ -5110,6 +5337,7 @@ window.initV5Grid = function () {
         suppressSizeToFit: true,
         comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
         valueGetter: params => {
+          if (params.data._refNum) return params.data._refNum;
           // STRICTLY DYNAMIC: Ensure no gaps by using row index
           const p = V5State.refPrefix || '';
           const num = String(params.node.rowIndex + 1).padStart(3, '0');
@@ -5144,7 +5372,7 @@ window.initV5Grid = function () {
           const val = params.value || '';
           const data = params.data || {};
           const rowId = params.node.id;
-          const isAuditActive = V5State.auditModeActiveRowId === rowId;
+          const isAuditActive = V5State.auditModeActiveRowIds && V5State.auditModeActiveRowIds.includes(rowId);
 
           let content = '';
           if (!val.includes(',')) {
@@ -6987,6 +7215,7 @@ function getV5ColumnDefs() {
       pinned: 'left',
       editable: true,
       valueGetter: (params) => {
+        if (params.data._refNum) return params.data._refNum;
         // STRICTLY DYNAMIC: Always re-count based on row index to ensure no gaps
         const prefix = V5State.refPrefix || '';
         const num = String(params.node.rowIndex + 1).padStart(3, '0');
@@ -7420,15 +7649,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Expand/Collapse All (AUDIT MODE - REMOVED PER UX REFINEMENT)
+// Expand/Collapse All (AUDIT MODE)
 window.expandAllV5 = function () {
-  console.log('🔍 Audit Mode: Global expand disabled. Use row menus.');
+  console.log('🔵 [UI] expandAllV5() triggered');
+  if (V5State.gridApi) {
+    V5State.auditModeActiveRowIds = V5State.gridData.map(r => r.id).filter(id => !!id);
+    console.log(`  ✓ IDs to expand: ${V5State.auditModeActiveRowIds.length}`);
+    V5State.gridApi.redrawRows();
+    console.log('✅ Expanded all inline audits');
+  } else {
+    console.warn('  ⚠️ gridApi not ready for expandAll');
+  }
 };
 
 window.collapseAllV5 = function () {
-  V5State.auditModeActiveRowId = null;
+  V5State.auditModeActiveRowIds = [];
   if (V5State.gridApi) V5State.gridApi.redrawRows();
-  console.log('🔍 Audit Mode: Collapsed all inline audits');
+  console.log('✅ Collapsed all inline audits');
 };
 
 // Hybrid Drag-Drop Handler (for blue button)
@@ -7925,16 +8162,20 @@ function updateBrandDisplay(detection) {
   updateConfidenceBadge(detection.confidence || 0.7, detection.source);
 
   if (infoLine) {
-    const inst = detection.institutionCode || detection.institution_code || '---';
-    const transit = detection.transit || '-----';
-    const account = detection.accountNumber || detection.account_number || '-----';
+    const inst = detection.institutionCode || detection.institution_code || detection._inst || '---';
+    const transit = detection.transit || detection._transit || '-----';
+    const account = detection.accountNumber || detection.account_digits || detection._acct || '-----';
+
+    // DEBUG UI HINT: If transit/account are still placeholders after my "Total Fix", highlight them
+    const transitStyle = transit === '-----' ? 'color: #ef4444; font-weight: 800;' : 'font-weight: 700;';
+    const accountStyle = account === '-----' ? 'color: #ef4444; font-weight: 800;' : 'font-weight: 700;';
 
     infoLine.innerHTML = `
       <span>INST: <b>${inst}</b></span>
       <span class="sep">|</span>
-      <span>TRANSIT: <b>${transit}</b></span>
+      <span>TRANSIT: <b style="${transitStyle}">${transit}</b></span>
       <span class="sep">|</span>
-      <span>ACCOUNT: <b>${account}</b></span>
+      <span>ACCOUNT: <b style="${accountStyle}">${account}</b></span>
     `;
     infoLine.style.display = 'flex';
   }
@@ -7960,44 +8201,26 @@ window.showV5AssignmentBanner = function () {
       const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
       const acct = coa.find(a => a.code == V5State.currentAccountCode);
       const name = acct ? acct.name : V5State.currentAccountCode;
-      text.innerHTML = `🔗 Linked to: <b>${V5State.currentAccountCode} - ${name}</b>. Change link:`;
+      text.innerHTML = `Linked to: <b>${V5State.currentAccountCode} - ${name}</b>. Change link: `;
     } else {
-      text.innerHTML = `📋 <b>${count}</b> statement${count !== 1 ? 's' : ''} uploaded. Link to account:`;
+      text.innerHTML = `<b>${count}</b> statement${count !== 1 ? 's' : ''} uploaded. Link to account: `;
     }
   }
 
-  // Populate Select with Mixed Grouping (Used Flat | Unused Categorized)
-  const select = document.getElementById('v5-banner-assign-select');
-  if (select) {
-    const cats = get5TierCoAAccounts();
-    const usedCodes = Object.keys(V5State.multiLedgerData);
-    const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+  // Replace old select logic with custom dropdown population
+  const usedCodes = Object.keys(V5State.multiLedgerData);
+  window.populateV5BannerCOA();
 
-    let html = '<option value="">Choose account...</option>';
-
-    // 1. Used Accounts (Flat)
-    if (usedCodes.length > 0) {
-      html += '<optgroup label="Used Accounts">';
-      usedCodes.forEach(code => {
-        const acct = coa.find(a => a.code == code);
-        const name = acct ? acct.name : code;
-        html += `<option value="${code}" ${code == V5State.currentAccountCode ? 'selected' : ''}>${code} - ${name}</option>`;
-      });
-      html += '</optgroup>';
+  // If we have a current account, update the trigger text
+  if (V5State.currentAccountCode) {
+    const coa = JSON.parse(localStorage.getItem('ab3_accounts') || localStorage.getItem('ab_chart_of_accounts') || '[]');
+    const acct = coa.find(a => (a.code || a.account_number) == V5State.currentAccountCode);
+    if (acct) {
+      const valInput = document.getElementById('v5-banner-assign-value');
+      const triggerText = document.getElementById('v5-banner-coa-selected-text');
+      if (valInput) valInput.value = V5State.currentAccountCode;
+      if (triggerText) triggerText.textContent = `${acct.code} - ${acct.name} `;
     }
-
-    // 2. Unused Accounts (Categorized)
-    Object.keys(cats).forEach(cat => {
-      const unusedInTier = cats[cat].filter(a => !usedCodes.includes(a.code));
-      if (unusedInTier.length > 0) {
-        html += `<optgroup label="Unused - ${cat}">`;
-        unusedInTier.forEach(a => {
-          html += `<option value="${a.code}">${a.code} - ${a.name}</option>`;
-        });
-        html += '</optgroup>';
-      }
-    });
-    select.innerHTML = html;
   }
 
   // Make it ALWAYS visible
@@ -8014,6 +8237,131 @@ window.showV5AssignmentBanner = function () {
   document.getElementById('v5-banner-toggle')?.remove();
 
   banner.style.display = 'flex';
+};
+
+/** Supporting functions for the Banner Custom Dropdown */
+window.toggleV5BannerCOADropdown = function () {
+  const menu = document.getElementById('v5-banner-coa-menu');
+  const trigger = document.getElementById('v5-banner-coa-trigger');
+  if (!menu || !trigger) return;
+
+  const isOpen = menu.style.display === 'block';
+  if (isOpen) {
+    menu.style.display = 'none';
+    trigger.classList.remove('open');
+  } else {
+    window.populateV5BannerCOA();
+    menu.style.display = 'block';
+    trigger.classList.add('open');
+    setTimeout(() => menu.querySelector('.coa-search-input')?.focus(), 50);
+  }
+};
+
+window.populateV5BannerCOA = function (filterText = '') {
+  const listContainer = document.getElementById('v5-banner-coa-list');
+  if (!listContainer) return;
+
+  const cats = window.get5TierCoAAccounts();
+  const usedCodes = Object.keys(V5State.multiLedgerData);
+  const coa = JSON.parse(localStorage.getItem('ab3_accounts') || localStorage.getItem('ab_chart_of_accounts') || '[]');
+  const lowerFilter = filterText.toLowerCase();
+
+  let html = '';
+
+  // 1. Used Accounts (Active Ledgers)
+  const filteredUsed = usedCodes.filter(code => {
+    const acct = coa.find(a => (a.code || a.account_number) == code);
+    const name = acct ? acct.name : code;
+    return `${code} ${name} `.toLowerCase().includes(lowerFilter);
+  });
+
+  if (filteredUsed.length > 0) {
+    html += `
+    < div class="coa-group" data - group="used" >
+        <div class="coa-group-header expanded" onclick="window.toggleV5BannerCOAGroup('used')">
+          <i class="ph ph-caret-right"></i>
+          <span>✅ ACTIVE LEDGERS</span>
+        </div>
+        <div class="coa-group-items expanded" id="v5-banner-coa-group-used">
+          ${filteredUsed.map(code => {
+      const acct = coa.find(a => (a.code || a.account_number) == code);
+      const name = acct ? acct.name : code;
+      return `
+              <div class="coa-item ${code == V5State.currentAccountCode ? 'selected' : ''}" onclick="window.selectV5BannerCOAAccount('${code}', '${name.replace(/'/g, "\\'")}')">
+                ${code} - ${name}
+              </div>
+            `;
+    }).join('')}
+        </div>
+      </div >
+    `;
+  }
+
+  // 2. Unused Accounts (5 Categories)
+  const tierLabels = {
+    ASSETS: 'Assets',
+    LIABILITIES: 'Liabilities',
+    EQUITY: 'Equity',
+    REVENUE: 'Revenue',
+    EXPENSES: 'Expenses'
+  };
+
+  Object.keys(cats).forEach(tierKey => {
+    const unusedInTier = cats[tierKey].filter(a => !usedCodes.includes(a.code));
+    const filteredUnused = unusedInTier.filter(a => `${a.code} ${a.name} `.toLowerCase().includes(lowerFilter));
+
+    if (filteredUnused.length > 0) {
+      const label = tierLabels[tierKey] || tierKey;
+      const isFilterActive = filterText.length > 0;
+      html += `
+    < div class="coa-group" data - group="${tierKey}" >
+          <div class="coa-group-header ${isFilterActive ? 'expanded' : ''}" onclick="window.toggleV5BannerCOAGroup('${tierKey}')">
+            <i class="ph ph-caret-right"></i>
+            <span>${label}</span>
+          </div>
+          <div class="coa-group-items ${isFilterActive ? 'expanded' : ''}" id="v5-banner-coa-group-${tierKey}">
+            ${filteredUnused.map(a => {
+        const isParent = parseInt(a.code) % 1000 === 0;
+        const style = isParent ? 'font-weight:700; color:#2563eb;' : '';
+        const prefix = isParent ? '⚡ ' : '';
+        return `
+                <div class="coa-item" style="${style}" onclick="window.selectV5BannerCOAAccount('${a.code}', '${a.name.replace(/'/g, "\\'")}')">
+                  ${prefix}${a.code} - ${a.name}
+                </div>
+              `;
+      }).join('')}
+          </div>
+        </div >
+    `;
+    }
+  });
+
+  listContainer.innerHTML = html;
+};
+
+window.filterV5BannerCOA = function (val) {
+  window.populateV5BannerCOA(val);
+};
+
+window.toggleV5BannerCOAGroup = function (groupId) {
+  const items = document.getElementById(`v5 - banner - coa - group - ${groupId} `);
+  const header = items?.previousElementSibling;
+  if (items && header) {
+    items.classList.toggle('expanded');
+    header.classList.toggle('expanded');
+  }
+};
+
+window.selectV5BannerCOAAccount = function (code, name) {
+  const valInput = document.getElementById('v5-banner-assign-value');
+  const triggerText = document.getElementById('v5-banner-coa-selected-text');
+  if (valInput) valInput.value = code;
+  if (triggerText) triggerText.textContent = `${code} - ${name} `;
+
+  const menu = document.getElementById('v5-banner-coa-menu');
+  const trigger = document.getElementById('v5-banner-coa-trigger');
+  if (menu) menu.style.display = 'none';
+  if (trigger) trigger.classList.remove('open');
 };
 
 /** Hide the assignment banner */
@@ -8122,7 +8470,7 @@ window.onBankTagChange = async function () {
     window.bankLearningService.learn(detection.fingerprint, {
       brand: bank,
       accountType: tag,
-      parserName: `${bank}${tag}`
+      parserName: `${bank}${tag} `
     });
     console.log('[LEARNING] Saved user choice');
   }
@@ -8265,7 +8613,7 @@ function populateFindAutocomplete() {
   // Populate datalist
   let html = '';
   descriptions.forEach(desc => {
-    html += `<option value="${desc}">`;
+    html += `< option value = "${desc}" > `;
   });
 
   datalist.innerHTML = html;
@@ -8336,7 +8684,7 @@ window.populateGlassCOA = function () {
     if (accounts.length === 0) return;
 
     html += `
-      <div class="coa-group" data-group="${groupName}">
+    < div class="coa-group" data - group="${groupName}" >
         <div class="coa-group-header" onclick="toggleCOAGroup('${groupName}')">
           <span>${groupName}</span>
           <i class="ph ph-caret-down"></i>
@@ -8348,20 +8696,20 @@ window.populateGlassCOA = function () {
             </div>
           `).join('')}
         </div>
-      </div>
+      </div >
     `;
   });
 
   menuContainer.innerHTML = html;
-  console.log(`  ✓ Custom dropdown populated with ${all.length} accounts in ${Object.keys(groups).filter(g => groups[g].length > 0).length} groups (all collapsed)`);
+  console.log(`  ✓ Custom dropdown populated with ${all.length} accounts in ${Object.keys(groups).filter(g => groups[g].length > 0).length} groups(all collapsed)`);
 };
 
 /** Toggle COA group expand/collapse */
 window.toggleCOAGroup = function (groupName) {
-  console.log(`🔵 [BULK] toggleCOAGroup(${groupName})`);
+  console.log(`🔵[BULK] toggleCOAGroup(${groupName})`);
 
-  const header = document.querySelector(`.coa-group[data-group="${groupName}"] .coa-group-header`);
-  const items = document.getElementById(`coa-group-${groupName}`);
+  const header = document.querySelector(`.coa - group[data - group="${groupName}"] .coa - group - header`);
+  const items = document.getElementById(`coa - group - ${groupName} `);
 
   if (!header || !items) return;
 
@@ -8371,18 +8719,18 @@ window.toggleCOAGroup = function (groupName) {
     // Collapse
     items.classList.remove('expanded');
     header.classList.remove('expanded');
-    console.log(`  ▲ Collapsed ${groupName}`);
+    console.log(`  ▲ Collapsed ${groupName} `);
   } else {
     // Expand
     items.classList.add('expanded');
     header.classList.add('expanded');
-    console.log(`  ▼ Expanded ${groupName}`);
+    console.log(`  ▼ Expanded ${groupName} `);
   }
 };
 
 /** Select a COA account from custom dropdown */
 window.selectCOAAccount = function (accountFullName) {
-  console.log(`🔵 [BULK] selectCOAAccount("${accountFullName}")`);
+  console.log(`🔵[BULK] selectCOAAccount("${accountFullName}")`);
 
   // Update trigger text
   const triggerText = document.getElementById('coa-selected-text');
@@ -8396,7 +8744,7 @@ window.selectCOAAccount = function (accountFullName) {
   // Close dropdown
   closeCustomDropdown();
 
-  console.log(`  ✓ Selected: ${accountFullName}`);
+  console.log(`  ✓ Selected: ${accountFullName} `);
 };
 
 /** Open/close custom dropdown */
@@ -8471,7 +8819,7 @@ window.applyBulkCategorize = function () {
     return;
   }
 
-  console.log(`  📁 Selected account: ${fullAccountName}`);
+  console.log(`  📁 Selected account: ${fullAccountName} `);
 
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   console.log(`  📋 Applying to ${selectedRows.length} selected rows`);
@@ -8484,20 +8832,20 @@ window.applyBulkCategorize = function () {
 
   // Show inline confirmation
   enterConfirmMode(
-    `Apply "${fullAccountName}" to ${selectedRows.length} transaction(s)?`,
+    `Apply "${fullAccountName}" to ${selectedRows.length} transaction(s) ? `,
     () => executeBulkCategorize(fullAccountName, selectedRows)
   );
 };
 
 /** Execute bulk categorize after confirmation */
 function executeBulkCategorize(fullAccountName, selectedRows) {
-  console.log(`  📁 Executing categorize: ${fullAccountName}`);
+  console.log(`  📁 Executing categorize: ${fullAccountName} `);
 
   // Apply to all selected rows
   selectedRows.forEach((row, idx) => {
     row.account = fullAccountName;
     row.category = fullAccountName.split(' - ')[1] || fullAccountName;
-    console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: ${fullAccountName}`);
+    console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: ${fullAccountName} `);
   });
 
   // Refresh grid
@@ -8519,7 +8867,7 @@ function executeBulkCategorize(fullAccountName, selectedRows) {
   const dropdown = document.getElementById('glass-coa-dropdown'); // Re-declare dropdown for scope
   if (dropdown) dropdown.value = '';
 
-  console.log(`✅ [BULK] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
+  console.log(`✅[BULK] Successfully applied ${fullAccountName} to ${selectedRows.length} transactions`);
 };
 
 /** Apply bulk rename (find/replace with autocomplete) */
@@ -8538,7 +8886,7 @@ window.applyBulkRename = function () {
     return;
   }
 
-  console.log(`  🔍 Find: "${findText}" (blank = rename all)`);
+  console.log(`  🔍 Find: "${findText}"(blank = rename all)`);
   console.log(`  ✏️ Replace: "${replaceText}"`);
 
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
@@ -8552,8 +8900,8 @@ window.applyBulkRename = function () {
 
   // Show inline confirmation
   const confirmMsg = findText.trim() === ''
-    ? `Replace ALL ${selectedRows.length} descriptions with "${replaceText}"?`
-    : `Find & replace "${findText}" in ${selectedRows.length} transaction(s)?`;
+    ? `Replace ALL ${selectedRows.length} descriptions with "${replaceText}" ? `
+    : `Find & replace "${findText}" in ${selectedRows.length} transaction(s) ? `;
 
   enterConfirmMode(confirmMsg, () => executeBulkRename(findText, replaceText, selectedRows));
 };
@@ -8582,7 +8930,7 @@ function executeBulkRename(findText, replaceText, selectedRows) {
         updatedCount++;
         console.log(`    [${idx + 1}/${selectedRows.length}] Updated row ${row.id}: "${originalDesc}" → "${row.description}"`);
       } else {
-        console.log(`    [${idx + 1}/${selectedRows.length}] No match in row ${row.id}`);
+        console.log(`    [${idx + 1}/${selectedRows.length}] No match in row ${row.id} `);
       }
     });
   }
@@ -8608,7 +8956,7 @@ function executeBulkRename(findText, replaceText, selectedRows) {
   if (findInput) findInput.value = '';
   if (replaceInput) replaceInput.value = '';
 
-  console.log(`✅ [BULK] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
+  console.log(`✅[BULK] Successfully updated ${updatedCount}/${selectedRows.length} descriptions`);
   // Removed alert - confirmation is inline
 };
 
@@ -8676,13 +9024,13 @@ function getV5LogoDataURI(bankKey) {
 
   // Priority 1: Local PNG Assets
   const localAssets = {
-    'TD': '/src/assets/banks/td.png',
-    'RBC': '/src/assets/banks/rbc.png',
-    'BMO': '/src/assets/banks/bmo.png',
-    'CIBC': '/src/assets/banks/cibc.png',
-    'Scotiabank': '/src/assets/banks/scotia.png',
-    'Tangerine': '/src/assets/banks/tangerine.png',
-    'Amex': '/src/assets/banks/amex.png'
+    'TD': 'src/assets/banks/td.png',
+    'RBC': 'src/assets/banks/rbc.png',
+    'BMO': 'src/assets/banks/bmo.png',
+    'CIBC': 'src/assets/banks/cibc.png',
+    'Scotiabank': 'src/assets/banks/scotia.png',
+    'Tangerine': 'src/assets/banks/tangerine.png',
+    'Amex': 'src/assets/banks/amex.png'
   };
 
   if (localAssets[bankKey]) return localAssets[bankKey];

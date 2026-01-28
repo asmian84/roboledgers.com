@@ -23,21 +23,28 @@ CIBC CHEQUING FORMAT:
         const lines = statementText.split('\n');
         const transactions = [];
 
+        // LOUD DIAGNOSTIC
+        console.warn('⚡ [EXTREME-CIBC] Starting metadata extraction for CIBC...');
+        console.error('📄 [DEBUG-CIBC] First 1000 characters (RED for visibility):');
+        console.log(statementText.substring(0, 1000));
+
         // EXTRACT METADATA (Institution, Transit, Account)
-        // CIBC format from screenshot:
-        // Account number 10-57618
-        // Branch transit number 04729
+        // CIBC format: Account number 10-57618, Branch transit number 04729
         const transitMatch = statementText.match(/Branch transit number\s*(\d{5})/i);
         const acctMatch = statementText.match(/Account number\s*([\d-]{5,})/i);
-        const fileMetadata = {
+
+        const metadata = {
             _inst: '010', // CIBC Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            institutionCode: '010',
+            transit: transitMatch ? transitMatch[1] : '-----',
+            accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'CIBC',
             _bank: 'CIBC',
             _tag: 'Chequing'
         };
-        console.log('[CIBC] Extracted Metadata:', fileMetadata);
+        console.warn('🏁 [CIBC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
         // Extract year from statement
         const yearMatch = statementText.match(/20\d{2}/);
@@ -107,7 +114,7 @@ CIBC CHEQUING FORMAT:
         }
 
         console.log(`[CIBC] Parsing complete. Found ${transactions.length} transactions.`);
-        return { transactions };
+        return { transactions, metadata };
     }
 
     /**

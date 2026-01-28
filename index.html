@@ -111,10 +111,7 @@
         </a>
         -->
 
-        <a href="#/vendors" class="nav-item" data-route="/vendors">
-          <i class="ph ph-storefront nav-icon"></i>
-          <span class="nav-label">Vendors</span>
-        </a>
+        <!-- Vendors link removed - Moved to Settings -->
       </div>
 
       <div class="nav-group">
@@ -779,6 +776,10 @@
 
     router.register('/settings/about', () => {
       document.getElementById('app').innerHTML = renderSettings({ panel: 'about' });
+    });
+
+    router.register('/settings/vendors', () => {
+      document.getElementById('app').innerHTML = renderSettings({ panel: 'vendors' });
     });
 
     // Admin routes

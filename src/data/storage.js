@@ -335,14 +335,14 @@ class StorageService {
             console.log('📊 Initializing Chart of Accounts from defaults...');
             accounts = window.DEFAULT_CHART_OF_ACCOUNTS.map(acc => ({
                 id: acc.code,
-                accountNumber: acc.code,
-                name: acc.name,
-                type: acc.type || 'Expense',
-                parentId: null,
-                openingBalance: 0,
+                account_number: acc.code,
+                account_name: acc.name,
+                account_type: acc.type || 'Expense',
+                parent_id: null,
+                opening_balance: 0,
                 active: true,
-                createdAt: this._now(),
-                updatedAt: this._now()
+                created_at: this._now(),
+                updated_at: this._now()
             }));
             this._set(this.keys.accounts, accounts);
 
@@ -363,7 +363,8 @@ class StorageService {
         // Compute currentBalance
         return accounts.map(account => {
             const accountTxns = transactions.filter(t => t.accountId === account.id);
-            const balance = (account.openingBalance || 0) + accountTxns.reduce((sum, t) => {
+            const openBal = account.opening_balance || account.openingBalance || 0;
+            const balance = openBal + accountTxns.reduce((sum, t) => {
                 return sum + (t.type === 'credit' ? t.amount : -t.amount);
             }, 0);
 
@@ -391,14 +392,14 @@ class StorageService {
 
         const account = {
             id: this._generateId(),
-            name: data.name,
-            accountNumber: data.accountNumber || '',
-            type: data.type,
-            parentId: data.parentId || null,
-            openingBalance: data.openingBalance || 0,
+            account_name: data.name,
+            account_number: data.accountNumber || data.account_number || '',
+            account_type: data.type || data.account_type,
+            parent_id: data.parentId || data.parent_id || null,
+            opening_balance: data.openingBalance || data.opening_balance || 0,
             active: data.active !== undefined ? data.active : true,
-            createdAt: this._now(),
-            updatedAt: this._now()
+            created_at: this._now(),
+            updated_at: this._now()
         };
 
         accounts.push(account);

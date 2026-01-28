@@ -10,17 +10,21 @@ window.AccountBalances = {
      * @returns {Object} Map of account name -> balance object
      */
     calculateBalances() {
-        const transactions = JSON.parse(localStorage.getItem('ab3_transactions') || '[]');
-        const coa = JSON.parse(localStorage.getItem('ab3_coa') || '[]');
+        const globalTransactions = JSON.parse(localStorage.getItem('ab3_transactions') || '[]');
+        const multiLedgerData = JSON.parse(localStorage.getItem('ab_v5_multi_ledger') || '{}');
+        const coa = JSON.parse(localStorage.getItem('ab3_accounts') || localStorage.getItem('ab_chart_of_accounts') || localStorage.getItem('ab3_coa') || '[]');
 
         // Initialize balance map for all accounts
         const balanceMap = {};
 
-        // Initialize all accounts with zero balances
+        // 1. Initialize all accounts with zero balances from COA
         coa.forEach(account => {
-            const accountName = account.name || account.accountName;
-            if (accountName) {
-                balanceMap[accountName] = {
+            const accountCode = String(account.code || account.account_number || '');
+            const accountName = account.name || account.accountName || '';
+            if (accountCode) {
+                balanceMap[accountCode] = {
+                    code: accountCode,
+                    name: accountName,
                     debit: 0,
                     credit: 0,
                     balance: 0,
@@ -29,52 +33,66 @@ window.AccountBalances = {
             }
         });
 
-        // Aggregate transaction amounts by account
-        transactions.forEach(txn => {
-            // Get account name from transaction (try multiple fields for compatibility)
-            const accountName = txn.accountDescription || txn.category || txn.account;
+        // 2. Process Global Transactions (Legacy support)
+        globalTransactions.forEach(txn => {
+            const acctCode = String(txn.accountId || txn.AccountId || txn.accountCode || '');
+            if (!acctCode || acctCode === 'Uncategorized') return;
 
-            if (!accountName || accountName === 'Uncategorized') {
-                return; // Skip uncategorized transactions
+            if (!balanceMap[acctCode]) {
+                balanceMap[acctCode] = { code: acctCode, name: txn.account || acctCode, debit: 0, credit: 0, balance: 0, transactionCount: 0 };
             }
 
-            // Initialize if this is a new account (ad-hoc)
-            if (!balanceMap[accountName]) {
-                balanceMap[accountName] = {
-                    debit: 0,
-                    credit: 0,
-                    balance: 0,
-                    transactionCount: 0
-                };
-            }
+            const debit = parseFloat(txn.debit) || (txn.type === 'debit' ? parseFloat(txn.amount) : 0) || 0;
+            const credit = parseFloat(txn.credit) || (txn.type === 'credit' ? parseFloat(txn.amount) : 0) || 0;
 
-            // Get debit/credit amounts
-            let debit = parseFloat(txn.debit) || 0;
-            let credit = parseFloat(txn.credit) || 0;
+            balanceMap[acctCode].debit += debit;
+            balanceMap[acctCode].credit += credit;
+            balanceMap[acctCode].transactionCount++;
+        });
 
-            // Fallback to amount field if debit/credit are zero
-            if (debit === 0 && credit === 0 && txn.amount) {
-                const amount = parseFloat(txn.amount) || 0;
-                if (txn.type === 'debit') {
-                    debit = amount;
-                } else if (txn.type === 'credit') {
-                    credit = amount;
+        // 3. Process Multi-Ledger Transactions (Double Entry Logic)
+        // Each ledger key is the PARENT account (e.g. 1010 Cash)
+        Object.keys(multiLedgerData).forEach(parentCode => {
+            const rows = multiLedgerData[parentCode];
+            rows.forEach(row => {
+                // Determine target account (Categorized side)
+                let targetCode = String(row.accountId || row.AccountId || row.account || '9970');
+                if (targetCode === 'Uncategorized' || targetCode === 'undefined' || targetCode == 'null') targetCode = '9970';
+
+                // Determine base account (Bank/Source side)
+                const baseCode = String(parentCode);
+
+                if (!balanceMap[targetCode]) {
+                    balanceMap[targetCode] = { code: targetCode, name: 'Unusual/Suspense', debit: 0, credit: 0, balance: 0, transactionCount: 0 };
                 }
-            }
+                if (!balanceMap[baseCode]) {
+                    balanceMap[baseCode] = { code: baseCode, name: 'Main Account', debit: 0, credit: 0, balance: 0, transactionCount: 0 };
+                }
 
-            // Aggregate to account
-            balanceMap[accountName].debit += debit;
-            balanceMap[accountName].credit += credit;
-            balanceMap[accountName].transactionCount++;
+                const amt = parseFloat(row.Amount || row.amount || 0);
+
+                // Trial Balance Math:
+                // Credit in statement (Increase Bank) -> Dr Bank, Cr Income/Liability
+                // Debit in statement (Decrease Bank) -> Cr Bank, Dr Expense/Asset
+                if (amt > 0) {
+                    balanceMap[baseCode].debit += amt;
+                    balanceMap[targetCode].credit += amt;
+                } else if (amt < 0) {
+                    const absVal = Math.abs(amt);
+                    balanceMap[baseCode].credit += absVal;
+                    balanceMap[targetCode].debit += absVal;
+                }
+
+                balanceMap[targetCode].transactionCount++;
+                balanceMap[baseCode].transactionCount++;
+            });
         });
 
-        // Calculate net balance for each account
-        Object.keys(balanceMap).forEach(accountName => {
-            const account = balanceMap[accountName];
-            // Net balance = Total Debits - Total Credits
-            account.balance = account.debit - account.credit;
+        // 4. Final Balance Calculation (Net = Dr - Cr)
+        Object.keys(balanceMap).forEach(code => {
+            const acc = balanceMap[code];
+            acc.balance = acc.debit - acc.credit;
         });
-
 
         return balanceMap;
     },
@@ -85,14 +103,15 @@ window.AccountBalances = {
      */
     updateCoABalances() {
         const balanceMap = this.calculateBalances();
-        const coa = JSON.parse(localStorage.getItem('ab3_coa') || '[]');
+        const coaKey = localStorage.getItem('ab3_accounts') ? 'ab3_accounts' : (localStorage.getItem('ab_chart_of_accounts') ? 'ab_chart_of_accounts' : 'ab3_coa');
+        const coa = JSON.parse(localStorage.getItem(coaKey) || '[]');
 
-        // Update each account with its balance
+        // Update each account with its balance using CODE as key
         coa.forEach(account => {
-            const accountName = account.name || account.accountName;
+            const accountCode = String(account.code || account.account_number || '');
 
-            if (accountName && balanceMap[accountName]) {
-                const balanceData = balanceMap[accountName];
+            if (accountCode && balanceMap[accountCode]) {
+                const balanceData = balanceMap[accountCode];
                 account.totalDebit = balanceData.debit;
                 account.totalCredit = balanceData.credit;
                 account.balance = balanceData.balance;

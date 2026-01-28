@@ -53,7 +53,7 @@ class BankLearningService {
     /**
      * Generate fingerprint from statement text
      */
-    async generateFingerprint(text, filename) {
+    async generateFingerprint(text, filename, metadata = {}) {
         // 1. Header signature (first 500 chars, normalized)
         const header = text.substring(0, 500).toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -71,14 +71,20 @@ class BankLearningService {
             dateFormat = 'YYYY-MM-DD';
         }
 
-        // 4. Simple hash of header (no crypto needed, just consistency)
-        const headerHash = this.simpleHash(header);
+        // 4. Statement-specific metadata (Robust Sub-Ledger Mapping)
+        const transit = metadata.transit || (text.match(/transit[:\s]+(\d{5})/i)?.[1] || '---');
+        const acct = metadata.accountNumber || (text.match(/account[:\s\#]+(\d{5,})/i)?.[1] || '---');
+
+        // 5. Simple hash of header (no crypto needed, just consistency)
+        const headerHash = this.simpleHash(header + transit + acct);
 
         return {
             headerHash: headerHash,
             textSignature: header.substring(0, 200), // First 200 chars for fuzzy matching
             linePattern: linePattern,
             dateFormat: dateFormat,
+            transit: transit,
+            accountNumber: acct,
             filename: filename ? filename.toLowerCase() : ''
         };
     }

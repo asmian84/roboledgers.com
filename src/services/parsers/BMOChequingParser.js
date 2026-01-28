@@ -26,17 +26,21 @@ BMO CHEQUING FORMAT:
     async parse(statementText) {
         const lines = statementText.split('\n');
         const transactions = [];
-        let currentYear = new Date().getFullYear();
 
-        if (yearMatch) {
-            currentYear = parseInt(yearMatch[1]);
-        }
+        // LOUD DIAGNOSTIC
+        console.warn('⚡ [EXTREME-BMO] Starting metadata extraction for BMO...');
+        console.error('📄 [DEBUG-BMO] First 1000 characters (RED for visibility):');
+        console.log(statementText.substring(0, 1000));
+
+        // Extract year from statement
+        const yearMatch = statementText.match(/20\d{2}/);
+        let currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
 
         // EXTRACT METADATA (Transit, Account Number)
         let transitMatch = statementText.match(/Transit:?\s*(\d{5})/i);
         let acctMatch = statementText.match(/Account:?\s*(?:number)?\s*(\d{4}[-\s]?\d{4}|\d{7,})/i);
 
-        // BMO Alternative format from screenshot: # 2515 1994-226
+        // BMO Alternative format: # 2515 1994-226
         if (!transitMatch || !acctMatch) {
             const bmoAltMatch = statementText.match(/#\s*(\d{4,5})\s*([\d-]{7,})/);
             if (bmoAltMatch) {
@@ -45,16 +49,19 @@ BMO CHEQUING FORMAT:
             }
         }
 
-        const fileMetadata = {
+        const metadata = {
             _inst: '001', // BMO Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            institutionCode: '001',
+            transit: transitMatch ? transitMatch[1] : '-----',
+            accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'BMO',
             _bank: 'BMO',
             _tag: 'Chequing'
         };
 
-        console.log('[BMO] Extracted Metadata:', fileMetadata);
+        console.warn('🏁 [BMO] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 
         // Date pattern: "Apr 01", "May 16", etc. (Flexible, no start anchor)
         const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
@@ -144,7 +151,7 @@ BMO CHEQUING FORMAT:
         }
 
         console.log('[BMO] Parsing complete. Found', transactions.length, 'transactions.');
-        return { transactions };
+        return { transactions, metadata };
     }
 
     parseLineWithAmounts(fullLine, dateStr, isoDate, amountStrings) {
@@ -217,7 +224,7 @@ BMO CHEQUING FORMAT:
             debit: debit,
             credit: credit,
             balance: balance,
-            ...fileMetadata
+            ...metadata
         };
     }
 

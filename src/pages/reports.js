@@ -20,6 +20,8 @@ window.renderReports = function (params) {
     return renderAccountSummary();
   } else if (report === 'custom') {
     return renderCustomReportBuilder();
+  } else if (report === 'trial-balance') {
+    return renderTrialBalance();
   }
 
   return renderReportsDashboard();
@@ -95,6 +97,13 @@ function renderReportsDashboard() {
             <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Custom Report</h3>
             <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">Build your own custom report</p>
             <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">Build Report →</div>
+          </a>
+
+          <a href="#/reports/trial-balance" class="report-card trial-balance" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s;">
+            <div class="report-icon" style="font-size: 2rem; margin-bottom: 16px;">⚖️</div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 700;">Trial Balance</h3>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.9rem;">CaseWare-style audit reconciliation</p>
+            <div class="report-action" style="color: #8b5cf6; font-weight: 600; font-size: 0.9rem;">View Audit TB →</div>
           </a>
         </div>
       </div>
@@ -446,9 +455,71 @@ function renderCustomReportBuilder() {
       </div>
     </div>
     
+  `;
+}
+
+// ==================================================
+// CASEWARE-STYLE TRIAL BALANCE
+// ==================================================
+
+function renderTrialBalance() {
+  return `
+    <div class="ai-brain-page" style="width: 100%; height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
+      <style>
+        .tb-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+        .tb-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+        .tb-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+        .tb-table tr:hover { background: #f8fafc; }
+        .tb-table .num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+        .tb-table .total-row { background: #f8fafc; font-weight: 700; border-top: 2px solid #e2e8f0; }
+        .tb-status-balanced { color: #10b981; font-weight: 800; }
+        .tb-status-unbalanced { color: #ef4444; font-weight: 800; }
+      </style>
+
+      <div class="fixed-top-section" style="background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button class="btn-back" onclick="router.navigate('/reports')" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #64748b;">←</button>
+          <div>
+              <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Trial Balance (Audit View)</h1>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Consolidated Ledger Reconciliation</p>
+          </div>
+        </div>
+        
+        <div class="report-controls" style="display: flex; align-items: center; gap: 12px;">
+          <div id="tb-balance-indicator" class="tb-status-balanced">✓ BALANCED</div>
+          <button class="btn-secondary" onclick="window.print()" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer;">🖨️ Print TB</button>
+        </div>
+      </div>
+
+      <div class="report-body" style="flex: 1; overflow-y: auto; background: white; padding: 40px;">
+        <div style="max-width: 1000px; margin: 0 auto;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="margin:0; font-size: 1.5rem; letter-spacing: -0.02em;">Trial Balance</h2>
+            <p style="color: #64748b; margin: 5px 0;">As of ${new Date().toLocaleDateString()}</p>
+          </div>
+
+          <table class="tb-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Account</th>
+                <th>Description</th>
+                <th style="text-align: right; width: 140px;">Debit</th>
+                <th style="text-align: right; width: 140px;">Credit</th>
+                <th style="text-align: right; width: 140px;">Net Balance</th>
+              </tr>
+            </thead>
+            <tbody id="tb-table-body">
+              <tr><td colspan="5" style="text-align:center; padding: 40px;">Calculating balances...</td></tr>
+            </tbody>
+            <tfoot id="tb-table-footer"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    
     <script>
-      if (typeof initCustomReportBuilder === 'function') {
-        setTimeout(initCustomReportBuilder, 100);
+      if (typeof initTrialBalance === 'function') {
+        setTimeout(initTrialBalance, 100);
       }
     </script>
   `;
@@ -1057,4 +1128,71 @@ function updateDateRange() {
   //Global date range update
   console.log('Date range updated');
 }
+
+/** CaseWare-Style Trial Balance Logic */
+async function initTrialBalance() {
+  const body = document.getElementById('tb-table-body');
+  const footer = document.getElementById('tb-table-footer');
+  const indicator = document.getElementById('tb-balance-indicator');
+
+  if (!body || !window.AccountBalances) return;
+
+  try {
+    const balanceMap = window.AccountBalances.calculateBalances();
+    const sortedCodes = Object.keys(balanceMap).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    let html = '';
+    let totalDr = 0;
+    let totalCr = 0;
+
+    const fmt = (val) => val === 0 ? '-' : val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    sortedCodes.forEach(code => {
+      const acc = balanceMap[code];
+      if (Math.abs(acc.debit) < 0.001 && Math.abs(acc.credit) < 0.001) return;
+
+      totalDr += acc.debit;
+      totalCr += acc.credit;
+
+      html += `
+        <tr>
+          <td><b style="color: #6366f1;">${acc.code}</b></td>
+          <td>${acc.name}</td>
+          <td class="num">${fmt(acc.debit)}</td>
+          <td class="num">${fmt(acc.credit)}</td>
+          <td class="num" style="font-weight: 700;">${acc.balance < 0 ? '(' + fmt(Math.abs(acc.balance)) + ')' : fmt(acc.balance)}</td>
+        </tr>
+      `;
+    });
+
+    if (html === '') {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;">No transaction data found.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = html;
+    footer.innerHTML = `
+      <tr class="total-row">
+        <td colspan="2" style="padding-left: 16px;">TRIAL BALANCE TOTAL</td>
+        <td class="num" style="border-top: 2px solid #000; border-bottom: 4px double #000;">${fmt(totalDr)}</td>
+        <td class="num" style="border-top: 2px solid #000; border-bottom: 4px double #000;">${fmt(totalCr)}</td>
+        <td class="num" style="border-top: 2px solid #000; border-bottom: 4px double #000;">${fmt(totalDr - totalCr)}</td>
+      </tr>
+    `;
+
+    const diff = Math.abs(totalDr - totalCr);
+    if (diff < 0.01) {
+      indicator.innerHTML = '<i class="ph ph-check-circle"></i> BALANCED TO ZERO';
+      indicator.style.color = '#10b981';
+    } else {
+      indicator.innerHTML = `<i class="ph ph-warning"></i> UNBALANCED (Diff: ${fmt(diff)})`;
+      indicator.style.color = '#ef4444';
+    }
+  } catch (e) {
+    console.error('Trial Balance Error:', e);
+    body.innerHTML = '<tr><td colspan="5" style="color:red;">Error loading report.</td></tr>';
+  }
+}
+
+window.refreshTrialBalance = initTrialBalance;
 

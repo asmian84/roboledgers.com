@@ -62,6 +62,14 @@ window.renderSettings = function (params) {
               <div class="nav-desc">Plan</div>
             </div>
           </a>
+
+          <a href="#/settings/vendors" class="settings-nav-item ${panel === 'vendors' ? 'active' : ''}">
+            <i class="ph ph-buildings"></i>
+            <div>
+              <div class="nav-title">Vendors</div>
+              <div class="nav-desc">Dictionary</div>
+            </div>
+          </a>
           
           <a href="#/settings/about" class="settings-nav-item ${panel === 'about' ? 'active' : ''}">
             <i class="ph ph-info"></i>
@@ -264,6 +272,8 @@ function renderSettingsPanel(panel) {
       return renderSubscriptionPanel();
     case 'about':
       return renderAboutPanel();
+    case 'vendors':
+      return renderVendorsPanel();
     default:
       return renderGeneralPanel();
   }
@@ -1071,6 +1081,10 @@ async function initSettingsPage(panel) {
           console.log(`📦 Compact mode: ${enabled}`);
         });
       }
+    } else if (panel === 'vendors') {
+      if (window.initVendorsGrid) {
+        setTimeout(() => window.initVendorsGrid(), 50);
+      }
     } else if (panel === 'about') {
       // Populate system info
       document.getElementById('browser-info').textContent = navigator.userAgent.split(' ').pop();
@@ -1426,6 +1440,47 @@ function renderAccountsList() {
     `;
   }).join('');
 }
+
+// ==================================================
+// VENDORS PANEL
+// ==================================================
+function renderVendorsPanel() {
+  return `
+    <div class="settings-panel">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+        <div>
+          <h2>Vendor Dictionary</h2>
+          <p class="panel-description">Manage merchant aliases and default category assignments.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="window.showAddVendorModal()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem;">
+          <i class="ph ph-plus-circle"></i> Add Vendor
+        </button>
+      </div>
+
+      <div class="form-section">
+        <h3>Primary Dictionary</h3>
+        <div id="vendors-list" style="display: grid; gap: 8px;">
+          <div class="loading-state">Loading merchant database...</div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Categorization Logic</h3>
+        <div class="form-group">
+          <label>Default Catch-all Account</label>
+          <select id="vendor-default-fallback" onchange="saveVendorGlobalSettings()">
+             <option value="9970">9970 - Review Required</option>
+             <option value="5000">5000 - General Expenses</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.showAddVendorModal = function () {
+  alert('Vendor Management Bridge: Coming in V5.2. Use the dictionary mapping service in the meantime.');
+};
 
 window.deleteAccountSettings = function (accountId) {
   if (confirm('Are you sure you want to delete this account? ALL transactions will be lost forever!')) {

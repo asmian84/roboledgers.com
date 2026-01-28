@@ -8,12 +8,33 @@ class ScotiaCreditCardParser extends BaseBankParser {
     }
 
     async parse(statementText) {
+        // LOUD DIAGNOSTIC
+        console.warn('⚡ [EXTREME-SCOTIA-CC] Starting metadata extraction for Scotiabank CC...');
+        console.error('📄 [DEBUG-SCOTIA-CC] First 1000 characters (RED for visibility):');
+        console.log(statementText.substring(0, 1000));
+
         const lines = statementText.split('\n');
         const transactions = [];
+
+        // EXTRACT METADATA (Institution, Transit, Account)
+        const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+        const metadata = {
+            _inst: '002', // Scotiabank Institution Code
+            _transit: '-----',
+            _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            institutionCode: '002',
+            transit: '-----',
+            accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
+            _brand: 'Scotiabank',
+            _bank: 'Scotiabank',
+            _tag: 'CreditCard'
+        };
+        console.warn('🏁 [SCOTIA-CC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+
         let currentYear = new Date().getFullYear();
 
         // Extract year
-        const yearMatch = text.match(/(\d{4})/);
+        const yearMatch = statementText.match(/(\d{4})/);
         if (yearMatch) currentYear = parseInt(yearMatch[1]);
 
         // Date formats: "MM/DD/YYYY" or "MMM DD"
@@ -84,7 +105,7 @@ class ScotiaCreditCardParser extends BaseBankParser {
         }
 
         console.log(`[SCOTIA-CC] Parsed ${transactions.length} transactions`);
-        return { transactions };
+        return { transactions, metadata };
     }
 }
 

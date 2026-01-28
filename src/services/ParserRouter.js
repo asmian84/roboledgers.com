@@ -64,18 +64,41 @@ class ParserRouter {
         console.log(`📍 Routing to: ${detection.parserName}`);
 
         // Step 2: Get the specific parser
-        const parserKey = detection.parserName; // Use the parserName from detection (might be learned)
-        const parser = this.parsers[parserKey];
+        const parserKey = detection.parserName;
+        let parser = this.parsers[parserKey];
 
         if (!parser) {
-            throw new Error(`No parser found for ${parserKey}. Available: ${Object.keys(this.parsers).join(', ')}`);
+            console.warn(`⚠️ No specific parser for ${parserKey}, falling back to Smart Parser`);
+            if (window.pdfParser) {
+                const smartResult = await window.pdfParser.parsePDF({
+                    arrayBuffer: async () => new TextEncoder().encode(statementText).buffer,
+                    name: filename
+                });
+                // Adapt smartResult to expected format
+                return {
+                    transactions: smartResult.transactions,
+                    brandDetection: {
+                        ...detection,
+                        institutionCode: smartResult.metadata?.institutionCode || detection.institutionCode || '---',
+                        transit: smartResult.metadata?.transit || detection.transit || '-----',
+                        accountNumber: smartResult.metadata?.accountNumber || detection.accountNumber || '-----'
+                    }
+                };
+            }
+            throw new Error(`No parser found for ${parserKey} and no Smart Parser fallback.`);
         }
 
         // Step 3: Parse with brand-specific parser
         console.log(`🤖 Step 2: Parsing with ${parserKey} parser...`);
-        let result = await parser.parse(statementText);
+        let result = await parser.parse(statementText, detection);
 
         // Step 4: Add brand info to result
+        // CRITICAL: Prefer metadata from the specific parser result if it exists and isn't a placeholder
+        const firstTxn = result.transactions[0] || {};
+        const pInst = (firstTxn._inst && firstTxn._inst !== '---') ? firstTxn._inst : (detection.institutionCode || '---');
+        const pTransit = (firstTxn._transit && firstTxn._transit !== '-----') ? firstTxn._transit : (detection.transit || '-----');
+        const pAcctNum = (firstTxn._acct && firstTxn._acct !== '-----') ? firstTxn._acct : (detection.accountNumber || '-----');
+
         result.brandDetection = {
             brand: detection.brand,
             fullBrandName: detection.fullBrandName,
@@ -84,10 +107,13 @@ class ParserRouter {
             prefix: detection.prefix || 'TXN',
             tag: detection.tag || detection.accountType,
             confidence: detection.confidence,
-            institutionCode: detection.institutionCode || result.transactions[0]?._inst || '---',
-            transit: detection.transit || result.transactions[0]?._transit || '-----',
-            accountNumber: detection.accountNumber || result.transactions[0]?._acct || '-----'
+            institutionCode: pInst,
+            transit: pTransit,
+            accountNumber: pAcctNum
         };
+
+        console.log('🔍 [ParserRouter] Brand Metadata Result:');
+        console.table(result.brandDetection);
 
         // CRITICAL FIX: Inject brand into EACH transaction so it survives array flattening
         result.transactions.forEach(tx => {
@@ -96,9 +122,14 @@ class ParserRouter {
             tx._accountType = detection.accountType; // e.g. "Chequing"
             tx._prefix = detection.prefix || 'TXN'; // e.g. "CHQ"
             tx._tag = detection.tag || detection.accountType; // e.g. "Chequing"
-            tx._inst = tx._inst || detection.institutionCode || '---';
-            tx._transit = tx._transit || detection.transit || '-----';
-            tx._acct = tx._acct || detection.accountNumber || '-----';
+
+            // Injection logic: Use detected metadata if transaction-level data is missing or just placeholders
+            if (!tx._inst || tx._inst === '---') tx._inst = result.brandDetection.institutionCode;
+            if (!tx._transit || tx._transit === '-----') tx._transit = result.brandDetection.transit;
+            if (!tx._acct || tx._acct === '-----') tx._acct = result.brandDetection.accountNumber;
+
+            // Attach fingerprint for learning
+            if (detection.fingerprint) tx._fingerprint = detection.fingerprint;
         });
 
         // Step 5: Run Validation Engine (silent auto-fix)

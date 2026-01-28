@@ -32,12 +32,17 @@ function calculateLevenshteinDistance(str1, str2) {
 
 // Calculate similarity score (0-1, where 1 is identical)
 function calculateSimilarity(str1, str2) {
+    if (str1 === str2) return 1.0;
+
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
 
     if (longer.length === 0) {
         return 1.0;
     }
+
+    // Optimization: If length difference is too great, it can't possibly meet threshold
+    // E.g. if threshold is 0.7, then shorter.length must be at least 0.7 * longer.length
 
     const distance = calculateLevenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;
@@ -171,26 +176,36 @@ async function smartCategorize(description, vendors) {
         };
     }
 
-    // --- STEP 3: Keyword/MCC Pattern Match ---
-    // Uses local heuristic "suggestCategory" logic from original code
+    // --- STEP 3: Keyword/MCC Pattern Match (Dictionary First) ---
+    // PRIORITIZE: User's custom vendor dictionary keyword rules
     const suggestedCategory = suggestCategory(cleanDesc);
-    const categoryAccountMap = {
-        'Utilities': '6800',
-        'Office Supplies': '6700',
-        'Meals & Entertainment': '6300',
-        'Travel': '6600',
-        'Vehicle': '6400',
-        'Insurance': '6500',
-        'Professional Services': '6900',
-        'Software': '6700'
-    };
+    const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
 
-    if (suggestedCategory && categoryAccountMap[suggestedCategory]) {
+    // Dynamic lookup: Try to find an account that matches the suggested category name
+    let categoryAccount = coa.find(a => a.name.toUpperCase() === suggestedCategory.toUpperCase());
+
+    // Fallback mapping for common categories if dynamic lookup fails
+    if (!categoryAccount) {
+        const categoryAccountMap = {
+            'Utilities': coa.find(a => a.code.startsWith('68'))?.code || '6800',
+            'Office Supplies': coa.find(a => a.code.startsWith('67'))?.code || '6700',
+            'Meals & Entertainment': coa.find(a => a.code.startsWith('63'))?.code || '6300',
+            'Travel': coa.find(a => a.code.startsWith('66'))?.code || '6600',
+            'Vehicle': coa.find(a => a.code.startsWith('64'))?.code || '6400',
+            'Insurance': coa.find(a => a.code.startsWith('65'))?.code || '6500',
+            'Professional Services': coa.find(a => a.code.startsWith('69'))?.code || '6900',
+            'Software': coa.find(a => a.code.startsWith('67'))?.code || '6700'
+        };
+        const fallbackCode = suggestedCategory && categoryAccountMap[suggestedCategory];
+        if (fallbackCode) categoryAccount = { code: fallbackCode };
+    }
+
+    if (suggestedCategory && categoryAccount) {
         const proposedName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
         return {
             vendorId: null,
             vendorName: proposedName,
-            accountId: categoryAccountMap[suggestedCategory],
+            accountId: categoryAccount.code,
             isNew: true,
             confidence: 0.8,
             method: 'Keyword Pattern'
@@ -236,7 +251,7 @@ async function smartCategorize(description, vendors) {
     // Ensure we never return null/empty. Force to "Suspense" (9970)
     const fallbackName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-    return {
+    const finalResult = {
         vendorId: null,
         accountId: '9970', // Automated Suspense / Review Required
         vendorName: fallbackName,
@@ -244,6 +259,8 @@ async function smartCategorize(description, vendors) {
         confidence: 0,
         method: 'Forced Fallback'
     };
+
+    return finalResult;
 }
 
 // Normalize vendor name (clean up common variations)

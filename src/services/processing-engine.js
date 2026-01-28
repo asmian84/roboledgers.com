@@ -44,6 +44,7 @@ class ProcessingEngine {
      * @returns {Promise<Array>} Parsed transactions
      */
     async parseFiles(files, progressCallback) {
+        console.time('ProcessingEngine.parseFiles');
         this.log('log', 'Starting file parsing', { fileCount: files.length });
         const allTransactions = [];
 
@@ -56,9 +57,12 @@ class ProcessingEngine {
             this.log('log', `Parsing file ${current}/${total}`, { filename: file.name });
 
             try {
+                const startTime = performance.now();
                 const transactions = await this._parseFile(file, (progress) => {
                     progressCallback(current, total, `${file.name}: ${progress}%`);
                 });
+                const endTime = performance.now();
+                console.log(`[ProcessingEngine] Parsed ${file.name} in ${(endTime - startTime).toFixed(2)}ms (${transactions.length} txns)`);
 
                 allTransactions.push(...transactions);
                 this.log('log', `File parsed successfully`, {
@@ -77,6 +81,7 @@ class ProcessingEngine {
         }
 
         this.log('log', 'File parsing complete', { totalTransactions: allTransactions.length });
+        console.timeEnd('ProcessingEngine.parseFiles');
         return allTransactions;
     }
 
@@ -135,6 +140,7 @@ class ProcessingEngine {
      * @returns {Promise<Array>} Categorized transactions
      */
     async categorizeTransactions(transactions, progressCallback) {
+        console.time('ProcessingEngine.categorizeTransactions');
         this.log('log', 'Starting categorization', { count: transactions.length });
 
         // Fetch vendors for the 7-step engine
@@ -149,7 +155,14 @@ class ProcessingEngine {
                 if (!transaction.accountId || transaction.accountId === 'Uncategorized' || transaction.accountId === '9970' || !transaction.vendorId) {
                     // 7-Step Smart Categorization Logic
                     // Now ASYNC to support AI calls
+                    const startTime = performance.now();
                     const result = await window.VendorMatcher.smartCategorize(transaction.description, vendors);
+                    const endTime = performance.now();
+
+                    // Log individual transaction performance if it takes > 50ms
+                    if (endTime - startTime > 50) {
+                        console.warn(`[ProcessingEngine] Heavy categorization for "${transaction.description}": ${(endTime - startTime).toFixed(2)}ms`);
+                    }
 
                     if (result) {
                         transaction.vendorId = result.vendorId;
@@ -168,7 +181,13 @@ class ProcessingEngine {
 
                 completed++;
                 const progress = Math.round((completed / total) * 100);
-                progressCallback(progress, `Categorizing... ${completed}/${total}`);
+
+                // Frequency capping for UI updates to prevent UI thread flooding
+                if (completed % 5 === 0 || completed === total) {
+                    progressCallback(progress, `Categorizing... ${completed}/${total}`);
+                    // Yield to browser periodically
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
             }
         } catch (err) {
             this.log('error', 'Categorization loop error', err);
@@ -179,6 +198,7 @@ class ProcessingEngine {
             categorized: transactions.filter(t => t.accountId).length
         });
 
+        console.timeEnd('ProcessingEngine.categorizeTransactions');
         return transactions;
     }
 

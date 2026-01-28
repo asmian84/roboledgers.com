@@ -14,7 +14,7 @@ class BaseBankParser {
      * @param {string} text 
      * @returns {Object|null} { transactions: [] } or null if not implemented/failed
      */
-    parseWithRegex(text) {
+    parseWithRegex(text, metadata = null) {
         return null; // Default implementation returns null to trigger AI fallback
     }
 
@@ -24,11 +24,11 @@ class BaseBankParser {
      * @param {string} statementText 
      * @returns {Promise<Object>}
      */
-    async parse(statementText) {
+    async parse(statementText, metadata = null) {
         // 1. Try Local Regex Parsing First (Free, Private, Fast)
         try {
             console.log(`⚡ BaseBankParser: Attempting local REGEX parsing for ${this.bankName}...`);
-            const regexResult = this.parseWithRegex(statementText);
+            const regexResult = this.parseWithRegex(statementText, metadata);
 
             if (regexResult && regexResult.transactions && regexResult.transactions.length > 0) {
                 console.log(`✅ Regex parsing successful: ${regexResult.transactions.length} transactions found.`);
