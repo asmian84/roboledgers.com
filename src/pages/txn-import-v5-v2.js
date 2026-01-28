@@ -8170,13 +8170,31 @@ function updateBrandDisplay(detection) {
     const transitStyle = transit === '-----' ? 'color: #ef4444; font-weight: 800;' : 'font-weight: 700;';
     const accountStyle = account === '-----' ? 'color: #ef4444; font-weight: 800;' : 'font-weight: 700;';
 
-    infoLine.innerHTML = `
-      <span>INST: <b>${inst}</b></span>
-      <span class="sep">|</span>
-      <span>TRANSIT: <b style="${transitStyle}">${transit}</b></span>
-      <span class="sep">|</span>
-      <span>ACCOUNT: <b style="${accountStyle}">${account}</b></span>
-    `;
+    const isCreditCard = (tagVal && (
+      tagVal.toUpperCase().includes('VISA') ||
+      tagVal.toUpperCase().includes('MASTERCARD') ||
+      tagVal.toUpperCase().includes('CREDIT') ||
+      tagVal.toUpperCase().includes('AMEX')
+    ));
+
+    if (isCreditCard) {
+      // CLEAN UI FOR CREDIT CARDS
+      infoLine.innerHTML = `
+        <span style="font-weight: 600; color: #334155; opacity: 0.8;">
+          <i class="ph ph-credit-card" style="margin-right: 4px;"></i>
+          ${bankVal} / ${tagVal}
+        </span>
+      `;
+    } else {
+      // STANDARD UI FOR BANK ACCOUNTS (Chequing/Savings)
+      infoLine.innerHTML = `
+        <span>INST: <b>${inst}</b></span>
+        <span class="sep">|</span>
+        <span>TRANSIT: <b style="${transitStyle}">${transit}</b></span>
+        <span class="sep">|</span>
+        <span>ACCOUNT: <b style="${accountStyle}">${account}</b></span>
+      `;
+    }
     infoLine.style.display = 'flex';
   }
 }
