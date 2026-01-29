@@ -75,7 +75,6 @@ if (!window.V5State) {
       },
       shortcuts: {
         refBox: true,
-        expandAll: true,
         autoCat: true,
         search: true,
         undo: false,
@@ -83,7 +82,7 @@ if (!window.V5State) {
         startOver: false,
         popout: false
       },
-      shortcutsOrder: ['refBox', 'expandAll', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search']
+      shortcutsOrder: ['refBox', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search']
     }
   };
 }
@@ -558,7 +557,7 @@ window.renderV5Shortcuts = function () {
   if (!container) return;
 
   const s = V5State.settings;
-  const order = s.shortcutsOrder || ['refBox', 'expandAll', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search'];
+  const order = s.shortcutsOrder || ['refBox', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search'];
   const visibility = s.shortcuts || {};
 
   // Ensure the Action Bar itself is visible if we have data
@@ -731,31 +730,6 @@ window.filterV5ByRef = function (refText) {
 }
 
 
-// Toggle expand/collapse all with single button
-window.toggleExpandCollapseAll = function () {
-  if (!V5State.gridApi) return;
-
-  const btn = document.getElementById('v5-expand-toggle-btn');
-  const icon = document.getElementById('v5-expand-toggle-icon');
-  const text = document.getElementById('v5-expand-toggle-text');
-
-  // Check current state (if icon is caret-down, we're in "collapsed" state)
-  const isCollapsed = icon.classList.contains('ph-caret-down');
-
-  if (isCollapsed) {
-    // Expand all
-    V5State.gridApi.forEachNode(node => node.setExpanded(true));
-    icon.classList.remove('ph-caret-down');
-    icon.classList.add('ph-caret-up');
-    text.textContent = 'Collapse All';
-  } else {
-    // Collapse all
-    V5State.gridApi.forEachNode(node => node.setExpanded(false));
-    icon.classList.remove('ph-caret-up');
-    icon.classList.add('ph-caret-down');
-    text.textContent = 'Expand All';
-  }
-}
 
 // Settings panel - Open the Phase 2 slide-in panel
 window.toggleV5Settings = function () {
@@ -3714,12 +3688,6 @@ window.renderTxnImportV5Page = function () {
                    style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
                    oninput="window.updateRefPrefix(this.value)">
           </div>
-
-          <!-- Expand/Collapse Toggle (Single Button) -->
-          <button class="btn-action-secondary" id="v5-shortcut-expandAll" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="window.toggleExpandCollapseAll()" style="cursor: move;">
-            <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
-            <span id="v5-expand-toggle-text">Expand All</span>
-          </button>
 
           <!-- New Primary Shortcuts -->
           <button class="btn-icon-secondary" id="v5-shortcut-undo" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="undoV5()" title="Undo" style="cursor: move;">
@@ -9787,14 +9755,10 @@ function updateBrandDisplay(detection) {
     return;
   }
 
-  // Sync Ref# Prefix if detected
+  // Sync Ref# Prefix if detected - Use updateRefPrefix for full sync
   if (detection.prefix && detection.prefix !== V5State.refPrefix) {
-    V5State.refPrefix = detection.prefix;
-    const refInput = document.getElementById('v5-ref-input');
-    if (refInput) {
-      refInput.value = detection.prefix;
-      console.log(`🏷️ Persisted Ref# Sync: ${detection.prefix}`);
-    }
+    console.log(`🏷️ Auto-setting Ref# prefix from detection: ${detection.prefix}`);
+    window.updateRefPrefix(detection.prefix);
   }
 
   const bankVal = detection.brand;

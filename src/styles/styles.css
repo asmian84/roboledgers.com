@@ -6551,7 +6551,7 @@ button {
 }
 
 .btn-action-blue {
-  padding: 8px 14px;
+  padding: 6px 10px;
   background: var(--primary-color);
   color: white;
   border: none;
@@ -6597,7 +6597,7 @@ button {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  min-width: 250px;
+  min-width: 300px;
 }
 
 .v5-search-compact i {
