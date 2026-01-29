@@ -7000,7 +7000,7 @@ window.renderAuditCrop = async (rowId, canvasId, auditData) => {
     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const page = await pdf.getPage(auditData.page);
 
-    const scale = 2.0; // High quality crop
+    const scale = 3.0; // Increased from 2.0 for larger, sharper crops
     const viewport = page.getViewport({ scale });
 
     const renderCanvas = document.createElement('canvas');
@@ -7015,7 +7015,7 @@ window.renderAuditCrop = async (rowId, canvasId, auditData) => {
     // Extract slice centered at auditData.y
     // PDF coordinates are bottom-up, Viewport is top-down
     const canvasCtx = canvas.getContext('2d');
-    const boxHeight = 100; // UI height
+    const boxHeight = 150; // Increased from 100 for better visibility
     canvas.width = viewport.width;
     canvas.height = boxHeight * scale;
 
