@@ -6384,6 +6384,32 @@ window.parseV5Files = async function () {
       });
     }
 
+    // EXTRACT OPENING BALANCE from first (oldest) statement
+    // This runs on EVERY upload to ensure opening balance is always from the first statement
+    if (V5State.gridData && V5State.gridData.length > 0) {
+      // Find the earliest transaction date across ALL transactions
+      const dates = V5State.gridData.map(t => new Date(t.date || t.Date));
+      const earliestDate = new Date(Math.min(...dates));
+
+      console.log(`📅 Earliest transaction date in grid: ${earliestDate.toISOString().split('T')[0]}`);
+
+      // If this upload has an opening balance, use it
+      if (brandDetection.openingBalance) {
+        V5State.openingBalance = brandDetection.openingBalance;
+        console.log(`💰 Opening balance set from statement: ${brandDetection.openingBalance}`);
+
+        // Update reconciliation card
+        if (window.updateReconciliationCard) {
+          window.updateReconciliationCard();
+        }
+
+        // Recalculate all balances with the new opening balance
+        if (window.recalculateAllBalances) {
+          window.recalculateAllBalances();
+        }
+      }
+    }
+
     // Hide empty state if visible
     const emptyState = document.getElementById('v5-empty-state');
     if (emptyState) emptyState.style.display = 'none';
@@ -7093,15 +7119,15 @@ popperStyle.textContent = `
     .v5-smart-popper {
       position: fixed;
       z-index: 10000;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 2px solid rgba(139, 92, 246, 0.3);
       box-shadow: 
         0 4px 6px -1px rgba(0, 0, 0, 0.1), 
         0 2px 4px -1px rgba(0, 0, 0, 0.06),
-        0 20px 25px -5px rgba(0, 0, 0, 0.1), 
-        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        0 20px 25px -5px rgba(0, 0, 0, 0.2), 
+        0 10px 10px -5px rgba(0, 0, 0, 0.08);
       border-radius: 12px;
       padding: 16px;
       width: 400px;
@@ -7151,7 +7177,7 @@ popperStyle.textContent = `
 
     .v5-smart-popper-raw {
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 0.8rem;
+      font-size: 1.04rem;
       color: #1e293b;
       background: rgba(255, 255, 255, 0.6);
       padding: 10px;

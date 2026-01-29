@@ -27,6 +27,15 @@ TD VISA FORMAT:
 
         // EXTRACT METADATA (Institution, Transit, Account)
         const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+
+        // Extract opening balance (Previous Balance for credit cards)
+        let openingBalance = null;
+        const openingMatch = statementText.match(/(Opening|Previous) Balance.*?\$?([\d,]+\.\d{2})/i);
+        if (openingMatch) {
+            openingBalance = parseFloat(openingMatch[2].replace(/,/g, ''));
+            console.log(`[TD-VISA] Extracted opening balance: ${openingBalance}`);
+        }
+
         const metadata = {
             _inst: '004', // TD Institution Code
             _transit: '-----',
@@ -36,7 +45,8 @@ TD VISA FORMAT:
             accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'TD',
             _bank: 'TD Visa',
-            _tag: 'CreditCard'
+            _tag: 'CreditCard',
+            openingBalance: openingBalance
         };
         console.warn('🏁 [TD-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 

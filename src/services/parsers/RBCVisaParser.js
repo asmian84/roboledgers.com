@@ -24,6 +24,15 @@ RBC VISA FORMAT:
 
         // EXTRACT METADATA (Institution, Transit, Account)
         const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
+
+        // Extract opening balance (Previous Balance for credit cards)
+        let openingBalance = null;
+        const openingMatch = statementText.match(/Previous Balance.*?\$?([\d,]+\.\d{2})/i);
+        if (openingMatch) {
+            openingBalance = parseFloat(openingMatch[1].replace(/,/g, ''));
+            console.log(`[RBC-VISA] Extracted opening balance: ${openingBalance}`);
+        }
+
         const metadata = {
             _inst: '003', // RBC Institution Code
             _transit: '-----',
@@ -33,7 +42,8 @@ RBC VISA FORMAT:
             accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'RBC',
             _bank: 'RBC Visa',
-            _tag: 'CreditCard'
+            _tag: 'CreditCard',
+            openingBalance: openingBalance
         };
         console.warn('🏁 [RBC-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
 

@@ -49,6 +49,14 @@ BMO CHEQUING FORMAT:
             }
         }
 
+        // Extract opening balance
+        let openingBalance = null;
+        const openingMatch = statementText.match(/Opening balance.*?([\d,]+\.\d{2})/i);
+        if (openingMatch) {
+            openingBalance = parseFloat(openingMatch[1].replace(/,/g, ''));
+            console.log(`[BMO] Extracted opening balance: ${openingBalance}`);
+        }
+
         const metadata = {
             _inst: '001', // BMO Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
@@ -58,7 +66,8 @@ BMO CHEQUING FORMAT:
             accountNumber: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
             _brand: 'BMO',
             _bank: 'BMO',
-            _tag: 'Chequing'
+            _tag: 'Chequing',
+            openingBalance: openingBalance
         };
 
         console.warn('🏁 [BMO] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);

@@ -149,12 +149,35 @@
 
         let firstTopPx = null;
 
-        highlightYs.forEach(item => {
+        highlightYs.forEach((item, index) => {
           // Convert PDF Y (bottom-up) to Viewport Y (top-down)
           // Y=0 is bottom left in PDF.
           const yFromTopPt = pageHeightPt - item.y;
           const topPx = (yFromTopPt * scale) - (item.h * scale);
           const heightPx = (item.h || 20) * scale;
+
+          // 🐛 DEBUG LOGGING
+          console.group(`🔍 PDF Highlight #${index + 1} Debug`);
+          console.log('📄 PDF Coordinates (bottom-up):', {
+            targetY: item.y,
+            targetHeight: item.h,
+            pageHeightPt: pageHeightPt
+          });
+          console.log('🔄 Conversion to Top-Down:', {
+            yFromTopPt: yFromTopPt,
+            formula: `${pageHeightPt} - ${item.y} = ${yFromTopPt}`
+          });
+          console.log('📐 Scale & Pixel Calculation:', {
+            scale: scale,
+            topPx: topPx,
+            heightPx: heightPx,
+            formula: `(${yFromTopPt} * ${scale}) - (${item.h} * ${scale}) = ${topPx}`
+          });
+          console.log('🎯 Final CSS Position:', {
+            top: `${topPx}px`,
+            height: `${heightPx}px`
+          });
+          console.groupEnd();
 
           if (firstTopPx === null || topPx < firstTopPx) {
             firstTopPx = topPx;

@@ -78,6 +78,14 @@ SMART PARSING RULES:
       if (filenameMatch) fallbackAcct = `...${filenameMatch[1]}`;
     }
 
+    // Extract opening balance
+    let openingBalance = null;
+    const openingMatch = text.match(/Opening Balance.*?\$?([\d,]+\.\d{2})/i);
+    if (openingMatch) {
+      openingBalance = parseFloat(openingMatch[1].replace(/,/g, ''));
+      console.log(`[RBC] Extracted opening balance: ${openingBalance}`);
+    }
+
     this.metadata = {
       _inst: '003', // RBC Institution Code
       _transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
@@ -87,7 +95,8 @@ SMART PARSING RULES:
       accountNumber: transitAcctMatch ? (transitAcctMatch[2] || fallbackAcct) : fallbackAcct,
       _brand: 'RBC',
       _bank: 'RBC',
-      _tag: 'Chequing'
+      _tag: 'Chequing',
+      openingBalance: openingBalance
     };
     console.warn('🏁 [RBC] Extraction Phase Complete. Transit:', this.metadata.transit, 'Acct:', this.metadata.accountNumber);
 
