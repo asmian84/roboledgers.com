@@ -84,7 +84,7 @@ CIBC CHEQUING FORMAT:
                 const lineAfterDate = trimmed.substring(dateMatch[0].length).trim();
 
                 // Try to extract transaction
-                const extracted = this.extractTransaction(lineAfterDate, currentDate);
+                const extracted = this.extractTransaction(lineAfterDate, currentDate, trimmed);
                 if (extracted) {
                     transactions.push(extracted);
                 } else if (lineAfterDate) {
@@ -92,7 +92,7 @@ CIBC CHEQUING FORMAT:
                 }
             } else if (currentDate) {
                 // No date - continuation or new transaction for same date
-                const extracted = this.extractTransaction(trimmed, currentDate);
+                const extracted = this.extractTransaction(trimmed, currentDate, trimmed);
                 if (extracted) {
                     // Merge pending description if exists
                     if (pendingDescription) {
@@ -120,7 +120,7 @@ CIBC CHEQUING FORMAT:
     /**
      * Extract transaction from line with amounts
      */
-    extractTransaction(text, dateStr) {
+    extractTransaction(text, dateStr, originalLine = '') {
         if (!text) return null;
 
         // Pattern: Description | Withdrawals | Deposits | Balance
@@ -175,7 +175,8 @@ CIBC CHEQUING FORMAT:
             _inst: '010',
             _brand: 'CIBC',
             _bank: 'CIBC',
-            _tag: 'Chequing'
+            _tag: 'Chequing',
+            rawText: this.cleanRawText(originalLine || text)
         };
     }
 

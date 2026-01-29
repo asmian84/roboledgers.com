@@ -21,9 +21,13 @@ SMART PARSING RULES:
     /**
      * Parse TD Chequing statement using regex
      */
-    async parse(statementText) {
+    async parse(statementText, metadata = null, lineMetadata = []) {
         console.log('⚡ TD Chequing: Starting regex-based parsing...');
         console.log('[TD-DEBUG] First 500 chars of text:', statementText.substring(0, 500));
+
+        // [PHASE 4] Store metadata for audit
+        this.lastLineMetadata = lineMetadata;
+        const pageCounts = {};
 
         const lines = statementText.split('\n');
         const transactions = [];
@@ -38,7 +42,7 @@ SMART PARSING RULES:
         const transitMatch = statementText.match(/(?:Branch No\.|Transit)[:#]?\s*(\d{4,5})/i);
         const acctMatch = statementText.match(/(?:Account No\.|Account)[:#]?\s*([\d-]{7,})/i);
 
-        const metadata = {
+        const metaObj = {
             _inst: '004', // TD Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -49,7 +53,7 @@ SMART PARSING RULES:
             _bank: 'TD',
             _tag: 'Chequing'
         };
-        console.warn('🏁 [TD] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [TD] Extraction Phase Complete. Transit:', metaObj.transit, 'Acct:', metaObj.accountNumber);
 
         // Extract year from statement (usually at top)
         const yearMatch = statementText.match(/20\d{2}/);
@@ -58,6 +62,7 @@ SMART PARSING RULES:
 
         let currentDate = null;
         let pendingDescription = '';
+        let pendingLineCount = 0; // Track lines for multi-line transactions
         let lastMonth = null;
 
         // Date regex: "JAN 15", "FEB02" (flexible spacing, no start anchor)
@@ -77,6 +82,9 @@ SMART PARSING RULES:
             if (trimmed.match(/^(Debits|Credits)\s+\d/i)) continue; // Counts like "Debits 5"
 
             console.log('[TD-DEBUG] Line:', trimmed);
+
+            // Find valid audit metadata for this line
+            const currentAudit = this.findAuditMetadata(trimmed, this.lastLineMetadata);
 
             // Find date anywhere in the line
             const dateMatch = trimmed.match(dateRegex);
@@ -104,52 +112,99 @@ SMART PARSING RULES:
                     // STANDARD PERSONAL FORMAT: Date | Description | Amounts...
                     // Remove date from line to get description part
                     const lineAfterDate = trimmed.substring(dateMatch[0].length).trim();
-                    console.log('[TD-DEBUG] Mode: Date-First. Remainder:', lineAfterDate);
 
                     const extracted = this.extractTransaction(lineAfterDate, currentDate);
                     if (extracted) {
+                        if (currentAudit) {
+                            if (!pageCounts[currentAudit.page]) pageCounts[currentAudit.page] = 0;
+                            const idx = ++pageCounts[currentAudit.page];
+                            extracted.audit = {
+                                ...currentAudit,
+                                lineCount: 1,
+                                lineIndex: idx
+                            };
+                        }
                         transactions.push(extracted);
                     } else if (lineAfterDate) {
+                        // Start of multi-line
                         pendingDescription = lineAfterDate;
+                        pendingLineCount = 1;
                     }
 
                 } else {
                     // BUSINESS FORMAT: Description | Debit/Credit | Date | Balance
-                    // e.g. "Monthly Fee 19.00 AUG 31 10,062.72"
-                    console.log('[TD-DEBUG] Mode: Business (Date Middle). Processing...');
-
                     const extracted = this.extractBusinessTransaction(trimmed, dateMatch, currentDate);
                     if (extracted) {
+                        if (currentAudit) {
+                            if (!pageCounts[currentAudit.page]) pageCounts[currentAudit.page] = 0;
+                            const idx = ++pageCounts[currentAudit.page];
+                            extracted.audit = {
+                                ...currentAudit,
+                                lineCount: 1,
+                                lineIndex: idx
+                            };
+                        }
                         transactions.push(extracted);
                     }
                 }
 
             } else if (currentDate) {
                 // No date - continuation line?
-                // For Business Format, continuations are harder because amounts might align to columns.
-                // Fallback to standard extraction just in case
                 const extracted = this.extractTransaction(trimmed, currentDate);
                 if (extracted) {
+                    // Transaction matched on THIS line (the continuation/end line)
                     if (pendingDescription) {
                         extracted.description = pendingDescription + ' ' + extracted.description;
                         extracted.description = this.cleanTDDescription(extracted.description);
-                        pendingDescription = '';
                     }
+
+                    // AUDIT LOGIC
+                    if (currentAudit) {
+                        if (!pageCounts[currentAudit.page]) pageCounts[currentAudit.page] = 0;
+                        const idx = ++pageCounts[currentAudit.page];
+
+                        const totalLines = pendingLineCount + 1;
+
+                        // Adjust Y upwards if multi-line (PDF coordinates are bottom-up)
+                        // currentAudit.y is the baseline of the current (bottom) line.
+                        // We want approx top of the block.
+                        // Actually, let's keep Y as the *anchor* and let Smart Popper handle "going up"?
+                        // RBCChequing uses Top Line.
+                        // If I change Y here, Smart Popper needs to know.
+                        // Better: `y` = `currentAudit.y + (pendingLineCount * 12)`.
+
+                        const adjustedY = pendingLineCount > 0 ? (currentAudit.y + (pendingLineCount * 12)) : currentAudit.y;
+                        const totalHeight = Math.max(currentAudit.height, totalLines * 14);
+
+                        extracted.audit = {
+                            page: currentAudit.page,
+                            y: adjustedY,
+                            height: totalHeight,
+                            raw: currentAudit.raw, // This is just the last line text, imperfect but okay
+                            lineCount: totalLines,
+                            lineIndex: idx
+                        };
+                    }
+
+                    pendingDescription = '';
+                    pendingLineCount = 0;
                     transactions.push(extracted);
                 } else {
                     // Accumulate description logic
                     if (pendingDescription) {
                         pendingDescription += ' ' + trimmed;
+                        pendingLineCount++;
                     } else if (trimmed.match(/^[A-Za-z]/)) {
                         // Only accumulate if it looks like text, not numbers
                         pendingDescription = trimmed;
+                        pendingLineCount = 1;
                     }
                 }
             }
         }
 
         console.log(`[TD] Parsing complete. Found ${transactions.length} transactions.`);
-        return { transactions, metadata };
+        return { transactions, metadata: metaObj };
     }
 
     /**
@@ -219,7 +274,8 @@ SMART PARSING RULES:
             _inst: '004',
             _brand: 'TD',
             _bank: 'TD',
-            _tag: 'Chequing'
+            _tag: 'Chequing',
+            rawText: this.cleanRawText(line)
         };
     }
 
@@ -287,7 +343,8 @@ SMART PARSING RULES:
             _inst: '004',
             _brand: 'TD',
             _bank: 'TD',
-            _tag: 'Chequing'
+            _tag: 'Chequing',
+            rawText: this.cleanRawText(text)
         };
     }
 

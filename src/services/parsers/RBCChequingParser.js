@@ -26,14 +26,12 @@ SMART PARSING RULES:
    * KEY INSIGHT: Multiple transactions can occur on the same date
    * A new transaction starts when we see an AMOUNT (not a new date)
    */
-  parseWithRegex(text) {
+  parseWithRegex(text, metadata = null, lineMetadata = []) {
     const lines = text.split('\n');
     const transactions = [];
 
-    // LOUD DIAGNOSTIC: Use console.error so it shows up in Red and is impossible to miss
-    console.warn('⚡ [EXTREME-RBC] Starting metadata extraction for RBC...');
-    console.error('📄 [DEBUG-RBC] First 2000 characters of statement text (RED for visibility):');
-    console.log(text.substring(0, 2000));
+    // [PHASE 4] Store lineMetadata for audit lookups
+    this.lastLineMetadata = lineMetadata;
 
     // EXTRACT METADATA (Institution, Transit, Account)
     // RBC variation from screenshot: "Account number:     01259 100-244-3"
@@ -130,6 +128,8 @@ SMART PARSING RULES:
     console.log(`[RBC] Starting parse with ${lines.length} lines, year: ${this.currentYear}`);
 
     let pendingDescription = '';
+    let pendingLineCount = 0;
+    const pageCounts = {}; // Track transaction index per page for Smart Popper
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -159,13 +159,20 @@ SMART PARSING RULES:
         // Remove the date from the line to get description part
         const lineAfterDate = line.substring(dateMatch[0].length).trim();
 
-        // Try to extract transaction from this line
-        const extracted = this.extractTransaction(lineAfterDate, currentDate);
+        // Try to extract transaction from this line (pass full line for rawText)
+        const extracted = this.extractTransaction(lineAfterDate, currentDate, line);
         if (extracted) {
+          // Assign lineIndex
+          if (extracted.audit && extracted.audit.page) {
+            const p = extracted.audit.page;
+            pageCounts[p] = (pageCounts[p] || 0) + 1;
+            extracted.audit.lineIndex = pageCounts[p];
+          }
           transactions.push(extracted);
         } else if (lineAfterDate) {
           // No amount found - start accumulating for multi-line description
           pendingDescription = lineAfterDate;
+          pendingLineCount = 1;
         }
       } else if (currentDate) {
         // No date at start - could be:
@@ -173,22 +180,40 @@ SMART PARSING RULES:
         // 2. A new transaction for the same date
 
         // Check if this line has an amount (marks transaction boundary)
-        const extracted = this.extractTransaction(line, currentDate);
+        const extracted = this.extractTransaction(line, currentDate, line);
         if (extracted) {
           // If we have pending description, prepend it
           if (pendingDescription) {
             extracted.description = pendingDescription + ' ' + extracted.description;
             // CRITICAL: Re-clean the concatenated description to ensure proper formatting
             extracted.description = this.cleanRBCDescription(extracted.description);
+
+            // Adjust audit data for multi-line
+            if (extracted.audit) {
+              extracted.audit.lineCount = (extracted.audit.lineCount || 1) + pendingLineCount;
+              extracted.audit.height = Math.max(extracted.audit.height, extracted.audit.lineCount * 14);
+            }
+
             pendingDescription = '';
+            pendingLineCount = 0;
           }
+
+          // Assign lineIndex
+          if (extracted.audit && extracted.audit.page) {
+            const p = extracted.audit.page;
+            pageCounts[p] = (pageCounts[p] || 0) + 1;
+            extracted.audit.lineIndex = pageCounts[p];
+          }
+
           transactions.push(extracted);
         } else {
           // Accumulate description (but limit to prevent runaway)
           if (pendingDescription && pendingDescription.length < 200) {
             pendingDescription += ' ' + line;
+            pendingLineCount++;
           } else if (!pendingDescription) {
             pendingDescription = line;
+            pendingLineCount = 1;
           }
         }
       }
@@ -201,7 +226,7 @@ SMART PARSING RULES:
   /**
    * Extract a transaction from a line if it has an amount
    */
-  extractTransaction(text, dateStr) {
+  extractTransaction(text, dateStr, fullLine = null, meta) {
     if (!text) return null;
 
     // Pattern: Description ending with Amount Balance
@@ -230,7 +255,95 @@ SMART PARSING RULES:
     // Determine debit vs credit
     const isCredit = this.isCredit(description);
 
-    return {
+    // [PHASE 4] Spatial Metadata Lookup
+    let auditData = null;
+
+    // Use the RAW line text (fullLine or text) to find the matching lineMetadata
+    // This is the original PDF line before any reformatting
+    const searchLine = fullLine || text;
+
+    if (this.lastLineMetadata && this.lastLineMetadata.length > 0 && searchLine) {
+      // Extract key parts of the line for fuzzy matching
+      // Remove extra whitespace but keep the structure
+      const normalizedSearch = searchLine.replace(/\s+/g, ' ').trim();
+
+      // Try exact match first (with whitespace normalization)
+      for (const lineMeta of this.lastLineMetadata) {
+        if (!lineMeta.text) continue;
+
+        const normalizedMeta = lineMeta.text.replace(/\s+/g, ' ').trim();
+
+        // Check if the search line is contained in (or contains) the metadata line
+        // This handles cases where lines might be split differently
+        if (normalizedMeta.includes(normalizedSearch) || normalizedSearch.includes(normalizedMeta)) {
+          auditData = {
+            page: lineMeta.page,
+            y: lineMeta.y,
+            height: lineMeta.height || 12
+          };
+          break;
+        }
+      }
+
+      // If no exact match, try partial match using distinctive parts
+      if (!auditData) {
+        // Extract the most distinctive part: the description (before any amount)
+        const descPart = searchLine.replace(/[\d,]+\.?\d*\s*$/g, '').trim();
+
+        if (descPart.length > 10) { // Only try if we have meaningful text
+          for (const lineMeta of this.lastLineMetadata) {
+            if (!lineMeta.text) continue;
+
+            // Look for the description part in the metadata
+            if (lineMeta.text.includes(descPart.substring(0, Math.min(30, descPart.length)))) {
+              auditData = {
+                page: lineMeta.page,
+                y: lineMeta.y,
+                height: lineMeta.height || 12
+              };
+              break;
+            }
+          }
+        }
+      }
+
+      // Last resort: try matching by amount only if it's a distinctive amount
+      if (!auditData && amount && amount > 10) { // Avoid matching common small amounts
+        const amountStr = amount.toFixed(2).replace(/\.00$/, '');
+        for (const lineMeta of this.lastLineMetadata) {
+          if (lineMeta.text && lineMeta.text.includes(amountStr)) {
+            auditData = {
+              page: lineMeta.page,
+              y: lineMeta.y,
+              height: lineMeta.height || 12
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    // [PHASE 5] Multi-line Height Calculation
+    // If we have audit data, check if the transaction spans multiple lines
+    if (auditData) {
+      // Estimate line count from raw text
+      const lineCount = (fullLine || text).split('\n').length;
+
+      // Store lineCount for Smart Popper cropping
+      auditData.lineCount = lineCount;
+
+      if (lineCount > 1) {
+        // Expand height to cover multiple lines (approx 12-14px per line)
+        auditData.height = Math.max(auditData.height, lineCount * 14);
+      }
+      // Also check description length as a backup (RBC descriptions can be long)
+      else if (description.length > 80) {
+        auditData.height = Math.max(auditData.height, 28); // Assume 2 lines
+        if (auditData.lineCount < 2) auditData.lineCount = 2;
+      }
+    }
+
+    const finalTxn = {
       date: dateStr,
       description: description,
       amount: amount,
@@ -242,8 +355,35 @@ SMART PARSING RULES:
       _acct: this.metadata?.accountNumber || '-----',
       _brand: 'RBC',
       _bank: 'RBC',
-      _tag: 'Chequing'
+      _tag: 'Chequing',
+      rawText: (() => {
+        // Get the line without balance
+        const lineWithoutBalance = fullLine ? fullLine.replace(/\s+[\d,]+\.\d{2}$/, '').trim() : text;
+
+        // If line already starts with date, use as-is
+        if (lineWithoutBalance.match(/^\d{1,2}\s+\w{3}/)) {
+          return lineWithoutBalance;
+        }
+
+        // Otherwise prepend formatted date from dateStr (YYYY-MM-DD format)
+        const dateParts = dateStr.split('-');
+        if (dateParts.length === 3) {
+          const day = parseInt(dateParts[2]);
+          const monthIndex = parseInt(dateParts[1]) - 1;
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const formattedDate = `${day.toString().padStart(2, '0')} ${monthNames[monthIndex]}`;
+          return `${formattedDate}   ${lineWithoutBalance}`;
+        }
+
+        return lineWithoutBalance;
+      })(),
+      audit: auditData
     };
+
+    // DEBUG: Log audit data for inspection
+    console.log(`[RBC-AUDIT] Final Audit for "${description.substring(0, 15)}...":`, auditData);
+
+    return finalTxn;
   }
 
   getMonthIndex(monthName) {
@@ -337,7 +477,13 @@ SMART PARSING RULES:
         // console.log('[DEBUG] ✓ MATCHED:', type);
 
         // Found a match - extract everything after the prefix
-        const name = desc.substring(type.length).trim();
+        let name = desc.substring(type.length).trim();
+
+        // [USER FIX] Clean the extracted name (remove "- 1234 ", "1234 ", etc.)
+        // This handles "Online Banking payment - 4891 AMEX" -> "AMEX"
+        name = name.replace(/^[\s-]*\d{4,}\s+/, '');
+        name = name.replace(/^[\s-]+/, ''); // Remove leading dashes/spaces
+
         if (name) {
           // Format as "Name, Type" (RBC style)
           const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();

@@ -11,24 +11,75 @@ class BaseBankParser {
 
     /**
      * Abstract method for Regex parsing - to be implemented by child classes
+     * [PHASE 4] Now accepts lineMetadata for spatial tracking
      * @param {string} text 
+     * @param {Object} metadata
+     * @param {Array} lineMetadata
      * @returns {Object|null} { transactions: [] } or null if not implemented/failed
      */
-    parseWithRegex(text, metadata = null) {
+    parseWithRegex(text, metadata = null, lineMetadata = []) {
         return null; // Default implementation returns null to trigger AI fallback
+    }
+
+    /**
+     * [PHASE 4] Helper to find spatial metadata (Page/Y) for a transaction
+     * Searches the lineMetadata array for a line containing the target text.
+     */
+    findAuditMetadata(targetText, lineMetadata) {
+        if (!lineMetadata || lineMetadata.length === 0 || !targetText) return null;
+
+        // Normalize target (remove extra spaces)
+        const cleanTarget = targetText.toLowerCase().replace(/\s+/g, ' ').trim();
+
+        // 1. Exact/Substring Match
+        for (const line of lineMetadata) {
+            const cleanLine = line.text ? line.text.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+            if (cleanLine.includes(cleanTarget)) {
+                console.log(`[BaseBankParser] 🎯 Match found! Y=${line.y} for "${cleanTarget.substring(0, 10)}..."`);
+                return {
+                    page: line.page,
+                    y: line.y,
+                    height: line.height,
+                    raw: line.text
+                };
+            }
+        }
+
+        // 2. Partial Match
+        if (cleanTarget.length > 10) {
+            const partial = cleanTarget.substring(0, 15);
+            for (const line of lineMetadata) {
+                const cleanLine = line.text ? line.text.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+                if (cleanLine.includes(partial)) {
+                    return {
+                        page: line.page,
+                        y: line.y,
+                        height: line.height,
+                        raw: line.text
+                    };
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
     /**
      * Parse statement text using Hybrid Strategy (Regex First -> AI Fallback)
      * @param {string} statementText 
+     * @param {Object} metadata
+     * @param {Array} lineMetadata - [PHASE 4] Spatial info
      * @returns {Promise<Object>}
      */
-    async parse(statementText, metadata = null) {
+    async parse(statementText, metadata = null, lineMetadata = []) {
+        // [PHASE 4] Store metadata for use in description cleaning or audit attachment
+        this.lastLineMetadata = lineMetadata;
+
         // 1. Try Local Regex Parsing First (Free, Private, Fast)
         try {
             console.log(`⚡ BaseBankParser: Attempting local REGEX parsing for ${this.bankName}...`);
-            const regexResult = this.parseWithRegex(statementText, metadata);
+            const regexResult = this.parseWithRegex(statementText, metadata, lineMetadata);
 
             if (regexResult && regexResult.transactions && regexResult.transactions.length > 0) {
                 console.log(`✅ Regex parsing successful: ${regexResult.transactions.length} transactions found.`);
@@ -212,6 +263,37 @@ ${statementText}`;
                 console.warn(`Transaction ${idx} is incomplete:`, tx);
             }
         });
+    }
+
+    /**
+     * Standardize Raw Text by removing the trailing balance if present.
+     * User wants the transaction amount, but NOT the running balance.
+     */
+    cleanRawText(line) {
+        if (!line) return '';
+        let cleaned = line.trim();
+
+        // Regex to match currency amounts: $? 1,234.56 or 1234.56
+        // We look for patterns like: [Amount] [Balance]
+        const amountRegex = /(\$?\s?-?\d[\d,]*\.\d{2})/g;
+        const matches = cleaned.match(amountRegex);
+
+        if (matches && matches.length >= 2) {
+            // Find the last amount (likely the balance)
+            const lastAmount = matches[matches.length - 1];
+
+            // Safety check: The balance usually comes after the transaction amount.
+            // We find the LAST occurrence of the last amount and strip it.
+            const lastIndex = cleaned.lastIndexOf(lastAmount);
+
+            // Verify there's enough space/delimiters between amounts to be reasonably sure it's a balance column
+            if (lastIndex > 0) {
+                const before = cleaned.substring(0, lastIndex).trim();
+                return before;
+            }
+        }
+
+        return cleaned;
     }
 }
 

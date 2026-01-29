@@ -13,7 +13,11 @@ AMEX FORMAT:
         super('American Express', 'Amex', formatRules);
     }
 
-    async parse(statementText) {
+    /**
+     * Parse Amex statement
+     * [PHASE 4] Now accepts lineMetadata for spatial tracking
+     */
+    async parse(statementText, inputMetadata = null, lineMetadata = []) {
         // LOUD DIAGNOSTIC
         console.warn('⚡ [EXTREME-AMEX] Starting metadata extraction for Amex...');
         console.error('📄 [DEBUG-AMEX] First 1000 characters (RED for visibility):');
@@ -56,6 +60,15 @@ AMEX FORMAT:
 
         const lines = statementText.split('\n');
         const transactions = [];
+
+        // Extract opening balance (Previous Balance)
+        let openingBalance = 0;
+        const previousBalanceMatch = statementText.match(/Previous\s+Balance\s+.*?([\d,]+\.\d{2})/i);
+        if (previousBalanceMatch) {
+            openingBalance = parseFloat(previousBalanceMatch[1].replace(/,/g, ''));
+            console.log(`[AMEX] Extracted opening balance: ${openingBalance}`);
+        }
+
         let inTransactionBlock = false;
         let txnCounter = 1;
 
@@ -65,6 +78,7 @@ AMEX FORMAT:
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
+            const meta = lineMetadata && lineMetadata[i];
             if (!line) continue;
 
             // TRACK BLOCK STATE
@@ -138,12 +152,15 @@ AMEX FORMAT:
                 _inst: '303',
                 _brand: 'Amex',
                 _bank: 'American Express',
-                _tag: 'Amex'
+                _tag: 'Amex',
+                audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null,
+                rawText: this.cleanRawText(line),
+                refCode: line.match(/\b([A-Z0-9]{15,})\b/)?.[1] || 'N/A'
             });
         }
 
         console.log(`[AMEX] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata };
+        return { transactions, metadata, openingBalance };
     }
 
     cleanCreditDescription(desc, prefixes) {

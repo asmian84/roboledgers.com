@@ -52,7 +52,8 @@ class BMOCreditCardParser extends BaseBankParser {
                 amount,
                 debit: isPayment ? 0 : amount,   // Charge = debit (balance up)
                 credit: isPayment ? amount : 0,  // Payment = credit (balance down)
-                balance
+                balance,
+                rawText: this.cleanRawText(line)
             });
         }
 

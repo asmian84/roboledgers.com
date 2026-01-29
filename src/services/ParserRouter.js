@@ -52,9 +52,11 @@ class ParserRouter {
      * Parse a bank statement by detecting brand and routing
      * @param {string} statementText - Full PDF text
      * @param {string} filename - Original filename for learning matching
+     * @param {Array} lineMetadata - Spatial info per line
+     * @param {Object} originalFile - The original File object (optional, for Smart Parser fallback)
      * @returns {Promise<Object>} Parsed transactions + metadata
      */
-    async parseStatement(statementText, filename = '') {
+    async parseStatement(statementText, filename = '', lineMetadata = [], originalFile = null) {
         console.log('🔍 Step 1: Detecting bank brand...');
 
         // Step 1: Detect brand (with Learning System)
@@ -69,12 +71,13 @@ class ParserRouter {
 
         if (!parser) {
             console.warn(`⚠️ No specific parser for ${parserKey}, falling back to Smart Parser`);
-            if (window.pdfParser) {
-                const smartResult = await window.pdfParser.parsePDF({
-                    arrayBuffer: async () => new TextEncoder().encode(statementText).buffer,
-                    name: filename
-                });
-                // Adapt smartResult to expected format
+            // CRITICAL FIX: Ensure we have the window.pdfParser AND the original File object to avoid recursion/exception
+            if (window.pdfParser && originalFile) {
+                console.log('🤖 Falling back to window.pdfParser (line scan heuristic)...');
+                // Use a dedicated flag or check to ensure pdfParser.parsePDF doesn't just call back into ParserRouter
+                const smartResult = await window.pdfParser.parsePDF(originalFile, { skipRouter: true });
+
+                // Adapt smartResult if needed
                 return {
                     transactions: smartResult.transactions,
                     brandDetection: {
@@ -84,16 +87,17 @@ class ParserRouter {
                         accountNumber: smartResult.metadata?.accountNumber || detection.accountNumber || '-----'
                     }
                 };
+            } else if (window.pdfParser && !originalFile) {
+                console.error('❌ Cannot fallback to Smart Parser: originalFile not provided to ParserRouter.');
             }
-            throw new Error(`No parser found for ${parserKey} and no Smart Parser fallback.`);
+            throw new Error(`No parser found for ${parserKey} and cannot perform Smart Parser fallback.`);
         }
 
         // Step 3: Parse with brand-specific parser
         console.log(`🤖 Step 2: Parsing with ${parserKey} parser...`);
-        let result = await parser.parse(statementText, detection);
+        let result = await parser.parse(statementText, detection, lineMetadata);
 
         // Step 4: Add brand info to result
-        // CRITICAL: Prefer metadata from the specific parser result if it exists and isn't a placeholder
         const firstTxn = result.transactions[0] || {};
         const pInst = (firstTxn._inst && firstTxn._inst !== '---') ? firstTxn._inst : (detection.institutionCode || '---');
         const pTransit = (firstTxn._transit && firstTxn._transit !== '-----') ? firstTxn._transit : (detection.transit || '-----');
@@ -112,47 +116,31 @@ class ParserRouter {
             accountNumber: pAcctNum
         };
 
-        console.log('🔍 [ParserRouter] Brand Metadata Result:');
-        console.table(result.brandDetection);
-
-        // CRITICAL FIX: Inject brand into EACH transaction so it survives array flattening
+        // Inject brand into EACH transaction
         result.transactions.forEach(tx => {
-            tx._bank = detection.fullBrandName; // e.g. "Scotiabank"
-            tx._brand = detection.brand;        // e.g. "Scotiabank"
-            tx._accountType = detection.accountType; // e.g. "Chequing"
-            tx._prefix = detection.prefix || 'TXN'; // e.g. "CHQ"
-            tx._tag = detection.tag || detection.accountType; // e.g. "Chequing"
+            tx._bank = detection.fullBrandName;
+            tx._brand = detection.brand;
+            tx._accountType = detection.accountType;
+            tx._prefix = detection.prefix || 'TXN';
+            tx._tag = detection.tag || detection.accountType;
 
-            // Injection logic: Use detected metadata if transaction-level data is missing or just placeholders
             if (!tx._inst || tx._inst === '---') tx._inst = result.brandDetection.institutionCode;
             if (!tx._transit || tx._transit === '-----') tx._transit = result.brandDetection.transit;
             if (!tx._acct || tx._acct === '-----') tx._acct = result.brandDetection.accountNumber;
 
-            // Attach fingerprint for learning
             if (detection.fingerprint) tx._fingerprint = detection.fingerprint;
         });
 
         // Step 5: Run Validation Engine (silent auto-fix)
         if (window.validationEngine) {
             try {
-                // Update status text in UI
-                const statusEl = document.getElementById('v5-status-text');
                 const progressContainer = document.getElementById('v5-progress-container');
                 const progressFill = document.getElementById('v5-progress-fill');
-                const progressMsg = document.getElementById('v5-progress-message');
 
-                // Removed "Validating data..." text per user request
-                // if (statusEl) statusEl.textContent = 'Validating data...';
-
-                // Only show progress bar if not already visible (prevent flicker during batch uploads)
                 if (progressContainer && progressContainer.style.display !== 'flex') {
                     progressContainer.style.display = 'flex';
-                    // Track when we showed it
                     progressContainer.dataset.showTime = Date.now();
                 }
-
-                // Removed validation message per user request
-                // if (progressMsg) progressMsg.textContent = 'Validating and auto-fixing transaction data...';
 
                 result = window.validationEngine.validate(result, (current, total) => {
                     if (progressFill) {
@@ -161,19 +149,16 @@ class ParserRouter {
                     }
                 });
 
-                // Hide progress bar after validation, but only if it's been visible for at least 1 second
-                // to prevent flicker during batch uploads
                 setTimeout(() => {
                     const gridVisible = document.getElementById('v5-grid-container')?.offsetHeight > 0;
                     if (gridVisible && progressContainer) {
                         const showTime = parseInt(progressContainer.dataset.showTime || '0');
                         const elapsed = Date.now() - showTime;
-                        const minDisplayTime = 1000; // 1 second minimum
+                        const minDisplayTime = 1000;
 
                         if (elapsed >= minDisplayTime) {
                             progressContainer.style.display = 'none';
                         } else {
-                            // Wait for remaining time before hiding
                             setTimeout(() => {
                                 progressContainer.style.display = 'none';
                             }, minDisplayTime - elapsed);
@@ -186,21 +171,6 @@ class ParserRouter {
         }
 
         console.log(`✅ Successfully parsed ${result.transactions.length} transactions from ${detection.fullBrandName}`);
-
-        // DEBUG: Log first 3 transactions to see field names
-        if (result.transactions.length > 0) {
-            console.log('🔍 PARSER OUTPUT - First 3 transactions:');
-            result.transactions.slice(0, 3).forEach((txn, idx) => {
-                const debugInfo = {
-                    description: txn.description,
-                    Description: txn.Description,
-                    date: txn.date,
-                    Date: txn.Date
-                };
-                console.log(`  Transaction ${idx + 1}:`, JSON.stringify(debugInfo, null, 2));
-            });
-        }
-
         return result;
     }
 

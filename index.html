@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RoboLedgers 4.1 [REFRESHED-V5]</title>
+  <title>RoboLedgers 4.2 [AUDIT-V5]</title>
   <link rel="stylesheet" href="src/styles/styles.css">
   <link rel="stylesheet" href="src/styles/import-summary.css">
   <link rel="stylesheet" href="src/styles/roadmap.css">
@@ -334,7 +334,7 @@
   <script src="src/pages/data-import.js?v=20251230_v17"></script>
   <script src="src/pages/transactions-import.js"></script>
   <!-- TRANSACTION IMPORT V5 (Full Restoration) -->
-  <script src="src/pages/txn-import-v5-v2.js?v=20260111_1652"></script>
+  <script src="src/pages/txn-import-v5-v2.js?v=20260128_AUDIT"></script>
   <script src="src/pages/profile.js"></script>
   <!-- <script src="src/pages/transactions-fixed.js"></script> LEGACY -->
   <script src="src/pages/transactions-grid.js?v=20260101_v3"></script>
@@ -352,7 +352,10 @@
   <script src="src/pages/training.js"></script>
 
 
-  <!-- Vendor Pages -->
+  <!-- NEW: V5 PDF Viewer (Internal Audit) -->
+  <script src="src/pages/v5-pdf-viewer.js?v=20260128_AUDIT"></script>
+
+  <!-- V4 Core Pages -->
   <script src="src/utils/vendorMatcher.js"></script>
   <script src="src/pages/vendorNew.js"></script>
   <!-- Features -->
@@ -609,12 +612,46 @@
 
     // Transactions Import V5 (Unified with 7 methods, keyboard shortcuts, caching)
     router.register('/txn-import-v5', () => {
+      console.log('🛣️ [Router] /txn-import-v5 triggered');
       window.breadcrumbManager.update('/txn-import-v5');
       const app = document.getElementById('app');
+
+      // PERSISTENCE FIX: Only re-render if grid doesn't exist or state is empty
+      const gridExists = app.querySelector('.ag-theme-alpine') !== null;
+      const hasData = window.V5State && window.V5State.gridData && window.V5State.gridData.length > 0;
+
+      if (gridExists && hasData) {
+        console.log('✅ [Router] Grid already exists with data, preserving state');
+        // Refresh the grid to show current data
+        if (window.V5State.gridApi) {
+          window.V5State.gridApi.setGridOption('rowData', window.V5State.gridData);
+          console.log(`✅ [Router] Refreshed grid with ${window.V5State.gridData.length} rows`);
+        }
+        return; // Skip re-rendering
+      }
+
+      console.log('🔄 [Router] Rendering fresh page (grid missing or no data)');
       app.innerHTML = window.renderTxnImportV5Page();
       setTimeout(() => {
-        if (window.initTxnImportV5Grid) window.initTxnImportV5Grid();
+        console.log('⏰ [Router] Attempting to init grid...');
+        if (window.initTxnImportV5Grid) {
+          window.initTxnImportV5Grid();
+        } else {
+          console.error('❌ [Router] initTxnImportV5Grid missing!');
+        }
       }, 50);
+    });
+
+    // V5 Internal PDF Viewer (Phase 4 Audit)
+    router.register('/txn-import-v5/pdf-viewer', () => {
+      // Note: params are handled inside the component via window.location.hash
+      const app = document.getElementById('app');
+      if (window.renderV5PdfViewer) {
+        app.innerHTML = window.renderV5PdfViewer();
+        if (window.initV5PdfViewer) window.initV5PdfViewer();
+      } else {
+        app.innerHTML = '<div class="page">Loading PDF Viewer...</div>';
+      }
     });
 
     // User Profile

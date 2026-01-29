@@ -339,7 +339,9 @@
                 let currentYear = year;
                 let previousMonth = -1;
 
-                for (const line of lines) {
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const meta = this.lineMetadata && this.lineMetadata[i];
                     const trimmed = line.trim();
 
                     // Skip headers, empty, totals
@@ -384,7 +386,8 @@
                             date: date,
                             description: finalDesc,
                             amount: Math.abs(amount),
-                            type: amount < 0 ? 'credit' : 'debit'  // Credit = payment, Debit = purchase
+                            type: amount < 0 ? 'credit' : 'debit',  // Credit = payment, Debit = purchase
+                            audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null
                         });
                     } else if (lastSeenDate) {
                         // TRY DATELESS FALLBACK: Pattern for lines WITH amounts but NO dates
@@ -402,7 +405,8 @@
                                     date: lastSeenDate,
                                     description: desc.trim(),
                                     amount: Math.abs(amount),
-                                    type: amount < 0 ? 'credit' : 'debit'
+                                    type: amount < 0 ? 'credit' : 'debit',
+                                    audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null
                                 });
                             }
                         } else if (trimmed.length > 5 && !/^\d/.test(trimmed) && !/^[A-Z]{3}\s+\d{1,2}/.test(trimmed)) {
@@ -442,7 +446,9 @@
                 let lastSeenDate = null;
                 let previousBalance = null; // Track balance for BMO debit/credit detection
 
-                for (const line of lines) {
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const meta = this.lineMetadata && this.lineMetadata[i];
                     const trimmed = line.trim();
 
                     // Skip headers
@@ -587,6 +593,7 @@
 
                     if (transaction) {
                         lastSeenDate = transaction.date;
+                        transaction.audit = meta ? { page: meta.page, y: meta.y, height: meta.height } : null;
                         transactions.push(transaction);
                     } else if (lastSeenDate) {
                         // TRY CARLESS FALLBACK: Pattern for lines WITH amounts but NO dates
@@ -603,7 +610,8 @@
                                     date: lastSeenDate,
                                     description: desc.trim(),
                                     amount,
-                                    type
+                                    type,
+                                    audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null
                                 });
                             }
                         }
@@ -636,6 +644,8 @@
 
                     // 2. Extract text from all pages (PRESERVE LINE STRUCTURE)
                     let fullText = '';
+                    this.lineMetadata = []; // [PHASE 4] Track spatial info per line
+
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
@@ -649,25 +659,33 @@
 
                         // Group items by Y position (within tolerance)
                         let lastY = null;
+                        let lastHeight = 10;
                         let lineBuffer = [];
 
                         for (const item of items) {
                             const y = item.transform[5];
+                            const height = item.height || 10;
                             if (lastY !== null && Math.abs(y - lastY) > 5) {
                                 // New line - flush buffer
                                 if (lineBuffer.length > 0) {
-                                    fullText += lineBuffer.join(' ') + '\n';
+                                    const lineText = lineBuffer.join(' ');
+                                    fullText += lineText + '\n';
+                                    this.lineMetadata.push({ page: i, y: lastY, height: lastHeight, text: lineText });
                                     lineBuffer = [];
                                 }
                             }
                             lineBuffer.push(item.str);
                             lastY = y;
+                            lastHeight = height;
                         }
                         // Flush remaining
                         if (lineBuffer.length > 0) {
-                            fullText += lineBuffer.join(' ') + '\n';
+                            const lineText = lineBuffer.join(' ');
+                            fullText += lineText + '\n';
+                            this.lineMetadata.push({ page: i, y: lastY, height: lastHeight, text: lineText });
                         }
                         fullText += '\n'; // Page break
+                        this.lineMetadata.push({ page: i, y: 0, height: 0, text: '' }); // spacer for page break
                     }
 
 
@@ -739,8 +757,26 @@
 
 
 
-                    // 4. Extract transactions & metadata
-                    const result = this.extractTransactions(fullText, bank);
+                    // Step 3: Parse with Router (unless skipRouter is true)
+                    let result;
+                    if (options.skipRouter) {
+                        console.log('🤖 Smart Parser: skipRouter is true, using internal line scan extraction...');
+                        // Use internal extractSmart methods based on classification
+                        const type = this.classifyStatementType(fullText);
+                        const bankName = this.detectBankSmart(fullText);
+
+                        let transactions = [];
+                        if (type === 'CREDIT_CARD') {
+                            transactions = this.extractSmartCreditCard(fullText, bankName);
+                        } else {
+                            transactions = this.extractSmartBankAccount(fullText, bankName);
+                        }
+
+                        const metadata = this.extractUniversalMetadata(fullText, bankName, type);
+                        result = { transactions, metadata };
+                    } else {
+                        result = await window.parserRouter.parseStatement(fullText, file.name, this.lineMetadata, file);
+                    }
                     let transactions = [];
                     let metadata = {};
 

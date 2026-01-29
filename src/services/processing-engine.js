@@ -82,7 +82,12 @@ class ProcessingEngine {
 
         this.log('log', 'File parsing complete', { totalTransactions: allTransactions.length });
         console.timeEnd('ProcessingEngine.parseFiles');
-        return allTransactions;
+
+        // Return structured result instead of just array
+        return {
+            transactions: allTransactions,
+            openingBalance: allTransactions.openingBalance || 0
+        };
     }
 
     /**
@@ -116,11 +121,13 @@ class ProcessingEngine {
             console.group('🔍 [ProcessingEngine] Brand Metadata Check');
             console.log('result.brandDetection:', result.brandDetection);
             console.log('First transaction:', result.transactions?.[0]);
-            console.log('First txn._brand:', result.transactions?.[0]?._brand);
-            console.log('First txn._tag:', result.transactions?.[0]?._tag);
+            console.log('Opening Balance:', result.openingBalance);
             console.groupEnd();
 
-            return result.transactions || [];
+            const txns = result.transactions || [];
+            // Attach opening balance to the array as a hidden property to avoid breaking simpler logic
+            txns.openingBalance = result.openingBalance || 0;
+            return txns;
 
         } else if (ext === 'csv') {
             if (!window.SmartCsvParser) {

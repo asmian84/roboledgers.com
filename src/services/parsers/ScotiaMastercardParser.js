@@ -67,7 +67,8 @@ SCOTIA MASTERCARD FORMAT:
                 amount,
                 debit: isPayment ? 0 : amount,
                 credit: isPayment ? amount : 0,
-                balance
+                balance,
+                rawText: this.cleanRawText(line)
             });
         }
 

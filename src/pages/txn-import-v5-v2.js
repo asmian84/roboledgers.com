@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Txn Import V5 - Unified Transaction Import Page
  * VERSION 5.1.0 (Clean House Cleanup)
  * Consolidates all logic, fixes categorization wiring, and implements Audit Mode.
@@ -10,79 +10,83 @@
 // STATE MANAGEMENT
 // ============================================
 
-window.V5State = {
-  importZoneExpanded: true,
-  gridData: [],
-  importHistory: [],
-  selectedFiles: [],
-  gridApi: null,
-  undoStack: [],
-  isProcessing: false,
-  currentProgress: { current: 0, total: 0, message: '' },
-  openingBalance: 0, // Changed from 0.00
-  recentImports: [], // New property
-  accountType: null, // New property
-  refPrefix: '', // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
-  pendingStatements: [], // [NEW] Free-float statements before assignment
-  multiLedgerData: {},    // [NEW] Assigned ledger data by account code
-  currentAccountCode: null, // [NEW] Track active ledger for breadcrumbs
-  auditModeActiveRowId: null, // [NEW] Track which row has audit details expanded
+// Check if V5State already exists to preserve data during navigation
+if (!window.V5State) {
+  window.V5State = {
+    importZoneExpanded: true,
+    gridData: [],
+    importHistory: [],
+    selectedFiles: [],
+    gridApi: null,
+    undoStack: [],
+    isProcessing: false,
+    currentProgress: { current: 0, total: 0, message: '' },
+    openingBalance: 0, // Changed from 0.00
+    recentImports: [], // New property
+    accountType: null, // New property
+    refPrefix: '', // For Ref# column (e.g., "CHQ" -> CHQ-001, CHQ-002...)
+    pendingStatements: [], // [NEW] Free-float statements before assignment
+    multiLedgerData: {},    // [NEW] Assigned ledger data by account code
+    currentAccountCode: null, // [NEW] Track active ledger for breadcrumbs
+    auditModeActiveRowId: null, // [NEW] Track which row has audit details expanded
 
-  // [PHASE 2] Settings Panel Configuration
-  settings: {
-    appearance: {
-      theme: 'light',
-      fontSize: 14,
-      rowDensity: 'comfortable' // compact | comfortable | spacious
-    },
-    columns: {
-      visible: ['date', 'description', 'debit', 'credit', 'balance', 'account', 'refNumber'],
-      salesTax: false, // GST ITC (2155) / GST Collected (2160)
-      foreignBalance: false // Show foreign currency amounts with live rates
-    },
-    autoCategorize: {
-      enabled: true,
-      confidenceThreshold: 75,
-      showScores: false,
-      reviewBeforeApply: false
-    },
-    importPrefs: {
-      defaultRefPrefix: 'REF', // Default, auto-updates to detected bank
-      dateFormat: 'MM/DD/YYYY',
-      province: 'ON', // Default to Ontario
-      autoExpandRows: false
-    },
-    currency: {
-      home: 'CAD',
-      foreignPairs: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
-      rates: {}, // Populated from API
-      lastUpdated: null,
-      autoRefresh: true,
-      refreshInterval: 3600000 // 1 hour in ms
-    },
-    performance: {
-      rowsPerPage: 100,
-      virtualization: true,
-      autoSaveInterval: 60000 // 1 minute
-    },
-    exportFormat: 'xlsx',
-    validation: {
-      duplicateDetection: true,
-      balanceAlerts: true,
-      negativeWarnings: true
-    },
-    shortcuts: {
-      refBox: true,
-      expandAll: true,
-      autoCat: true,
-      search: true,
-      undo: false,
-      history: false,
-      startOver: false,
-      popout: false
+    // [PHASE 2] Settings Panel Configuration
+    settings: {
+      appearance: {
+        theme: 'light',
+        fontSize: 14,
+        rowDensity: 'comfortable' // compact | comfortable | spacious
+      },
+      columns: {
+        visible: ['date', 'description', 'debit', 'credit', 'balance', 'account', 'refNumber'],
+        salesTax: false, // GST ITC (2155) / GST Collected (2160)
+        foreignBalance: false // Show foreign currency amounts with live rates
+      },
+      autoCategorize: {
+        enabled: true,
+        confidenceThreshold: 75,
+        showScores: false,
+        reviewBeforeApply: false
+      },
+      importPrefs: {
+        defaultRefPrefix: 'REF', // Default, auto-updates to detected bank
+        dateFormat: 'MM/DD/YYYY',
+        province: 'ON', // Default to Ontario
+        autoExpandRows: false
+      },
+      currency: {
+        home: 'CAD',
+        foreignPairs: ['USD', 'EUR', 'GBP', 'JPY', 'AUD'],
+        rates: {}, // Populated from API
+        lastUpdated: null,
+        autoRefresh: true,
+        refreshInterval: 3600000 // 1 hour in ms
+      },
+      performance: {
+        rowsPerPage: 100,
+        virtualization: true,
+        autoSaveInterval: 60000 // 1 minute
+      },
+      exportFormat: 'xlsx',
+      validation: {
+        duplicateDetection: true,
+        balanceAlerts: true,
+        negativeWarnings: true
+      },
+      shortcuts: {
+        refBox: true,
+        expandAll: true,
+        autoCat: true,
+        search: true,
+        undo: false,
+        history: false,
+        startOver: false,
+        popout: false
+      },
+      shortcutsOrder: ['refBox', 'expandAll', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search']
     }
-  }
-};
+  };
+}
 
 const V5State = window.V5State;
 
@@ -247,6 +251,39 @@ function get5TierCoAAccounts() {
   });
 
   return tiers;
+}
+
+/**
+ * [RESCUED] GroupedAccountEditor Class
+ * Required for AG Grid category selection
+ */
+class V5GroupedAccountEditor {
+  init(params) {
+    this.params = params;
+    this.value = params.value || 'Uncategorized';
+    this.container = document.createElement('div');
+    this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; max-height:400px; overflow-y:auto; z-index:10000;';
+    const coa = window.get5TierCoAAccounts ? window.get5TierCoAAccounts() : (window.getGroupedCoA ? window.getGroupedCoA() : {});
+    Object.entries(coa).forEach(([group, items]) => {
+      if (items && items.length) {
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:8px 12px; background:#f8fafc; font-weight:700; font-size:11px; color:#64748b; text-transform:uppercase;';
+        header.innerText = group;
+        this.container.appendChild(header);
+        items.forEach(item => {
+          const label = typeof item === 'object' ? (item.code ? `${item.code} - ${item.name}` : item.name) : item;
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px 16px; font-size:13px; color: #334155; cursor:pointer;';
+          div.innerText = label;
+          div.onclick = () => { this.value = label; this.params.stopEditing(); };
+          this.container.appendChild(div);
+        });
+      }
+    });
+  }
+  getGui() { return this.container; }
+  getValue() { return this.value; }
+  isPopup() { return true; }
 }
 
 function resolveAccountName(val) {
@@ -473,17 +510,8 @@ window.applyAllV5Settings = function () {
   // 5. Pagination
   V5State.gridApi.setGridOption('paginationPageSize', s.performance.rowsPerPage);
 
-  // [NEW] 6. Shortcuts Visibility
-  if (s.shortcuts) {
-    Object.keys(s.shortcuts).forEach(key => {
-      const el = document.getElementById(`v5-shortcut-${key}`);
-      if (el) {
-        // Use flex for search and refBox, inline-flex for buttons
-        const isFlex = ['search', 'refBox'].includes(key);
-        el.style.display = s.shortcuts[key] ? (isFlex ? 'flex' : 'inline-flex') : 'none';
-      }
-    });
-  }
+  // [NEW] 6. Shortcuts Ordered Rendering
+  window.renderV5Shortcuts();
 
   console.log('[Settings:Apply] All settings applied');
 }
@@ -521,12 +549,109 @@ window.toggleV5Shortcut = (key, val) => {
   if (!V5State.settings.shortcuts) V5State.settings.shortcuts = {};
   V5State.settings.shortcuts[key] = val;
 
-  // Apply immediately via CSS
-  const el = document.getElementById(`v5-shortcut-${key}`);
-  if (el) {
-    const isFlex = ['search', 'refBox'].includes(key);
-    el.style.display = val ? (isFlex ? 'flex' : 'inline-flex') : 'none';
+  // Re-render shortcuts to apply visibility and order
+  window.renderV5Shortcuts();
+};
+
+window.renderV5Shortcuts = function () {
+  const container = document.getElementById('v5-shortcuts-container');
+  if (!container) return;
+
+  const s = V5State.settings;
+  const order = s.shortcutsOrder || ['refBox', 'expandAll', 'undo', 'history', 'startOver', 'popout', 'autoCat', 'search'];
+  const visibility = s.shortcuts || {};
+
+  // Ensure the Action Bar itself is visible if we have data
+  const actionBar = document.getElementById('v5-action-bar');
+  if (actionBar && V5State.gridData && V5State.gridData.length > 0) {
+    actionBar.style.display = 'flex';
+    actionBar.classList.add('show-data');
+    if (window.updateReconciliationCard) window.updateReconciliationCard();
   }
+
+  // Clear container
+  container.innerHTML = '';
+
+  let activeCount = 0;
+  const MAX_CAPACITY = 6; // "Comfortable" limit before warning
+
+  order.forEach(key => {
+    if (visibility[key]) {
+      const template = document.getElementById(`v5-shortcut-${key}`);
+      if (template) {
+        const clone = template.cloneNode(true);
+        // Remove ID from clone to prevent collisions
+        clone.removeAttribute('id');
+
+        // Ensure inputs maintain their values/handlers if cloned
+        if (key === 'refBox') {
+          const inp = clone.querySelector('input');
+          const origInp = template.querySelector('input');
+          if (inp && origInp) {
+            inp.value = origInp.value || V5State.refPrefix || '';
+            inp.oninput = origInp.oninput;
+          }
+        }
+        if (key === 'search') {
+          const inp = clone.querySelector('input');
+          const origInp = template.querySelector('input');
+          if (inp && origInp) {
+            inp.value = origInp.value;
+            inp.oninput = origInp.oninput;
+          }
+        }
+
+        clone.style.display = (['search', 'refBox'].includes(key)) ? 'flex' : 'inline-flex';
+        container.appendChild(clone);
+        activeCount++;
+      }
+    }
+  });
+
+  // Overflow Check
+  const warning = document.getElementById('v5-shortcut-warning');
+  if (warning) {
+    warning.style.display = activeCount > MAX_CAPACITY ? 'flex' : 'none';
+  }
+};
+
+// Drag and Drop Handlers
+let draggedShortcutKey = null;
+
+window.handleV5ShortcutDragStart = function (e) {
+  const id = e.currentTarget.id;
+  draggedShortcutKey = id.replace('v5-shortcut-', '');
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+};
+
+window.handleV5ShortcutDragOver = function (e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+};
+
+window.handleV5ShortcutDrop = function (e) {
+  e.preventDefault();
+  const targetId = e.currentTarget.id;
+  const targetKey = targetId.replace('v5-shortcut-', '');
+  e.currentTarget.style.opacity = '1';
+
+  if (draggedShortcutKey && draggedShortcutKey !== targetKey) {
+    const order = V5State.settings.shortcutsOrder;
+    const fromIndex = order.indexOf(draggedShortcutKey);
+    const toIndex = order.indexOf(targetKey);
+
+    if (fromIndex !== -1 && toIndex !== -1) {
+      // Reorder array
+      order.splice(fromIndex, 1);
+      order.splice(toIndex, 0, draggedShortcutKey);
+
+      // Save and Render
+      window.renderV5Shortcuts();
+      if (window.saveV5SettingsSilently) window.saveV5SettingsSilently();
+    }
+  }
+  draggedShortcutKey = null;
 };
 
 window.refreshV5ExchangeRates = async function () {
@@ -1743,6 +1868,41 @@ window.renderTxnImportV5Page = function () {
         font-size: 0.6rem;
         font-weight: 700;
       }
+
+      /* Floating Details Button - REFINED */
+      .v5-details-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        visibility: hidden;
+        background: #f1f5f9; /* Slate 100 */
+        color: #64748b; /* Slate 500 */
+        border: 1px solid #e2e8f0;
+        padding: 3px 10px;
+        border-radius: 9999px; /* Pill shape */
+        font-size: 0.6rem;
+        font-weight: 700;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .ag-cell:hover .v5-details-btn {
+        opacity: 1;
+        visibility: visible;
+      }
+      .v5-details-btn:hover {
+        background: #1e293b;
+        transform: translateY(-50%) scale(1.05);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .v5-details-btn:active {
+        transform: translateY(-50%) scale(0.95);
+      }
       
       @keyframes slideDown {
         from { transform: translateY(-10px); opacity: 0; }
@@ -1935,8 +2095,8 @@ window.renderTxnImportV5Page = function () {
       /* Balances Card - Natural blend, no border */
       .v5-balances-card {
         display: flex;
-        gap: 1.5rem;
-        padding: 0.75rem 1.25rem;
+        gap: 0.85rem;
+        padding: 0.5rem 0.75rem;
         background: transparent;
         border-radius: 6px;
         flex-shrink: 0;
@@ -1946,12 +2106,12 @@ window.renderTxnImportV5Page = function () {
       .v5-balance-item {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
-        min-width: 80px;
+        gap: 0.15rem;
+        min-width: 70px;
       }
       
       .v5-balance-label {
-        font-size: 0.625rem;
+        font-size: 0.55rem;
         font-weight: 700;
         color: #6B7280;
         text-transform: uppercase;
@@ -1959,21 +2119,39 @@ window.renderTxnImportV5Page = function () {
       }
       
       .v5-balance-value {
-        font-size: 0.875rem;
-        font-weight: 700;
-        color: #1F2937;
-        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #1e293b;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
       }
       
-      .v5-balance-value.positive {
-        color: #10b981;
+      #v5-opening-bal {
+        background: transparent;
+        border: 1px dashed #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 4px;
+        width: 80px;
+        color: #1e293b;
+        text-align: right;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      #v5-opening-bal:hover { border-color: #94a3b8; background: rgba(241, 245, 249, 0.5); }
+      #v5-opening-bal:focus { border-color: #3b82f6; border-style: solid; outline: none; background: #fff; }
+
+      .v5-balance-value.positive { color: #10b981; }
+      .v5-balance-value.negative { color: #ef4444; }
+      
+      .v5-balance-item.ending {
+        border-left: 1px solid #e2e8f0;
+        padding-left: 1rem;
+        margin-left: 0.5rem;
       }
       
-      .v5-balance-value.negative {
-        color: #ef4444;
+      #v5-ending-bal {
+        color: #2563eb;
+        font-size: 0.95rem; /* Slightly larger for emphasis but still small */
       }
-      
-      .v5-balance-item.ending .v5-balance-value {
         font-size: 1rem;
         color: #60a5fa;
       }
@@ -3518,36 +3696,58 @@ window.renderTxnImportV5Page = function () {
       
       <!-- Action Bar - Only shown when grid has data -->
       <div class="v5-action-bar v5-control-toolbar" id="v5-action-bar" style="display: none;">
-        <!-- Far Left: Ref# Prefix Input -->
-        <div class="v5-ref-input-wrapper" id="v5-shortcut-refBox" style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
-          <input type="text" 
-                 id="v5-ref-prefix" 
-                 class="v5-ref-input" 
-                 placeholder="REF" 
-                 style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
-                 oninput="window.updateRefPrefix(this.value)">
+        
+        <!-- Draggable Shortcuts Container -->
+        <div id="v5-shortcuts-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; max-width: 100%;">
+          <!-- Shortcuts will be rendered here by window.renderV5Shortcuts() -->
         </div>
 
-        <!-- Expand/Collapse Toggle (Single Button) -->
-        <button class="btn-action-secondary" id="v5-shortcut-expandAll" onclick="window.toggleExpandCollapseAll()">
-          <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
-          <span id="v5-expand-toggle-text">Expand All</span>
-        </button>
+        <!-- Hidden Templates for Shortcuts -->
+        <div style="display: none;">
+          <!-- Far Left: Ref# Prefix Input -->
+          <div class="v5-ref-input-wrapper" id="v5-shortcut-refBox" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" style="display: flex; align-items: center; gap: 8px; cursor: move;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Ref#</label>
+            <input type="text" 
+                   id="v5-ref-prefix" 
+                   class="v5-ref-input" 
+                   placeholder="REF" 
+                   style="width: 80px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; height: 32px; font-weight: 600; text-align: center; font-family: 'Courier New', monospace; text-transform: uppercase;"
+                   oninput="window.updateRefPrefix(this.value)">
+          </div>
 
-        <!-- New Primary Shortcuts (Hidden by default in V5State) -->
-        <button class="btn-icon-secondary" id="v5-shortcut-undo" onclick="undoV5()" title="Undo" style="display: none;">
-          <i class="ph ph-arrow-counter-clockwise"></i>
-        </button>
-        <button class="btn-icon-secondary" id="v5-shortcut-history" onclick="toggleV5History()" title="History" style="display: none;">
-          <i class="ph ph-clock-counter-clockwise"></i>
-        </button>
-        <button class="btn-icon-secondary" id="v5-shortcut-startOver" onclick="startOverV5()" title="Start Over" style="display: none;">
-          <i class="ph ph-arrows-counter-clockwise"></i>
-        </button>
-        <button class="btn-icon-secondary" id="v5-shortcut-popout" onclick="popOutV5Grid()" title="Pop Out Grid" style="display: none;">
-          <i class="ph ph-arrow-square-out"></i>
-        </button>
+          <!-- Expand/Collapse Toggle (Single Button) -->
+          <button class="btn-action-secondary" id="v5-shortcut-expandAll" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="window.toggleExpandCollapseAll()" style="cursor: move;">
+            <i class="ph ph-caret-down" id="v5-expand-toggle-icon"></i>
+            <span id="v5-expand-toggle-text">Expand All</span>
+          </button>
+
+          <!-- New Primary Shortcuts -->
+          <button class="btn-icon-secondary" id="v5-shortcut-undo" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="undoV5()" title="Undo" style="cursor: move;">
+            <i class="ph ph-arrow-counter-clockwise"></i>
+          </button>
+          <button class="btn-icon-secondary" id="v5-shortcut-history" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="toggleV5History()" title="History" style="cursor: move;">
+            <i class="ph ph-clock-counter-clockwise"></i>
+          </button>
+          <button class="btn-icon-secondary" id="v5-shortcut-startOver" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="startOverV5()" title="Start Over" style="cursor: move;">
+            <i class="ph ph-arrows-counter-clockwise"></i>
+          </button>
+          <button class="btn-icon-secondary" id="v5-shortcut-popout" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="popOutV5Grid()" title="Pop Out Grid" style="cursor: move;">
+            <i class="ph ph-arrow-square-out"></i>
+          </button>
+          
+          <button class="btn-action-blue" id="v5-shortcut-autoCat" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" onclick="autoCategorizeV5()" style="cursor: move;">
+            <i class="ph ph-magic-wand"></i>
+            Auto-Categorize
+          </button>
+
+          <div class="v5-search-compact" id="v5-shortcut-search" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" style="cursor: move;">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" 
+                   id="v5-search-input" 
+                   placeholder="Search..." 
+                   oninput="filterV5Grid(this.value)">
+          </div>
+        </div>
         
         <!-- Left: Selection Count (shown when selected) -->
         <div class="v5-selection-info" id="v5-selection-info" style="display: none;">
@@ -3570,22 +3770,34 @@ window.renderTxnImportV5Page = function () {
             <i class="ph ph-x"></i>
             Clear
           </button>
-          
-          <button class="btn-action-blue" onclick="autoCategorizeV5()" id="v5-shortcut-autoCat">
-            <i class="ph ph-magic-wand"></i>
-            Auto-Categorize
-          </button>
         </div>
         
-        <!-- Right: Search + Menu -->
+        <!-- Right: Menu -->
         <div class="v5-actions-right">
-          <!-- General Search -->
-          <div class="v5-search-compact" id="v5-shortcut-search">
-            <i class="ph ph-magnifying-glass"></i>
-            <input type="text" 
-                   id="v5-search-input" 
-                   placeholder="Search transactions..." 
-                   oninput="filterV5Grid(this.value)">
+          <!-- RECONCILIATION BAR (MVP REFINED) -->
+          <div class="v5-balances-card" id="v5-balances-card" style="display: none;">
+            <div class="v5-balance-item">
+              <div class="v5-balance-label">Opening</div>
+              <input type="text" id="v5-opening-bal" class="v5-balance-value" 
+                     onchange="window.handleOpeningBalanceChange(this)">
+            </div>
+            <div class="v5-balance-item">
+              <div class="v5-balance-label">In</div>
+              <div class="v5-balance-value positive" id="v5-total-in">$0.00</div>
+            </div>
+            <div class="v5-balance-item">
+              <div class="v5-balance-label">Out</div>
+              <div class="v5-balance-value negative" id="v5-total-out">$0.00</div>
+            </div>
+            <div class="v5-balance-item ending">
+              <div class="v5-balance-label">Ending</div>
+              <div class="v5-balance-value" id="v5-ending-bal">$0.00</div>
+            </div>
+          </div>
+
+          <!-- Overflow Warning (Hidden) -->
+          <div id="v5-shortcut-warning" style="display: none; color: #ef4444; font-size: 0.7rem; font-weight: 600; align-items: center; gap: 4px; border: 1px solid #fee2e2; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">
+            <i class="ph ph-warning"></i> Max Capacity
           </div>
           
           <!-- Settings Icon with dropdown menu -->
@@ -5236,7 +5448,9 @@ window.updateReconciliationCard = function () {
 
   const fmt = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  if (openingEl) openingEl.value = fmt(openingBal); // Changed from textContent to value
+  if (openingEl) {
+    openingEl.value = fmt(openingBal); // Changed from textContent to value
+  }
   if (totalInEl) totalInEl.textContent = '+$' + totalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (totalOutEl) totalOutEl.textContent = '-$' + totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (endingEl) endingEl.textContent = fmt(endingBal);
@@ -5403,11 +5617,13 @@ window.updateRefPrefix = function (value) {
     V5State.settings.importPrefs.defaultRefPrefix = prefix;
   }
 
-  // Sync toolbar input if needed (if it wasn't the trigger)
-  const toolbarInput = document.getElementById('v5-ref-prefix');
-  if (toolbarInput && toolbarInput.value.toUpperCase() !== prefix) {
-    toolbarInput.value = prefix;
-  }
+  // Sync toolbar input clones (querySelectorAll handles multiple)
+  const inputs = document.querySelectorAll('#v5-ref-prefix');
+  inputs.forEach(inp => {
+    if (inp.value.toUpperCase() !== prefix) {
+      inp.value = prefix;
+    }
+  });
 
   // Sync settings panel input if open
   const settingsInput = document.getElementById('v5-setting-refprefix');
@@ -5425,19 +5641,13 @@ window.updateRefPrefix = function (value) {
 // SYSTEM A: GRID DATA PERSISTENCE (FIXED)
 // ============================================
 
+// Consolidated Save Data (Sync wrapper for main async function)
 window.saveData = function () {
-  try {
-    // FIX 4: Strictly filter out file blobs before saving
-    const cleanData = V5State.gridData.map(({ sourceFileBlob, ...keep }) => keep);
-
-    localStorage.setItem('ab_v5_grid_data', JSON.stringify(cleanData));
-    localStorage.setItem('ab_v5_last_save', new Date().toISOString());
-
-    // console.log(`💾 Saved ${cleanData.length} transactions (blobs filtered)`);
-    return true;
-  } catch (error) {
-    // Silently fail if quota exceeded - data still works in memory
-    return false;
+  // Use the main async version but don't wait (it handles internal errors)
+  if (typeof saveDataAsync === 'function') {
+    saveDataAsync();
+  } else if (typeof saveData === 'function') {
+    saveData();
   }
 };
 
@@ -5450,17 +5660,23 @@ window.loadSavedData = function () {
     }
 
     V5State.gridData = JSON.parse(savedData);
-    // console.log(`📂 Loaded ${V5State.gridData.length} transactions from storage`);
+    V5State.openingBalance = parseFloat(localStorage.getItem('ab_v5_opening_balance')) || 0;
+    V5State.refPrefix = localStorage.getItem('ab_v5_ref_prefix') || '';
 
     // Initialize grid with loaded data
     if (V5State.gridData.length > 0) {
       window.initV5();
 
+      // Update UI elements
+      const refInp = document.getElementById('v5-ref-prefix');
+      if (refInp) refInp.value = V5State.refPrefix;
+
       // Show toolbar ONLY when data exists
-      const toolbar = document.getElementById('v5-control-toolbar');
+      const toolbar = document.getElementById('v5-action-bar');
       if (toolbar) {
         toolbar.classList.add('show-data');
-        // console.log('✅ Control toolbar shown - data loaded');
+        toolbar.style.display = 'flex';
+        window.renderV5Shortcuts(); // Ensure shortcuts are rendered
       }
 
       // Update reconciliation card
@@ -5655,14 +5871,14 @@ window.toggleV5History = function () {
 
 window.openSourceFile = function (fileId) {
   const row = V5State.gridData.find(r => r.sourceFileId === fileId);
-  if (!row || !row.sourceFileBlob) {
-    console.warn('Source file not found for:', fileId);
+  if (!row) {
+    console.warn('Source file not found for fileId:', fileId);
     return;
   }
 
-  const url = URL.createObjectURL(row.sourceFileBlob);
-  window.open(url, '_blank');
-  console.log(`📂 Opened source file: ${row.sourceFileName}`);
+  const fileName = row.sourceFileName;
+  window.router.navigate(`/txn-import-v5/pdf-viewer?file=${encodeURIComponent(fileName)}`);
+  console.log(`📂 Navigating to internal PDF viewer: ${fileName}`);
 };
 
 // ============================================
@@ -6017,12 +6233,14 @@ window.parseV5Files = async function () {
   if (progressContainer) {
     progressContainer.classList.add('v5-active');
     // Ensure inline style doesn't override class
-    progressContainer.style.display = '';
+    progressContainer.style.display = 'block'; // Explicitly set to block
   }
 
   try {
     // Use ProcessingEngine for background parsing - LOOPING TO PRESERVE FILE SOURCE
     let allTransactions = [];
+    let earliestDate = null;
+    let autoOpeningBalance = 0;
 
     // Process files sequentially to ensure we can tag them correctly
     for (let i = 0; i < V5State.selectedFiles.length; i++) {
@@ -6033,7 +6251,9 @@ window.parseV5Files = async function () {
 
       try {
         // Parse single file
-        const fileTxns = await window.ProcessingEngine.parseFiles([file], () => { });
+        const parseResult = await window.ProcessingEngine.parseFiles([file], () => { });
+        const fileTxns = parseResult.transactions || [];
+        const fileOpeningBal = parseResult.openingBalance || 0;
 
         const endTime = performance.now();
         console.log(`[V5-V2] File ${i + 1}/${V5State.selectedFiles.length} (${file.name}) took ${(endTime - startTime).toFixed(2)}ms`);
@@ -6054,6 +6274,20 @@ window.parseV5Files = async function () {
         });
 
         allTransactions = allTransactions.concat(fileTxns);
+
+        // Track earliest statement's opening balance
+        if (fileTxns.length > 0) {
+          const fileEarliestDate = fileTxns.reduce((min, t) => {
+            const d = t.Date || t.date;
+            return (!min || d < min) ? d : min;
+          }, null);
+
+          if (!earliestDate || fileEarliestDate < earliestDate) {
+            earliestDate = fileEarliestDate;
+            autoOpeningBalance = fileOpeningBal;
+            console.log(`[V5-V2] New earliest statement detected: ${file.name}, Date: ${earliestDate}, Opening Balance: ${autoOpeningBalance}`);
+          }
+        }
 
         // Add to import history (one entry per file)
         const currentHistory = getImportHistory();
@@ -6082,6 +6316,16 @@ window.parseV5Files = async function () {
     }
 
     const transactions = allTransactions;
+
+    // Auto-populate opening balance from earliest statement
+    if (autoOpeningBalance !== 0) {
+      console.log(`[V5-V2] Auto-populating opening balance: ${autoOpeningBalance}`);
+      V5State.openingBalance = autoOpeningBalance;
+      const openingBalInput = document.getElementById('v5-opening-bal');
+      if (openingBalInput) {
+        openingBalInput.value = '$' + autoOpeningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
 
     // CRITICAL: Capture brand detection BEFORE categorization wipes it
     const firstTxn = transactions[0] || {};
@@ -6146,13 +6390,15 @@ window.parseV5Files = async function () {
       transactions: categorized // Store transactions in the statement object!
     });
 
-    // NATURAL FLOW: Push directly to grid for instant visibility
-    V5State.gridData = [...V5State.gridData, ...categorized];
+    // NATURAL FLOW: Set grid data (don't append categorized again if parseV5Files is called multiple times without reset)
+    // Actually, categorized already contains allTransactions. 
+    // If V5State.gridData already had data from previous calls, the spread below would double it.
+    V5State.gridData = categorized;
     V5State.currentAccountCode = null; // Reset to "Pending" state
 
     // Initialize or Update Grid
     if (!V5State.gridApi) {
-      window.initV5Grid();
+      window.initTxnImportV5Grid(); // FIX TYPO: initV5Grid -> initTxnImportV5Grid
     } else {
       V5State.gridApi.setGridOption('rowData', V5State.gridData);
     }
@@ -6179,15 +6425,18 @@ window.parseV5Files = async function () {
     if (window.showV5AssignmentBanner) window.showV5AssignmentBanner();
 
     // SUCCESS: Clear files and stop processing
-    clearV5Files();
+    // clearV5Files(); // DISABLED: Keep files in memory for Audit/PDF Viewer
 
-  } catch (error) {
-    console.error('Parse failed:', error);
-    // ... error handling
+  } catch (err) {
+    console.error('❌ [V5-V2] parseV5Files Critical Error:', err);
+    // Error notification would go here
   } finally {
     V5State.isProcessing = false;
     const progressContainer = document.getElementById('v5-progress-container');
-    if (progressContainer) progressContainer.classList.remove('v5-active');
+    if (progressContainer) {
+      progressContainer.classList.remove('v5-active');
+      progressContainer.style.display = 'none';
+    }
   }
 };
 
@@ -6403,7 +6652,13 @@ window.executeV5Assignment = function (stmtId) {
     txn.refNumber = String(idx + 1).padStart(3, '0');
   });
 
-  document.querySelector('.v5-control-toolbar')?.classList.add('show-data');
+  // Show action bar and update reconciliation
+  const actionBar = document.getElementById('v5-action-bar');
+  if (actionBar) {
+    actionBar.classList.add('show-data');
+    actionBar.style.display = 'flex';
+    if (window.updateReconciliationCard) window.updateReconciliationCard();
+  }
 
   // Save State
   saveData();
@@ -6602,52 +6857,14 @@ function updateV5Progress(current, total, message) {
 // ============================================
 
 
-window.initV5Grid = function () {
-  const container = document.getElementById('v5-grid-container');
-  if (!container) {
-    // Grid container not ready - silent return
-    return;
-  }
 
-  // IMPORTANT: Hide empty state, show grid
-  const emptyState = document.getElementById('v5-empty-state');
-  if (emptyState) emptyState.style.display = 'none';
-  container.style.display = 'block';
-
-  console.log('✅ Grid initialized successfully with', V5State.gridData.length, 'rows');
-
-  // Update statement badge based on data
-  if (typeof updateStatementBadge === 'function') {
-    updateStatementBadge();
-  }
-  console.log('📊 First 3 transactions:', V5State.gridData.slice(0, 3));
-
-  // DEBUG: Log full structure of first transaction
-  if (V5State.gridData.length > 0) {
-    const first = V5State.gridData[0];
-    console.log('🔍 FULL FIRST TRANSACTION:', JSON.stringify(first, null, 2));
-    console.log('🔍 Keys:', Object.keys(first));
-
-    // DEBUG: Check ALL descriptions for commas
-    console.log('🔍 DESCRIPTION COMMA CHECK:');
-    V5State.gridData.slice(0, 20).forEach((txn, idx) => {
-      const desc = txn.Description || txn.description || '';
-      const hasComma = desc.includes(',');
-      const status = hasComma ? '✅' : '❌';
-      console.log(`  ${status} Row ${String(idx + 1).padStart(3, '0')}: "${desc.substring(0, 60)}..."`);
-    });
-  }
-
-  // NOTE: Column definitions are now defined INLINE inside gridOptions below.
-  // This consolidation ensures a single source of truth for all column properties.
-
-  // ---------------------------------------------------------
-  // ACTION MENU LOGIC (Attached to Window for global access)
-  // ---------------------------------------------------------
-  if (!document.getElementById('v5-action-menu-styles')) {
-    const style = document.createElement('style');
-    style.id = 'v5-action-menu-styles';
-    style.innerHTML = `
+// ---------------------------------------------------------
+// ACTION MENU LOGIC (Attached to Window for global access)
+// ---------------------------------------------------------
+if (!document.getElementById('v5-action-menu-styles')) {
+  const style = document.createElement('style');
+  style.id = 'v5-action-menu-styles';
+  style.innerHTML = `
       .kebab-btn { background: transparent; border: none; color: #6B7280; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: background 0.15s; width: 28px; height: 28px; }
       .kebab-btn:hover { background: #F3F4F6; color: #111827; }
       
@@ -6675,45 +6892,61 @@ window.initV5Grid = function () {
       @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
       
       /* Audit Detail Panel Styling */
-      .v5-audit-detail { padding: 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.85rem; }
-      .v5-audit-grid { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+      .v5-audit-detail { padding: 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.85rem; border-radius: 0 0 8px 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+      .v5-audit-grid { display: grid; grid-template-columns: 120px 1fr; gap: 8px; margin-bottom: 12px; }
+      .v5-audit-label { color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.025em; font-weight: 600; }
       .v5-audit-value { color: #1e293b; font-family: 'JetBrains Mono', 'Roboto Mono', monospace; }
+      
+      .v5-audit-crop-container { 
+        margin-top: 12px; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 6px; 
+        overflow: hidden; 
+        background: white;
+        position: relative;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .v5-audit-crop-canvas { width: 100%; height: auto; image-rendering: high-quality; }
+      .v5-audit-crop-loading { position: absolute; color: #94a3b8; font-size: 0.75rem; font-style: italic; }
       
       /* Right Align Header Fix */
       .ag-right-aligned-header .ag-header-cell-label { justify-content: flex-start !important; }
     `;
-    document.head.appendChild(style);
-  }
+  document.head.appendChild(style);
+}
 
-  // Create Menu Element if missing
-  if (!document.getElementById('v5-action-menu')) {
-    const menu = document.createElement('div');
-    menu.id = 'v5-action-menu';
-    menu.className = 'v5-action-dropdown';
-    document.body.appendChild(menu);
-    window.addEventListener('click', (e) => {
-      if (!e.target.closest('.kebab-btn') && !e.target.closest('.v5-action-dropdown')) {
-        menu.style.display = 'none';
-      }
-    });
+// Create Menu Element if missing
+if (!document.getElementById('v5-action-menu')) {
+  const menu = document.createElement('div');
+  menu.id = 'v5-action-menu';
+  menu.className = 'v5-action-dropdown';
+  document.body.appendChild(menu);
+  window.addEventListener('click', (e) => {
+    if (!e.target.closest('.kebab-btn') && !e.target.closest('.v5-action-dropdown')) {
+      menu.style.display = 'none';
+    }
+  });
 
-    window.addEventListener('scroll', () => { menu.style.display = 'none'; }, true);
-  }
+  window.addEventListener('scroll', () => { menu.style.display = 'none'; }, true);
+}
 
-  // Global Toggle Function - Updates for consolidated actions
-  window.toggleV5ActionMenu = (event, rowId, sourceFileId, fileType, fileName) => {
-    if (event && event.stopPropagation) event.stopPropagation();
+// Global Toggle Function - Updates for consolidated actions
+window.toggleV5ActionMenu = (event, rowId, sourceFileId, fileType, fileName) => {
+  if (event && event.stopPropagation) event.stopPropagation();
 
-    const menu = document.getElementById('v5-action-menu');
-    const btn = event.currentTarget;
-    const rect = btn.getBoundingClientRect();
+  const menu = document.getElementById('v5-action-menu');
+  const btn = event.currentTarget;
+  const rect = btn.getBoundingClientRect();
 
-    const isPdf = fileType && (fileType === 'pdf' || fileType.includes('pdf'));
-    const pdfItem = isPdf ?
-      `<button class="v5-action-item" onclick="openSourceFile('${sourceFileId}'); document.getElementById('v5-action-menu').style.display='none';"><i class="ph ph-file-pdf" style="color: #EF4444;"></i>View Source PDF</button>` :
-      `<div class="v5-action-item" style="color: #9CA3AF; cursor: default;"><i class="ph ph-file-dashed"></i>No Source File</div>`;
+  const isPdf = fileType && (fileType === 'pdf' || fileType.includes('pdf'));
+  const pdfItem = isPdf ?
+    `<button class="v5-action-item" onclick="openSourceFile('${sourceFileId}'); document.getElementById('v5-action-menu').style.display='none';"><i class="ph ph-file-pdf" style="color: #EF4444;"></i>View Source PDF</button>` :
+    `<div class="v5-action-item" style="color: #9CA3AF; cursor: default;"><i class="ph ph-file-dashed"></i>No Source File</div>`;
 
-    menu.innerHTML = `
+  menu.innerHTML = `
       ${pdfItem}
       <button class="v5-action-item" onclick="window.swapDebitCredit('${rowId}'); document.getElementById('v5-action-menu').style.display='none';">
         <i class="ph ph-arrows-left-right" style="color: #3B82F6;"></i>
@@ -6730,39 +6963,107 @@ window.initV5Grid = function () {
       </button>
     `;
 
-    menu.style.display = 'flex';
-    menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
-    menu.style.left = `${rect.right - 180}px`;
-  };
+  menu.style.display = 'flex';
+  menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
+  menu.style.left = `${rect.right - 180}px`;
+};
 
-  /** NEW: Toggle Audit View for Community compatibility */
-  /** NEW: Toggle Audit View for Community compatibility */
-  window.toggleV5Audit = (rowId) => {
-    if (!V5State.auditModeActiveRowIds) V5State.auditModeActiveRowIds = [];
+/** NEW: Toggle Audit View for Community compatibility */
+/** NEW: Toggle Audit View for Community compatibility */
+window.toggleV5Audit = (rowId) => {
+  if (!V5State.auditModeActiveRowIds) V5State.auditModeActiveRowIds = [];
 
-    if (V5State.auditModeActiveRowIds.includes(rowId)) {
-      V5State.auditModeActiveRowIds = V5State.auditModeActiveRowIds.filter(id => id !== rowId);
-    } else {
-      V5State.auditModeActiveRowIds.push(rowId);
-    }
+  if (V5State.auditModeActiveRowIds.includes(rowId)) {
+    V5State.auditModeActiveRowIds = V5State.auditModeActiveRowIds.filter(id => id !== rowId);
+  } else {
+    V5State.auditModeActiveRowIds.push(rowId);
+  }
 
-    if (V5State.gridApi) {
-      V5State.gridApi.redrawRows();
-    }
-  };
+  if (V5State.gridApi) {
+    V5State.gridApi.redrawRows();
+  }
+};
 
-  // Column definition logging moved to onGridReady for accuracy
+/** [PHASE 4] Render literal crop from source PDF */
+window.renderAuditCrop = async (rowId, canvasId, auditData) => {
+  if (!auditData || !auditData.page) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
 
-  // ---------------------------------------------------------
-  // FLOATING HOVER ACTION BUTTON LOGIC
-  // ---------------------------------------------------------
-  const setupHoverActionButton = () => {
-    if (document.getElementById('v5-hover-btn')) return;
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (!row || !row.sourceFileName) return;
 
-    const btn = document.createElement('button');
-    btn.id = 'v5-hover-btn';
-    btn.innerHTML = '<i class="ph ph-dots-three-vertical"></i>';
-    btn.style.cssText = `
+  const file = (V5State.selectedFiles && V5State.selectedFiles.find(f => f.name === row.sourceFileName)) ||
+    (V5State.fileCache && V5State.fileCache.find(f => f.name === row.sourceFileName));
+
+  if (!file) {
+    console.warn('⚠️ File for crop not found in memory:', row.sourceFileName);
+    return;
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(auditData.page);
+
+    const scale = 2.0; // High quality crop
+    const viewport = page.getViewport({ scale });
+
+    const renderCanvas = document.createElement('canvas');
+    renderCanvas.width = viewport.width;
+    renderCanvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: renderCanvas.getContext('2d'),
+      viewport: viewport
+    }).promise;
+
+    // Extract slice centered at auditData.y
+    // PDF coordinates are bottom-up, Viewport is top-down
+    const canvasCtx = canvas.getContext('2d');
+    const boxHeight = 100; // UI height
+    canvas.width = viewport.width;
+    canvas.height = boxHeight * scale;
+
+    // Calculate slice Y in viewport pixels
+    const pageHeightPt = page.view[3];
+    const yFromBottomPt = auditData.y;
+    const yFromTopPt = pageHeightPt - yFromBottomPt;
+
+    const sliceCenterY = yFromTopPt * scale;
+    const sliceTop = sliceCenterY - (canvas.height / 2);
+
+    canvasCtx.drawImage(
+      renderCanvas,
+      0, sliceTop, viewport.width, canvas.height,
+      0, 0, viewport.width, canvas.height
+    );
+
+    // Clean up ref
+    renderCanvas.width = 0;
+    renderCanvas.height = 0;
+
+    // Hide loading text
+    const loading = canvas.parentElement.querySelector('.v5-audit-crop-loading');
+    if (loading) loading.style.display = 'none';
+
+  } catch (err) {
+    console.error('Audit Crop Error:', err);
+  }
+};
+
+// Column definition logging moved to onGridReady for accuracy
+
+// ---------------------------------------------------------
+// FLOATING HOVER ACTION BUTTON LOGIC
+// ---------------------------------------------------------
+const setupHoverActionButton = () => {
+  if (document.getElementById('v5-hover-btn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'v5-hover-btn';
+  btn.innerHTML = '<i class="ph ph-dots-three-vertical"></i>';
+  btn.style.cssText = `
       position: fixed;
       display: none;
       z-index: 999;
@@ -6778,697 +7079,549 @@ window.initV5Grid = function () {
       justify-content: center;
       transition: all 0.1s;
     `;
-    btn.onmouseenter = () => {
-      btn.style.background = '#F3F4F6';
-      btn.style.color = '#111827';
-      // Keep clear of hiding logic
-      clearTimeout(window.v5HoverTimer);
-    };
-    btn.onmouseleave = () => {
-      btn.style.background = 'white';
-      btn.style.color = '#6B7280';
-      // Hide after delay if leaving button (Increased to at least 300ms to stop flicker)
-      window.v5HoverTimer = setTimeout(() => {
-        btn.style.display = 'none';
-      }, 300);
-    };
-
-    // ACTION ON CLICK
-    btn.onclick = (e) => {
-      const rowId = btn.dataset.rowId;
-      if (!rowId) return;
-
-      // Use Global Toggle
-      window.toggleV5ActionMenu(
-        e,
-        rowId,
-        btn.dataset.sourceFileId,
-        btn.dataset.sourceFileType,
-        btn.dataset.sourceFileName
-      );
-    };
-
-    document.body.appendChild(btn);
+  btn.onmouseenter = () => {
+    btn.style.background = '#F3F4F6';
+    btn.style.color = '#111827';
+    // Keep clear of hiding logic
+    clearTimeout(window.v5HoverTimer);
+  };
+  btn.onmouseleave = () => {
+    btn.style.background = 'white';
+    btn.style.color = '#6B7280';
+    // Hide after delay if leaving button (Increased to at least 300ms to stop flicker)
+    window.v5HoverTimer = setTimeout(() => {
+      btn.style.display = 'none';
+    }, 300);
   };
 
-  // Run Setup
-  setupHoverActionButton();
+  // ACTION ON CLICK
+  btn.onclick = (e) => {
+    const rowId = btn.dataset.rowId;
+    if (!rowId) return;
 
-  const gridOptions = {
-    pagination: true,
-    paginationPageSize: V5State.settings.performance.rowsPerPage,
-    rowBuffer: V5State.settings.performance.virtualization ? 10 : 0,
-    getRowId: (params) => {
-      // ROBUST IDENTITY: Use ID if present, else composite key (Date + Desc + Amount + rowId)
-      const data = params.data || {};
-      if (data.id) return data.id;
+    // Use Global Toggle
+    window.toggleV5ActionMenu(
+      e,
+      rowId,
+      btn.dataset.sourceFileId,
+      btn.dataset.sourceFileType,
+      btn.dataset.sourceFileName
+    );
+  };
 
-      // Fallback: Use description + date + index-in-data
-      // We avoid params.node.rowIndex because it may not be ready during initialization
-      const idx = V5State.gridData.indexOf(data);
-      return `v5-${data.date || 'nodate'}-${data.description || 'nodesc'}-${data.debit || data.credit || 0}-${idx}`;
-    },
-    masterDetail: false, // [COMMUNITY] Disabling masterDetail
-    suppressRowClickSelection: true,
-    rowSelection: 'multiple',
-    columnDefs: [
-      {
-        colId: 'checkbox',
-        headerName: '',
-        checkboxSelection: true,
-        headerCheckboxSelection: true,
-        headerCheckboxSelectionFilteredOnly: true,
-        width: 40,
-        minWidth: 40,
-        maxWidth: 40,
-        resizable: false,
-        suppressSizeToFit: true
-      },
-      {
-        colId: 'refNumber',
-        headerName: 'Ref#',
-        field: 'refNumber',
-        width: 120,
-        minWidth: 120,
-        suppressSizeToFit: true,
-        comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
-        valueGetter: params => {
-          // PRIORITY: Use the Ref# input box value as THE source of truth
-          const p = V5State.refPrefix || '';
-          const num = String(params.node.rowIndex + 1).padStart(3, '0');
-          return p ? `${p}-${num}` : num;
-        },
-        cellStyle: { fontWeight: '600', color: '#6B7280' }
-      },
-      {
-        colId: 'date',
-        headerName: 'Date',
-        field: 'date',
-        width: 110,
-        minWidth: 110,
-        suppressSizeToFit: true,
-        editable: true,
-        valueGetter: params => params.data.date || params.data.Date || '',
-        valueFormatter: params => {
-          try { return params.value ? new Date(params.value).toLocaleDateString() : ''; }
-          catch (e) { return params.value; }
-        }
-      },
-      {
-        colId: 'description',
-        headerName: 'Description',
-        field: 'description',
-        flex: 1, // ABSORB ALL REMAINING SPACE (Wall-to-Wall)
-        minWidth: 250,
-        editable: true,
-        cellEditor: 'agTextCellEditor',
-        valueGetter: params => params.data.description || params.data.Description || '',
-        cellRenderer: params => {
-          const val = params.value || '';
-          const data = params.data || {};
-          const rowId = params.node.id;
-          const isAuditActive = V5State.auditModeActiveRowIds && V5State.auditModeActiveRowIds.includes(rowId);
+  document.body.appendChild(btn);
+};
 
-          let content = '';
-          if (!val.includes(',')) {
-            content = `<div style="word-break: break-all; white-space: normal; font-weight: 500;">${val}</div>`;
-          } else {
-            const parts = val.split(',');
-            content = `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
-              <div style="font-weight: 600;">${parts[0].trim()}</div>
-              <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
-            </div>`;
-          }
+// Run Setup
+setupHoverActionButton();
 
-          if (isAuditActive) {
-            content += `
-              <div class="v5-audit-detail" style="margin-top: 8px; position: relative;">
-                <button onclick="event.stopPropagation(); window.toggleV5Audit('${rowId}')" 
-                        style="position: absolute; top: 0px; right: 0px; background: none; border: none; font-size: 14px; color: #94a3b8; cursor: pointer;">✕</button>
-                <div class="v5-audit-grid">
-                  <div class="v5-audit-label">Raw Desc:</div>
-                  <div class="v5-audit-value" style="font-weight: 700;">${data.rawDescription || data.Description || 'N/A'}</div>
-                  
-                  <div class="v5-audit-label">Source:</div>
-                  <div class="v5-audit-value">${data._sourceFile || data.sourceFile || data._bank || 'Uploaded File'}</div>
-                  
-                  <div class="v5-audit-label">Ref Code:</div>
-                  <div class="v5-audit-value">
-                    <span style="color: #059669; font-weight: 600;">${data.method || 'Manual Entry'}</span> 
-                    <span style="color: #64748b;">(${Math.round((data.confidence || 0) * 100)}% confidence)</span>
-                  </div>
-                </div>
-              </div>`;
-          }
-          return content;
-        },
-        autoHeight: true,
-        cellStyle: { 'white-space': 'normal', 'word-break': 'break-all', 'padding-top': '8px', 'padding-bottom': '8px' }
-      },
-      {
-        colId: 'debit',
-        headerName: 'Debit',
-        field: 'debit',
-        minWidth: 80,
-        suppressSizeToFit: true,
-        type: 'numericColumn',
-        headerClass: 'ag-right-aligned-header',
-        cellStyle: { color: '#EF4444', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
-        editable: true,
-        valueGetter: params => {
-          const val = parseFloat(params.data.debit || params.data.Debit) || 0;
-          return val > 0 ? val : 0;
-        },
-        valueFormatter: params => {
-          const val = parseFloat(params.value) || 0;
-          return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
-        },
-        valueSetter: params => {
-          const val = parseFloat(params.newValue) || 0;
-          params.data.debit = val;
-          params.data.Debit = val;
-          params.data.credit = 0;
-          params.data.Credit = 0;
-          window.recalculateAllBalances();
-          return true;
-        }
-      },
-      {
-        colId: 'credit',
-        headerName: 'Credit',
-        field: 'credit',
-        minWidth: 80,
-        suppressSizeToFit: true,
-        type: 'numericColumn',
-        headerClass: 'ag-right-aligned-header',
-        cellStyle: { color: '#10B981', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
-        editable: true,
-        valueGetter: params => {
-          const val = parseFloat(params.data.credit || params.data.Credit) || 0;
-          return val > 0 ? val : 0;
-        },
-        valueFormatter: params => {
-          const val = parseFloat(params.value) || 0;
-          return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
-        },
-        valueSetter: params => {
-          const val = parseFloat(params.newValue) || 0;
-          params.data.credit = val;
-          params.data.Credit = val;
-          params.data.debit = 0;
-          params.data.Debit = 0;
-          window.recalculateAllBalances();
-          return true;
-        }
-      },
-      {
-        colId: 'salesTax',
-        headerName: 'Sales Tax',
-        field: 'salesTax',
-        width: 120,
-        hide: !V5State.settings.columns.salesTax,
-        valueGetter: params => {
-          const d = params.data.debit || 0;
-          const c = params.data.credit || 0;
-          const amt = d > 0 ? -d : c;
+// ---------------------------------------------------------
+// SMART POPPER LOGIC (Glassmorphism Audit)
+// ---------------------------------------------------------
 
-          // Localization Fix: Use province-specific rates
-          const province = V5State.settings.importPrefs?.province || 'ON';
-          const rate = V5_CANADIAN_TAX_RATES[province]?.total || 0.13;
-
-          // Internal formula: Amount / (1 + rate) * rate
-          // Example for 13%: Amount * 13 / 113
-          return (amt / (1 + rate) * rate).toFixed(2);
-        },
-        valueFormatter: params => '$' + Math.abs(params.value).toLocaleString()
-      },
-      {
-        colId: 'foreignBalance',
-        headerName: 'Foreign Bal',
-        field: 'foreignBalance',
-        width: 140,
-        hide: !V5State.settings.columns.foreignBalance,
-        valueGetter: params => {
-          const baseBal = params.data.balance || 0;
-          const rate = V5State.settings.currency.rates['USD'] || 0.74; // Demo USD rate
-          return (baseBal * rate).toFixed(2);
-        },
-        valueFormatter: params => {
-          return 'USD ' + parseFloat(params.value).toLocaleString();
-        }
-      },
-      {
-        colId: 'balance',
-        headerName: 'Balance',
-        field: 'balance',
-        minWidth: 110, // Wider for running balance
-        suppressSizeToFit: true,
-        type: 'numericColumn',
-        headerClass: 'ag-right-aligned-header',
-        editable: false,
-        valueFormatter: params => parseFloat(params.value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-        cellStyle: { color: '#111827', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' }
-      },
-
-      {
-        colId: 'account',
-        headerName: 'Account',
-        field: 'account',
-        minWidth: 160,
-        suppressSizeToFit: true,
-        editable: true,
-        filter: true, // SEARCHABLE AS REQUESTED
-        cellEditor: GroupedAccountEditor,
-        valueGetter: params => params.data.account || params.data.Category || params.data.AccountId || 'Uncategorized',
-        valueFormatter: params => resolveAccountName(params.value)
-      },
-      {
-        colId: 'action',
-        headerName: 'Action',
-        width: 110,
-        minWidth: 110,
-        suppressMenu: true,
-        sortable: false,
-        filter: false,
-        resizable: false,
-        cellStyle: { 'text-align': 'center', 'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'padding': '0', 'border': 'none' },
-        cellRenderer: (params) => {
-          if (!params.data) return '';
-          const d = params.data;
-          // Standardized metadata for action menu
-          const fileId = d.sourceFileId || d._sourceFileId || '';
-          const fType = d.fileType || d._fileType || (d.sourceFile?.endsWith('.pdf') ? 'pdf' : '');
-          const fName = d.sourceFileName || d._sourceFileName || d.sourceFile || '';
-
-          return `
-            <div style="display:flex; justify-content:center; align-items:center; height:100%;">
-              <button class="kebab-btn" 
-                onclick="window.toggleV5ActionMenu(event, '${params.node.id}', '${fileId}', '${fType}', '${fName}')"
-                style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:18px; padding:4px; display:flex; align-items:center; justify-content:center; transition: color 0.2s;"
-                onmouseover="this.style.color='#475569'"
-                onmouseout="this.style.color='#94a3b8'">
-                <i class="ph ph-dots-three"></i>
-              </button>
-            </div>
-          `;
-        }
-      }
-    ],
-    rowData: V5State.gridData,
-    headerHeight: 48,
-    rowHeight: 44,
-    rowSelection: 'multiple',
-    animateRows: true,
-    defaultColDef: {
-      sortable: true,
-      filter: true,
-      resizable: true,
-      minWidth: 50,
-      suppressMenu: true
-    },
-
-    // LIVE BALANCE RECALCULATION
-    onSortChanged: (params) => {
-      console.log('🔄 Sort changed - recalculating live balances');
-      window.recalculateAllBalances();
-    },
-    onFilterChanged: (params) => {
-      console.log('🔍 Filter changed - recalculating live balances');
-      window.recalculateAllBalances();
-    },
-    onCellValueChanged: (params) => {
-      captureState();
-      saveData();
-      if (params.colDef.field === 'account') {
-        window.ProcessingEngine.learnFromUserAction('category_change', {
-          description: params.data.description,
-          newCategory: params.newValue
-        });
-      }
-      window.recalculateAllBalances();
-    },
-    onRowSelected: (event) => {
-      // DEBUG: Selection UI with modern floating bar
-      const selected = event.api.getSelectedRows();
-      console.log('🔘 Selection changed:', selected.length, 'items');
-
-      const modernBar = document.getElementById('v5-bulk-bar'); // Modern floating pill
-      const inlineBar = document.getElementById('v5-inline-bar'); // Old yellow strip
-      const bulkModeBar = document.getElementById('bulk-mode-bar');
-      const bulkCountSpan = document.getElementById('v5-bulk-count'); // For modern bar
-
-      console.log('📊 Elements found:', {
-        modernBar: !!modernBar,
-        inlineBar: !!inlineBar,
-        bulkModeBar: !!bulkModeBar,
-        bulkCountSpan: !!bulkCountSpan
-      });
-
-      // ALWAYS hide the old inline bar
-      if (inlineBar) {
-        inlineBar.style.display = 'none';
-        console.log('✅ Hid inline bar');
-      }
-      if (bulkModeBar) {
-        bulkModeBar.style.display = 'none';
-      }
-
-      // Show/hide modern bar based on selection
-      if (selected.length > 1) {
-        if (modernBar) {
-          modernBar.style.display = 'flex';
-          console.log('✅ Showing modern bar');
-        } else {
-          console.error('❌ Modern bar (#v5-bulk-bar) not found!');
-        }
-        if (bulkCountSpan) {
-          bulkCountSpan.textContent = `${selected.length} selected`;
-        }
-      } else {
-        if (modernBar) {
-          modernBar.style.display = 'none';
-          console.log('✅ Hiding modern bar (selection <= 1)');
-        }
-      }
-    },
-
-    onGridReady: (params) => {
-      V5State.gridApi = params.api;
-      console.log('✅ Grid Ready');
-
-      // EXCEL-STYLE FITTING: 
-      // 1. Auto-size all columns tightly to content
-      // 2. Expand only the Description column to fill remaining void
-      // 3. Ensure "Action" column is visible
-      params.api.autoSizeAllColumns();
-      setTimeout(() => params.api.sizeColumnsToFit(), 50);
-
-      window.recalculateAllBalances();
-      window.addEventListener('resize', () => {
-        params.api.sizeColumnsToFit();
-      });
-    },
-
-    onBodyScroll: () => {
-      // No-op
+// Inject CSS
+const popperStyle = document.createElement('style');
+popperStyle.textContent = `
+    .v5-smart-popper {
+      position: fixed;
+      z-index: 10000;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border-radius: 12px;
+      padding: 16px;
+      width: 400px;
+      max-width: 90vw;
+      font-family: 'Inter', sans-serif;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px) scale(0.98);
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                  transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-  };
+    
+    .v5-smart-popper.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
 
-  // RESTORED ACTION HELPERS (ID-Based)
-  // PDF VIEWER HELPER (DEBUG ENABLED)
-  window.viewSourcePDF = (rowId) => {
-    const row = V5State.gridData.find(r => r.id === rowId);
-    if (!row) {
-      console.error('❌ Row not found:', rowId);
+    .v5-smart-popper-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      margin-bottom: 4px;
+    }
+
+    .v5-smart-popper-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+    }
+
+    .v5-smart-popper-ref {
+      font-family: monospace;
+      font-size: 0.75rem;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #475569;
+    }
+
+    .v5-smart-popper-raw {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.05);
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .v5-smart-popper-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .v5-smart-popper-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .v5-audit-icon {
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      margin-right: 6px;
+    }
+    
+    .v5-audit-icon:hover, .v5-audit-icon.active {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+    }
+  `;
+document.head.appendChild(popperStyle);
+
+// Create Global Popper Element
+let smartPopper = document.getElementById('v5-smart-popper');
+if (!smartPopper) {
+  smartPopper = document.createElement('div');
+  smartPopper.id = 'v5-smart-popper';
+  smartPopper.className = 'v5-smart-popper';
+  document.body.appendChild(smartPopper);
+}
+
+let popperHideTimer = null;
+
+// Helper: Render Visual Audit Crop
+window.renderVisualAudit = async (row, containerId) => {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  try {
+    if (!row.sourceFileName) {
+      container.innerHTML = `<div class="v5-smart-popper-loading" style="color:#ef4444;">No source file linked</div>`;
       return;
     }
 
-    console.log('📄 Requesting PDF for row:', rowId);
-    console.log('   Target File:', row.sourceFileName);
-
-    // Debug State
-    console.log('   Memory State:', {
-      selectedFiles: V5State.selectedFiles ? V5State.selectedFiles.length : 0,
-      fileCache: V5State.fileCache ? V5State.fileCache.length : 0
-    });
-
-    if (row.sourceFileName) {
-      let file = null;
-      let source = 'none';
-
-      // 1. Check Active Selection
-      if (!file && V5State.selectedFiles) {
-        file = V5State.selectedFiles.find(f => f.name === row.sourceFileName);
-        if (file) source = 'selectedFiles';
-      }
-
-      // 2. Check File Cache
-      if (!file && V5State.fileCache) {
-        file = V5State.fileCache.find(f => f.name === row.sourceFileName);
-        if (file) source = 'fileCache';
-      }
-
-      if (file) {
-        console.log(`✅ File found in [${source}]:`, file.name, file.size);
-        const fileURL = URL.createObjectURL(file);
-        window.open(fileURL, '_blank');
-        return;
-      }
-
-      // 3. Last Resort: BrainStorage
-      console.log('⚠️ File not in memory, checking BrainStorage...');
-      if (window.BrainStorage && window.BrainStorage.getFile) {
-        window.BrainStorage.getFile(row.sourceFileName).then(file => {
-          if (file) {
-            console.log('✅ File retrieved from BrainStorage');
-            const fileURL = URL.createObjectURL(file);
-            window.open(fileURL, '_blank');
-          } else {
-            console.error('❌ File not found in BrainStorage');
-            alert(`File "${row.sourceFileName}" not found in cache.\nPlease re-upload to view.`);
-          }
-        }).catch(e => {
-          console.error('❌ BrainStorage Error:', e);
-          alert(`Error retrieving file: ${e.message}`);
-        });
-        return;
-      }
-
-      alert(`File "${row.sourceFileName}" not found in current session.\n(Reloading the page clears file memory)`);
-    } else {
-      alert('No source file linked to this transaction.');
-    }
-  };
-
-  // RESTORED ACTION HELPERS (ID-Based)
-  window.deleteV5Row = (rowId) => {
-    // Custom In-Page Confirmation
-    const existingModal = document.getElementById('v5-delete-modal');
-    if (existingModal) existingModal.remove();
-
-    const row = V5State.gridData.find(r => r.id === rowId);
-    if (!row) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'v5-delete-modal';
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5); z-index: 10000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    modal.innerHTML = `
-        <div style="background: white; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1f2937;">Delete Transaction?</h3>
-            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 14px;">
-                Are you sure you want to delete <strong>${row.description}</strong>? This cannot be undone unless you use the Undo function immediately.
-            </p>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button onclick="document.getElementById('v5-delete-modal').remove()" 
-                    style="padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                    Cancel
-                </button>
-                <button onclick="confirmDeleteV5Row('${rowId}')" 
-                    style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                    Delete
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-  };
-
-  window.confirmDeleteV5Row = (rowId) => {
-    document.getElementById('v5-delete-modal')?.remove();
-
-    // Find and remove
-    const idx = V5State.gridData.findIndex(r => r.id === rowId);
-    if (idx === -1) return;
-
-    const deletedRow = V5State.gridData[idx];
-
-    // PUSH TO UNDO STACK
-    V5State.undoStack.push({
-      type: 'delete',
-      row: { ...deletedRow },
-      index: idx
-    });
-    updateUndoButton();
-
-    V5State.gridData.splice(idx, 1);
-
-    const rowNode = V5State.gridApi.getRowNode(rowId);
-    if (rowNode) {
-      V5State.gridApi.applyTransaction({ remove: [rowNode.data] });
-    } else {
-      V5State.gridApi.setGridOption('rowData', V5State.gridData);
+    // 1. Resolve File
+    let file = null;
+    if (row.sourceFileBlob) {
+      file = row.sourceFileBlob;
+    } else if (V5State.selectedFiles || V5State.fileCache) {
+      file = (V5State.selectedFiles?.find(f => f.name === row.sourceFileName)) ||
+        (V5State.fileCache?.find(f => f.name === row.sourceFileName));
     }
 
-    recalculateAllBalances();
-    saveData();
-    console.log('🗑️ Deleted row ID:', rowId);
-  };
-
-  window.swapDebitCredit = (rowId) => {
-    const row = V5State.gridData.find(r => r.id === rowId);
-    if (!row) return;
-
-    // PUSH TO UNDO STACK implies we want to reverse this later
-    // The "reverse" of a swap is just another swap on the same row!
-    V5State.undoStack.push({
-      type: 'swap',
-      rowId: rowId
-    });
-    updateUndoButton();
-
-    const oldDebit = parseFloat(row.debit || 0);
-    const oldCredit = parseFloat(row.credit || 0);
-
-    row.debit = oldCredit;
-    row.Debit = oldCredit;
-    row.credit = oldDebit;
-    row.Credit = oldDebit;
-    row.type = row.debit > 0 ? 'Debit' : 'Credit';
-
-    updateRowBalance(row);
-
-    const res = V5State.gridApi.applyTransaction({ update: [row] });
-    if (!res || res.updated.length === 0) {
-      V5State.gridApi.refreshCells({ force: true });
+    if (!file) {
+      container.innerHTML = `<div class="v5-smart-popper-loading" style="color:#ef4444;">Source file not found in memory</div>`;
+      return;
     }
 
-    saveData();
-    window.updateV5BalancingSummary(); // Added: Call after swap
-    console.log('🔄 Swapped D/C for row ID:', rowId);
-  };
+    // 2. Load PDF
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pageNum = row.audit?.page || 1;
+    const page = await pdf.getPage(pageNum);
 
-  // ROBUST UNDO FUNCTION
-  window.undoLastAction = () => {
-    if (V5State.undoStack.length === 0) return;
+    // 3. Setup Canvas for High-Res Crop
+    const scale = 2.0;
+    const viewport = page.getViewport({ scale });
 
-    const action = V5State.undoStack.pop();
-    updateUndoButton();
-    console.log('↩️ Undoing action:', action.type);
+    // 4. Calculate Crop Coordinates
+    // audit.y is typically numeric (from PDF parsing)
+    // If audit.y is missing, we default to showing the top of the page or specific coordinates
+    let cropY = 0;
+    let cropHeight = 100 * scale; // Default height
 
-    if (action.type === 'delete') {
-      const row = action.row;
-      // Insert back at original index if possible, or push
-      if (action.index >= 0 && action.index <= V5State.gridData.length) {
-        V5State.gridData.splice(action.index, 0, row);
-      } else {
-        V5State.gridData.push(row);
-      }
+    if (row.audit && typeof row.audit.y === 'number') {
+      const pdfY = row.audit.y;
+      const auditHeight = row.audit.height || 14;
 
-      V5State.gridApi.applyTransaction({ add: [row], addIndex: action.index });
-      console.log('↩️ Restored deleted row:', row.id);
+      // PDF Coordinates: 0,0 is Bottom-Left. Y increases upwards.
+      // Canvas Coordinates: 0,0 is Top-Left. Y increases downwards.
+      // pdfY is usually the baseline of the text.
+      // We want to capture from slightly above the baseline (for ascenders) downwards.
 
-    } else if (action.type === 'swap') {
-      // Just call swap again to reverse it
-      // But DON'T push to undo stack this time (to avoid loop)
-      // We manually swap logic here without calling window.swapDebitCredit
-      const row = V5State.gridData.find(r => r.id === action.rowId);
-      if (row) {
-        const oldDebit = parseFloat(row.debit || 0);
-        const oldCredit = parseFloat(row.credit || 0);
-        row.debit = oldCredit;
-        row.Debit = oldCredit;
-        row.credit = oldDebit;
-        row.Credit = oldDebit;
-        row.type = row.debit > 0 ? 'Debit' : 'Credit';
+      const padding = 10;
+      const topPdf = pdfY + padding;
+      const bottomPdf = pdfY - auditHeight - padding;
 
-        updateRowBalance(row);
-        V5State.gridApi.applyTransaction({ update: [row] });
-      }
+      // Convert to Canvas Y (Top-Down)
+      // Canvas Y = ViewportHeight - (PDF_Y * scale)
+      const canvasTop = viewport.height - (topPdf * scale);
+      const canvasBottom = viewport.height - (bottomPdf * scale);
+
+      cropY = Math.max(0, canvasTop);
+      cropHeight = Math.abs(canvasBottom - canvasTop);
     }
 
-    recalculateAllBalances();
-    saveData();
-  };
+    // 5. Render Full Page to Temp Canvas (Expensive but accurate)
+    // Optimization: In real-world, render only the slice if possible, but PDFJS renders whole pages.
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = viewport.width;
+    tempCanvas.height = viewport.height;
 
+    await page.render({
+      canvasContext: tempCanvas.getContext('2d'),
+      viewport: viewport
+    }).promise;
 
-  // Initialize grid
-  console.log('🔧 Creating AG Grid instance...');
-  console.log('Container element:', container);
-  console.log('Container computed style:', window.getComputedStyle(container).display, window.getComputedStyle(container).height);
-  console.log('Grid options:', gridOptions);
+    // 6. Draw Crop to Target Canvas
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = viewport.width; // Keep full width to show context
+    finalCanvas.height = cropHeight;
 
-  try {
-    // Create grid
-    V5State.gridApi = agGrid.createGrid(container, gridOptions);
+    const ctx = finalCanvas.getContext('2d');
+    // Draw background white
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-    console.log('✅ AG Grid initialized successfully');
-    console.log('📊 Grid API:', V5State.gridApi);
+    ctx.drawImage(
+      tempCanvas,
+      0, cropY, viewport.width, cropHeight, // Source
+      0, 0, viewport.width, cropHeight      // Dest
+    );
 
-    // Populate COA dropdown in bulk actions bar
-    populateCOADropdown('v5-bulk-account-select');
+    // 7. Output
+    container.innerHTML = '';
+    finalCanvas.style.width = '100%';
+    finalCanvas.style.height = 'auto';
+    finalCanvas.style.borderRadius = '4px';
+    finalCanvas.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    container.appendChild(finalCanvas);
 
-    // Populate COA dropdown in grid's Account cell editor (if exists)
-    const accountEditor = document.querySelector('.ag-cell-editor select');
-    if (accountEditor && accountEditor.id) {
-      populateCOADropdown(accountEditor.id);
-    }
-
-    // FORCE container to be visible with explicit height!
-    container.style.display = 'block';
-    container.style.visibility = 'visible';
-    container.style.opacity = '1';
-    container.style.position = 'relative';
-    container.style.height = 'calc(100vh - 250px)'; // Fill viewport minus header/padding
-    container.style.minHeight = '500px'; // Minimum height
-    container.style.zIndex = '1';
-    console.log('✅ Container forced to visible with height:', container.style.height);
-
-    // CRITICAL: Hide empty state now that grid has data
-    const emptyState = document.getElementById('v5-empty-state');
-    if (emptyState) {
-      emptyState.style.display = 'none';
-      console.log('✅ Empty state hidden');
-    }
-  } catch (error) {
-    console.error('❌ Failed to create AG Grid:', error);
+  } catch (err) {
+    console.error('Visual Audit Render Error:', err);
+    container.innerHTML = `<div class="v5-smart-popper-loading" style="color:#ef4444;">Error rendering audit image</div>`;
   }
-
-  // Add keyboard shortcut listeners
-  setupV5KeyboardShortcuts();
-
-  // Update reconciliation card
-  updateReconciliationCard();
 };
 
-// ============================================
-// KEYBOARD SHORTCUTS
-// ============================================
+window.showSmartPopper = (event, rowId) => {
+  clearTimeout(popperHideTimer);
 
-function setupV5KeyboardShortcuts() {
-  document.addEventListener('keydown', handleV5KeyboardShortcut);
-}
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (!row) return;
 
-function handleV5KeyboardShortcut(e) {
-  const isCtrl = e.ctrlKey || e.metaKey;
+  const rect = event.currentTarget.getBoundingClientRect();
 
-  // Only active if grid is visible
-  const gridContainer = document.getElementById('v5-grid-container');
-  if (!gridContainer || gridContainer.style.display === 'none') return;
+  // Construct UI
+  smartPopper.innerHTML = `
+      <div class="v5-smart-popper-header">
+        <span class="v5-smart-popper-title">${row.Description || 'Transaction'}</span>
+      </div>
+      
+      <div id="v5-popper-img-container-${rowId}" style="min-height: 60px; background: #f8fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">
+        <div class="v5-smart-popper-loading" style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+           <span class="v5-loading-dots">Loading Evidence</span>
+        </div>
+      </div>
 
-  // Ctrl+Z: Undo
-  if (isCtrl && e.key === 'z' && !e.shiftKey) {
-    e.preventDefault();
-    undoLastAction();
+      ${row.audit ? `
+      <div class="v5-smart-popper-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+        <div style="display: flex; gap: 12px; font-size: 11px; color: #6b7280; font-weight: 500;">
+          <span><i class="ph ph-file-text"></i> Page ${row.audit.page || '?'}</span>
+          <span><i class="ph ph-list-numbers"></i> Line ${row.audit.lineIndex || '?'}</span>
+          ${row.audit.lineCount ? `<span><i class="ph ph-rows"></i> ${row.audit.lineCount} Lines</span>` : ''}
+        </div>
+      </div>
+      ` : `
+      <div class="v5-smart-popper-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+        <div style="font-size: 11px; color: #9ca3af; font-style: italic;">
+          <i class="ph ph-warning"></i> No spatial metadata available
+        </div>
+      </div>
+      `}
+      
+      <div class="v5-smart-popper-section" style="margin-top: 4px;">
+         <div class="v5-smart-popper-value v5-popper-link" onclick="window.viewSourcePDF('${rowId}')" style="cursor: pointer; color: #3b82f6; text-decoration: none; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+          <i class="ph ph-arrow-square-out"></i> View Full Statement
+        </div>
+      </div>
+    `;
+
+  // Calculate Position
+  const popperRect = smartPopper.getBoundingClientRect();
+  // Default: Top-Right of cursor/icon
+  let top = rect.top;
+  let left = rect.right + 10;
+
+  // Boundary Checks
+  if (left + 400 > window.innerWidth) {
+    left = rect.left - 410; // Flip to left
+  }
+  if (top + popperRect.height > window.innerHeight) {
+    top = window.innerHeight - popperRect.height - 20;
   }
 
-  // Ctrl+S: Save
-  if (isCtrl && e.key === 's') {
-    e.preventDefault();
+  smartPopper.style.top = `${top}px`;
+  smartPopper.style.left = `${left}px`;
+  smartPopper.classList.add('visible');
+
+  // Trigger Async Render
+  window.renderVisualAudit(row, `v5-popper-img-container-${rowId}`);
+};
+
+window.hideSmartPopper = () => {
+  popperHideTimer = setTimeout(() => {
+    smartPopper.classList.remove('visible');
+  }, 200);
+};
+
+// Allow hovering over the popper itself to keep it open
+smartPopper.addEventListener('mouseenter', () => {
+  clearTimeout(popperHideTimer);
+});
+smartPopper.addEventListener('mouseleave', () => {
+  window.hideSmartPopper();
+});
+
+
+const gridOptions = {
+  pagination: true,
+  paginationPageSize: V5State.settings.performance.rowsPerPage,
+  rowBuffer: V5State.settings.performance.virtualization ? 10 : 0,
+  getRowId: (params) => {
+    // ROBUST IDENTITY: Use ID if present, else composite key (Date + Desc + Amount + rowId)
+    const data = params.data || {};
+    if (data.id) return data.id;
+
+    // Fallback: Use description + date + index-in-data
+    // We avoid params.node.rowIndex because it may not be ready during initialization
+    const idx = V5State.gridData.indexOf(data);
+    return `v5-${data.date || 'nodate'}-${data.description || 'nodesc'}-${data.debit || data.credit || 0}-${idx}`;
+  },
+  masterDetail: false, // [COMMUNITY] Disabling masterDetail
+  suppressRowClickSelection: true,
+  rowSelection: 'multiple',
+  columnDefs: [
+    {
+      colId: 'checkbox',
+      headerName: '',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
+      width: 40,
+      minWidth: 40,
+      maxWidth: 40,
+      resizable: false,
+      suppressSizeToFit: true
+    },
+    {
+      colId: 'refNumber',
+      headerName: 'Ref#',
+      field: 'refNumber',
+      width: 80, // Snug
+      minWidth: 80,
+      suppressSizeToFit: true,
+      comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
+      valueGetter: params => {
+        const p = V5State.refPrefix || '';
+        const num = String(params.node.rowIndex + 1).padStart(3, '0');
+        return p ? `${p}-${num}` : num;
+      },
+      cellStyle: { fontWeight: '600', color: '#6B7280' }
+    },
+    {
+      colId: 'date',
+      headerName: 'Date',
+      field: 'date',
+      width: 100, // Snug
+      minWidth: 100,
+      suppressSizeToFit: true,
+      editable: true,
+      valueGetter: params => params.data.date || params.data.Date || '',
+      valueFormatter: params => {
+        try { return params.value ? new Date(params.value).toLocaleDateString() : ''; }
+        catch (e) { return params.value; }
+      }
+    },
+    {
+      colId: 'description',
+      headerName: 'Description',
+      field: 'description',
+      flex: 1,
+      minWidth: 200,
+      editable: true,
+      cellEditor: 'agTextCellEditor',
+      valueGetter: params => params.data.description || params.data.Description || '',
+      cellRenderer: params => {
+        const val = params.value || '';
+        const rowId = params.node.id;
+        // const isAuditActive = V5State.auditModeActiveRowIds && V5State.auditModeActiveRowIds.includes(rowId); // Removed expanding logic
+
+        // SMART POPPER ICON
+        // Always show magnifying glass - users can view PDF even without exact coordinates
+        const auditIcon = `<i class="ph ph-magnifying-glass v5-audit-icon" onmouseenter="window.showSmartPopper(event, '${rowId}')" onmouseleave="window.hideSmartPopper()" onclick="event.stopPropagation(); window.viewSourcePDF('${rowId}')"></i>`;
+
+        let content = `<div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: row; align-items: center; padding-right: 10px;">`;
+
+        // Icon Column
+        content += `<div style="flex-shrink: 0; display: flex; align-items: center;">${auditIcon}</div>`;
+
+        // Text Column
+        content += `<div style="flex: 1; min-width: 0;">`; // Flex container for text
+
+        // REVERTED to two-line layout as requested for cleaner grid appearance
+        if (!val.includes(',')) {
+          content += `<div style="word-break: break-all; white-space: normal; font-weight: 500;">${val}</div>`;
+        } else {
+          const parts = val.split(',');
+          content += `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
+              <div style="font-weight: 600;">${parts[0].trim()}</div>
+              <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
+            </div>`;
+        }
+
+        content += `</div></div>`; // Close text col and main container
+        return content;
+      },
+      autoHeight: true,
+      cellStyle: { 'white-space': 'normal', 'word-break': 'break-all', 'padding-top': '8px', 'padding-bottom': '8px' }
+    },
+    {
+      colId: 'debit',
+      headerName: 'Debit',
+      field: 'debit',
+      width: 100, // Snug
+      minWidth: 100,
+      suppressSizeToFit: true,
+      type: 'numericColumn',
+      headerClass: 'ag-right-aligned-header',
+      cellStyle: { color: '#EF4444', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
+      editable: true,
+      valueGetter: params => {
+        const val = parseFloat(params.data.debit || params.data.Debit) || 0;
+        return val > 0 ? val : 0;
+      },
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+      },
+      valueSetter: params => {
+        const val = parseFloat(params.newValue) || 0;
+        params.data.debit = val;
+        params.data.Debit = val;
+        params.data.credit = 0;
+        params.data.Credit = 0;
+        window.recalculateAllBalances();
+        return true;
+      }
+    },
+    {
+      colId: 'credit',
+      headerName: 'Credit',
+      field: 'credit',
+      width: 100, // Snug
+      minWidth: 100,
+      suppressSizeToFit: true,
+      type: 'numericColumn',
+      headerClass: 'ag-right-aligned-header',
+      cellStyle: { color: '#10B981', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
+      editable: true,
+      valueGetter: params => {
+        const val = parseFloat(params.data.credit || params.data.Credit) || 0;
+        return val > 0 ? val : 0;
+      },
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+      },
+      valueSetter: params => {
+        const val = parseFloat(params.newValue) || 0;
+        params.data.credit = val;
+        params.data.Credit = val;
+        params.data.debit = 0;
+        params.data.Debit = 0;
+        window.recalculateAllBalances();
+        return true;
+      }
+    },
+    {
+      colId: 'balance',
+      headerName: 'Balance',
+      field: 'balance',
+      width: 110, // Snug
+      minWidth: 110,
+      suppressSizeToFit: true,
+      headerClass: 'ag-right-aligned-header',
+      cellStyle: { fontWeight: '700', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
+      valueGetter: params => params.data.balance || params.data.Balance || 0,
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    },
+    {
+      colId: 'account',
+      headerName: 'Account',
+      field: 'account',
+      width: 160,
+      minWidth: 160,
+      suppressSizeToFit: true,
+      cellEditor: V5GroupedAccountEditor
+    }
+  ],
+  rowData: V5State.gridData,
+  defaultColDef: {
+    sortable: true,
+    filter: true,
+    resizable: true,
+    minWidth: 50
+  },
+  onSortChanged: () => window.recalculateAllBalances?.(),
+  onFilterChanged: () => window.recalculateAllBalances?.(),
+  onCellValueChanged: (params) => {
     saveData();
-    // PART 3: Silent operation - no toast
-    console.log('💾 Data saved to cache');
+    window.recalculateAllBalances?.();
+  },
+  onGridReady: (params) => {
+    V5State.gridApi = params.api;
+    params.api.sizeColumnsToFit();
+    window.recalculateAllBalances?.();
   }
-
-  // Delete: Delete selected rows
-  if (e.key === 'Delete' && !e.target.matches('input, textarea')) {
-    e.preventDefault();
-    deleteV5SelectedRows();
-  }
-}
+};
 
 // ============================================
 // ACTION HANDLERS
@@ -7478,104 +7631,42 @@ function handleV5KeyboardShortcut(e) {
 window.showKeyboardShortcuts = function () {
   const modal = document.createElement('div');
   modal.style.cssText = `
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
   `;
 
   modal.innerHTML = `
     <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; font-size: 1.25rem;">⌨️ Keyboard Shortcuts</h2>
-        <button onclick="this.closest('div').parentElement.remove()" style="border: none; background: none; font-size: 24px; cursor: pointer; color: #6b7280;">×</button>
-      </div>
-      <div style="display: grid; gap: 0.75rem;">
-        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-          <span style="color: #6b7280;">Save Data</span>
-          <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Ctrl + S</kbd>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.25rem;">⌨️ Keyboard Shortcuts</h2>
+                <button onclick="this.closest('#v5-shortcuts-modal').remove()" style="border: none; background: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+            </div>
+            <div style="display: grid; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #6b7280;">Save Data</span>
+                    <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Ctrl + S</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #6b7280;">Undo Last Change</span>
+                    <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Ctrl + Z</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #6b7280;">Delete Selected</span>
+                    <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Delete</kbd>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                    <span style="color: #6b7280;">Edit Cell</span>
+                    <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Double Click</kbd>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 0.875rem;">
+                <strong>Actions:</strong><br>• Click <strong>⇄</strong> to swap Debit/Credit<br>• Click <strong>&times;</strong> to delete row
+            </div>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-          <span style="color: #6b7280;">Undo Last Change</span>
-          <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Ctrl + Z</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;">
-          <span style="color: #6b7280;">Delete Selected</span>
-          <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Delete</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
-          <span style="color: #6b7280;">Edit Cell</span>
-          <kbd style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Double Click</kbd>
-        </div>
-      </div>
-      <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 0.875rem;">
-        <strong>Actions:</strong><br>• Click <strong>⇄</strong> to swap Debit/Credit<br>• Click <strong>✕</strong> to delete row
-      </div>
-    </div>
-
-    <!-- GRID APPEARANCE MODAL (Simple Working Version) -->
-    <div id="v5-appearance-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
-      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:12px; padding:2rem; min-width:500px; max-width:600px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-          <h3 style="margin:0; font-size:1.25rem;"> Grid Appearance</h3>
-          <button onclick="closeAppearanceModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:1rem;">
-          <div>
-            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Theme</label>
-            <select id="v5-theme-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="">Default (Gray)</option>
-              <option value="vanilla">Vanilla</option>
-              <option value="classic">Classic Blue</option>
-              <option value="ledger-pad">Ledger Pad</option>
-              <option value="postit">Post-it Note</option>
-              <option value="rainbow" selected>Rainbow</option>
-              <option value="spectrum">Spectrum (Excel)</option>
-              <option value="vintage">Vintage Dark</option>
-            </select>
-          </div>
-
-          <div>
-            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Font</label>
-            <select id="v5-font-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="inter">Inter (Default)</option>
-              <optgroup label="Sans-Serif">
-                <option value="neue-haas">Helvetica / Neue Haas</option>
-                <option value="arial">Arial</option>
-                <option value="verdana">Verdana</option>
-                <option value="open-sans">Open Sans</option>
-                <option value="roboto">Roboto</option>
-                <option value="public-sans">Public Sans</option>
-              </optgroup>
-              <optgroup label="Serif">
-                <option value="garamond">Garamond</option>
-                <option value="times">Times New Roman</option>
-                <option value="libre-baskerville">Libre Baskerville</option>
-                <option value="georgia">Georgia</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div>
-            <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:0.875rem;">Text Size</label>
-            <select id="v5-size-dropdown" onchange="applyAppearance()" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px;">
-              <option value="xs">Extra Small</option>
-              <option value="s">Small</option>
-              <option value="m" selected>Medium</option>
-              <option value="l">Large</option>
-              <option value="xl">Extra Large</option>
-            </select>
-          </div>
-        </div>
-              <option value="xl">XL</option>
-            </select>
-          </div>
-        </div>
-        <div style="margin-top:1.5rem; text-align:right;">
-          <button onclick="window.closeAppearanceModal()" style="padding:0.5rem 1rem; border:1px solid #ddd; background:white; border-radius:6px; cursor:pointer;">Close</button>
-        </div>
-      </div>
-    </div>
   `;
+
+  modal.id = 'v5-shortcuts-modal';
+  document.body.appendChild(modal);
 
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 
@@ -7587,8 +7678,6 @@ window.showKeyboardShortcuts = function () {
     }
   };
   document.addEventListener('keydown', escHandler);
-
-  document.body.appendChild(modal);
 };
 
 // ==================================================
@@ -7638,19 +7727,19 @@ window.startOverV5 = async function () {
   const banner = document.createElement('div');
   banner.id = 'v5-confirm-banner';
   banner.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #ef4444;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
-    max-width: 450px;
-    width: 90%;
-    `;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  max-width: 450px;
+  width: 90%;
+  `;
 
   banner.innerHTML = `
     <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #dc2626;">
@@ -7667,7 +7756,7 @@ window.startOverV5 = async function () {
         Cancel
       </button>
     </div>
-    `;
+  `;
 
   document.body.appendChild(banner);
 };
@@ -7697,9 +7786,10 @@ window.confirmStartOver = async function () {
   document.getElementById('v5-recon-inline').style.display = 'none';
 
   // Hide control toolbar when data is cleared
-  const controlToolbar = document.querySelector('.v5-control-toolbar');
+  const controlToolbar = document.getElementById('v5-action-bar');
   if (controlToolbar) {
     controlToolbar.classList.remove('show-data');
+    controlToolbar.style.display = 'none';
     console.log('✅ Control toolbar hidden - data cleared');
   }
 
@@ -7732,15 +7822,15 @@ window.popOutV5Grid = function () {
   const popInOverlay = document.createElement('div');
   popInOverlay.id = 'v5-popin-overlay';
   popInOverlay.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 400px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    margin: 2rem;
-    cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin: 2rem;
+  cursor: pointer;
   `;
   popInOverlay.innerHTML = `
     <div style="text-align: center; color: white;">
@@ -7748,7 +7838,7 @@ window.popOutV5Grid = function () {
       <h2 style="margin: 0 0 0.5rem 0; font-size: 24px;">Grid Popped Out</h2>
       <p style="margin: 0; opacity: 0.9; font-size: 14px;">Click here to bring it back</p>
     </div>
-  `;
+    `;
   popInOverlay.onclick = () => window.popInV5Grid();
   gridContainer.parentElement.insertBefore(popInOverlay, gridContainer);
 
@@ -8896,30 +8986,41 @@ function updateSelectionCount() {
 // ============================================
 
 async function saveData() {
-  // Save to CacheManager (IndexedDB)
-  await window.CacheManager.saveTransactions(V5State.gridData);
+  // Rename local to avoid collision with global declaration if needed
+  const coreSave = async () => {
+    // Save to CacheManager (IndexedDB)
+    if (window.CacheManager?.saveTransactions) {
+      await window.CacheManager.saveTransactions(V5State.gridData);
+    }
 
-  // Also save to localStorage as backup
-  try {
-    const dataToSave = V5State.gridData.map(({ sourceFileBlob, ...rest }) => rest);
-    localStorage.setItem('ab_v5_grid_data', JSON.stringify(dataToSave));
+    // Also save to localStorage as backup
+    try {
+      const dataToSave = V5State.gridData.map(({ sourceFileBlob, ...rest }) => rest);
+      localStorage.setItem('ab_v5_grid_data', JSON.stringify(dataToSave));
+      localStorage.setItem('ab_v5_opening_balance', V5State.openingBalance || 0);
+      localStorage.setItem('ab_v5_ref_prefix', V5State.refPrefix || '');
 
-    // [PHASE 6] Persist Multi-Ledger State
-    const multiLedgerToSave = {};
-    Object.keys(V5State.multiLedgerData).forEach(acct => {
-      multiLedgerToSave[acct] = V5State.multiLedgerData[acct].map(({ sourceFileBlob, ...rest }) => rest);
-    });
-    localStorage.setItem('ab_v5_multi_ledger', JSON.stringify(multiLedgerToSave));
-    localStorage.setItem('ab_v5_current_account', V5State.currentAccountCode);
-  } catch (e) {
-    console.warn('Could not save to localStorage:', e);
-  }
+      // [PHASE 6] Persist Multi-Ledger State
+      const multiLedgerToSave = {};
+      Object.keys(V5State.multiLedgerData).forEach(acct => {
+        multiLedgerToSave[acct] = V5State.multiLedgerData[acct].map(({ sourceFileBlob, ...rest }) => rest);
+      });
+      localStorage.setItem('ab_v5_multi_ledger', JSON.stringify(multiLedgerToSave));
+      localStorage.setItem('ab_v5_current_account', V5State.currentAccountCode);
+    } catch (e) {
+      console.warn('Could not save to localStorage:', e);
+    }
 
-  // Background sync to Supabase
-  if (window.CacheManager.syncToSupabase) {
-    window.CacheManager.syncToSupabase(V5State.gridData);
-  }
+    // Background sync to Supabase
+    if (window.CacheManager?.syncToSupabase) {
+      window.CacheManager.syncToSupabase(V5State.gridData);
+    }
+  };
+
+  await coreSave();
 }
+// Alias for global access
+window.saveDataAsync = saveData;
 
 async function loadData() {
   const cached = await window.CacheManager.getTransactions();
@@ -8931,6 +9032,8 @@ async function loadData() {
       V5State.multiLedgerData = JSON.parse(multiLedgerRaw);
     } catch (e) { console.error('Failed to parse multi-ledger', e); }
   }
+  V5State.openingBalance = parseFloat(localStorage.getItem('ab_v5_opening_balance')) || 0;
+  V5State.refPrefix = localStorage.getItem('ab_v5_ref_prefix') || '';
   const currentAcct = localStorage.getItem('ab_v5_current_account');
   if (currentAcct) V5State.currentAccountCode = currentAcct;
 
@@ -8985,15 +9088,42 @@ window.startFreshImport = async function () {
 // AUTO-INITIALIZE
 // ============================================
 
-// Helper to show the toolbar safely
+// Helper to show the toolbar safely - AND ENSURE GRID IS VISIBLE
 function showControlToolbar() {
-  const toolbar = document.querySelector('.v5-control-toolbar');
+  const toolbar = document.getElementById('v5-action-bar');
   if (toolbar) {
     toolbar.style.display = 'flex'; // Robustness
     toolbar.classList.add('show-data');
+    window.renderV5Shortcuts();
     console.log('✅ Control toolbar shown');
-  } else {
-    console.warn('Control toolbar element not found');
+  }
+
+  // FORCE GRID INITIALIZATION & VISIBILITY
+  // This ensures the grid appears immediately after processing finish
+  if (window.V5State.gridData.length > 0) {
+    const container = document.getElementById('v5-grid-container');
+    const emptyState = document.querySelector('.v5-empty-state-info'); // Correct selector
+
+    if (container) {
+      container.style.display = 'block';
+      container.style.visibility = 'visible';
+    }
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Always try to init or refresh grid
+    if (!window.V5State.gridApi) {
+      console.log('⚡ [Toolbar] Init V5 Grid triggered from showControlToolbar');
+      window.initTxnImportV5Grid(); // Use the robust init function
+    } else {
+      // If API exists, just push data
+      console.log('⚡ [Toolbar] Refreshing existing grid with data');
+      if (window.V5State.gridApi.setGridOption) {
+        window.V5State.gridApi.setGridOption('rowData', window.V5State.gridData);
+      } else {
+        window.V5State.gridApi.setRowData(window.V5State.gridData);
+      }
+      requestAnimationFrame(() => window.V5State.gridApi.sizeColumnsToFit());
+    }
   }
 }
 
@@ -9007,7 +9137,7 @@ window.initV5 = async function () {
       return;
     } else {
       console.log('🔄 Grid has data but no API, initializing grid...');
-      window.initV5Grid();
+      window.initTxnImportV5Grid();
       return;
     }
   }
@@ -9868,7 +9998,7 @@ window.populateV5BannerCOA = function (filterText = '') {
 
   if (filteredUsed.length > 0) {
     html += `
-    < div class="coa-group" data - group="used" >
+    <div class="coa-group" data-group="used">
         <div class="coa-group-header expanded" onclick="window.toggleV5BannerCOAGroup('used')">
           <i class="ph ph-caret-right"></i>
           <span>✅ ACTIVE LEDGERS</span>
@@ -9884,7 +10014,7 @@ window.populateV5BannerCOA = function (filterText = '') {
             `;
     }).join('')}
         </div>
-      </div >
+      </div>
     `;
   }
 
@@ -9905,7 +10035,7 @@ window.populateV5BannerCOA = function (filterText = '') {
       const label = tierLabels[tierKey] || tierKey;
       const isFilterActive = filterText.length > 0;
       html += `
-    < div class="coa-group" data - group="${tierKey}" >
+    <div class="coa-group" data-group="${tierKey}">
           <div class="coa-group-header ${isFilterActive ? 'expanded' : ''}" onclick="window.toggleV5BannerCOAGroup('${tierKey}')">
             <i class="ph ph-caret-right"></i>
             <span>${label}</span>
@@ -9922,7 +10052,7 @@ window.populateV5BannerCOA = function (filterText = '') {
               `;
       }).join('')}
           </div>
-        </div >
+        </div>
     `;
     }
   });
@@ -9935,7 +10065,7 @@ window.filterV5BannerCOA = function (val) {
 };
 
 window.toggleV5BannerCOAGroup = function (groupId) {
-  const items = document.getElementById(`v5 - banner - coa - group - ${groupId} `);
+  const items = document.getElementById(`v5-banner-coa-group-${groupId}`);
   const header = items?.previousElementSibling;
   if (items && header) {
     items.classList.toggle('expanded');
@@ -10275,7 +10405,7 @@ window.populateGlassCOA = function () {
     if (accounts.length === 0) return;
 
     html += `
-    < div class="coa-group" data - group="${groupName}" >
+    <div class="coa-group" data-group="${groupName}">
         <div class="coa-group-header" onclick="toggleCOAGroup('${groupName}')">
           <span>${groupName}</span>
           <i class="ph ph-caret-down"></i>
@@ -10287,7 +10417,7 @@ window.populateGlassCOA = function () {
             </div>
           `).join('')}
         </div>
-      </div >
+      </div>
     `;
   });
 
@@ -10299,8 +10429,8 @@ window.populateGlassCOA = function () {
 window.toggleCOAGroup = function (groupName) {
   console.log(`🔵[BULK] toggleCOAGroup(${groupName})`);
 
-  const header = document.querySelector(`.coa - group[data - group="${groupName}"] .coa - group - header`);
-  const items = document.getElementById(`coa - group - ${groupName} `);
+  const header = document.querySelector(`.coa-group[data-group="${groupName}"] .coa-group-header`);
+  const items = document.getElementById(`coa-group-${groupName}`);
 
   if (!header || !items) return;
 
@@ -10675,11 +10805,274 @@ window.reinitCOAs = function () {
   console.log(`✅ Loaded ${count} accounts across 5 tiers.`);
 
   if (V5State.pendingStatements.length > 0) {
+    console.log('📄 Pending statements detected during COA init');
     showV5AssignmentBanner();
   }
 
   return tiers;
 };
 
+// ============================================
+// CRITICAL: GRID INITIALIZATION & RE-HYDRATION
+// ============================================
+
+// RESTORED GRID OPTIONS (Rescue)
+// Use global gridOptions defined at line 7411
+
+window.initTxnImportV5Grid = function () {
+  console.group('🚀 [GRID DIAGNOSTIC] Initialization Start');
+  console.log('📦 V5State:', window.V5State);
+  console.log('📊 Data Length:', window.V5State?.gridData?.length);
+  console.log('📚 agGrid Library:', typeof agGrid !== 'undefined' ? 'Found (v' + (agGrid.version || 'unknown') + ')' : 'MISSING!');
+
+  const gridDiv = document.getElementById('v5-grid-container');
+  if (!gridDiv) {
+    console.error('❌ [Init] Grid container #v5-grid-container NOT FOUND in DOM.');
+    console.groupEnd();
+    return;
+  }
+
+  // DIAGNOSTIC: Check parent visibility
+  let parent = gridDiv.parentElement;
+  while (parent && parent !== document.body) {
+    const style = window.getComputedStyle(parent);
+    if (style.display === 'none') {
+      console.error(`❌ [Init] Parent <${parent.tagName}> #${parent.id} is hidden with display:none!`, parent);
+    }
+    if (parseFloat(style.height) === 0 && style.overflow === 'hidden') {
+      console.warn(`⚠️ [Init] Parent <${parent.tagName}> #${parent.id} has 0px height and overflow:hidden.`, parent);
+    }
+    parent = parent.parentElement;
+  }
+
+  const containerStyle = window.getComputedStyle(gridDiv);
+  console.log('📐 Container Dimensions:', {
+    width: gridDiv.offsetWidth,
+    height: gridDiv.offsetHeight,
+    display: containerStyle.display,
+    visibility: containerStyle.visibility,
+    opacity: containerStyle.opacity
+  });
+
+  // Initialize AG Grid if empty
+  // Check if we need to create or recreate the grid
+  // A grid instance is "dead" if the API exists but isDestroyed() returns true
+  let needsRecreation = false;
+
+  if (gridDiv.innerHTML === '') {
+    needsRecreation = true;
+    console.log('✨ [Init] Grid container empty, creating new grid...');
+  } else if (V5State.gridApi && typeof V5State.gridApi.isDestroyed === 'function' && V5State.gridApi.isDestroyed()) {
+    needsRecreation = true;
+    console.log('🔄 [Init] Grid instance destroyed, recreating...');
+    gridDiv.innerHTML = ''; // Clear old DOM
+  } else if (!V5State.gridApi) {
+    needsRecreation = true;
+    console.log('🔄 [Init] No grid API reference, recreating...');
+    gridDiv.innerHTML = ''; // Clear old DOM
+  } else {
+    console.log('✅ [Init] Grid container populated with active instance.');
+  }
+
+  if (needsRecreation) {
+    try {
+      new agGrid.Grid(gridDiv, gridOptions);
+      V5State.gridApi = gridOptions.api;
+      console.log('✅ [Init] Grid created successfully');
+    } catch (e) {
+      console.error('❌ [Init] AG Grid init failed:', e);
+    }
+  }
+
+  // RE-HYDRATION & VISIBILITY LOGIC
+  const gridContainer = document.getElementById('v5-grid-container');
+  const emptyStateInfo = document.querySelector('.v5-empty-state-info');
+
+  if (V5State.gridData && V5State.gridData.length > 0) {
+    console.log(`♻️ [Init] Restoring ${V5State.gridData.length} rows from V5State persistence...`);
+
+    // VISIBILITY: Show Grid, Hide Empty State
+    if (gridContainer) {
+      gridContainer.style.display = 'block';
+      gridContainer.style.visibility = 'visible';
+      gridContainer.style.opacity = '1';
+
+      // FIX: Ensure ag-theme-alpine is present (required for ag-grid styling)
+      if (!gridContainer.classList.contains('ag-theme-alpine')) {
+        gridContainer.classList.add('ag-theme-alpine');
+      }
+
+      // FORCE HEIGHT RESTORATION - Fixed invalid calc syntax and added fallback
+      gridContainer.style.height = '600px';
+      gridContainer.style.minHeight = '500px';
+
+      console.log('✨ [Init] Grid visibility forced to block/600px');
+    }
+    if (emptyStateInfo) emptyStateInfo.style.display = 'none';
+
+    // Safety check for API
+    if (!V5State.gridApi) {
+      console.warn('⚠️ [Init] V5State.gridApi is missing. Attempting to recover from gridOptions...');
+      if (gridOptions && gridOptions.api) {
+        V5State.gridApi = gridOptions.api;
+      } else {
+        // [FINAL ATTEMPT] If we have a container, we can try to get the grid from it?
+        // But better to just re-init if possible.
+        console.error('❌ [Init] Cannot restore data: Grid API not found.');
+      }
+    }
+
+    if (V5State.gridApi) {
+      V5State.gridApi.setGridOption('rowData', V5State.gridData);
+      V5State.gridApi.sizeColumnsToFit();
+      console.log('📊 [Init] Grid re-hydrated with data, sizeColumnsToFit called.');
+
+      // Forced Visibility Sanity Check
+      setTimeout(() => {
+        if (gridDiv.offsetHeight < 10) {
+          console.warn('⚠️ [Init] Grid still 0px. Forcing hard-coded height/display.');
+          gridDiv.style.height = '600px';
+          gridDiv.style.display = 'block';
+          gridDiv.style.visibility = 'visible';
+        }
+      }, 500);
+    }
+
+    // Restore Data
+    try {
+      // Use setGridOption for rowData to avoid deprecation warning
+      if (V5State.gridApi.setGridOption) {
+        V5State.gridApi.setGridOption('rowData', V5State.gridData);
+      } else {
+        V5State.gridApi.setRowData(V5State.gridData);
+      }
+
+      // Restore UI State (e.g. Action Bar)
+      setTimeout(() => {
+        const actionBar = document.getElementById('v5-action-bar');
+        if (actionBar) {
+          actionBar.style.display = 'flex';
+          actionBar.classList.add('show-data');
+        }
+        if (window.updateReconciliationCard) window.updateReconciliationCard();
+
+        // Restore columns size - WAIT FOR PAINT
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (V5State.gridApi) {
+              try {
+                // V5State.gridApi.autoSizeAllColumns(); // Can be noisy
+                V5State.gridApi.sizeColumnsToFit();
+                console.log('✅ [Init] Restoration complete & columns resized.');
+              } catch (e) {
+                console.warn('⚠️ [Init] Column resize failed:', e);
+              }
+            }
+          });
+        });
+      }, 50);
+    } catch (e) {
+      console.error('❌ [Init] Error restoring grid data:', e);
+    }
+  } else {
+    // NO DATA -> Show Empty State, Hide Grid
+    console.log('ℹ️ [Init] No cached data found - showing empty state');
+    console.log('✨ [Init] Fresh start - waiting for file upload.');
+
+    if (gridContainer) gridContainer.style.display = 'none';
+    if (emptyStateInfo) emptyStateInfo.style.display = 'block'; // Or flex, depending on CSS
+  }
+  console.groupEnd();
+};
+
+
 // Start initialization
 window.initV5();
+
+// ============================================
+// MODAL PDF VIEWER (Overlay - No Navigation)
+// ============================================
+
+// Inject modal HTML into page
+(function initPDFModal() {
+  if (document.getElementById('v5-pdf-modal')) return; // Already exists
+
+  const modalHTML = `
+    <div id="v5-pdf-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:10000; backdrop-filter:blur(4px);">
+      <div style="position:absolute; top:20px; right:20px; display:flex; gap:12px; z-index:10001;">
+        <button id="v5-pdf-popout-btn" style="background:white; border:none; border-radius:8px; padding:12px 20px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+          <i class="ph ph-arrow-square-out"></i> Popout
+        </button>
+        <button id="v5-pdf-close-btn" style="background:white; border:none; border-radius:8px; padding:12px 20px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+          <i class="ph ph-x"></i> Close
+        </button>
+      </div>
+      <div id="v5-pdf-modal-content" style="width:90%; height:90%; margin:5vh auto; background:white; border-radius:12px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <!-- PDF viewer content will be rendered here -->
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  // Close button
+  document.getElementById('v5-pdf-close-btn').addEventListener('click', () => {
+    document.getElementById('v5-pdf-modal').style.display = 'none';
+    document.getElementById('v5-pdf-modal-content').innerHTML = ''; // Clear content
+  });
+
+  // Popout button
+  document.getElementById('v5-pdf-popout-btn').addEventListener('click', () => {
+    if (window._currentPDFUrl) {
+      window.open(window._currentPDFUrl, 'PDFViewer', 'width=1200,height=900');
+      document.getElementById('v5-pdf-close-btn').click();
+    }
+  });
+
+  // ESC key to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('v5-pdf-modal');
+      if (modal && modal.style.display === 'block') {
+        document.getElementById('v5-pdf-close-btn').click();
+      }
+    }
+  });
+})();
+
+// Override viewSourcePDF to use modal instead of navigation
+window.viewSourcePDF = (rowId) => {
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (!row || !row.audit) {
+    console.warn('[PDF Modal] No audit data for row:', rowId);
+    return;
+  }
+
+  const modal = document.getElementById('v5-pdf-modal');
+  const contentDiv = document.getElementById('v5-pdf-modal-content');
+
+  // Store URL for popout
+  window._currentPDFUrl = `#/txn-import-v5/pdf-viewer?file=${encodeURIComponent(row.sourceFileName)}&page=${row.audit.page}&y=${row.audit.y}`;
+
+  // Render PDF viewer directly in modal (no iframe, no navigation)
+  if (window.renderV5PdfViewer) {
+    contentDiv.innerHTML = window.renderV5PdfViewer();
+    modal.style.display = 'block';
+
+    // Initialize PDF viewer with parameters
+    setTimeout(() => {
+      if (window.initV5PdfViewer) {
+        window.initV5PdfViewer({
+          file: row.sourceFileName,
+          page: row.audit.page,
+          y: row.audit.y,
+          height: row.audit.height // Pass calculated height
+        });
+      }
+    }, 100);
+  } else {
+    console.error('[PDF Modal] renderV5PdfViewer not found');
+  }
+
+  console.log('[PDF Modal] Opened:', url);
+};

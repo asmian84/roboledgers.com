@@ -105,6 +105,7 @@ class DataJunkie {
 
     /**
      * FULL TEXT EXTRACTION (Optimized)
+     * Returns { text, lineMetadata } with coordinates for on-demand cropping
      */
     async extractFullText(file) {
         console.time(`DataJunkie.extractFullText:${file.name}`);
@@ -117,25 +118,59 @@ class DataJunkie {
                     const pdf = await pdfjsLib.getDocument(typedArray).promise;
 
                     let fullText = '';
+                    const lineMetadata = []; // Track PDF coordinates
                     const totalPages = pdf.numPages;
 
                     for (let i = 1; i <= totalPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
+                        const viewport = page.getViewport({ scale: 1.0 });
 
                         // Simple Y-coordinate based line reconstruction
                         let lastY = -1;
                         let pageText = '';
+                        let currentLine = '';
+                        let lineStartY = -1;
 
                         for (const item of textContent.items) {
                             const y = item.transform[5];
+
+                            // New line detected
                             if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+                                // Save previous line metadata
+                                if (currentLine.trim()) {
+                                    lineMetadata.push({
+                                        page: i,
+                                        y: lineStartY,
+                                        height: item.height || 12,
+                                        text: currentLine.trim()
+                                    });
+                                }
+
                                 pageText += '\n';
-                            } else if (pageText.length > 0 && !pageText.endsWith('\n')) {
-                                pageText += ' ';
+                                currentLine = item.str;
+                                lineStartY = y;
+                            } else {
+                                if (pageText.length > 0 && !pageText.endsWith('\n')) {
+                                    pageText += ' ';
+                                    currentLine += ' ';
+                                }
+                                currentLine += item.str;
+                                if (lineStartY === -1) lineStartY = y;
                             }
+
                             pageText += item.str;
                             lastY = y;
+                        }
+
+                        // Save last line
+                        if (currentLine.trim()) {
+                            lineMetadata.push({
+                                page: i,
+                                y: lineStartY,
+                                height: 12,
+                                text: currentLine.trim()
+                            });
                         }
 
                         fullText += pageText + '\n';
@@ -147,7 +182,8 @@ class DataJunkie {
                     }
 
                     console.timeEnd(`DataJunkie.extractFullText:${file.name}`);
-                    resolve(fullText);
+                    console.log(`[DataJunkie] Extracted ${lineMetadata.length} lines with coordinates`);
+                    resolve({ text: fullText, lineMetadata });
                 } catch (error) {
                     console.timeEnd(`DataJunkie.extractFullText:${file.name}`);
                     reject(error);
@@ -163,8 +199,10 @@ class DataJunkie {
      * COMPLETE SCAN: Process file through all steps (Optimized v33.0)
      */
     async scanAndProcess(file) {
-        // Step 1: Extract full text ONCE
-        const fullText = await this.extractFullText(file);
+        // Step 1: Extract full text ONCE (now returns { text, lineMetadata })
+        const extraction = await this.extractFullText(file);
+        const fullText = extraction.text;
+        const lineMetadata = extraction.lineMetadata || [];
 
         // Step 2: Check if bank statement
         const isStatement = this.isBankStatementSync(fullText, file.name);
@@ -172,13 +210,13 @@ class DataJunkie {
             return { skipped: true, reason: 'Not a bank statement' };
         }
 
-        // Step 3: Parse with AI/Regex via ParserRouter
+        // Step 3: Parse with AI/Regex via ParserRouter (now with lineMetadata!)
         let parsed;
         try {
             const router = window.parserRouter;
             if (!router) throw new Error('ParserRouter not found.');
 
-            const result = await router.parseStatement(fullText, file.name);
+            const result = await router.parseStatement(fullText, file.name, lineMetadata);
 
             parsed = {
                 bank: result.brandDetection?.fullBrandName || 'Unknown Bank',
@@ -201,8 +239,12 @@ class DataJunkie {
                     _transit: tx._transit,
                     _acct: tx._acct,
                     _fingerprint: tx._fingerprint,
-                    _refNum: tx.refNum
-                }))
+                    _refNum: tx.refNum,
+                    rawText: tx.rawText,
+                    audit: tx.audit,
+                    refCode: tx.refCode
+                })),
+                openingBalance: result.openingBalance || 0
             };
         } catch (error) {
             console.error('DataJunkie: Parser failed, attempting fallback', error);
@@ -223,7 +265,8 @@ class DataJunkie {
             bank: parsed.bank,
             accountType: parsed.accountType,
             accountHolder: parsed.accountHolder,
-            brandDetection: parsed.brandDetection
+            brandDetection: parsed.brandDetection,
+            openingBalance: parsed.openingBalance
         };
     }
 

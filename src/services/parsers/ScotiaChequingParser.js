@@ -21,8 +21,9 @@ SMART PARSING RULES:
   /**
    * STRICT REGEX PARSER for Scotiabank Chequing
    * Based on actual PDF text structure from user's statements
+   * [PHASE 4] Now accepts lineMetadata for spatial tracking
    */
-  parseWithRegex(text, inputMetadata = null) {
+  parseWithRegex(text, inputMetadata = null, lineMetadata = []) {
     const lines = text.split('\n');
     const transactions = [];
 
@@ -64,8 +65,18 @@ SMART PARSING RULES:
 
     console.log(`[SCOTIA] Starting parse with ${lines.length} lines`);
 
+    let openingBalance = 0;
+    const openingBalanceMatch = text.match(/BALANCE\s+FORWARD\s+.*?([\d,]+\.\d{2}-?)/i);
+    if (openingBalanceMatch) {
+      let rawBal = openingBalanceMatch[1].replace(/,/g, '');
+      openingBalance = parseFloat(rawBal.replace(/-$/, ''));
+      if (rawBal.endsWith('-')) openingBalance = -openingBalance;
+      console.log(`[SCOTIA] Extracted opening balance: ${openingBalance}`);
+    }
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      const meta = lineMetadata && lineMetadata[i];
       if (!line) continue;
 
       // Skip known headers
@@ -94,7 +105,7 @@ SMART PARSING RULES:
         const amountMatch = line.match(twoAmountPattern);
         if (amountMatch) {
           console.log(`[SCOTIA] ✓ Single-line match: "${line}"`);
-          this.processTransaction(dateStr, line, amountMatch, transactions, metadata);
+          this.processTransaction(dateStr, line, amountMatch, transactions, metadata, meta);
           continue;
         }
 
@@ -128,7 +139,7 @@ SMART PARSING RULES:
           const combinedMatch = combinedLine.match(twoAmountPattern);
           if (combinedMatch) {
             console.log(`[SCOTIA] ✓ Multi-line match (${lookAheadIndex + 1} lines): "${combinedLine.substring(0, 80)}..."`);
-            this.processTransaction(dateStr, combinedLine, combinedMatch, transactions, metadata);
+            this.processTransaction(dateStr, combinedLine, combinedMatch, transactions, metadata, meta);
             i += lookAheadIndex; // Skip consumed lines
             foundAmount = true;
             break;
@@ -142,7 +153,7 @@ SMART PARSING RULES:
           const singleMatch = line.match(singleAmountPattern);
           if (singleMatch && !line.includes("BALANCE FORWARD")) {
             console.log(`[SCOTIA] ✓ Single-amount fallback: "${line}"`);
-            this.processTransaction(dateStr, line, [singleMatch[0], singleMatch[1], null], transactions, metadata);
+            this.processTransaction(dateStr, line, [singleMatch[0], singleMatch[1], null], transactions, metadata, meta);
             foundAmount = true;
           }
         }
@@ -157,11 +168,17 @@ SMART PARSING RULES:
 
     return {
       transactions: transactions,
-      metadata: metadata
+      metadata: metadata,
+      openingBalance: openingBalance
     };
   }
 
-  processTransaction(dateStr, fullLine, amountMatch, transactions, fileMetadata) {
+  processTransaction(dateStr, fullLine, amountMatch, transactions, fileMetadata, meta = null) {
+    // [PHASE 4] Extract ref code from the raw description before cleaning
+    let refCode = 'N/A';
+    const refMatch = fullLine.match(/\b([A-Z0-9]{15,})\b/);
+    if (refMatch) refCode = refMatch[0];
+
     // amountMatch[1] = Transaction Amount
     // amountMatch[2] = Balance (OPTIONAL if we only found 1 amount)
     let rawAmount = amountMatch[1].replace(/,/g, '');
@@ -238,7 +255,10 @@ SMART PARSING RULES:
       _acct: fileMetadata._acct,
       _brand: 'Scotiabank',
       _bank: 'Scotiabank',
-      _tag: 'Chequing'
+      _tag: 'Chequing',
+      audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null,
+      rawText: this.cleanRawText(fullLine), // Capture full uncleaned multi-line string
+      refCode: refCode
     };
 
     transactions.push(tx);

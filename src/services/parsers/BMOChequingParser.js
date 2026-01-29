@@ -224,7 +224,8 @@ BMO CHEQUING FORMAT:
             debit: debit,
             credit: credit,
             balance: balance,
-            ...metadata
+            ...metadata,
+            rawText: this.cleanRawText(fullLine)
         };
     }
 

@@ -22,6 +22,14 @@ BMO MASTERCARD FORMAT:
     const lines = statementText.split('\n');
     const transactions = [];
 
+    // Extract opening balance (Previous Balance)
+    let openingBalance = 0;
+    const previousBalanceMatch = statementText.match(/(?:Previous\s+Balance|Opening\s+Balance)\s+.*?([\d,]+\.\d{2})/i);
+    if (previousBalanceMatch) {
+      openingBalance = parseFloat(previousBalanceMatch[1].replace(/,/g, ''));
+      console.log(`[BMO-MC] Extracted opening balance: ${openingBalance}`);
+    }
+
     // EXTRACT METADATA (Institution, Transit, Account)
     const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
     const metadata = {
@@ -43,7 +51,8 @@ BMO MASTERCARD FORMAT:
     const dateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})/i;
     const monthMap = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const trimmed = line.trim();
       if (!trimmed || trimmed.match(/Opening|Balance|Page \d/i)) continue;
 
@@ -75,12 +84,14 @@ BMO MASTERCARD FORMAT:
         amount,
         debit: isPayment ? 0 : amount,
         credit: isPayment ? amount : 0,
-        balance
+        balance,
+        rawText: this.cleanRawText(line),
+        refCode: line.match(/\b([A-Z0-9]{15,})\b/)?.[1] || 'N/A'
       });
     }
 
     console.log(`[BMO-MC] Parsed ${transactions.length} transactions`);
-    return { transactions, metadata };
+    return { transactions, metadata, openingBalance };
   }
 
   cleanCreditDescription(desc, prefixes) {
@@ -91,14 +102,14 @@ BMO MASTERCARD FORMAT:
     for (const type of prefixes) {
       if (descUpper.startsWith(type + ' ')) {
         const name = desc.substring(type.length).trim();
-        if (name) desc = `${name}, ${type.charAt(0) + type.slice(1).toLowerCase()}`;
+        if (name) desc = `${name}, ${type.charAt(0) + type.slice(1).toLowerCase()} `;
         break;
       }
     }
 
     if (!desc.includes(',') && desc.includes(' - ')) {
       const parts = desc.split(' - ');
-      desc = `${parts[1].trim()}, ${parts[0].trim()}`;
+      desc = `${parts[1].trim()}, ${parts[0].trim()} `;
     }
 
     return desc.replace(/,\s*,/g, ',').trim();

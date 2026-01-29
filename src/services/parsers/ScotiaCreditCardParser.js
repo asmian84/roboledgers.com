@@ -16,6 +16,14 @@ class ScotiaCreditCardParser extends BaseBankParser {
         const lines = statementText.split('\n');
         const transactions = [];
 
+        // Extract opening balance (Previous Balance)
+        let openingBalance = 0;
+        const previousBalanceMatch = statementText.match(/Previous\s+Balance\s+.*?([\d,]+\.\d{2})/i);
+        if (previousBalanceMatch) {
+            openingBalance = parseFloat(previousBalanceMatch[1].replace(/,/g, ''));
+            console.log(`[SCOTIA-CC] Extracted opening balance: ${openingBalance}`);
+        }
+
         // EXTRACT METADATA (Institution, Transit, Account)
         const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
         const metadata = {
@@ -100,12 +108,14 @@ class ScotiaCreditCardParser extends BaseBankParser {
                 amount,
                 debit: isPayment ? 0 : amount,
                 credit: isPayment ? amount : 0,
-                balance
+                balance,
+                rawText: line,
+                refCode: line.match(/\b([A-Z0-9]{15,})\b/)?.[1] || 'N/A'
             });
         }
 
         console.log(`[SCOTIA-CC] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata };
+        return { transactions, metadata, openingBalance };
     }
 }
 

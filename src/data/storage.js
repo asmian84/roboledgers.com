@@ -317,13 +317,21 @@ class StorageService {
                 const candidates = ['chart_of_accounts', 'coa', 'accounts', 'account', 'COA', 'Categories', 'categories'];
                 const table = await window.supabaseService.discoverTable(candidates, 'accounts');
 
-                const { data, error } = await window.supabaseService.from(table).select('*');
+                const queryColumns = 'account_number, account_name, account_type, active, created_at, updated_at';
+                const { data, error } = await window.supabaseService.from(table).select(queryColumns);
                 if (!error && data && data.length > 0) {
                     console.log(`☁️ Storage: Synced ${data.length} accounts from Supabase ("${table}")`);
-                    accounts = data;
+                    // Map to local format (id = account_number)
+                    accounts = data.map(a => ({
+                        ...a,
+                        id: a.account_number.toString(),
+                        name: a.account_name,
+                        type: a.account_type,
+                        code: a.account_number.toString()
+                    }));
                     this._set(this.keys.accounts, accounts); // Sync local cache
                 } else if (error) {
-                    console.warn(`☁️ Storage: Supabase fail on "${table}":`, error.message);
+                    console.warn(`☁️ Storage: Supabase error on "${table}":`, error.message);
                 }
             } catch (e) {
                 console.warn('☁️ Storage: Supabase sync failed, using local cache', e);
@@ -334,12 +342,11 @@ class StorageService {
         if (accounts.length === 0 && window.DEFAULT_CHART_OF_ACCOUNTS) {
             console.log('📊 Initializing Chart of Accounts from defaults...');
             accounts = window.DEFAULT_CHART_OF_ACCOUNTS.map(acc => ({
-                id: acc.code,
-                account_number: acc.code,
+                id: acc.code.toString(),
+                account_number: parseInt(acc.code),
                 account_name: acc.name,
                 account_type: acc.type || 'Expense',
-                parent_id: null,
-                opening_balance: 0,
+                parent_account: null,
                 active: true,
                 created_at: this._now(),
                 updated_at: this._now()
@@ -376,6 +383,10 @@ class StorageService {
         });
     }
 
+    getAccountsSync() {
+        return this._get(this.keys.accounts);
+    }
+
     async getAccount(id) {
         const accounts = await this.getAccounts();
         return accounts.find(a => a.id === id) || null;
@@ -393,10 +404,9 @@ class StorageService {
         const account = {
             id: this._generateId(),
             account_name: data.name,
-            account_number: data.accountNumber || data.account_number || '',
+            account_number: parseInt(data.accountNumber || data.account_number),
             account_type: data.type || data.account_type,
-            parent_id: data.parentId || data.parent_id || null,
-            opening_balance: data.openingBalance || data.opening_balance || 0,
+            parent_account: data.parentId || data.parent_id || null,
             active: data.active !== undefined ? data.active : true,
             created_at: this._now(),
             updated_at: this._now()
