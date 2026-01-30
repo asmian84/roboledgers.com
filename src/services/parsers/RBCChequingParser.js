@@ -285,6 +285,10 @@ SMART PARSING RULES:
         // Check if the search line is contained in (or contains) the metadata line
         // This handles cases where lines might be split differently
         if (normalizedMeta.includes(normalizedSearch) || normalizedSearch.includes(normalizedMeta)) {
+          console.log(`🎯 [RBC-AUDIT] Exact match found for "${description.substring(0, 30)}...":`);
+          console.log(`   Search: "${normalizedSearch.substring(0, 50)}"`);
+          console.log(`   Found:  "${normalizedMeta.substring(0, 50)}"`);
+          console.log(`   Y: ${lineMeta.y}, Page: ${lineMeta.page}`);
           auditData = {
             page: lineMeta.page,
             y: lineMeta.y,
