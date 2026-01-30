@@ -5199,33 +5199,42 @@ window.recalculateAllBalances = function () {
   const openingVal = parseFloat(V5State.openingBalance) || 0;
   let runningBalance = openingVal;
 
+  // 1. ALWAYS update the source data first (Source of Truth)
+  if (V5State.gridData && V5State.gridData.length > 0) {
+    V5State.gridData.forEach((txn, index) => {
+      const debit = parseFloat(txn.debit || txn.Debit) || 0;
+      const credit = parseFloat(txn.credit || txn.Credit) || 0;
+      runningBalance = runningBalance - debit + credit;
+      txn.balance = parseFloat(runningBalance.toFixed(2));
+      txn.Balance = txn.balance;
+
+      // If no refNumber yet, give it a sequence
+      if (!txn.refNumber) {
+        txn.refNumber = String(index + 1).padStart(3, '0');
+      }
+    });
+  }
+
+  // 2. If grid is ready, sync the grid state
   if (V5State.gridApi) {
-    // Recalculate based on VISIBLE / SORTED order (Live Basis)
+    // Refresh the grid but also RE-SEQUENCE if sorted/filtered
     let seq = 1;
+    let gridRunningBalance = openingVal;
+
+    // We iterate the VISIBLE nodes to ensure the refNumber matches the visual order
     V5State.gridApi.forEachNodeAfterFilterAndSort((node) => {
       const txn = node.data;
       const debit = parseFloat(txn.debit || txn.Debit) || 0;
       const credit = parseFloat(txn.credit || txn.Credit) || 0;
 
-      runningBalance = runningBalance - debit + credit;
-      txn.balance = parseFloat(runningBalance.toFixed(2));
+      gridRunningBalance = gridRunningBalance - debit + credit;
+      txn.balance = parseFloat(gridRunningBalance.toFixed(2));
       txn.Balance = txn.balance;
-
-      // Dynamic Ref# Sequencing (001, 002, 003...) - Resets on sort/filter
       txn.refNumber = String(seq++).padStart(3, '0');
     });
 
-    // Refresh balance and refNumber columns
+    // Final push to UI
     V5State.gridApi.refreshCells({ columns: ['balance', 'refNumber'], force: true });
-  } else {
-    // Fallback if grid not ready
-    V5State.gridData.forEach(txn => {
-      const debit = parseFloat(txn.debit || txn.Debit) || 0;
-      const credit = parseFloat(txn.credit || txn.Credit) || 0;
-      runningBalance = runningBalance - debit + credit;
-      txn.balance = parseFloat(runningBalance.toFixed(2));
-      txn.Balance = txn.balance;
-    });
   }
 
   if (window.updateReconciliationCard) window.updateReconciliationCard();
@@ -6410,10 +6419,11 @@ window.parseV5Files = async function () {
           window.updateReconciliationCard();
         }
 
-        // Recalculate all balances with the new opening balance
-        if (window.recalculateAllBalances) {
-          window.recalculateAllBalances();
-        }
+      }
+
+      // ALWAYS recalculate after setting gridData
+      if (window.recalculateAllBalances) {
+        window.recalculateAllBalances();
       }
     }
 
