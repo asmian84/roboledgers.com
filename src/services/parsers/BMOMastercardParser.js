@@ -33,7 +33,7 @@ BMO MASTERCARD FORMAT:
 
     // EXTRACT METADATA (Institution, Transit, Account)
     const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
-    const metadata = {
+    const parsedMetadata = {
       _inst: '001', // BMO Institution Code
       _transit: '-----',
       _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -44,7 +44,7 @@ BMO MASTERCARD FORMAT:
       _bank: 'BMO Mastercard',
       _tag: 'CreditCard'
     };
-    console.warn('🏁 [BMO-MC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+    console.warn('🏁 [BMO-MC] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
     const yearMatch = statementText.match(/20\d{2}/);
     const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -105,9 +105,11 @@ BMO MASTERCARD FORMAT:
       }
     }
 
+
     console.log(`[BMO-MC] Parsed ${transactions.length} transactions`);
-    return { transactions, metadata, openingBalance };
-  }
+    return { transactions, metadata: parsedMetadata, openingBalance };
+  };
+
 
   extractTransaction(text, isoDate, originalLine) {
     const amounts = text.match(/([\d,]+\.\d{2})/g);

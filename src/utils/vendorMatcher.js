@@ -145,7 +145,16 @@ function checkForDuplicates(name, vendors) {
 // 7-Step Smart Categorization Logic
 // Now ASYNC to support AI calls
 async function smartCategorize(description, vendors) {
-    if (!description) return { vendorId: null, accountId: '9970', vendorName: 'Review Required', isNew: true, confidence: 0 };
+    if (!description) {
+        return {
+            vendorId: null,
+            accountId: '9970',
+            vendorName: 'Review Required',
+            isNew: true,
+            confidence: 0,
+            method: 'Empty Description' // Fix log noise
+        };
+    }
 
     const cleanDesc = normalizeVendorName(description).toUpperCase();
     const rawDesc = description.trim();
@@ -154,6 +163,7 @@ async function smartCategorize(description, vendors) {
     // Fast check against main vendor names
     let match = vendors.find(v => normalizeVendorName(v.name).toUpperCase() === cleanDesc);
     if (match) {
+        console.log(`[Matcher] Exact Match Found: ${match.name}`);
         return {
             vendorId: match.id,
             vendorName: match.name,
@@ -201,6 +211,7 @@ async function smartCategorize(description, vendors) {
     const similar = findSimilarVendors(cleanDesc, vendors, 0.85);
     if (similar.length > 0) {
         match = similar[0].vendor;
+        console.log(`[Matcher] Fuzzy Match Found: ${match.name} (Score: ${similar[0].similarity})`);
         return {
             vendorId: match.id,
             vendorName: match.name,
@@ -219,6 +230,7 @@ async function smartCategorize(description, vendors) {
     let categoryAccount = coa.find(a => a.name.toUpperCase() === suggestedCategory.toUpperCase());
 
     if (!categoryAccount && suggestedCategory) {
+        console.log(`[Matcher] Keyword Inference: "${suggestedCategory}"`);
         const categoryAccountMap = {
             'Utilities': '6800',
             'Office Supplies': '6700',

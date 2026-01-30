@@ -270,7 +270,7 @@ class V5GroupedAccountEditor {
     this.container = document.createElement('div');
     this.container.className = 'custom-coa-menu';
     // FIX: Added background, border, shadow for visibility
-    this.container.style.cssText = 'width: 380px; max-height: 500px; position: relative; display: flex; flex-direction: column; overflow: hidden; background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); font-family: "Inter", sans-serif;';
+    this.container.style.cssText = 'width: 380px; max-height: 500px; position: relative; display: flex; flex-direction: column; overflow: hidden; background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); font-family: "Inter", sans-serif; z-index: 99999;';
 
     console.log('[V5GroupedAccountEditor] Initialized');
 
@@ -363,10 +363,13 @@ class V5GroupedAccountEditor {
 
     // Attach click handlers manually to capture selection
     this.listContainer.querySelectorAll('.coa-item').forEach(el => {
-      el.onclick = () => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop grid from stealing click
+        // e.preventDefault(); // Don't prevent default on click
         this.value = el.innerText.trim();
-        this.params.stopEditing();
-      };
+        // Slight delay to ensure UI updates before grid closes editor
+        setTimeout(() => this.params.stopEditing(), 50);
+      });
     });
   }
 
@@ -3798,6 +3801,14 @@ window.renderTxnImportV5Page = function () {
             Auto-Categorize
           </button>
 
+
+          <div class="v5-search-compact" id="v5-shortcut-autoCat" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" style="cursor: pointer;" onclick="window.runAutoCategorization()">
+            <div id="v5-autocat-btn-content" style="display:flex;align-items:center;gap:6px;">
+                <i class="ph ph-magic-wand"></i>
+                <span class="v5-toolbar-label">Auto-Categorize</span>
+            </div>
+          </div>
+
           <div class="v5-search-compact" id="v5-shortcut-search" draggable="true" ondragstart="window.handleV5ShortcutDragStart(event)" ondragover="window.handleV5ShortcutDragOver(event)" ondrop="window.handleV5ShortcutDrop(event)" style="cursor: move;">
             <i class="ph ph-magnifying-glass"></i>
             <input type="text" 
@@ -6173,6 +6184,117 @@ window.applyBulkCat = function () {
   cancelBulkSelection();
 };
 
+/**
+ * 🚀 AUTO-CATEGORIZATION ENGINE (V5.2)
+ * High-Frequency Updates via AG Grid Async Transactions
+ * Uses the 7-Tier VendorMatcher logic
+ */
+window.runAutoCategorization = async function () {
+  console.log('🚀 Auto-Categorize Triggered!');
+
+  // 1. Get Rows to Process (Only Uncategorized or "New")
+  const allRows = [];
+  V5State.gridApi.forEachNode(node => allRows.push(node.data));
+
+  // Filter for items that need categorization (empty, suspense, or unverified)
+  const targetRows = allRows.filter(r =>
+    !r.account ||
+    r.account === '9970' ||
+    r.account === '' ||
+    (r.auditStatus !== 'verified' && r.auditStatus !== 'flagged')
+  );
+
+  console.log(`🎯 Found ${targetRows.length} candidates for auto-categorization.`);
+
+  if (targetRows.length === 0) {
+    if (window.ToastManager) window.ToastManager.info('No uncategorized transactions found.');
+    return;
+  }
+
+  // UI Feedback: Show Spinner inside button (and prevent double-click)
+  const btnDiv = document.getElementById('v5-shortcut-autoCat');
+  const btnContent = document.getElementById('v5-autocat-btn-content');
+  const originalHTML = btnContent.innerHTML;
+
+  if (btnDiv) btnDiv.style.pointerEvents = 'none'; // Disable click
+  btnContent.innerHTML = '<i class="ph ph-spinner ph-spin" style="margin-right:6px"></i> Running 7-Tier Logic...';
+
+  try {
+    // 2. Load Dictionary
+    if (!window.merchantDictionary || !window.merchantDictionary.isInitialized) {
+      if (window.merchantDictionary) await window.merchantDictionary.init();
+    }
+
+    const vendors = await window.merchantDictionary.getAllMerchants();
+    console.log(`📚 Dictionary loaded: ${vendors.length} vendors`);
+
+    // 3. Process in Batches (High-Frequency Updates)
+    const BATCH_SIZE = 50;
+    let processed = 0;
+    let matchesFound = 0;
+
+    // Performance: Use applyTransactionAsync for high-freq updates
+    // https://www.ag-grid.com/javascript-data-grid/data-update-high-frequency/
+
+    for (let i = 0; i < targetRows.length; i += BATCH_SIZE) {
+      const batch = targetRows.slice(i, i + BATCH_SIZE);
+      const updates = [];
+
+      await Promise.all(batch.map(async (row) => {
+        // CALL THE 7-TIER BRAIN
+        // This is where the magic happens
+        const result = await window.VendorMatcher.smartCategorize(row.description, vendors);
+
+        if (result && result.confidence > 0.6) {
+          // Apply changes to data model
+          row.vendor = result.vendorName;
+          row.account = result.accountId;
+          row.confidence = result.confidence;
+
+          // Auto-verify high confidence (Tier 1 & 4 mostly)
+          if (result.confidence >= 0.95) {
+            row.auditStatus = 'verified';
+          } else {
+            row.auditStatus = 'tentative';
+          }
+
+          // Only queue for update if changed
+          updates.push(row);
+          matchesFound++;
+        }
+      }));
+
+      if (updates.length > 0) {
+        // The Magic: Async Transaction for UI smoothness
+        // This allows grid to update rows without full redraw
+        V5State.gridApi.applyTransactionAsync({ update: updates });
+      }
+
+      processed += batch.length;
+
+      // Tiny yield to let UI breathe (prevent main thread freeze)
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    // 4. Success Message
+    if (window.ToastManager) {
+      window.ToastManager.success(`Auto-Categorized ${matchesFound} transactions with High Confidence.`);
+    }
+
+    // 5. Trigger Persistence
+    saveData();
+
+  } catch (err) {
+    console.error('❌ Auto-Categorize Failed:', err);
+    if (window.ToastManager) window.ToastManager.error('Auto-Categorize failed. Check console.');
+  } finally {
+    // 6. Restore UI
+    if (btnDiv) btnDiv.style.pointerEvents = 'auto';
+    btnContent.innerHTML = originalHTML;
+  }
+};
+
+
 window.bulkRenameV5 = function () {
   const selectedRows = V5State.gridApi?.getSelectedRows() || [];
   if (selectedRows.length === 0) return;
@@ -6486,10 +6608,14 @@ window.parseV5Files = async function () {
     // This runs on EVERY upload to ensure opening balance is always from the first statement
     if (V5State.gridData && V5State.gridData.length > 0) {
       // Find the earliest transaction date across ALL transactions
-      const dates = V5State.gridData.map(t => new Date(t.date || t.Date));
-      const earliestDate = new Date(Math.min(...dates));
+      const dates = V5State.gridData.map(t => new Date(t.date || t.Date)).filter(d => !isNaN(d.getTime()));
 
-      console.log(`📅 Earliest transaction date in grid: ${earliestDate.toISOString().split('T')[0]}`);
+      if (dates.length > 0) {
+        const earliestDate = new Date(Math.min(...dates));
+        console.log(`📅 Earliest transaction date in grid: ${earliestDate.toISOString().split('T')[0]}`);
+      } else {
+        console.warn('⚠️ No valid dates found in grid data for earliest date extraction');
+      }
 
       // If this upload has an opening balance, use it
       if (brandDetection.openingBalance || autoOpeningBalance) {
@@ -7520,8 +7646,7 @@ const gridOptions = {
       field: 'date',
       width: 110,
       maxWidth: 130,
-      minWidth: 100,
-      suppressSizeToFit: true,
+      minWidth: 90,
       editable: true,
       valueGetter: params => params.data.date || params.data.Date || '',
       valueFormatter: params => {
@@ -7533,8 +7658,8 @@ const gridOptions = {
       colId: 'description',
       headerName: 'Description',
       field: 'description',
-      flex: 3,
-      minWidth: 300,
+      flex: 2,
+      minWidth: 200,
       editable: true,
       cellEditor: 'agTextCellEditor',
       valueGetter: params => params.data.description || params.data.Description || '',
@@ -7573,8 +7698,7 @@ const gridOptions = {
       headerName: 'Debit',
       field: 'debit',
       width: 100,
-      minWidth: 100,
-      suppressSizeToFit: true,
+      minWidth: 80,
       type: 'numericColumn',
       headerClass: 'ag-right-aligned-header',
       cellStyle: { color: '#EF4444', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
@@ -7602,8 +7726,7 @@ const gridOptions = {
       headerName: 'Credit',
       field: 'credit',
       width: 100,
-      minWidth: 100,
-      suppressSizeToFit: true,
+      minWidth: 80,
       type: 'numericColumn',
       headerClass: 'ag-right-aligned-header',
       cellStyle: { color: '#10B981', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
@@ -7627,12 +7750,31 @@ const gridOptions = {
       }
     },
     {
+      colId: 'salesTax',
+      headerName: 'Sales Tax',
+      field: 'salesTax',
+      width: 100,
+      minWidth: 70,
+      hide: !V5State.settings.columns.salesTax, // Controlled by toggle
+      type: 'numericColumn',
+      headerClass: 'ag-right-aligned-header',
+      cellStyle: { 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center', 'color': '#6366f1' },
+      editable: true,
+      valueGetter: params => {
+        const val = parseFloat(params.data.salesTax) || 0;
+        return val > 0 ? val : 0;
+      },
+      valueFormatter: params => {
+        const val = parseFloat(params.value) || 0;
+        return val > 0 ? '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+      }
+    },
+    {
       colId: 'balance',
       headerName: 'Balance',
       field: 'balance',
       width: 110,
-      minWidth: 110,
-      suppressSizeToFit: true,
+      minWidth: 90,
       headerClass: 'ag-right-aligned-header',
       cellStyle: { fontWeight: '700', 'text-align': 'right', 'justify-content': 'flex-end', 'display': 'flex', 'align-items': 'center' },
       valueGetter: params => params.data.balance || params.data.Balance || 0,
@@ -7646,8 +7788,7 @@ const gridOptions = {
       headerName: 'Account',
       field: 'account',
       width: 160,
-      minWidth: 160,
-      suppressSizeToFit: true,
+      minWidth: 120,
       cellEditor: V5GroupedAccountEditor
     }
   ],
@@ -8890,6 +9031,72 @@ window.syncAppearanceFromPopup = function (theme, font, size) {
   window.applyAppearance();
 };
 
+// ============================================
+// CUSTOM EDITOR COMPONENT (Global Scope)
+// ============================================
+
+window.V5GroupedAccountEditor = class {
+  init(params) {
+    this.params = params;
+    this.value = params.value || 'Uncategorized';
+
+    // Create container
+    this.container = document.createElement('div');
+    this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; max-height:400px; overflow-y:auto; z-index:10000; font-family:"Inter",sans-serif;';
+
+    // Helper to get grouped COA - assumes get5TierCoAAccounts is global or we can rebuild it
+    // Using simple rebuild logic if getGroupedCoA is not global
+    const coa = window.getGroupedCoA ? window.getGroupedCoA() : (() => {
+      const raw = JSON.parse(localStorage.getItem('ab_chart_of_accounts') || '[]');
+      const groups = {};
+      raw.forEach(a => {
+        const g = a.category || 'Other';
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(`${a.code} - ${a.name}`);
+      });
+      return groups;
+    })();
+
+    Object.entries(coa).forEach(([group, items]) => {
+      if (items.length) {
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:8px 12px; background:#f8fafc; font-weight:700; font-size:11px; color:#64748b; text-transform:uppercase; border-bottom:1px solid #e2e8f0; position:sticky; top:0;';
+        header.innerText = group;
+        this.container.appendChild(header);
+        items.forEach(item => {
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px 16px; font-size:13px; color: #334155; cursor:pointer; border-bottom:1px solid #f1f5f9;';
+          div.innerText = item;
+          div.onmouseover = () => { div.style.background = '#eff6ff'; div.style.color = '#2563eb'; };
+          div.onmouseout = () => { div.style.background = 'white'; div.style.color = '#334155'; };
+          div.onclick = () => {
+            this.value = item;
+            this.params.stopEditing();
+          };
+          this.container.appendChild(div);
+        });
+      }
+    });
+
+    // Handle outside clicks to close
+    setTimeout(() => {
+      this.clickListener = (e) => {
+        if (!this.container.contains(e.target)) {
+          this.params.stopEditing();
+        }
+      };
+      document.addEventListener('click', this.clickListener);
+    }, 100);
+  }
+
+  getGui() { return this.container; }
+  getValue() { return this.value; }
+  isPopup() { return true; }
+  destroy() {
+    if (this.clickListener) document.removeEventListener('click', this.clickListener);
+  }
+};
+
 function getV5ColumnDefs() {
   // Return same column defs used in main grid (without cellRenderer for actions)
   return [
@@ -8930,7 +9137,24 @@ function getV5ColumnDefs() {
     { headerName: 'Debit', field: 'debit', width: 120, editable: true },
     { headerName: 'Credit', field: 'credit', width: 120, editable: true },
     { headerName: 'Balance', field: 'balance', width: 130, editable: false },
-    { headerName: 'Account', field: 'account', width: 280, editable: true }
+    {
+      headerName: 'Account',
+      field: 'account',
+      width: 280,
+      editable: true,
+      cellEditor: 'V5GroupedAccountEditor', // Use the custom editor
+      cellRenderer: (params) => {
+        if (!params.value || params.value === '') return '<span style="color:#ef4444;font-style:italic">9970 - Suspense (Uncategorized)</span>';
+        return params.value;
+      },
+      onCellValueChanged: (params) => {
+        // Fallback Logic: If user clears it or enters specific "Uncategorized" text, force 9970
+        if (!params.newValue || params.newValue === 'Uncategorized') {
+          params.node.setDataValue('account', '9970 - Suspense (Uncategorized)');
+        }
+        saveData();
+      }
+    }
   ];
 }
 
@@ -10838,7 +11062,37 @@ window.debugV5 = function () {
   console.log('v5_current_detection:', !!localStorage.getItem('v5_current_detection'));
 
   console.groupEnd();
+  console.groupEnd();
+  console.groupEnd();
   return 'Verification complete. Check console logs for details.';
+};
+
+/** 
+ * PARSER DEBUGGER 
+ * Dumps the raw text of the last parsed file to console.
+ */
+window.debugLastParserResult = function () {
+  if (!window.rbcChequingParser || !window.rbcChequingParser.lastLineMetadata) {
+    console.warn('No parser history found. Please parse a file first.');
+    return;
+  }
+  console.log('--- RAW PARSER DUMP ---');
+  console.log(window.rbcChequingParser.lastLineMetadata.map(l => l.text).join('\n'));
+  console.log('--- END DUMP ---');
+};
+
+/** 
+ * PARSER DEBUGGER 
+ * Dumps the raw text of the last parsed file to console.
+ */
+window.debugLastParserResult = function () {
+  if (!window.rbcChequingParser || !window.rbcChequingParser.lastLineMetadata) {
+    console.warn('No parser history found. Please parse a file first.');
+    return;
+  }
+  console.log('--- RAW PARSER DUMP ---');
+  console.log(window.rbcChequingParser.lastLineMetadata.map(l => l.text).join('\n'));
+  console.log('--- END DUMP ---');
 };
 
 /** Force Refresh Chart of Accounts */
@@ -10868,6 +11122,27 @@ window.initTxnImportV5Grid = function () {
   console.log('📦 V5State:', window.V5State);
   console.log('📊 Data Length:', window.V5State?.gridData?.length);
   console.log('📚 agGrid Library:', typeof agGrid !== 'undefined' ? 'Found (v' + (agGrid.version || 'unknown') + ')' : 'MISSING!');
+
+  // [INJECT] Debug Console Button
+  setTimeout(() => {
+    const toolbar = document.querySelector('.v5-control-toolbar') || document.getElementById('v5-action-bar');
+    if (toolbar && !document.getElementById('v5-btn-debug-console')) {
+      const btn = document.createElement('button');
+      btn.id = 'v5-btn-debug-console';
+      btn.className = 'v5-toolbar-btn secondary';
+      btn.title = 'Open Debug Console';
+      btn.style.marginLeft = '10px';
+      btn.innerHTML = '<i class="ph ph-bug"></i> Debug';
+      btn.onclick = () => {
+        if (window.toggleDebugConsole) window.toggleDebugConsole();
+      };
+
+      // Insert before the search wrapper
+      const search = toolbar.querySelector('.v5-search-wrapper');
+      if (search) toolbar.insertBefore(btn, search);
+      else toolbar.appendChild(btn);
+    }
+  }, 1000);
 
   const gridDiv = document.getElementById('v5-grid-container');
   if (!gridDiv) {
@@ -10920,8 +11195,83 @@ window.initTxnImportV5Grid = function () {
 
   if (needsRecreation) {
     try {
-      new agGrid.Grid(gridDiv, gridOptions);
-      V5State.gridApi = gridOptions.api;
+      // REGISTER COMPONENTS EXPLICITLY
+      const gridOpts = {
+        ...gridOptions,
+        components: {
+          ...(gridOptions.components || {}),
+          V5GroupedAccountEditor: window.V5GroupedAccountEditor
+        },
+        // [FIX] Revert to SizeToFit (User request: "Bleeding into wall")
+        onRowDataUpdated: (params) => {
+          // params.api.sizeColumnsToFit(); // Can be too aggressive on every row update
+        },
+        onGridReady: (params) => {
+          console.log('[Grid] Ready -> Layout Configured');
+
+          // ROBUST AUTO-FIT: Retry if width is zero (common in hidden tabs)
+          const robustResize = () => {
+            const gridDiv = document.getElementById('v5-grid-container');
+            if (gridDiv && gridDiv.offsetWidth > 0) {
+              params.api.sizeColumnsToFit();
+              console.log('✅ [Grid] Columns auto-fitted successfully');
+            } else {
+              // Wait for visibility
+              setTimeout(robustResize, 200);
+            }
+          };
+          robustResize();
+
+          // Native Auto-Fit on Window Resize
+          window.addEventListener('resize', () => {
+            if (params.api) params.api.sizeColumnsToFit();
+          });
+        },
+        onGridSizeChanged: (params) => {
+          // This is the native AG Grid event for container resize
+          params.api.sizeColumnsToFit();
+        }
+      };
+
+      // Add Sales Tax column if enabled in settings
+      if (V5State.settings.columns.salesTax) {
+        const balanceColIndex = gridOpts.columnDefs.findIndex(col => col.field === 'balance');
+        if (balanceColIndex !== -1) {
+          gridOpts.columnDefs.splice(balanceColIndex, 0, {
+            headerName: 'Sales Tax',
+            field: 'salesTax',
+            width: 100,
+            editable: true,
+            valueFormatter: (params) => {
+              if (params.value === null || params.value === undefined) return '';
+              return `$${parseFloat(params.value).toFixed(2)}`;
+            },
+            valueParser: (params) => parseFloat(params.newValue),
+            type: 'numericColumn',
+            cellStyle: { textAlign: 'right' },
+            tooltipField: 'salesTax'
+          });
+        }
+      }
+
+      // Fix Description column to handle both 'description' and 'Description'
+      const descriptionCol = gridOpts.columnDefs.find(col => col.field === 'description');
+      if (descriptionCol) {
+        descriptionCol.valueGetter = (params) => params.data.description || params.data.Description || '';
+      }
+
+
+      console.log('🔧 [Init] Grid Options Components:', Object.keys(gridOpts.components));
+
+      // DEBUG: Verify class availability
+      if (!window.V5GroupedAccountEditor) {
+        console.error('❌ CRITICAL: V5GroupedAccountEditor is undefined in global scope!');
+      } else {
+        console.log('✅ V5GroupedAccountEditor is defined globally.');
+      }
+
+      new agGrid.Grid(gridDiv, gridOpts);
+      V5State.gridApi = gridOpts.api;
       if (!V5State.gridApi) {
         console.warn('⚠️ [Init] gridOptions.api not immediately available, checking gridOptions object...');
         V5State.gridApi = gridOptions.api; // Try again as it might be populated after constructor
@@ -10973,6 +11323,7 @@ window.initTxnImportV5Grid = function () {
     if (V5State.gridApi) {
       V5State.gridApi.setGridOption('rowData', V5State.gridData);
       V5State.gridApi.sizeColumnsToFit();
+      // V5State.gridApi.autoSizeAllColumns();
       console.log('📊 [Init] Grid re-hydrated with data, sizeColumnsToFit called.');
 
       // Forced Visibility Sanity Check
@@ -11011,7 +11362,8 @@ window.initTxnImportV5Grid = function () {
               try {
                 // V5State.gridApi.autoSizeAllColumns(); // Can be noisy
                 V5State.gridApi.sizeColumnsToFit();
-                console.log('✅ [Init] Restoration complete & columns resized.');
+                // V5State.gridApi.autoSizeAllColumns();
+                console.log('✅ [Init] Restoration complete & columns resized (Fit to Window).');
               } catch (e) {
                 console.warn('⚠️ [Init] Column resize failed:', e);
               }

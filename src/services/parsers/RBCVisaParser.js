@@ -34,7 +34,7 @@ RBC VISA FORMAT:
             console.log(`[RBC-VISA] Extracted opening balance: ${openingBalance}`);
         }
 
-        const metadata = {
+        const parsedMetadata = {
             _inst: '003', // RBC Institution Code
             _transit: '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -46,7 +46,7 @@ RBC VISA FORMAT:
             _tag: 'CreditCard',
             openingBalance: openingBalance
         };
-        console.warn('🏁 [RBC-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [RBC-VISA] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         const yearMatch = statementText.match(/20\d{2}/);
         const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -107,7 +107,7 @@ RBC VISA FORMAT:
             }
         }
         console.log(`[RBC-VISA] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata };
+        return { transactions, metadata: parsedMetadata };
     }
 
     extractTransaction(text, isoDate, originalLine) {

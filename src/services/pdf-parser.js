@@ -659,21 +659,32 @@
 
                         // Group items by Y position (within tolerance)
                         let lastY = null;
+                        let lastX = 0; // Initialize lastX
                         let lastHeight = 10;
                         let lineBuffer = [];
 
                         for (const item of items) {
                             const y = item.transform[5];
                             const height = item.height || 10;
+                            // New line check
                             if (lastY !== null && Math.abs(y - lastY) > 5) {
                                 // New line - flush buffer
                                 if (lineBuffer.length > 0) {
                                     const lineText = lineBuffer.join(' ');
                                     fullText += lineText + '\n';
-                                    this.lineMetadata.push({ page: i, y: lastY, height: lastHeight, text: lineText });
+                                    // [PHASE 5] Added X/Width for Grid Parsing
+                                    this.lineMetadata.push({
+                                        page: i,
+                                        y: lastY,
+                                        x: lastX,  // Start X of the line
+                                        width: (items[items.length - 1].transform[4] + (items[items.length - 1].width || 0)) - lastX, // Approx width
+                                        height: lastHeight,
+                                        text: lineText
+                                    });
                                     lineBuffer = [];
                                 }
                             }
+                            if (lineBuffer.length === 0) lastX = item.transform[4]; // Capture X of start of line
                             lineBuffer.push(item.str);
                             lastY = y;
                             lastHeight = height;
@@ -682,10 +693,17 @@
                         if (lineBuffer.length > 0) {
                             const lineText = lineBuffer.join(' ');
                             fullText += lineText + '\n';
-                            this.lineMetadata.push({ page: i, y: lastY, height: lastHeight, text: lineText });
+                            this.lineMetadata.push({
+                                page: i,
+                                y: lastY,
+                                x: lastX,
+                                width: 0, // approximate or calc if needed
+                                height: lastHeight,
+                                text: lineText
+                            });
                         }
                         fullText += '\n'; // Page break
-                        this.lineMetadata.push({ page: i, y: 0, height: 0, text: '' }); // spacer for page break
+                        this.lineMetadata.push({ page: i, y: 0, x: 0, height: 0, text: '' }); // spacer for page break
                     }
 
 

@@ -27,7 +27,7 @@ class ScotiaCreditCardParser extends BaseBankParser {
 
         // EXTRACT METADATA (Institution, Transit, Account)
         const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
-        const metadata = {
+        const parsedMetadata = {
             _inst: '002', // Scotiabank Institution Code
             _transit: '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -38,7 +38,7 @@ class ScotiaCreditCardParser extends BaseBankParser {
             _bank: 'Scotiabank',
             _tag: 'CreditCard'
         };
-        console.warn('🏁 [SCOTIA-CC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [SCOTIA-CC] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         let currentYear = new Date().getFullYear();
 
@@ -115,7 +115,7 @@ class ScotiaCreditCardParser extends BaseBankParser {
         }
 
         console.log(`[SCOTIA-CC] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata, openingBalance };
+        return { transactions, metadata: parsedMetadata, openingBalance };
     }
 
     extractTransaction(text, isoDate, originalLine) {

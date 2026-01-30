@@ -34,7 +34,7 @@ CIBC CHEQUING FORMAT:
         const transitMatch = statementText.match(/Branch transit number\s*(\d{5})/i);
         const acctMatch = statementText.match(/Account number\s*([\d-]{5,})/i);
 
-        const metadata = {
+        const parsedMetadata = {
             _inst: '010', // CIBC Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -45,7 +45,7 @@ CIBC CHEQUING FORMAT:
             _bank: 'CIBC',
             _tag: 'Chequing'
         };
-        console.warn('🏁 [CIBC] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [CIBC] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         // Extract year from statement
         const yearMatch = statementText.match(/20\d{2}/);
@@ -131,7 +131,7 @@ CIBC CHEQUING FORMAT:
         }
 
         console.log(`[CIBC] Parsing complete. Found ${transactions.length} transactions.`);
-        return { transactions, metadata };
+        return { transactions, metadata: parsedMetadata };
     }
 
     /**

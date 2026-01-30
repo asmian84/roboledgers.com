@@ -37,7 +37,7 @@ TD VISA FORMAT:
             console.log(`[TD-VISA] Extracted opening balance: ${openingBalance}`);
         }
 
-        const metadata = {
+        const parsedMetadata = {
             _inst: '004', // TD Institution Code
             _transit: '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -49,7 +49,7 @@ TD VISA FORMAT:
             _tag: 'CreditCard',
             openingBalance: openingBalance
         };
-        console.warn('🏁 [TD-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [TD-VISA] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         const yearMatch = statementText.match(/20\d{2}/);
         const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -109,7 +109,7 @@ TD VISA FORMAT:
         }
 
         console.log(`[TD-VISA] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata };
+        return { transactions, metadata: parsedMetadata };
     }
 
     extractTransaction(text, isoDate, originalLine) {

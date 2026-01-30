@@ -25,7 +25,7 @@ CIBC VISA FORMAT:
 
         // EXTRACT METADATA (Institution, Transit, Account)
         const acctMatch = statementText.match(/(?:Account)[:#]?\s*([\d-]{7,})/i);
-        const metadata = {
+        const parsedMetadata = {
             _inst: '010', // CIBC Institution Code
             _transit: '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -36,7 +36,7 @@ CIBC VISA FORMAT:
             _bank: 'CIBC Visa',
             _tag: 'CreditCard'
         };
-        console.warn('🏁 [CIBC-VISA] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [CIBC-VISA] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         const yearMatch = statementText.match(/20\d{2}/);
         const currentYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
@@ -97,7 +97,7 @@ CIBC VISA FORMAT:
         }
 
         console.log(`[CIBC-VISA] Parsed ${transactions.length} transactions`);
-        return { transactions, metadata };
+        return { transactions, metadata: parsedMetadata };
     }
 
     extractTransaction(text, isoDate, originalLine) {

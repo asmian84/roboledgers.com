@@ -58,7 +58,7 @@ BMO CHEQUING FORMAT:
             console.log(`[BMO] Extracted opening balance: ${openingBalance}`);
         }
 
-        const metadata = {
+        const parsedMetadata = {
             _inst: '001', // BMO Institution Code
             _transit: transitMatch ? transitMatch[1] : '-----',
             _acct: acctMatch ? acctMatch[1].replace(/[-\s]/g, '') : '-----',
@@ -71,7 +71,7 @@ BMO CHEQUING FORMAT:
             openingBalance: openingBalance
         };
 
-        console.warn('🏁 [BMO] Extraction Phase Complete. Transit:', metadata.transit, 'Acct:', metadata.accountNumber);
+        console.warn('🏁 [BMO] Extraction Phase Complete. Transit:', parsedMetadata.transit, 'Acct:', parsedMetadata.accountNumber);
 
         // Date pattern: "Apr 01", "May 16", etc. (Flexible, no start anchor)
         const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d{1,2})/i;
@@ -165,7 +165,7 @@ BMO CHEQUING FORMAT:
         }
 
         console.log('[BMO] Parsing complete. Found', transactions.length, 'transactions.');
-        return { transactions, metadata };
+        return { transactions, metadata: parsedMetadata };
     }
 
     parseLineWithAmounts(fullLine, dateStr, isoDate, amountStrings) {

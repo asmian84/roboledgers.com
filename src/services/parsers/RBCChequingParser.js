@@ -1,7 +1,7 @@
 /**
- * RBC Chequing Parser
- * Regex-based parser for RBC Chequing statements
- */
+  * RBC Chequing Parser
+    * Regex - based parser for RBC Chequing statements
+      */
 class RBCChequingParser extends BaseBankParser {
   constructor() {
     const formatRules = `
@@ -33,230 +33,385 @@ SMART PARSING RULES:
     // [PHASE 4] Store lineMetadata for audit lookups
     this.lastLineMetadata = lineMetadata;
 
-    // EXTRACT METADATA (Institution, Transit, Account)
-    // RBC variation from screenshot: "Account number:     01259 100-244-3"
-    let transitAcctMatch = text.match(/Account\s+number:?\s+(\d{5})\s+([\d-]{7,})/i);
+    // 1. EXTRACT OPENING BALANCE (Robust Regex)
 
-    // EXTREME FALLBACK: If standard match fails, use a proximity search
-    if (!transitAcctMatch) {
-      console.warn('⚠️ [RBC] Standard label match failed. Starting proximity search...');
-      const labelIndex = text.search(/Account\s+number/i);
-      if (labelIndex !== -1) {
-        const probeString = text.substring(labelIndex, labelIndex + 200);
-        console.log(`🔍 [RBC] Probing text near label: "${probeString.replace(/\n/g, ' ')}"`);
-        const m = probeString.match(/(\d{5})\s+([\d-]{7,})/i) || probeString.match(/(\d{5})[\s\n]+([\d-]{7,})/i);
-        if (m) {
-          console.error('✅ [RBC] Recovered metadata via proximity match:', m[0]);
-          transitAcctMatch = m;
-        }
-      }
-    }
-
-    // ULTIMATE AGGRESSIVE SCAN: Scan first 5000 chars for ANY "5-digit [space] 7+digit/dash" pattern
-    if (!transitAcctMatch) {
-      console.warn('⚠️ [RBC] Proximity match failed. Scanning first 5000 chars for raw patterns...');
-      const patterns = [
-        /(\d{5})\s+([\d-]{7,})/i,
-        /(\d{5})[\r\n\s]+([\d-]{7,})/i,
-        /Transit\s+(\d{5})/i
-      ];
-      for (const p of patterns) {
-        const m = text.substring(0, 5000).match(p);
-        if (m) {
-          console.error('✅ [RBC] Raw pattern match found:', m[0]);
-          transitAcctMatch = m;
-          break;
-        }
-      }
-    }
-
-    // FILENAME FALLBACK: If text extraction fails, look at the filename (e.g., ...-2443...)
-    let fallbackAcct = '-----';
-    if (!transitAcctMatch) {
-      console.error('❌ [RBC] ALL text-based metadata extraction failed. Checking filename fallback...');
-      const filenameMatch = text.match(/Filename:\s*.*?-(\d{4})/i) || text.match(/(\d{4})\s*20\d{2}\.pdf/i);
-      if (filenameMatch) fallbackAcct = `...${filenameMatch[1]}`;
-    }
-
-    // Extract opening balance
     let openingBalance = null;
-    const openingMatch = text.match(/Opening Balance.*?\$?([\d,]+\.\d{2})/i);
+    // Look for lines like "Opening balance on June 5, 2023 $24,840.89"
+    // Handle cases where $ is missing or space is weird
+    const openingMatch = text.match(/Opening\s+balance.*?(?:on\s+.*?)?[\$:]?\s*([\d,]+\.\d{2})/i);
+
     if (openingMatch) {
       openingBalance = parseFloat(openingMatch[1].replace(/,/g, ''));
-      console.log(`[RBC] Extracted opening balance: ${openingBalance}`);
+      console.log(`✅ [RBC] Robustly extracted opening balance: ${openingBalance}`);
+    } else {
+      console.warn('⚠️ [RBC] Opening balance not found in text header.');
     }
 
-    this.metadata = {
-      _inst: '003', // RBC Institution Code
-      _transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
-      _acct: transitAcctMatch ? (transitAcctMatch[2] ? transitAcctMatch[2].replace(/[-\s]/g, '') : fallbackAcct) : fallbackAcct,
-      institutionCode: '003',
-      transit: transitAcctMatch ? transitAcctMatch[1] : '-----',
-      accountNumber: transitAcctMatch ? (transitAcctMatch[2] || fallbackAcct) : fallbackAcct,
-      _brand: 'RBC',
-      _bank: 'RBC',
-      _tag: 'Chequing',
-      openingBalance: openingBalance
-    };
-    console.warn('🏁 [RBC] Extraction Phase Complete. Transit:', this.metadata.transit, 'Acct:', this.metadata.accountNumber);
+    // 1.1 EXTRACT ACCOUNT INFO
+    let transit = '-----';
+    let acctFromText = '-----';
 
-    // Extract year from statement - look for "January 1, 2024" or "February 5, 2024" patterns
-    // CRITICAL: Be specific to avoid matching random 4-digit numbers
-    const yearPatterns = [
-      /(\w+)\s+\d{1,2},?\s+(20\d{2})\s+to\s+\w+\s+\d{1,2},?\s+(20\d{2})/i, // "January 1, 2024 to February 5, 2024"
-      /Statement\s+Period.*?(20\d{2})/i,
-      /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+(20\d{2})/i,
-      /(20\d{2})-\d{2}-\d{2}/ // ISO date
-    ];
+    // RBC Patterns (Priority Order)
 
-    for (const pattern of yearPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        // Use the last year found in case of date range
-        const year = match[match.length - 1] || match[1];
-        if (year && year.match(/^20\d{2}$/)) {
-          this.currentYear = parseInt(year);
-          console.log(`[RBC] Extracted year: ${this.currentYear}`);
-          break;
-        }
+    // STRATEGY 1: Exact Match based on User Dump (Most likely to succeed)
+    // Matches: "Account number:", variable spaces, 5-digit transit, variable spaces, Account ID (digits/dashes)
+    // Regex Note: [\s\u00A0]* matches normal spaces and non-breaking spaces
+    const exactLabelMatch = text.match(/Account\s+number[:\s\u00A0]*(\d{5})[\s\u00A0]+([\d-]+)/i);
+
+    // STRATEGY 2: "Your Account Number" (Older statements)
+    const yourAcctMatch = text.match(/Your\s+account\s+number[:\s\u00A0]*(\d{5})[\s\u00A0]+([\d-]+)/i);
+
+    // STRATEGY 3: Scorched Earth - Transit/Account Pattern (Ignore Label)
+    // Looks for: 5 digits, space, 3 digits, dash, 3 digits, dash, 1 digit (RBC standard)
+    // e.g. "01259 100-244-3"
+    const patternMatch = text.match(/\b(\d{5})[\s\u00A0]+(\d{3}-\d{3}-\d)\b/);
+
+    // 3. Header Scan: "500 ROYAL BANK... 00000 000-000-0" (Specific RBC header format)
+    const headerLines = lines.slice(0, 50).join('\n'); // Increased to 50 lines
+    const rawPatternMatch = headerLines.match(/\b(\d{5})\s+(\d{3}-\d{3}-\d)\b/);
+
+    // Select the best match
+    let acctInfoMatch = exactLabelMatch || yourAcctMatch || patternMatch;
+
+    // Log the wins for debugging
+    if (window.ProcessingEngine) {
+      window.ProcessingEngine.log('info', '[RBC Parser] Extraction Strategy', {
+        strategy: exactLabelMatch ? 'Exact Label' : (yourAcctMatch ? 'Your Account' : (patternMatch ? 'Pattern Only' : 'None')),
+        match: acctInfoMatch ? acctInfoMatch[0] : 'null'
+      });
+    }
+    // 4. SCORCHED EARTH VARIATIONS
+    // Matches: "12345 123-456-7" OR "12345 1234567"
+    const anyTransitAcctMatch = headerLines.match(/(\d{5})\s+(\d{3}[-\s]?\d{3}[-\s]?\d)/);
+
+    // 5. KEYWORD PROXIMITY (Last Resort)
+    // Look for "Account" followed by digits within 20 chars
+    const keywordMatch = headerLines.match(/Account\D{0,20}(\d{7,12})/i);
+    const transitMatch = headerLines.match(/Transit\D{0,20}(\d{5})/i);
+
+    if (acctInfoMatch) {
+      transit = acctInfoMatch[1];
+      acctFromText = acctInfoMatch[2].replace(/[-\s]/g, '');
+      console.log(`✅ [RBC] Found Transit/Account: ${transit} / ${acctFromText}`);
+
+      // Store in metadata for processing engine
+      if (metadata) {
+        metadata.transit = transit;
+        metadata.accountNumber = acctFromText;
       }
+    } else if (anyTransitAcctMatch) {
+      transit = anyTransitAcctMatch[1];
+      acctFromText = anyTransitAcctMatch[2].replace(/[-\s]/g, '');
+      console.log(`✅ [RBC] Found via Scorched Earth: ${transit} / ${acctFromText}`);
+      if (metadata) {
+        metadata.transit = transit;
+        metadata.accountNumber = acctFromText;
+      }
+    } else if (keywordMatch) {
+      acctFromText = keywordMatch[1];
     }
-    let lastMonth = null;
-    let currentDate = null; // Track the current date for multi-transaction days
 
-    // RBC Date pattern: "06 Feb" or "7 May" (day space month)
-    const dateRegex = /^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i;
+    console.log(`[RBC Parser Debug] Raw Header Sample (First 100 chars): ${headerLines.substring(0, 100).replace(/\n/g, ' ')}`);
+    console.log(`[RBC Parser Debug] Extracted -> Transit: ${transit}, Account: ${acctFromText}`);
 
-    // Amount pattern: ends with Amount + Balance
-    // RBC format: "Description  Amount  Balance" with spacing
-    const amountPattern = /([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/;
+    if (window.ProcessingEngine) {
+      window.ProcessingEngine.log('info', '[RBC Parser] Extraction Result', { transit, acct: acctFromText });
+    }
 
-    // Single amount pattern (some transactions only have one amount)
-    const singleAmountPattern = /([\d,]+\.\d{2})$/;
+    // Capture metadata
+    this.metadata = {
+      institutionCode: '003',
+      transit: transit,
+      accountNumber: acctFromText,
+      brand: 'RBC',
+      bank: 'RBC',
+      tag: 'Chequing',
+      openingBalance: openingBalance,
+      debug_raw_header: headerLines // Store for UI debugging
+    };
 
-    console.log(`[RBC] Starting parse with ${lines.length} lines, year: ${this.currentYear}`);
+    // Calculate metadata similar to before (abbreviated for this replacement to focus on grid logic)
+    // ... [Transit extraction logic can remain or be re-injected if needed, but keeping it simple for now]
+
+    // 2. GRID PARSING STRATEGY
+    // We maintain a running balance to verify columns
+    let currentCalculatedBalance = openingBalance;
+    let currentYear = new Date().getFullYear(); // We should extract this from header ideally
+
+    // Extract year from header
+    const yearMatch = text.match(/,\s+(20\d{2})/);
+    if (yearMatch) currentYear = parseInt(yearMatch[1]);
+
+    console.log(`[RBC] Starting Grid Parse.Initial Balance: ${currentCalculatedBalance} `);
 
     let pendingDescription = '';
-    let pendingRawLines = [];
-    let pendingAuditLines = [];
-    let pendingLineCount = 0;
-    const pageCounts = {}; // Track transaction index per page for Smart Popper
+    let pendingDate = null;
+
+    // 3. TWO-PASS PARSING STRATEGY (Gap Solver)
+    // Pass 1: Extract all potential transaction rows
+    // 3. TWO-PASS PARSING STRATEGY (Gap Solver) [REFACTORED for BOUNDARY SAFETY]
+    // Pass 1: Extract all potential transaction rows INSIDE THE BOX
+    const rawRows = [];
+    let pendingLineDesc = '';
+    let pendingLineDate = null;
+
+    // BOUNDARY FLAGS
+    let insideTransactionBlock = false;
+    const startMarkers = [/Account Activity Details/i, /Date\s+Description\s+Cheques/i];
+    const endMarkers = [/Closing balance/i, /Total\s+deposits/i, /Total\s+cheques/i, /Page\s+\d+\s+of\s+\d+/i];
+
+    // GARBAGE FILTERS (Strict)
+    const garbagePatterns = [
+      /Business Account Statement/i,
+      /Account number:/i,
+      /continued\s+\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i,
+      /Opening\s+balance/i,
+      /Please contact us/i,
+      /royalbank\.com/i,
+      /^\s*$/
+    ];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Skip headers and summary lines
-      if (line.match(/Opening Balance|Closing Balance|Balance Forward|Statement|Account Number|Account Activity|Cheques.*Debits|Deposits.*Credits/i)) continue;
-      if (line.match(/^Date\s+Description/i)) continue;
-      if (line.match(/^Page\s+\d+/i)) continue;
-
-      // Check if line starts with a date
-      const dateMatch = line.match(dateRegex);
-      if (dateMatch) {
-        const day = dateMatch[1];
-        const monthName = dateMatch[2];
-
-        // Year rollover detection
-        const monthIndex = this.getMonthIndex(monthName);
-        if (lastMonth !== null && monthIndex < lastMonth && monthIndex <= 1) {
-          this.currentYear++;
-          console.log(`[RBC] Year rollover detected: ${this.currentYear}`);
+      // 1. STATE MACHINE TRANSITIONS
+      // Start Trigger: "Account Activity Details" OR Table Header
+      if (!insideTransactionBlock) {
+        if (startMarkers.some(m => line.match(m))) {
+          console.log(`[RBC] 🟢 Entered Transaction Block at line "${line}"`);
+          insideTransactionBlock = true;
+          continue; // Skip the marker line itself
         }
-        lastMonth = monthIndex;
+        // Fallback: If we see a clear date+amount line, maybe we missed the header? 
+        // Be careful not to trigger on the summary header.
+        // For now, rely on markers seen in the user's screenshot.
+      }
 
-        currentDate = this.formatDate(day, monthName, this.currentYear);
-
-        // Remove the date from the line to get description part
-        const lineAfterDate = line.substring(dateMatch[0].length).trim();
-
-        // Try to extract transaction from this line (pass full line for rawText)
-        const extracted = this.extractTransaction(lineAfterDate, currentDate, line);
-        if (extracted) {
-          // Assign lineIndex
-          if (extracted.audit && extracted.audit.page) {
-            const p = extracted.audit.page;
-            pageCounts[p] = (pageCounts[p] || 0) + 1;
-            extracted.audit.lineIndex = pageCounts[p];
-          }
-          transactions.push(extracted);
-        } else if (lineAfterDate) {
-          // No amount found - start accumulating for multi-line description
-          pendingDescription = lineAfterDate;
-          pendingRawLines = [line]; // Include the full line with date
-
-          // Capture audit for this first line
-          const firstLineAudit = this.getSpatialMetadata(line);
-          pendingAuditLines = firstLineAudit ? [firstLineAudit] : [];
-
-          pendingLineCount = 1;
-        }
-      } else if (currentDate) {
-        // No date at start - could be:
-        // 1. Continuation of previous description
-        // 2. A new transaction for the same date
-
-        // Check if this line has an amount (marks transaction boundary)
-        const extracted = this.extractTransaction(line, currentDate, line);
-        if (extracted) {
-          // If we have pending description, prepend it
-          if (pendingDescription) {
-            extracted.description = pendingDescription + ' ' + extracted.description;
-            // CRITICAL: Re-clean the concatenated description to ensure proper formatting
-            extracted.description = this.cleanRBCDescription(extracted.description);
-
-            // Prepend accumulated raw lines
-            const combinedRaw = [...pendingRawLines, extracted.rawText].join('\n');
-            extracted.rawText = combinedRaw;
-
-            // Merge Audit data for multi-line using base helper
-            if (extracted.audit) {
-              const allAudit = [...pendingAuditLines, extracted.audit];
-              extracted.audit = this.mergeAuditMetadata(allAudit);
-            }
-
-            pendingDescription = '';
-            pendingRawLines = [];
-            pendingAuditLines = [];
-            pendingLineCount = 0;
-          }
-
-          // Assign lineIndex
-          if (extracted.audit && extracted.audit.page) {
-            const p = extracted.audit.page;
-            pageCounts[p] = (pageCounts[p] || 0) + 1;
-            extracted.audit.lineIndex = pageCounts[p];
-          }
-
-          transactions.push(extracted);
-        } else {
-          // Accumulate description (but limit to prevent runaway)
-          if (pendingDescription && pendingDescription.length < 200) {
-            pendingDescription += ' ' + line;
-            pendingRawLines.push(line);
-
-            const lineAudit = this.getSpatialMetadata(line);
-            if (lineAudit) pendingAuditLines.push(lineAudit);
-
-            pendingLineCount++;
-          } else if (!pendingDescription) {
-            pendingDescription = line;
-            pendingRawLines = [line];
-
-            const lineAudit = this.getSpatialMetadata(line);
-            if (lineAudit) pendingAuditLines.push(lineAudit);
-
-            pendingLineCount = 1;
+      // Stop Trigger: Summary lines or End of Page indicators
+      if (insideTransactionBlock) {
+        if (endMarkers.some(m => line.match(m))) {
+          if (line.match(/Page\s+\d/i)) {
+            // Page break? Just ignore this line, but don't strictly close block if it's multi-page...
+            // Actually, "continued" headers usually reappear. Let's effectively "pause" or just filter the noise.
+            // For "Closing balance", definitely stop.
+          } else if (line.match(/Closing balance/i)) {
+            console.log(`[RBC] 🔴 Exited Transaction Block at line "${line}"`);
+            insideTransactionBlock = false;
+            break; // Strictly stop at summary
           }
         }
       }
+
+      // If we are NOT in the block yet, skip (unless we want to support headerless CSV-like dumps, but this is PDF)
+      if (!insideTransactionBlock) continue;
+
+      // 2. STRICT LINE FILTERING
+      if (garbagePatterns.some(p => line.match(p))) {
+        console.log(`[RBC] 🗑️ Ignored garbage line: "${line}"`);
+        continue;
+      }
+
+      // Skip Table Headers inside the block (if repeated)
+      if (line.match(/^Date\s+Description/i)) continue;
+
+      // ===================================
+      // CORE PARSING LOGIC (Existing logic adapted)
+      // ===================================
+
+      // Date extraction
+      const dateMatch = line.match(/^(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i);
+      let dateStr = null;
+      let content = line;
+
+      if (dateMatch) {
+        const day = dateMatch[1];
+        const month = dateMatch[2];
+        dateStr = this.formatDate(day, month, currentYear);
+        content = line.substring(dateMatch[0].length).trim();
+        pendingLineDate = dateStr;
+      }
+
+      // Amount extraction
+      const amountMatches = [...content.matchAll(/([\d,]+\.\d{2})/g)];
+
+      if (amountMatches.length >= 2) {
+        // Anchor Row (Amount + Balance)
+        const balanceStr = amountMatches[amountMatches.length - 1][1];
+        const amountStr = amountMatches[amountMatches.length - 2][1];
+        const rowBalance = parseFloat(balanceStr.replace(/,/g, ''));
+        const rowAmount = parseFloat(amountStr.replace(/,/g, ''));
+
+        // Clean Desc
+        let desc = content;
+        const lastIdx = content.lastIndexOf(balanceStr);
+        if (lastIdx > -1) desc = desc.substring(0, lastIdx).trim();
+        const secondIdx = desc.lastIndexOf(amountStr);
+        if (secondIdx > -1) desc = desc.substring(0, secondIdx).trim();
+
+        if (pendingLineDesc) { desc = pendingLineDesc + ' ' + desc; pendingLineDesc = ''; }
+
+        rawRows.push({
+          type: 'ANCHOR',
+          date: dateStr || pendingLineDate || this.formatDate(1, 'Jan', currentYear),
+          description: this.cleanRBCDescription(desc),
+          amount: rowAmount,
+          balance: rowBalance,
+          line: line
+        });
+        pendingLineDesc = ''; // Reset
+      } else if (amountMatches.length === 1) {
+        // Gap Row (Amount only, No balance)
+        const amountStr = amountMatches[0][1];
+        const rowAmount = parseFloat(amountStr.replace(/,/g, ''));
+
+        let desc = content.replace(amountStr, '').trim();
+        if (pendingLineDesc) { desc = pendingLineDesc + ' ' + desc; pendingLineDesc = ''; }
+
+        rawRows.push({
+          type: 'GAP',
+          date: dateStr || pendingLineDate || this.formatDate(1, 'Jan', currentYear),
+          description: this.cleanRBCDescription(desc),
+          amount: rowAmount,
+          line: line
+        });
+        pendingLineDesc = '';
+      } else {
+        // Description continuation
+        if (content.length > 3) pendingLineDesc += ' ' + content;
+      }
     }
 
-    console.log(`[RBC] Parsing complete. Found ${transactions.length} transactions.`);
+    // Pass 2: Solve Gaps (The "Sudoku" Logic)
+    let runningBalance = openingBalance || 0;
+    let gapBuffer = [];
+
+    // Helper: Solve a batch of gaps given start/end balances
+    const solveGapBatch = (startBal, endBal, gaps) => {
+      // Try all permutations of Debit/Credit for gaps
+      // Optimization: Limit to 2^12 (4096) to prevent freezing. If > 12, use Keyword Fallback.
+      if (gaps.length > 12) {
+        console.warn(`⚠️[RBC] Gap batch too large(${gaps.length}), falling back to Keywords.`);
+        return gaps.map(g => ({ ...g, isCredit: this.isCredit(g.description) }));
+      }
+
+      const count = gaps.length;
+      const perms = 1 << count; // 2^N
+
+      for (let i = 0; i < perms; i++) {
+        let tempBal = startBal;
+        for (let j = 0; j < count; j++) {
+          const isCred = (i >> j) & 1;
+          if (isCred) tempBal += gaps[j].amount;
+          else tempBal -= gaps[j].amount;
+        }
+
+        // Check if matches endBal (with floating point tolerance)
+        if (Math.abs(tempBal - endBal) < 0.05) {
+          // FOUND SOLUTION!
+          return gaps.map((g, idx) => ({
+            ...g,
+            isCredit: !!((i >> idx) & 1)
+          }));
+        }
+      }
+
+      // No solution found? Fallback to keywords
+      console.warn('⚠️ [RBC] Math solver failed to reconcile batch. Using keywords.');
+      return gaps.map(g => ({ ...g, isCredit: this.isCredit(g.description) }));
+    };
+
+    const processBuffer = (targetBalance) => {
+      if (gapBuffer.length === 0) return;
+
+      const solved = solveGapBatch(runningBalance, targetBalance, gapBuffer);
+
+      solved.forEach(g => {
+        // Update running balance naturally
+        if (g.isCredit) runningBalance += g.amount;
+        else runningBalance -= g.amount;
+
+        transactions.push({
+          date: g.date,
+          description: g.description,
+          amount: g.amount,
+          debit: g.isCredit ? 0 : g.amount,
+          credit: g.isCredit ? g.amount : 0,
+          balance: runningBalance,
+          _brand: 'RBC', _tag: 'Chequing',
+          audit: this.getSpatialMetadata(g.line)
+        });
+      });
+      gapBuffer = [];
+    };
+
+    // Main Processing Loop
+    for (const row of rawRows) {
+      if (row.type === 'ANCHOR') {
+        // Include Anchor in the solution batch
+        gapBuffer.push(row);
+
+        // Solve for Target = Anchor.balance
+        const solvedBatch = solveGapBatch(runningBalance, row.balance, gapBuffer);
+
+        solvedBatch.forEach((g, idx) => {
+          // Update running balance
+          if (g.isCredit) runningBalance += g.amount;
+          else runningBalance -= g.amount;
+
+          // Integrity sync for the anchor row itself
+          if (idx === solvedBatch.length - 1) {
+            if (Math.abs(runningBalance - row.balance) > 0.05) {
+              console.warn(`⚠️[RBC] Balance drift detected despite solver! Syncing to anchor.`);
+              runningBalance = row.balance;
+            }
+          }
+
+          transactions.push({
+            date: g.date,
+            description: g.description,
+            amount: g.amount,
+            debit: g.isCredit ? 0 : g.amount,
+            credit: g.isCredit ? g.amount : 0,
+            balance: runningBalance,
+            _brand: 'RBC', _tag: 'Chequing',
+            audit: this.getSpatialMetadata(g.line)
+          });
+        });
+        gapBuffer = [];
+
+      } else {
+        // Gap Row - Buffer it
+        gapBuffer.push(row);
+      }
+    }
+
+    // Handle Trailing Gaps (no closing anchor)
+    if (gapBuffer.length > 0) {
+      console.warn('⚠️ [RBC] Trailing gaps found without closing anchor. Using keywords.');
+      gapBuffer.forEach(g => {
+        const isCredit = this.isCredit(g.description);
+        if (isCredit) runningBalance += g.amount;
+        else runningBalance -= g.amount;
+
+        transactions.push({
+          date: g.date,
+          description: g.description,
+          amount: g.amount,
+          debit: isCredit ? 0 : g.amount,
+          credit: isCredit ? g.amount : 0,
+          balance: runningBalance,
+          _brand: 'RBC', _tag: 'Chequing',
+          audit: this.getSpatialMetadata(g.line)
+        });
+      });
+    }
+
+    console.log(`[RBC] Grid Parse Complete via GapSolver.${transactions.length} rows.`);
     return {
       transactions,
       metadata: this.metadata,
-      openingBalance: this.metadata.openingBalance || 0
+      openingBalance: openingBalance || 0
     };
   }
 
@@ -313,10 +468,10 @@ SMART PARSING RULES:
         // Check if the search line is contained in (or contains) the metadata line
         // This handles cases where lines might be split differently
         if (normalizedMeta.includes(normalizedSearch) || normalizedSearch.includes(normalizedMeta)) {
-          console.log(`🎯 [RBC-AUDIT] Exact match found for "${description.substring(0, 30)}...":`);
+          console.log(`🎯[RBC - AUDIT] Exact match found for "${description.substring(0, 30)}...": `);
           console.log(`   Search: "${normalizedSearch.substring(0, 50)}"`);
-          console.log(`   Found:  "${normalizedMeta.substring(0, 50)}"`);
-          console.log(`   Y: ${lineMeta.y}, Page: ${lineMeta.page}`);
+          console.log(`   Found: "${normalizedMeta.substring(0, 50)}"`);
+          console.log(`   Y: ${lineMeta.y}, Page: ${lineMeta.page} `);
           auditData = {
             page: lineMeta.page,
             y: lineMeta.y,
@@ -412,8 +567,8 @@ SMART PARSING RULES:
           const day = parseInt(dateParts[2]);
           const monthIndex = parseInt(dateParts[1]) - 1;
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const formattedDate = `${day.toString().padStart(2, '0')} ${monthNames[monthIndex]}`;
-          return `${formattedDate}   ${lineWithoutBalance}`;
+          const formattedDate = `${day.toString().padStart(2, '0')} ${monthNames[monthIndex]} `;
+          return `${formattedDate}   ${lineWithoutBalance} `;
         }
 
         return lineWithoutBalance;
@@ -422,7 +577,7 @@ SMART PARSING RULES:
     };
 
     // DEBUG: Log audit data for inspection
-    console.log(`[RBC-AUDIT] Final Audit for "${description.substring(0, 15)}...":`, auditData);
+    console.log(`[RBC - AUDIT] Final Audit for "${description.substring(0, 15)}...": `, auditData);
 
     return finalTxn;
   }
@@ -476,6 +631,12 @@ SMART PARSING RULES:
     }
 
     // 2.5. SPECIFIC OVERRIDES (High Priority)
+    // [FIX] Remove bank header boilerplate that bleeds into the description
+    desc = desc.replace(/Continued\s+\d{2}\s+[A-Z]{3}.*?Details/gi, '');
+    desc = desc.replace(/Account Activity Details/gi, '');
+    desc = desc.replace(/Royal Bank of Canada/gi, '');
+    desc = desc.replace(/Your account activity details/gi, '');
+
     const descUpper = desc.toUpperCase();
 
     // Rule for Debit Memo: "Debit Memo Client request [details]" -> "[details], Debit Memo - Client request"
@@ -528,7 +689,7 @@ SMART PARSING RULES:
         if (name) {
           // Format as "Name, Type" (RBC style)
           const formattedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-          desc = `${name}, ${formattedType}`;
+          desc = `${name}, ${formattedType} `;
           // console.log('[DEBUG] Result:', desc.substring(0, 60));
           matched = true;
         }
@@ -541,7 +702,7 @@ SMART PARSING RULES:
       const parts = desc.split(' - ');
       if (parts.length === 2) {
         // Format: "Type - Name" → "Name, Type"
-        desc = `${parts[1].trim()}, ${parts[0].trim()}`;
+        desc = `${parts[1].trim()}, ${parts[0].trim()} `;
       }
     }
 

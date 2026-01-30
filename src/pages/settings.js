@@ -383,6 +383,11 @@ function renderAppearancePanel() {
             <div class="theme-icon" style="color: #8b5cf6; font-size: 1.25rem;">💜</div>
             <div class="theme-name" style="font-size: 0.85rem;">Lavender</div>
           </div>
+          
+          <div class="theme-card" data-theme="wellness" onclick="applyTheme('wellness')" style="padding: 12px;">
+            <div class="theme-icon" style="color: #4A9D9C; font-size: 1.25rem;">🌿</div>
+            <div class="theme-name" style="font-size: 0.85rem;">Wellnessist</div>
+          </div>
         </div>
       </div>
       

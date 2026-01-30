@@ -137,6 +137,76 @@
   --border-color: #fdba74;
 }
 
+/* 9. Wellnessist (Medical/Spa Aesthetic) */
+[data-theme="wellness"] {
+  /* Soft Sage / Teal Palette */
+  --primary-color: #4A9D9C;
+  --primary-hover: #3b82f6;
+  /* Fallback or slightly darker teal */
+
+  --bg-primary: #F8FBF8;
+  /* Very light mint/white */
+  --bg-secondary: #EDF7F6;
+  --bg-tertiary: #E2F0EF;
+
+  /* Deep Forest Green Glass for Sidebar */
+  --bg-sidebar: rgba(20, 50, 40, 0.95);
+
+  --text-primary: #1E3A3A;
+  --text-secondary: #4A6A6A;
+  --text-tertiary: #709090;
+
+  --border-color: #CDE8E7;
+
+  /* Glassmorphism Variables */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(30, 58, 58, 0.15);
+}
+
+/* WELLNESS THEME: Floating Sidebar Overrides */
+[data-theme="wellness"] .sidebar {
+  /* Detach from edges - Floating Effect */
+  top: 20px;
+  left: 20px;
+  height: calc(100vh - 40px);
+  border-radius: 24px;
+
+  /* Glassmorphism */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--glass-shadow);
+  border: var(--glass-border);
+
+  /* Ensure it sits above content nicely */
+  z-index: 1000;
+}
+
+[data-theme="wellness"] .main-content {
+  /* Add extra spacing to account for the floating gap */
+  padding-left: 20px;
+}
+
+/* Pill-shaped Nav Items for Wellness Theme */
+[data-theme="wellness"] .nav-item {
+  margin: 4px 12px;
+  border-radius: 12px;
+  border-left: none;
+  /* Remove standard left border */
+}
+
+[data-theme="wellness"] .nav-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="wellness"] .sidebar-footer {
+  margin: 10px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+}
+
 /* ============================================
    Reset & Base Styles
    ============================================ */

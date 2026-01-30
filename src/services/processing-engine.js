@@ -31,9 +31,14 @@ class ProcessingEngine {
             this.logBuffer.shift();
         }
 
-        // Only log to console in dev mode (check localStorage flag)
+        // 1. Console Output (Dev Mode)
         if (localStorage.getItem('ab_dev_mode') === 'true') {
             console.log(`[ProcessingEngine:${level}]`, message, data || '');
+        }
+
+        // 2. Dispatch to Visual Debug Console
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ab-debug-log', { detail: entry }));
         }
     }
 
@@ -163,7 +168,35 @@ class ProcessingEngine {
                     // 7-Step Smart Categorization Logic
                     // Now ASYNC to support AI calls
                     const startTime = performance.now();
-                    const result = await window.VendorMatcher.smartCategorize(transaction.description, vendors);
+                    const descToMatch = transaction.description || transaction.Description || '';
+
+                    if (window.ProcessingEngine) {
+                        window.ProcessingEngine.log('info', `[AutoCat] Starting for: "${descToMatch}"`);
+                    }
+
+                    // [DEBUG] Safety Guard
+                    if (!descToMatch || descToMatch === 'undefined') {
+                        if (window.ProcessingEngine) {
+                            window.ProcessingEngine.log('error', '[AutoCat] Description Missing', transaction);
+                        }
+                    }
+
+                    const result = await window.VendorMatcher.smartCategorize(descToMatch, vendors);
+
+                    if (window.ProcessingEngine) {
+                        window.ProcessingEngine.log('info', `[AutoCat] Match Result: ${result.vendorName}`, {
+                            confidence: result.confidence,
+                            method: result.method,
+                            account: result.accountId
+                        });
+                    }
+
+                    // [DEBUG] Live Logging Requested by User
+                    console.log(`[AutoCat] Processing: "${transaction.description}"`);
+                    console.log(`   -> Matched: "${result.vendorName}" (${result.confidence * 100}%)`);
+                    console.log(`   -> Method: ${result.method}`);
+                    console.log(`   -> Account: ${result.accountId}`);
+
                     const endTime = performance.now();
 
                     // Log individual transaction performance if it takes > 50ms
@@ -171,30 +204,39 @@ class ProcessingEngine {
                         console.warn(`[ProcessingEngine] Heavy categorization for "${transaction.description}": ${(endTime - startTime).toFixed(2)}ms`);
                     }
 
-                    if (result) {
-                        transaction.vendorId = result.vendorId;
-                        transaction.vendorName = result.vendorName;
-                        transaction.accountId = result.accountId;
-                        transaction.confidence = result.confidence;
-                        transaction.method = result.method;
+                    transaction.vendorId = result.vendorId;
+                    transaction.vendorName = result.vendorName;
+                    transaction.accountId = result.accountId;
+                    transaction.confidence = result.confidence;
+                    transaction.method = result.method;
 
-                        // Log success
-                        this.log('log', `Categorized: ${transaction.description} -> ${result.vendorName}`, {
-                            method: result.method,
-                            account: result.accountId
-                        });
+                    // FIX: Map code to full name for Grid Display (e.g. "6300" -> "6300 - Meals")
+                    const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
+                    const match = coa.find(a => a.code === result.accountId);
+                    if (match) {
+                        transaction.account = `${match.code} - ${match.name}`;
+                    } else if (result.accountId === '9970') {
+                        transaction.account = '9970 - Suspense (Uncategorized)';
+                    } else {
+                        transaction.account = result.accountId;
                     }
-                }
 
-                completed++;
-                const progress = Math.round((completed / total) * 100);
-
-                // Frequency capping for UI updates to prevent UI thread flooding
-                if (completed % 5 === 0 || completed === total) {
-                    progressCallback(progress, `Categorizing... ${completed}/${total}`);
-                    // Yield to browser periodically
-                    await new Promise(resolve => setTimeout(resolve, 0));
+                    // Log success
+                    this.log('log', `Categorized: ${transaction.description} -> ${result.vendorName}`, {
+                        method: result.method,
+                        account: result.accountId
+                    });
                 }
+            }
+
+            completed++;
+            const progress = Math.round((completed / total) * 100);
+
+            // Frequency capping for UI updates to prevent UI thread flooding
+            if (completed % 5 === 0 || completed === total) {
+                progressCallback(progress, `Categorizing... ${completed}/${total}`);
+                // Yield to browser periodically
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         } catch (err) {
             this.log('error', 'Categorization loop error', err);
@@ -273,4 +315,6 @@ class ProcessingEngine {
 }
 
 // Export as global singleton
-window.ProcessingEngine = new ProcessingEngine();
+if (!window.ProcessingEngine) {
+    window.ProcessingEngine = new ProcessingEngine();
+}

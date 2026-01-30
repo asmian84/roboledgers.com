@@ -113,9 +113,14 @@ class ParserRouter {
 
         // Step 4: Add brand info to result
         const firstTxn = result.transactions[0] || {};
-        const pInst = (firstTxn._inst && firstTxn._inst !== '---') ? firstTxn._inst : (detection.institutionCode || '---');
-        const pTransit = (firstTxn._transit && firstTxn._transit !== '-----') ? firstTxn._transit : (detection.transit || '-----');
-        const pAcctNum = (firstTxn._acct && firstTxn._acct !== '-----') ? firstTxn._acct : (detection.accountNumber || '-----');
+        const meta = result.metadata || {};
+
+        const pInst = (firstTxn._inst && firstTxn._inst !== '---') ? firstTxn._inst :
+            (meta.institutionCode || detection.institutionCode || '---');
+        const pTransit = (firstTxn._transit && firstTxn._transit !== '-----') ? firstTxn._transit :
+            (meta.transit || detection.transit || '-----');
+        const pAcctNum = (firstTxn._acct && firstTxn._acct !== '-----') ? firstTxn._acct :
+            (meta.accountNumber || detection.accountNumber || '-----');
 
         result.brandDetection = {
             brand: detection.brand,
