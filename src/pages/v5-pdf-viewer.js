@@ -157,20 +157,16 @@
 
           // 🐛 DEBUG LOGGING
           console.group(`🔍 PDF Highlight #${index + 1} Debug`);
-          console.log('📄 PDF Coordinates (bottom-up):', {
+          console.log('📄 Parser Coordinates (Top-Down):', {
             targetY: item.y,
             targetHeight: item.h,
             pageHeightPt: pageHeightPt
-          });
-          console.log('🔄 Conversion to Top-Down:', {
-            yFromTopPt: yFromTopPt,
-            formula: `${pageHeightPt} - ${item.y} = ${yFromTopPt}`
           });
           console.log('📐 Scale & Pixel Calculation:', {
             scale: scale,
             topPx: topPx,
             heightPx: heightPx,
-            formula: `(${yFromTopPt} * ${scale}) - (${item.h} * ${scale}) = ${topPx}`
+            formula: `${item.y} * ${scale} = ${topPx}`
           });
           console.log('🎯 Final CSS Position:', {
             top: `${topPx}px`,
