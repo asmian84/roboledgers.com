@@ -6394,10 +6394,16 @@ window.parseV5Files = async function () {
       console.log(`📅 Earliest transaction date in grid: ${earliestDate.toISOString().split('T')[0]}`);
 
       // If this upload has an opening balance, use it
-      if (brandDetection.openingBalance || (parseResult && parseResult.openingBalance)) {
-        const ob = brandDetection.openingBalance || parseResult.openingBalance;
+      if (brandDetection.openingBalance || autoOpeningBalance) {
+        const ob = brandDetection.openingBalance || autoOpeningBalance;
         V5State.openingBalance = ob;
         console.log(`💰 Opening balance set from statement: ${ob}`);
+
+        // Ensure the input field is updated
+        const openingBalInput = document.getElementById('v5-opening-bal');
+        if (openingBalInput) {
+          openingBalInput.value = '$' + parseFloat(ob).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
         // Update reconciliation card
         if (window.updateReconciliationCard) {
