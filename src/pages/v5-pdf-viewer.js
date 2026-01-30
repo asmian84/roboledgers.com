@@ -153,7 +153,7 @@
           // Convert PDF Y (bottom-up) to Viewport Y (top-down)
           // Y=0 is bottom left in PDF.
           const yFromTopPt = pageHeightPt - item.y;
-          const topPx = (yFromTopPt * scale) - (item.h * scale);
+          const topPx = yFromTopPt * scale; // Fixed: removed height subtraction
           const heightPx = (item.h || 20) * scale;
 
           // 🐛 DEBUG LOGGING
