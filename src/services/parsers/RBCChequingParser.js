@@ -229,7 +229,11 @@ SMART PARSING RULES:
     }
 
     console.log(`[RBC] Parsing complete. Found ${transactions.length} transactions.`);
-    return { transactions, metadata: this.metadata };
+    return {
+      transactions,
+      metadata: this.metadata,
+      openingBalance: this.metadata.openingBalance || 0
+    };
   }
 
   /**

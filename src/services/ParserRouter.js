@@ -116,6 +116,9 @@ class ParserRouter {
             accountNumber: pAcctNum
         };
 
+        // Standardize opening balance promotion
+        result.openingBalance = result.openingBalance || (result.metadata && result.metadata.openingBalance) || 0;
+
         // Inject brand into EACH transaction
         result.transactions.forEach(tx => {
             tx._bank = detection.fullBrandName;

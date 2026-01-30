@@ -6394,9 +6394,10 @@ window.parseV5Files = async function () {
       console.log(`📅 Earliest transaction date in grid: ${earliestDate.toISOString().split('T')[0]}`);
 
       // If this upload has an opening balance, use it
-      if (brandDetection.openingBalance) {
-        V5State.openingBalance = brandDetection.openingBalance;
-        console.log(`💰 Opening balance set from statement: ${brandDetection.openingBalance}`);
+      if (brandDetection.openingBalance || (parseResult && parseResult.openingBalance)) {
+        const ob = brandDetection.openingBalance || parseResult.openingBalance;
+        V5State.openingBalance = ob;
+        console.log(`💰 Opening balance set from statement: ${ob}`);
 
         // Update reconciliation card
         if (window.updateReconciliationCard) {
@@ -11064,5 +11065,5 @@ window.viewSourcePDF = (rowId) => {
     console.error('[PDF Modal] renderV5PdfViewer not found');
   }
 
-  console.log('[PDF Modal] Opened:', url);
+  console.log('[PDF Modal] Opened:', window._currentPDFUrl);
 };
