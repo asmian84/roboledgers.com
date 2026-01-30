@@ -150,29 +150,9 @@
         let firstTopPx = null;
 
         highlightYs.forEach((item, index) => {
-          // Convert PDF Y (bottom-up) to Viewport Y (top-down)
-          // Y=0 is bottom left in PDF.
-          const yFromTopPt = pageHeightPt - item.y;
-
-          // CRITICAL DEBUG: Let's see all the values
-          console.log(`🔍 [COORDINATE DEBUG] Transaction highlight:`);
-          console.log(`   PDF pageHeightPt: ${pageHeightPt}`);
-          console.log(`   PDF item.y (from parser): ${item.y}`);
-          console.log(`   PDF item.h (height): ${item.h}`);
-          console.log(`   Calculated yFromTopPt: ${yFromTopPt}`);
-          console.log(`   Scale factor: ${scale}`);
-
-          // Try BOTH formulas and log results
-          const topPx_v1 = (yFromTopPt * scale) - (item.h * scale);
-          const topPx_v2 = yFromTopPt * scale;
-          const topPx_v3 = (yFromTopPt - item.h) * scale;
-
-          console.log(`   Formula V1 (original): ${topPx_v1}px`);
-          console.log(`   Formula V2 (no height): ${topPx_v2}px`);
-          console.log(`   Formula V3 (subtract before scale): ${topPx_v3}px`);
-
-          // Use V1 for now
-          const topPx = topPx_v1;
+          // FIXED: Y coordinates from parser are already top-down (not bottom-up PDF coords)
+          // Just use them directly and scale
+          const topPx = item.y * scale;
           const heightPx = (item.h || 20) * scale;
 
           // 🐛 DEBUG LOGGING
