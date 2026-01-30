@@ -42,6 +42,19 @@ Build a self-learning bookkeeping brain that:
 
 ---
 
+## ✅ Phase 1.2: Visual Intelligence & Audit (COMPLETE)
+**Status:** ✅ Shipped (Jan 2026)
+**Goal:** High-fidelity audit workflow and 7-tier precision categorization.
+
+### Features
+- [x] **Visual Audit Drawer:** 2.5x high-fidelity zoom on hover.
+- [x] **PDF Source Bridge:** Deep link from transaction to exact PDF page.
+- [x] **7-Tier Categorization:** Implemented "SmartLogic" engine (Exact -> Fuzzy -> Keyword -> History -> AI).
+- [x] **Data Import Bridge:** Script to import "Pristine Dictionary" backup JSON.
+- [x] **UI Polish:** Fixed grid column autosizing and modern dropdowns.
+
+---
+
 ## 🚧 Phase 2: Pattern Recognition (Q1 2026)
 **Goal:** One vendor = Many patterns
 
