@@ -62,6 +62,8 @@ SMART PARSING RULES:
 
         let currentDate = null;
         let pendingDescription = '';
+        let pendingRawLines = [];
+        let pendingAuditData = [];
         let pendingLineCount = 0; // Track lines for multi-line transactions
         let lastMonth = null;
 
@@ -128,6 +130,8 @@ SMART PARSING RULES:
                     } else if (lineAfterDate) {
                         // Start of multi-line
                         pendingDescription = lineAfterDate;
+                        pendingRawLines = [trimmed];
+                        pendingAuditData = [currentAudit];
                         pendingLineCount = 1;
                     }
 
@@ -156,47 +160,34 @@ SMART PARSING RULES:
                     if (pendingDescription) {
                         extracted.description = pendingDescription + ' ' + extracted.description;
                         extracted.description = this.cleanTDDescription(extracted.description);
+
+                        extracted.rawText = [...pendingRawLines, trimmed].join('\n');
+                        const allAudit = [...pendingAuditData, currentAudit];
+                        extracted.audit = this.mergeAuditMetadata(allAudit);
                     }
 
-                    // AUDIT LOGIC
-                    if (currentAudit) {
-                        if (!pageCounts[currentAudit.page]) pageCounts[currentAudit.page] = 0;
-                        const idx = ++pageCounts[currentAudit.page];
-
-                        const totalLines = pendingLineCount + 1;
-
-                        // Adjust Y upwards if multi-line (PDF coordinates are bottom-up)
-                        // currentAudit.y is the baseline of the current (bottom) line.
-                        // We want approx top of the block.
-                        // Actually, let's keep Y as the *anchor* and let Smart Popper handle "going up"?
-                        // RBCChequing uses Top Line.
-                        // If I change Y here, Smart Popper needs to know.
-                        // Better: `y` = `currentAudit.y + (pendingLineCount * 12)`.
-
-                        const adjustedY = pendingLineCount > 0 ? (currentAudit.y + (pendingLineCount * 12)) : currentAudit.y;
-                        const totalHeight = Math.max(currentAudit.height, totalLines * 14);
-
-                        extracted.audit = {
-                            page: currentAudit.page,
-                            y: adjustedY,
-                            height: totalHeight,
-                            raw: currentAudit.raw, // This is just the last line text, imperfect but okay
-                            lineCount: totalLines,
-                            lineIndex: idx
-                        };
+                    if (extracted.audit && extracted.audit.page) {
+                        if (!pageCounts[extracted.audit.page]) pageCounts[extracted.audit.page] = 0;
+                        extracted.audit.lineIndex = ++pageCounts[extracted.audit.page];
                     }
 
                     pendingDescription = '';
+                    pendingRawLines = [];
+                    pendingAuditData = [];
                     pendingLineCount = 0;
                     transactions.push(extracted);
                 } else {
                     // Accumulate description logic
                     if (pendingDescription) {
                         pendingDescription += ' ' + trimmed;
+                        pendingRawLines.push(trimmed);
+                        pendingAuditData.push(currentAudit);
                         pendingLineCount++;
                     } else if (trimmed.match(/^[A-Za-z]/)) {
                         // Only accumulate if it looks like text, not numbers
                         pendingDescription = trimmed;
+                        pendingRawLines = [trimmed];
+                        pendingAuditData = [currentAudit];
                         pendingLineCount = 1;
                     }
                 }

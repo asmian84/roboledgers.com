@@ -46,6 +46,14 @@ class BrandDetector {
                 addressKeywords: ['First Canadian Place']
             },
             {
+                id: 'BMOUS',
+                legalName: 'BMO Bank N.A.',
+                marketingNames: ['BMO Harris', 'BMO Bank', 'BMO US'],
+                institutionCode: '---', // US bank
+                domains: ['bmo.com', '@bmo.com'],
+                addressKeywords: ['Chicago', 'Illinois']
+            },
+            {
                 id: 'CIBC',
                 legalName: 'Canadian Imperial Bank of Commerce',
                 marketingNames: ['CIBC'],
@@ -80,10 +88,18 @@ class BrandDetector {
             {
                 id: 'HSBC',
                 legalName: 'HSBC Bank Canada',
-                marketingNames: ['HSBC'],
+                marketingNames: ['HSBC', 'HSBC Canada', 'HSBC Bank'],
                 institutionCode: '016',
                 domains: ['hsbc.ca', '@hsbc.ca'],
                 addressKeywords: []
+            },
+            {
+                id: 'ATB',
+                legalName: 'ATB Financial',
+                marketingNames: ['ATB', 'Alberta Treasury Branches', 'ATB Business', 'ATB Financial'],
+                institutionCode: '219',
+                domains: ['atb.com'],
+                addressKeywords: ['Alberta Treasury Branches']
             },
             {
                 id: 'EQBank',

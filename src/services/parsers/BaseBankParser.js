@@ -22,20 +22,55 @@ class BaseBankParser {
     }
 
     /**
-     * [PHASE 4] Helper to find spatial metadata (Page/Y) for a transaction
-     * Searches the lineMetadata array for a line containing the target text.
+     * [PHASE 4] Helper to find spatial metadata (Page/Y) for a line
+     */
+    getSpatialMetadata(lineText) {
+        if (!this.lastLineMetadata) return null;
+        return this.findAuditMetadata(lineText, this.lastLineMetadata);
+    }
+
+    /**
+     * Merge multiple audit objects into a single bounding box
+     */
+    mergeAuditMetadata(auditLines) {
+        if (!auditLines || auditLines.length === 0) return null;
+
+        // Filter out nulls
+        const valid = auditLines.filter(a => a && a.y !== undefined);
+        if (valid.length === 0) return null;
+
+        const page = valid[0].page;
+
+        // PDF Coordinates: 0,0 is Bottom-Left. Y increases UP.
+        // We want the absolute MIN Y and the absolute MAX Y (Y + Height).
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        valid.forEach(a => {
+            minY = Math.min(minY, a.y);
+            maxY = Math.max(maxY, a.y + (a.height || 12));
+        });
+
+        return {
+            page: page,
+            y: minY,
+            height: maxY - minY,
+            lineCount: valid.length
+        };
+    }
+
+    /**
+     * Find audit metadata for a specific line of text
      */
     findAuditMetadata(targetText, lineMetadata) {
         if (!lineMetadata || lineMetadata.length === 0 || !targetText) return null;
 
-        // Normalize target (remove extra spaces)
         const cleanTarget = targetText.toLowerCase().replace(/\s+/g, ' ').trim();
 
         // 1. Exact/Substring Match
         for (const line of lineMetadata) {
             const cleanLine = line.text ? line.text.toLowerCase().replace(/\s+/g, ' ').trim() : '';
             if (cleanLine.includes(cleanTarget)) {
-                console.log(`[BaseBankParser] 🎯 Match found! Y=${line.y} for "${cleanTarget.substring(0, 10)}..."`);
                 return {
                     page: line.page,
                     y: line.y,
@@ -64,7 +99,6 @@ class BaseBankParser {
         return null;
     }
 
-    /**
     /**
      * Parse statement text using Hybrid Strategy (Regex First -> AI Fallback)
      * @param {string} statementText 

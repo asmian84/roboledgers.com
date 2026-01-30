@@ -24,6 +24,7 @@ SMART PARSING RULES:
    * [PHASE 4] Now accepts lineMetadata for spatial tracking
    */
   parseWithRegex(text, inputMetadata = null, lineMetadata = []) {
+    this.lastLineMetadata = lineMetadata;
     const lines = text.split('\n');
     const transactions = [];
 
@@ -114,6 +115,9 @@ SMART PARSING RULES:
         let lookAheadIndex = 1;
         let foundAmount = false;
 
+        let rawLines = [line];
+        let auditLines = [this.getSpatialMetadata(line)];
+
         // Look ahead up to 4 lines (for multi-line descriptions)
         while (i + lookAheadIndex < lines.length && lookAheadIndex <= 4) {
           const nextLine = lines[i + lookAheadIndex].trim();
@@ -134,12 +138,18 @@ SMART PARSING RULES:
 
           // Append the next line
           combinedLine += " " + nextLine;
+          rawLines.push(nextLine);
+          auditLines.push(this.getSpatialMetadata(nextLine));
 
           // Check if we NOW have two amounts
           const combinedMatch = combinedLine.match(twoAmountPattern);
           if (combinedMatch) {
-            console.log(`[SCOTIA] ✓ Multi-line match (${lookAheadIndex + 1} lines): "${combinedLine.substring(0, 80)}..."`);
-            this.processTransaction(dateStr, combinedLine, combinedMatch, transactions, metadata, meta);
+            this.processTransaction(dateStr, combinedLine, combinedMatch, transactions, metadata, null); // passing null for meta to handle it manually
+            // Patch the last transaction with merged data
+            const lastTx = transactions[transactions.length - 1];
+            lastTx.rawText = rawLines.join('\n');
+            lastTx.audit = this.mergeAuditMetadata(auditLines);
+
             i += lookAheadIndex; // Skip consumed lines
             foundAmount = true;
             break;

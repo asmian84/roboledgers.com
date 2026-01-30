@@ -17,7 +17,8 @@ CIBC CHEQUING FORMAT:
     /**
      * Parse CIBC Chequing statement using regex
      */
-    async parse(statementText) {
+    async parse(statementText, metadata = null, lineMetadata = []) {
+        this.lastLineMetadata = lineMetadata;
         console.log('⚡ CIBC Chequing: Starting regex-based parsing...');
 
         const lines = statementText.split('\n');
@@ -53,6 +54,8 @@ CIBC CHEQUING FORMAT:
 
         let currentDate = null;
         let pendingDescription = '';
+        let pendingRawLines = [];
+        let pendingAuditData = [];
         let lastMonth = null;
 
         // Date regex: "Apr 1", "May 15", etc.
@@ -86,9 +89,12 @@ CIBC CHEQUING FORMAT:
                 // Try to extract transaction
                 const extracted = this.extractTransaction(lineAfterDate, currentDate, trimmed);
                 if (extracted) {
+                    extracted.audit = this.getSpatialMetadata(trimmed);
                     transactions.push(extracted);
                 } else if (lineAfterDate) {
                     pendingDescription = lineAfterDate;
+                    pendingRawLines = [trimmed];
+                    pendingAuditData = [this.getSpatialMetadata(trimmed)];
                 }
             } else if (currentDate) {
                 // No date - continuation or new transaction for same date
@@ -99,15 +105,26 @@ CIBC CHEQUING FORMAT:
                         extracted.description = pendingDescription + ' ' + extracted.description;
                         // CRITICAL: Re-clean concatenated description
                         extracted.description = this.cleanCIBCDescription(extracted.description);
+
+                        extracted.rawText = [...pendingRawLines, trimmed].join('\n');
+                        const allAudit = [...pendingAuditData, this.getSpatialMetadata(trimmed)];
+                        extracted.audit = this.mergeAuditMetadata(allAudit);
+
                         pendingDescription = '';
+                        pendingRawLines = [];
+                        pendingAuditData = [];
                     }
                     transactions.push(extracted);
                 } else {
                     // Accumulate multi-line description
                     if (pendingDescription) {
                         pendingDescription += ' ' + trimmed;
+                        pendingRawLines.push(trimmed);
+                        pendingAuditData.push(this.getSpatialMetadata(trimmed));
                     } else {
                         pendingDescription = trimmed;
+                        pendingRawLines = [trimmed];
+                        pendingAuditData = [this.getSpatialMetadata(trimmed)];
                     }
                 }
             }

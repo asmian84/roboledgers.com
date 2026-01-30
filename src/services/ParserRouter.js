@@ -42,9 +42,23 @@ class ParserRouter {
             'CIBCCreditCard': window.cibcCreditCardParser || window.cibcVisaParser,
             'CIBCVisa': window.cibcCreditCardParser || window.cibcVisaParser,
 
+            'BMOUSChequing': window.bmousParser,
+            'BMOUSSavings': window.bmousParser,
+
             // ===== AMEX (Credit Card only) =====
             'AmexCreditCard': window.amexParser,
-            'AmexAmex': window.amexParser
+            'AmexAmex': window.amexParser,
+
+            // ===== ATB =====
+            'ATBChequing': window.atbParser,
+            'ATBSavings': window.atbParser,
+            'ATBCreditCard': window.atbParser,
+            'ATBMastercard': window.atbParser,
+
+            // ===== HSBC =====
+            'HSBCChequing': window.hsbcParser,
+            'HSBCSavings': window.hsbcParser,
+            'HSBCCreditCard': window.hsbcParser
         };
     }
 

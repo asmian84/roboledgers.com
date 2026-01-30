@@ -137,6 +137,8 @@ SMART PARSING RULES:
     console.log(`[RBC] Starting parse with ${lines.length} lines, year: ${this.currentYear}`);
 
     let pendingDescription = '';
+    let pendingRawLines = [];
+    let pendingAuditLines = [];
     let pendingLineCount = 0;
     const pageCounts = {}; // Track transaction index per page for Smart Popper
 
@@ -181,6 +183,12 @@ SMART PARSING RULES:
         } else if (lineAfterDate) {
           // No amount found - start accumulating for multi-line description
           pendingDescription = lineAfterDate;
+          pendingRawLines = [line]; // Include the full line with date
+
+          // Capture audit for this first line
+          const firstLineAudit = this.getSpatialMetadata(line);
+          pendingAuditLines = firstLineAudit ? [firstLineAudit] : [];
+
           pendingLineCount = 1;
         }
       } else if (currentDate) {
@@ -197,13 +205,19 @@ SMART PARSING RULES:
             // CRITICAL: Re-clean the concatenated description to ensure proper formatting
             extracted.description = this.cleanRBCDescription(extracted.description);
 
-            // Adjust audit data for multi-line
+            // Prepend accumulated raw lines
+            const combinedRaw = [...pendingRawLines, extracted.rawText].join('\n');
+            extracted.rawText = combinedRaw;
+
+            // Merge Audit data for multi-line using base helper
             if (extracted.audit) {
-              extracted.audit.lineCount = (extracted.audit.lineCount || 1) + pendingLineCount;
-              extracted.audit.height = Math.max(extracted.audit.height, extracted.audit.lineCount * 14);
+              const allAudit = [...pendingAuditLines, extracted.audit];
+              extracted.audit = this.mergeAuditMetadata(allAudit);
             }
 
             pendingDescription = '';
+            pendingRawLines = [];
+            pendingAuditLines = [];
             pendingLineCount = 0;
           }
 
@@ -219,9 +233,19 @@ SMART PARSING RULES:
           // Accumulate description (but limit to prevent runaway)
           if (pendingDescription && pendingDescription.length < 200) {
             pendingDescription += ' ' + line;
+            pendingRawLines.push(line);
+
+            const lineAudit = this.getSpatialMetadata(line);
+            if (lineAudit) pendingAuditLines.push(lineAudit);
+
             pendingLineCount++;
           } else if (!pendingDescription) {
             pendingDescription = line;
+            pendingRawLines = [line];
+
+            const lineAudit = this.getSpatialMetadata(line);
+            if (lineAudit) pendingAuditLines.push(lineAudit);
+
             pendingLineCount = 1;
           }
         }

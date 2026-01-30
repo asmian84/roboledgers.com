@@ -7,13 +7,14 @@ class BMOCreditCardParser extends BaseBankParser {
         super('BMO', 'CreditCard', 'BMO Credit Card - Liability account');
     }
 
-    async parse(statementText) {
+    async parse(statementText, metadata = null, lineMetadata = []) {
+        this.lastLineMetadata = lineMetadata;
         const lines = statementText.split('\n');
         const transactions = [];
         let currentYear = new Date().getFullYear();
 
         // Extract year
-        const yearMatch = text.match(/(\d{4})/);
+        const yearMatch = statementText.match(/(\d{4})/);
         if (yearMatch) currentYear = parseInt(yearMatch[1]);
 
         // Date: "Apr 01", "May 16"
@@ -53,7 +54,8 @@ class BMOCreditCardParser extends BaseBankParser {
                 debit: isPayment ? 0 : amount,   // Charge = debit (balance up)
                 credit: isPayment ? amount : 0,  // Payment = credit (balance down)
                 balance,
-                rawText: this.cleanRawText(line)
+                rawText: this.cleanRawText(line),
+                audit: this.getSpatialMetadata(line)
             });
         }
 

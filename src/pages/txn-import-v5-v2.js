@@ -13,6 +13,7 @@
 // Check if V5State already exists to preserve data during navigation
 if (!window.V5State) {
   window.V5State = {
+    activeAuditRowId: null, // Track currently audited row
     importZoneExpanded: true,
     gridData: [],
     importHistory: [],
@@ -99,6 +100,8 @@ const V5_BANK_LOGOS = {
   'Scotiabank': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#ee1c25"/><path d="M50 20 L80 50 L50 80 L20 50 Z" fill="white"/></svg>`,
   'Tangerine': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#ff671b"/><path d="M30 30 Q50 20 70 30 L70 70 Q50 80 30 70 Z" fill="white"/></svg>`,
   'Amex': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="4" fill="#006fcf"/><text x="50" y="65" font-family="Arial" font-weight="900" font-size="35" fill="white" text-anchor="middle">AMEX</text></svg>`,
+  'HSBC': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#db0011"/><path d="M20 50 L50 20 L80 50 L50 80 Z" fill="white"/></svg>`,
+  'ATB': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#00a3e0"/><text x="50" y="65" font-family="Arial" font-weight="900" font-size="35" fill="white" text-anchor="middle">ATB</text></svg>`,
   'default': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="12" fill="#64748b"/><path d="M30 70 L50 30 L70 70 Z" fill="white"/></svg>`
 };
 
@@ -144,7 +147,9 @@ const popoverOptions = {
     { value: 'CIBC', label: 'CIBC Canada' },
     { value: 'Scotiabank', label: 'Scotiabank of Canada' },
     { value: 'Tangerine', label: 'Tangerine Bank' },
-    { value: 'Amex', label: 'American Express Can' }
+    { value: 'Amex', label: 'American Express Can' },
+    { value: 'ATB', label: 'ATB Financial' },
+    { value: 'HSBC', label: 'HSBC Bank Canada' }
   ],
   tag: [
     { value: 'Chequing', label: 'Chequing', icon: 'ph-money' },
@@ -260,26 +265,111 @@ class V5GroupedAccountEditor {
   init(params) {
     this.params = params;
     this.value = params.value || 'Uncategorized';
+
+    // Main Container
     this.container = document.createElement('div');
-    this.container.style.cssText = 'background:white; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); width:280px; max-height:400px; overflow-y:auto; z-index:10000;';
-    const coa = window.get5TierCoAAccounts ? window.get5TierCoAAccounts() : (window.getGroupedCoA ? window.getGroupedCoA() : {});
-    Object.entries(coa).forEach(([group, items]) => {
-      if (items && items.length) {
-        const header = document.createElement('div');
-        header.style.cssText = 'padding:8px 12px; background:#f8fafc; font-weight:700; font-size:11px; color:#64748b; text-transform:uppercase;';
-        header.innerText = group;
-        this.container.appendChild(header);
-        items.forEach(item => {
-          const label = typeof item === 'object' ? (item.code ? `${item.code} - ${item.name}` : item.name) : item;
-          const div = document.createElement('div');
-          div.style.cssText = 'padding:8px 16px; font-size:13px; color: #334155; cursor:pointer;';
-          div.innerText = label;
-          div.onclick = () => { this.value = label; this.params.stopEditing(); };
-          this.container.appendChild(div);
-        });
+    this.container.className = 'custom-coa-menu';
+    // FIX: Added background, border, shadow for visibility
+    this.container.style.cssText = 'width: 380px; max-height: 500px; position: relative; display: flex; flex-direction: column; overflow: hidden; background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); font-family: "Inter", sans-serif;';
+
+    console.log('[V5GroupedAccountEditor] Initialized');
+
+    // 1. Search Box
+    const searchWrapper = document.createElement('div');
+    searchWrapper.className = 'coa-search-box-wrapper';
+    this.searchInput = document.createElement('input');
+    this.searchInput.className = 'coa-search-input';
+    this.searchInput.placeholder = 'Search accounts...';
+    searchWrapper.appendChild(this.searchInput);
+    this.container.appendChild(searchWrapper);
+
+    // 2. List Container (Scrollable)
+    this.listContainer = document.createElement('div');
+    this.listContainer.className = 'coa-list-scroll';
+    this.container.appendChild(this.listContainer);
+
+    // Initial Populate
+    this.renderList();
+
+    // Search Logic
+    this.searchInput.addEventListener('input', (e) => {
+      this.renderList(e.target.value);
+    });
+
+    // Handle Keyboard
+    this.searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const firstItem = this.listContainer.querySelector('.coa-item');
+        if (firstItem) firstItem.click();
       }
     });
+
+    // Auto-focus search after a tiny delay for ag-grid lifecycle
+    setTimeout(() => this.searchInput.focus(), 100);
   }
+
+  renderList(filterText = '') {
+    this.listContainer.innerHTML = '';
+    const lowerFilter = filterText.toLowerCase();
+    const cats = window.get5TierCoAAccounts ? window.get5TierCoAAccounts() : {};
+    const usedCodes = window.V5State ? Object.keys(window.V5State.multiLedgerData || {}) : [];
+    const coaSource = JSON.parse(localStorage.getItem('ab3_accounts') || localStorage.getItem('ab_chart_of_accounts') || '[]');
+
+    let html = '';
+
+    // A. ACTIVE LEDGERS (Prioritized)
+    const filteredUsed = usedCodes.filter(code => {
+      const acct = coaSource.find(a => (a.code || a.account_number) == code);
+      const name = acct ? acct.name : code;
+      return `${code} ${name}`.toLowerCase().includes(lowerFilter);
+    });
+
+    if (filteredUsed.length > 0) {
+      html += `<div class="coa-group-header expanded" style="background:#ecfdf5; color:#059669; font-size:11px;">
+                <i class="ph ph-lightning-fill"></i> ACTIVE LEDGERS
+               </div>
+               <div class="coa-group-items expanded">`;
+      filteredUsed.forEach(code => {
+        const acct = coaSource.find(a => (a.code || a.account_number) == code);
+        const name = acct ? acct.name : code;
+        const label = `${code} - ${name}`;
+        html += `<div class="coa-item" onclick="this.parentElement.dataset.val='${label}'; this.dispatchEvent(new CustomEvent('select', {detail:'${label}'}))">
+                  ${label}
+                 </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // B. CATEGORIZED GROUPS
+    const tierLabels = { ASSETS: 'Assets', LIABILITIES: 'Liabilities', EQUITY: 'Equity', REVENUE: 'Revenue', EXPENSES: 'Expenses' };
+    Object.keys(cats).forEach(tierKey => {
+      const items = cats[tierKey].filter(a => `${a.code} ${a.name}`.toLowerCase().includes(lowerFilter));
+      if (items.length > 0) {
+        html += `<div class="coa-group-header expanded">
+                  <i class="ph ph-caret-right"></i> ${tierLabels[tierKey] || tierKey}
+                 </div>
+                 <div class="coa-group-items expanded">`;
+        items.forEach(item => {
+          const label = item.code ? `${item.code} - ${item.name}` : item.name;
+          html += `<div class="coa-item" onclick="this.parentElement.dataset.val='${label}'; this.dispatchEvent(new CustomEvent('select', {detail:'${label}'}))">
+                    ${label}
+                   </div>`;
+        });
+        html += `</div>`;
+      }
+    });
+
+    this.listContainer.innerHTML = html;
+
+    // Attach click handlers manually to capture selection
+    this.listContainer.querySelectorAll('.coa-item').forEach(el => {
+      el.onclick = () => {
+        this.value = el.innerText.trim();
+        this.params.stopEditing();
+      };
+    });
+  }
+
   getGui() { return this.container; }
   getValue() { return this.value; }
   isPopup() { return true; }
@@ -5620,11 +5710,10 @@ window.updateRefPrefix = function (value) {
 
 // Consolidated Save Data (Sync wrapper for main async function)
 window.saveData = function () {
-  // Use the main async version but don't wait (it handles internal errors)
-  if (typeof saveDataAsync === 'function') {
-    saveDataAsync();
-  } else if (typeof saveData === 'function') {
-    saveData();
+  // Use the global async version but don't wait 
+  // Avoid calling 'saveData' directly to prevent infinite recursion
+  if (typeof window.saveDataAsync === 'function') {
+    window.saveDataAsync();
   }
 };
 
@@ -7295,9 +7384,13 @@ window.renderVisualAudit = async (row, containerId) => {
       // pdfY is usually the baseline of the text.
       // We want to capture from slightly above the baseline (for ascenders) downwards.
 
-      const padding = 10;
-      const topPdf = pdfY + padding;
-      const bottomPdf = pdfY - auditHeight - padding;
+      const padding = 30; // Increased context padding
+
+      // PDF Coordinates: 0,0 is Bottom-Left. Y increases upwards.
+      // Text coordinates (y) usually refer to the baseline of the line.
+      // For multi-line blocks, we need to capture ABOVE the baseline (upward).
+      const topPdf = pdfY + auditHeight + padding;
+      const bottomPdf = pdfY - padding;
 
       // Convert to Canvas Y (Top-Down)
       // Canvas Y = ViewportHeight - (PDF_Y * scale)
@@ -7337,11 +7430,41 @@ window.renderVisualAudit = async (row, containerId) => {
 
     // 7. Output
     container.innerHTML = '';
+
+    // Create a wrapper for zoom
+    const zoomWrapper = document.createElement('div');
+    zoomWrapper.className = 'v5-audit-zoom-wrapper';
+    zoomWrapper.style.cssText = `
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 8px;
+      cursor: zoom-in;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    `;
+
     finalCanvas.style.width = '100%';
     finalCanvas.style.height = 'auto';
-    finalCanvas.style.borderRadius = '4px';
-    finalCanvas.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-    container.appendChild(finalCanvas);
+    finalCanvas.style.display = 'block';
+    finalCanvas.style.transition = 'transform 0.2s ease-out, transform-origin 0.05s linear';
+
+    zoomWrapper.appendChild(finalCanvas);
+    container.appendChild(zoomWrapper);
+
+    // Zoom Logic
+    zoomWrapper.onmousemove = (e) => {
+      const rect = zoomWrapper.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+      finalCanvas.style.transformOrigin = `${x}% ${y}%`;
+      finalCanvas.style.transform = 'scale(2.5)';
+    };
+
+    zoomWrapper.onmouseleave = () => {
+      finalCanvas.style.transform = 'scale(1)';
+    };
 
   } catch (err) {
     console.error('Visual Audit Render Error:', err);
@@ -7349,101 +7472,17 @@ window.renderVisualAudit = async (row, containerId) => {
   }
 };
 
-window.showSmartPopper = (event, rowId) => {
-  clearTimeout(popperHideTimer);
-
-  const row = V5State.gridData.find(r => r.id === rowId);
-  if (!row) return;
-
-  const rect = event.currentTarget.getBoundingClientRect();
-
-  // Construct UI
-  smartPopper.innerHTML = `
-      <div class="v5-smart-popper-header">
-        <span class="v5-smart-popper-title">${row.Description || 'Transaction'}</span>
-      </div>
-      
-      <div id="v5-popper-img-container-${rowId}" style="min-height: 60px; background: #f8fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">
-        <div class="v5-smart-popper-loading" style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-           <span class="v5-loading-dots">Loading Evidence</span>
-        </div>
-      </div>
-
-      ${row.audit ? `
-      <div class="v5-smart-popper-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-        <div style="display: flex; gap: 12px; font-size: 11px; color: #6b7280; font-weight: 500;">
-          <span><i class="ph ph-file-text"></i> Page ${row.audit.page || '?'}</span>
-          <span><i class="ph ph-list-numbers"></i> Line ${row.audit.lineIndex || '?'}</span>
-          ${row.audit.lineCount ? `<span><i class="ph ph-rows"></i> ${row.audit.lineCount} Lines</span>` : ''}
-        </div>
-      </div>
-      ` : `
-      <div class="v5-smart-popper-section" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-        <div style="font-size: 11px; color: #9ca3af; font-style: italic;">
-          <i class="ph ph-warning"></i> No spatial metadata available
-        </div>
-      </div>
-      `}
-      
-      <div class="v5-smart-popper-section" style="margin-top: 4px;">
-         <div class="v5-smart-popper-value v5-popper-link" onclick="window.viewSourcePDF('${rowId}')" style="cursor: pointer; color: #3b82f6; text-decoration: none; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
-          <i class="ph ph-arrow-square-out"></i> View Full Statement
-        </div>
-      </div>
-    `;
-
-  // Calculate Position
-  const popperRect = smartPopper.getBoundingClientRect();
-  // Default: Top-Right of cursor/icon
-  let top = rect.top;
-  let left = rect.right + 10;
-
-  // Boundary Checks
-  if (left + 400 > window.innerWidth) {
-    left = rect.left - 410; // Flip to left
-  }
-  if (top + popperRect.height > window.innerHeight) {
-    top = window.innerHeight - popperRect.height - 20;
-  }
-
-  smartPopper.style.top = `${top}px`;
-  smartPopper.style.left = `${left}px`;
-  smartPopper.classList.add('visible');
-
-  // Trigger Async Render
-  window.renderVisualAudit(row, `v5-popper-img-container-${rowId}`);
-};
-
-window.hideSmartPopper = () => {
-  popperHideTimer = setTimeout(() => {
-    smartPopper.classList.remove('visible');
-  }, 200);
-};
-
-// Allow hovering over the popper itself to keep it open
-smartPopper.addEventListener('mouseenter', () => {
-  clearTimeout(popperHideTimer);
-});
-smartPopper.addEventListener('mouseleave', () => {
-  window.hideSmartPopper();
-});
-
-
 const gridOptions = {
   pagination: true,
   paginationPageSize: V5State.settings.performance.rowsPerPage,
   rowBuffer: V5State.settings.performance.virtualization ? 10 : 0,
   getRowId: (params) => {
-    // ROBUST IDENTITY: Use ID if present, else composite key (Date + Desc + Amount + rowId)
     const data = params.data || {};
     if (data.id) return data.id;
-
-    // Fallback: Use description + date + index-in-data
-    // We avoid params.node.rowIndex because it may not be ready during initialization
     const idx = V5State.gridData.indexOf(data);
-    return `v5-${data.date || 'nodate'}-${data.description || 'nodesc'}-${data.debit || data.credit || 0}-${idx}`;
+    return 'v5-' + (data.date || 'nodate') + '-' + (data.description || 'nodesc') + '-' + (data.debit || data.credit || 0) + '-' + idx;
   },
-  masterDetail: false, // [COMMUNITY] Disabling masterDetail
+  masterDetail: false,
   suppressRowClickSelection: true,
   rowSelection: 'multiple',
   columnDefs: [
@@ -7463,14 +7502,14 @@ const gridOptions = {
       colId: 'refNumber',
       headerName: 'Ref#',
       field: 'refNumber',
-      width: 80, // Snug
+      width: 80,
       minWidth: 80,
       suppressSizeToFit: true,
       comparator: (a, b) => (parseInt(a) || 0) - (parseInt(b) || 0),
       valueGetter: params => {
         const p = V5State.refPrefix || '';
         const num = String(params.node.rowIndex + 1).padStart(3, '0');
-        return p ? `${p}-${num}` : num;
+        return p ? p + '-' + num : num;
       },
       cellStyle: { fontWeight: '600', color: '#6B7280' }
     },
@@ -7478,7 +7517,7 @@ const gridOptions = {
       colId: 'date',
       headerName: 'Date',
       field: 'date',
-      width: 100, // Snug
+      width: 100,
       minWidth: 100,
       suppressSizeToFit: true,
       editable: true,
@@ -7500,32 +7539,28 @@ const gridOptions = {
       cellRenderer: params => {
         const val = params.value || '';
         const rowId = params.node.id;
-        // const isAuditActive = V5State.auditModeActiveRowIds && V5State.auditModeActiveRowIds.includes(rowId); // Removed expanding logic
+        const status = params.data.auditStatus;
 
-        // SMART POPPER ICON
-        // Always show magnifying glass - users can view PDF even without exact coordinates
-        const auditIcon = `<i class="ph ph-magnifying-glass v5-audit-icon" onmouseenter="window.showSmartPopper(event, '${rowId}')" onmouseleave="window.hideSmartPopper()" onclick="event.stopPropagation(); window.viewSourcePDF('${rowId}')"></i>`;
+        let statusIcon = '';
+        if (status === 'verified') statusIcon = '<i class="ph-fill ph-check-circle" style="color: #10B981; margin-right: 8px; font-size: 1.1rem;"></i>';
+        else if (status === 'flagged') statusIcon = '<i class="ph-fill ph-warning-circle" style="color: #EF4444; margin-right: 8px; font-size: 1.1rem;"></i>';
+        else statusIcon = '<i class="ph ph-circle" style="color: #CBD5E1; margin-right: 8px; font-size: 1.1rem;"></i>';
 
-        let content = `<div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: row; align-items: center; padding-right: 10px;">`;
+        let content = '<div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: row; align-items: center;" onclick="window.openV5AuditDrawer(\'' + rowId + '\')">';
+        content += '<div style="flex-shrink: 0; display: flex; align-items: center;">' + statusIcon + '</div>';
+        content += '<div style="flex: 1; min-width: 0; cursor: pointer;">';
 
-        // Icon Column
-        content += `<div style="flex-shrink: 0; display: flex; align-items: center;">${auditIcon}</div>`;
-
-        // Text Column
-        content += `<div style="flex: 1; min-width: 0;">`; // Flex container for text
-
-        // REVERTED to two-line layout as requested for cleaner grid appearance
-        if (!val.includes(',')) {
-          content += `<div style="word-break: break-all; white-space: normal; font-weight: 500;">${val}</div>`;
+        if (val.indexOf(',') === -1) {
+          content += '<div style="word-break: break-all; white-space: normal; font-weight: 500;">' + val + '</div>';
         } else {
           const parts = val.split(',');
-          content += `<div style="line-height: 1.3; word-break: break-all; white-space: normal;">
-              <div style="font-weight: 600;">${parts[0].trim()}</div>
-              <div style="font-size: 0.85em; color: #6B7280;">${parts.slice(1).join(',').trim()}</div>
-            </div>`;
+          content += '<div style="line-height: 1.3; word-break: break-all; white-space: normal;">' +
+            '<div style="font-weight: 600;">' + parts[0].trim() + '</div>' +
+            '<div style="font-size: 0.85em; color: #6B7280;">' + parts.slice(1).join(',').trim() + '</div>' +
+            '</div>';
         }
 
-        content += `</div></div>`; // Close text col and main container
+        content += '</div></div>';
         return content;
       },
       autoHeight: true,
@@ -7535,7 +7570,7 @@ const gridOptions = {
       colId: 'debit',
       headerName: 'Debit',
       field: 'debit',
-      width: 100, // Snug
+      width: 100,
       minWidth: 100,
       suppressSizeToFit: true,
       type: 'numericColumn',
@@ -7556,7 +7591,7 @@ const gridOptions = {
         params.data.Debit = val;
         params.data.credit = 0;
         params.data.Credit = 0;
-        window.recalculateAllBalances();
+        window.recalculateAllBalances?.();
         return true;
       }
     },
@@ -7564,7 +7599,7 @@ const gridOptions = {
       colId: 'credit',
       headerName: 'Credit',
       field: 'credit',
-      width: 100, // Snug
+      width: 100,
       minWidth: 100,
       suppressSizeToFit: true,
       type: 'numericColumn',
@@ -7585,7 +7620,7 @@ const gridOptions = {
         params.data.Credit = val;
         params.data.debit = 0;
         params.data.Debit = 0;
-        window.recalculateAllBalances();
+        window.recalculateAllBalances?.();
         return true;
       }
     },
@@ -7593,7 +7628,7 @@ const gridOptions = {
       colId: 'balance',
       headerName: 'Balance',
       field: 'balance',
-      width: 110, // Snug
+      width: 110,
       minWidth: 110,
       suppressSizeToFit: true,
       headerClass: 'ag-right-aligned-header',
@@ -7673,7 +7708,7 @@ window.showKeyboardShortcuts = function () {
             <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 0.875rem;">
                 <strong>Actions:</strong><br>• Click <strong>⇄</strong> to swap Debit/Credit<br>• Click <strong>&times;</strong> to delete row
             </div>
-        </div>
+    </div>
   `;
 
   modal.id = 'v5-shortcuts-modal';
@@ -7754,8 +7789,8 @@ window.startOverV5 = async function () {
 
   banner.innerHTML = `
     <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #dc2626;">
-      ⚠️ Clear All Data?
-    </div>
+      ⚠️ Clear All Data ?
+    </div >
     <div style="margin-bottom: 1.5rem; color: #6b7280; line-height: 1.5;">
       This will permanently delete all transactions and import history. This action cannot be undone.
     </div>
@@ -7848,7 +7883,7 @@ window.popOutV5Grid = function () {
       <i class="ph ph-arrow-square-in" style="font-size: 64px; margin-bottom: 1rem;"></i>
       <h2 style="margin: 0 0 0.5rem 0; font-size: 24px;">Grid Popped Out</h2>
       <p style="margin: 0; opacity: 0.9; font-size: 14px;">Click here to bring it back</p>
-    </div>
+    </div >
     `;
   popInOverlay.onclick = () => window.popInV5Grid();
   gridContainer.parentElement.insertBefore(popInOverlay, gridContainer);
@@ -9242,7 +9277,7 @@ window.applyV5Restoration = function (restoredData) {
     });
   }
 
-  window.initV5Grid();
+  window.initTxnImportV5Grid();
   renderV5LedgerSwitcher();
   showControlToolbar();
 
@@ -10885,6 +10920,10 @@ window.initTxnImportV5Grid = function () {
     try {
       new agGrid.Grid(gridDiv, gridOptions);
       V5State.gridApi = gridOptions.api;
+      if (!V5State.gridApi) {
+        console.warn('⚠️ [Init] gridOptions.api not immediately available, checking gridOptions object...');
+        V5State.gridApi = gridOptions.api; // Try again as it might be populated after constructor
+      }
       console.log('✅ [Init] Grid created successfully');
     } catch (e) {
       console.error('❌ [Init] AG Grid init failed:', e);
@@ -11048,6 +11087,234 @@ window.initV5();
 })();
 
 // Override viewSourcePDF to use modal instead of navigation
+// ============================================
+// AUDIT DRAWER (Right Side Panel)
+// ============================================
+
+(function initAuditDrawer() {
+  if (document.getElementById('v5-audit-drawer')) return;
+
+  const drawerHTML = `
+    <div id="v5-audit-drawer" class="v5-drawer">
+      <div class="v5-drawer-header">
+        <h2 id="v5-audit-title">Audit Detail</h2>
+        <button onclick="window.closeV5AuditDrawer()" class="v5-drawer-close">&times;</button>
+      </div>
+      <div class="v5-drawer-content">
+        <div id="v5-audit-evidence" class="v5-audit-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3>Visual Evidence</h3>
+            <button onclick="window.viewSourcePDF(V5State.activeAuditRowId)" class="v5-btn-source-pdf">
+              <i class="ph ph-file-pdf"></i> View Source PDF
+            </button>
+          </div>
+          <div id="v5-audit-img-container" class="v5-audit-img-box">
+             <div class="v5-audit-placeholder">Select a transaction to view evidence</div>
+          </div>
+        </div>
+        
+        <div id="v5-audit-receipt" class="v5-audit-section">
+          <h3>Match Receipt / Support</h3>
+          <div id="v5-receipt-dropzone" class="v5-receipt-box" ondragover="event.preventDefault()" ondrop="window.handleReceiptDrop(event)">
+             <i class="ph ph-upload-simple"></i>
+             <span>Drop receipt here or click to upload</span>
+             <input type="file" id="v5-receipt-input" style="display:none" onchange="window.handleReceiptFile(this.files[0])">
+          </div>
+          <div id="v5-matched-receipt-view" style="display:none">
+             <!-- Matched receipt will show here -->
+          </div>
+        </div>
+
+        <div class="v5-audit-section">
+          <h3>Raw Extraction</h3>
+          <pre id="v5-audit-raw" class="v5-raw-box"></pre>
+        </div>
+
+        <div class="v5-audit-section metadata-grid">
+           <div>
+             <label>Transit</label>
+             <span id="v5-meta-transit">-</span>
+           </div>
+           <div>
+             <label>Page</label>
+             <span id="v5-meta-page">-</span>
+           </div>
+           <div>
+             <label>Confidence</label>
+             <span id="v5-meta-confidence">98%</span>
+           </div>
+        </div>
+      </div>
+      <div class="v5-drawer-footer">
+        <button onclick="window.verifyActiveRow()" class="v5-btn-verify">Verify (V)</button>
+        <button onclick="window.flagActiveRow()" class="v5-btn-flag">Flag (F)</button>
+      </div>
+    </div>
+    <style>
+      .v5-drawer {
+        position: fixed;
+        top: 0;
+        right: -450px;
+        width: 420px;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        z-index: 9000;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid rgba(59, 130, 246, 0.2);
+      }
+      .v5-drawer.open { right: 0; }
+      .v5-drawer-header {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+      }
+      .v5-drawer-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+      .v5-drawer-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+      .v5-drawer-content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+      .v5-audit-section h3 { margin: 0 0 10px 0; font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+      .v5-audit-img-box {
+        width: 100%;
+        min-height: 150px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .v5-receipt-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .v5-receipt-box:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); color: #3b82f6; }
+      .v5-raw-box {
+        background: #0f172a;
+        color: #10b981;
+        padding: 12px;
+        border-radius: 6px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.75rem;
+        white-space: pre-wrap;
+        margin: 0;
+      }
+      .metadata-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; border-top: 1px solid #eee; padding-top: 15px; }
+      .metadata-grid div { display: flex; flex-direction: column; gap: 4px; }
+      .metadata-grid label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; }
+      .metadata-grid span { font-size: 0.9rem; color: #1e293b; font-weight: 700; }
+      .v5-drawer-footer { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 12px; background: #fff; }
+      .v5-btn-verify { flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+      .v5-btn-flag { flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+      .v5-btn-verify:hover { background: #059669; }
+      .v5-btn-flag:hover { background: #dc2626; }
+    </style>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', drawerHTML);
+
+  // Click dropzone to trigger input
+  document.getElementById('v5-receipt-dropzone').onclick = () => document.getElementById('v5-receipt-input').click();
+})();
+
+window.openV5AuditDrawer = function (rowId) {
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (!row) return;
+
+  V5State.activeAuditRowId = rowId;
+  const drawer = document.getElementById('v5-audit-drawer');
+  drawer.classList.add('open');
+
+  // Update Content
+  document.getElementById('v5-audit-title').textContent = row.description?.split(',')[0] || 'Audit Detail';
+  document.getElementById('v5-audit-raw').textContent = row.rawText || 'No raw extraction available';
+  document.getElementById('v5-meta-transit').textContent = row._transit || '-';
+  document.getElementById('v5-meta-page').textContent = row.audit?.page || '-';
+
+  // Trigger Evidence Render
+  const imgContainer = document.getElementById('v5-audit-img-container');
+  imgContainer.innerHTML = `<div class="v5-loading-dots">Loading Evidence</div>`;
+  window.renderVisualAudit(row, 'v5-audit-img-container');
+
+  // Trigger Receipt Render
+  window.renderMatchedReceipt(rowId);
+};
+
+window.closeV5AuditDrawer = function () {
+  document.getElementById('v5-audit-drawer').classList.remove('open');
+  V5State.activeAuditRowId = null;
+};
+
+window.verifyActiveRow = function () {
+  const rowId = V5State.activeAuditRowId;
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (row) {
+    row.auditStatus = 'verified';
+    saveData();
+    if (V5State.gridApi) V5State.gridApi.applyTransaction({ update: [row] });
+    console.log('✅ Row Verified:', rowId);
+  }
+  moveToNextAuditRow();
+};
+
+window.flagActiveRow = function () {
+  const rowId = V5State.activeAuditRowId;
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (row) {
+    row.auditStatus = 'flagged';
+    saveData();
+    if (V5State.gridApi) V5State.gridApi.applyTransaction({ update: [row] });
+    console.log('🚩 Row Flagged:', rowId);
+  }
+  moveToNextAuditRow();
+};
+
+function moveToNextAuditRow() {
+  if (!V5State.gridApi) return;
+  const allNodes = [];
+  V5State.gridApi.forEachNode(node => allNodes.push(node));
+  const currentIndex = allNodes.findIndex(n => n.id === V5State.activeAuditRowId);
+  if (currentIndex !== -1 && currentIndex < allNodes.length - 1) {
+    const nextNode = allNodes[currentIndex + 1];
+    window.openV5AuditDrawer(nextNode.id);
+    nextNode.setSelected(true);
+    V5State.gridApi.ensureIndexVisible(currentIndex + 1);
+  } else {
+    window.closeV5AuditDrawer();
+  }
+}
+
+// Keyboard Listeners for V and F
+document.addEventListener('keydown', (e) => {
+  const drawer = document.getElementById('v5-audit-drawer');
+  if (!drawer || !drawer.classList.contains('open')) return;
+
+  // Ignore if typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key.toLowerCase() === 'v') {
+    window.verifyActiveRow();
+  } else if (e.key.toLowerCase() === 'f') {
+    window.flagActiveRow();
+  } else if (e.key === 'Escape') {
+    window.closeV5AuditDrawer();
+  }
+});
+
 window.viewSourcePDF = (rowId) => {
   const row = V5State.gridData.find(r => r.id === rowId);
   if (!row || !row.audit) {
@@ -11083,3 +11350,162 @@ window.viewSourcePDF = (rowId) => {
 
   console.log('[PDF Modal] Opened:', window._currentPDFUrl);
 };
+
+// ============================================
+// RECEIPT HANDLING LOGIC
+// ============================================
+
+window.handleReceiptDrop = function (e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) window.handleReceiptFile(file);
+};
+
+window.handleReceiptFile = async function (file) {
+  const rowId = V5State.activeAuditRowId;
+  if (!rowId || !file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    const row = V5State.gridData.find(r => r.id === rowId);
+    if (row) {
+      row.receipt = {
+        name: file.name,
+        type: file.type,
+        data: base64,
+        timestamp: new Date().toISOString()
+      };
+
+      window.renderMatchedReceipt(rowId);
+      saveData();
+
+      if (V5State.gridApi) {
+        V5State.gridApi.applyTransaction({ update: [row] });
+      }
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.renderMatchedReceipt = function (rowId) {
+  const row = V5State.gridData.find(r => r.id === rowId);
+  const matchedView = document.getElementById('v5-matched-receipt-view');
+  const dropzone = document.getElementById('v5-receipt-dropzone');
+
+  if (row && row.receipt) {
+    dropzone.style.display = 'none';
+    matchedView.style.display = 'block';
+    matchedView.innerHTML = `
+      <div class="v5-receipt-card">
+        <div class="v5-receipt-preview">
+          ${row.receipt.type.startsWith('image/') ? `<img src="${row.receipt.data}">` : `<i class="ph ph-file-pdf"></i>`}
+        </div>
+        <div class="v5-receipt-info">
+          <span class="v5-receipt-name">${row.receipt.name}</span>
+          <button onclick="window.removeReceipt('${rowId}')" title="Remove Match" class="v5-remove-receipt">&times;</button>
+        </div>
+      </div>
+    `;
+  } else {
+    dropzone.style.display = 'flex';
+    matchedView.style.display = 'none';
+  }
+};
+
+window.removeReceipt = function (rowId) {
+  const row = V5State.gridData.find(r => r.id === rowId);
+  if (row) {
+    delete row.receipt;
+    window.renderMatchedReceipt(rowId);
+    saveData();
+    if (V5State.gridApi) {
+      V5State.gridApi.applyTransaction({ update: [row] });
+    }
+  }
+};
+
+// CSS for receipt card
+(function initReceiptStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+        .v5-receipt-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .v5-receipt-preview {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .v5-receipt-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .v5-receipt-preview i {
+            font-size: 1.5rem;
+            color: #ef4444;
+        }
+        .v5-receipt-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .v5-receipt-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .v5-remove-receipt {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .v5-btn-source-pdf {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .v5-btn-source-pdf:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        .v5-btn-source-pdf i {
+            font-size: 0.9rem;
+            color: #ef4444;
+        }
+        .v5-remove-receipt:hover { color: #ef4444; }
+    `;
+  document.head.appendChild(style);
+})();

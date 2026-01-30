@@ -18,6 +18,7 @@ AMEX FORMAT:
      * [PHASE 4] Now accepts lineMetadata for spatial tracking
      */
     async parse(statementText, inputMetadata = null, lineMetadata = []) {
+        this.lastLineMetadata = lineMetadata;
         // LOUD DIAGNOSTIC
         console.warn('⚡ [EXTREME-AMEX] Starting metadata extraction for Amex...');
         console.error('📄 [DEBUG-AMEX] First 1000 characters (RED for visibility):');
@@ -76,91 +77,104 @@ AMEX FORMAT:
         const dateRegex2 = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})/i;
         const monthMap = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
 
+        let pendingDescription = '';
+        let pendingRawLines = [];
+        let pendingAuditLines = [];
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            const meta = lineMetadata && lineMetadata[i];
             if (!line) continue;
 
             // TRACK BLOCK STATE
-            // Trigger: "Your Transactions" or "New Transactions for"
             if (line.match(/Your Transactions|New Transactions for/i)) {
-                console.log(`[AMEX] Triggering transaction block at line ${i}: "${line}"`);
                 inTransactionBlock = true;
                 continue;
             }
-
-            // Stopper: "Total of New Transactions" or "Total of Payment Activity"
             if (inTransactionBlock && line.match(/Total of (?:New Transactions|Payment Activity|Activity)/i)) {
-                console.log(`[AMEX] Stopping transaction block at line ${i}: "${line}"`);
-                // Note: We don't break immediately because there might be another block (e.g. Charges vs Payments)
                 inTransactionBlock = false;
                 continue;
             }
-
-            if (!inTransactionBlock) continue;
-
-            // SKIP HEADERS
-            if (line.match(/Transaction\s+Posting\s+Details\s+Amount/i)) continue;
+            if (!inTransactionBlock || line.match(/Transaction\s+Posting\s+Details\s+Amount/i)) continue;
 
             let isoDate = null;
-            let dateMatch = line.match(dateRegex1);
+            let dateMatch = line.match(dateRegex1) || line.match(dateRegex2);
             if (dateMatch) {
-                isoDate = `${currentYear}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}`;
-            } else {
-                dateMatch = line.match(dateRegex2);
-                if (dateMatch) {
+                if (dateMatch[1].length === 3) {
                     isoDate = `${currentYear}-${monthMap[dateMatch[1].toLowerCase()]}-${dateMatch[2].padStart(2, '0')}`;
+                } else {
+                    isoDate = `${currentYear}-${dateMatch[1].padStart(2, '0')}-${dateMatch[2].padStart(2, '0')}`;
+                }
+                const remainder = line.substring(dateMatch[0].length).trim();
+
+                const extracted = this.extractTransaction(remainder, isoDate, line);
+                if (extracted && extracted.amount) {
+                    if (pendingDescription) {
+                        extracted.description = pendingDescription + ' ' + extracted.description;
+                        extracted.rawText = [...pendingRawLines, extracted.rawText].join('\n');
+                        if (extracted.audit) {
+                            extracted.audit = this.mergeAuditMetadata([...pendingAuditLines, extracted.audit]);
+                        }
+                    }
+                    transactions.push(extracted);
+                    pendingDescription = '';
+                    pendingRawLines = [];
+                    pendingAuditLines = [];
+                } else {
+                    pendingDescription = remainder;
+                    pendingRawLines = [line];
+                    pendingAuditLines = [this.getSpatialMetadata(line)];
+                }
+            } else if (pendingDescription && line.length > 3) {
+                const extracted = this.extractTransaction(line, '', line);
+                if (extracted && extracted.amount) {
+                    extracted.date = transactions[transactions.length - 1]?.date || '1900-01-01';
+                    extracted.description = pendingDescription + ' ' + extracted.description;
+                    extracted.rawText = [...pendingRawLines, line].join('\n');
+                    extracted.audit = this.mergeAuditMetadata([...pendingAuditLines, this.getSpatialMetadata(line)]);
+                    transactions.push(extracted);
+                    pendingDescription = '';
+                    pendingRawLines = [];
+                    pendingAuditLines = [];
+                } else {
+                    pendingDescription += ' ' + line;
+                    pendingRawLines.push(line);
+                    pendingAuditLines.push(this.getSpatialMetadata(line));
                 }
             }
-            if (!isoDate) continue;
-
-            const remainder = line.substring(dateMatch[0].length).trim();
-
-            // AMEX AMOUNTS: Often at the end of the line, can be negative with minus sign
-            // Match numbers with commas/dots and optional trailing minus
-            const amountsAtEnd = remainder.match(/(-?[\d,]+\.\d{2})|([\d,]+\.\d{2}-?)$/);
-            if (!amountsAtEnd) continue;
-
-            const rawAmt = amountsAtEnd[0];
-            const amount = parseFloat(rawAmt.replace(/[,]/g, ''));
-
-            // Description is everything between date and amount
-            const descEndIdx = remainder.lastIndexOf(rawAmt);
-            let description = remainder.substring(0, descEndIdx).trim();
-
-            // REMOVE LEADING SLASHES (Rogue delimiters sometimes captured)
-            description = description.replace(/^\/+\s*/, '').trim();
-
-            // CLEAN DESCRIPTION
-            description = this.cleanCreditDescription(description, [
-                "PAYMENT THANK YOU", "PURCHASE", "CASH ADVANCE",
-                "INTEREST CHARGE", "MEMBERSHIP FEE", "LATE FEE", "FOREIGN TRANSACTION FEE"
-            ]);
-
-            const isPayment = amount < 0 || /payment|credit|thank you/i.test(description);
-            const absAmount = Math.abs(amount);
-
-            transactions.push({
-                refNum: `AMEX-${String(txnCounter++).padStart(3, '0')}`,
-                _refNum: `AMEX-${String(txnCounter - 1).padStart(3, '0')}`, // Set both to be safe
-                date: isoDate,
-                description,
-                amount: absAmount,
-                debit: isPayment ? 0 : absAmount,
-                credit: isPayment ? absAmount : 0,
-                balance: 0, // Amex statements don't usually have line-by-line balance
-                _inst: '303',
-                _brand: 'Amex',
-                _bank: 'American Express',
-                _tag: 'Amex',
-                audit: meta ? { page: meta.page, y: meta.y, height: meta.height } : null,
-                rawText: this.cleanRawText(line),
-                refCode: line.match(/\b([A-Z0-9]{15,})\b/)?.[1] || 'N/A'
-            });
         }
 
         console.log(`[AMEX] Parsed ${transactions.length} transactions`);
         return { transactions, metadata, openingBalance };
+    }
+
+    extractTransaction(text, isoDate, originalLine) {
+        const amountsAtEnd = text.match(/(-?[\d,]+\.\d{2})|([\d,]+\.\d{2}-?)$/);
+        if (!amountsAtEnd) return null;
+
+        const rawAmt = amountsAtEnd[0];
+        const amount = parseFloat(rawAmt.replace(/[,]/g, ''));
+        const descEndIdx = text.lastIndexOf(rawAmt);
+        let description = text.substring(0, descEndIdx).trim().replace(/^\/+\s*/, '').trim();
+
+        description = this.cleanCreditDescription(description, [
+            "PAYMENT THANK YOU", "PURCHASE", "CASH ADVANCE",
+            "INTEREST CHARGE", "MEMBERSHIP FEE", "LATE FEE", "FOREIGN TRANSACTION FEE"
+        ]);
+
+        const isPayment = amount < 0 || /payment|credit|thank you/i.test(description);
+        const absAmount = Math.abs(amount);
+
+        return {
+            date: isoDate,
+            description,
+            amount: absAmount,
+            debit: isPayment ? 0 : absAmount,
+            credit: isPayment ? absAmount : 0,
+            balance: 0,
+            audit: this.getSpatialMetadata(originalLine),
+            rawText: this.cleanRawText(originalLine),
+            refCode: originalLine.match(/\b([A-Z0-9]{15,})\b/)?.[1] || 'N/A'
+        };
     }
 
     cleanCreditDescription(desc, prefixes) {

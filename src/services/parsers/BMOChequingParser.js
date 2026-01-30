@@ -23,7 +23,8 @@ BMO CHEQUING FORMAT:
      * LOCAL REGEX PARSER for BMO Chequing statements
      * Extracts from the ACTUAL debit/credit columns in the PDF
      */
-    async parse(statementText) {
+    async parse(statementText, metadata = null, lineMetadata = []) {
+        this.lastLineMetadata = lineMetadata;
         const lines = statementText.split('\n');
         const transactions = [];
 
@@ -126,18 +127,23 @@ BMO CHEQUING FORMAT:
                 let lookAhead = 1;
                 let foundTx = false;
 
+                let rawLines = [line];
+                let auditLines = [this.getSpatialMetadata(line)];
+
                 while (i + lookAhead < lines.length && lookAhead <= 3) {
                     const nextLine = lines[i + lookAhead].trim();
                     if (nextLine.match(dateRegex)) break;
                     combinedLine += ' ' + nextLine;
+                    rawLines.push(nextLine);
+                    auditLines.push(this.getSpatialMetadata(nextLine));
 
                     const combinedAmounts = combinedLine.match(/([\d,]+\.\d{2})/g);
                     if (combinedAmounts && combinedAmounts.length >= 2) {
                         const tx = this.parseLineWithAmounts(combinedLine, dateMatch[0], isoDate, combinedAmounts);
                         if (tx) {
+                            tx.rawText = rawLines.join('\n');
+                            tx.audit = this.mergeAuditMetadata(auditLines);
                             transactions.push(tx);
-                            // console.log('[BMO] ✓ Multi-line:', tx.description.substring(0, 25),
-                            //     'D:', tx.debit, 'C:', tx.credit);
                             foundTx = true;
                         }
                         i += lookAhead;
@@ -153,9 +159,8 @@ BMO CHEQUING FORMAT:
             const amountStrings = remainder.match(/([\d,]+\.\d{2})/g);
             const tx = this.parseLineWithAmounts(line, dateMatch[0], isoDate, amountStrings);
             if (tx) {
+                tx.audit = this.getSpatialMetadata(line);
                 transactions.push(tx);
-                // console.log('[BMO] ✓ Parsed:', tx.description.substring(0, 25),
-                //     'D:', tx.debit, 'C:', tx.credit);
             }
         }
 

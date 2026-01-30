@@ -148,8 +148,10 @@ async function smartCategorize(description, vendors) {
     if (!description) return { vendorId: null, accountId: '9970', vendorName: 'Review Required', isNew: true, confidence: 0 };
 
     const cleanDesc = normalizeVendorName(description).toUpperCase();
+    const rawDesc = description.trim();
 
-    // --- STEP 1: Exact Dictionary Match ---
+    // --- STEP 1: Exact Canonical Match (Tier 1) ---
+    // Fast check against main vendor names
     let match = vendors.find(v => normalizeVendorName(v.name).toUpperCase() === cleanDesc);
     if (match) {
         return {
@@ -162,7 +164,40 @@ async function smartCategorize(description, vendors) {
         };
     }
 
-    // --- STEP 2: Fuzzy Levenshtein Match ---
+    // --- STEP 2: Historical Pattern Match (Tier 4 - "The Brain") ---
+    // Check known variations (e.g. "TIM HORTONS #123" -> "TIM HORTONS")
+    // This uses the "Pristine Backup" style data
+    for (const v of vendors) {
+        if (v.description_patterns && Array.isArray(v.description_patterns)) {
+            // Check raw examples first (Exact Hit)
+            for (const p of v.description_patterns) {
+                // Check if any raw example matches exactly
+                if (p.raw_examples && p.raw_examples.includes(rawDesc)) {
+                    return {
+                        vendorId: v.id,
+                        vendorName: v.name,
+                        accountId: v.defaultAccountId || '9970',
+                        isNew: false,
+                        confidence: 1.0,
+                        method: 'Historical Pattern (Exact)'
+                    };
+                }
+                // Check normalized pattern
+                if (p.normalized_pattern && cleanDesc.includes(p.normalized_pattern.toUpperCase())) {
+                    return {
+                        vendorId: v.id,
+                        vendorName: v.name,
+                        accountId: v.defaultAccountId || '9970',
+                        isNew: false,
+                        confidence: 0.95,
+                        method: 'Historical Pattern (Partial)'
+                    };
+                }
+            }
+        }
+    }
+
+    // --- STEP 3: Fuzzy Levenshtein Match (Tier 2) ---
     const similar = findSimilarVendors(cleanDesc, vendors, 0.85);
     if (similar.length > 0) {
         match = similar[0].vendor;
@@ -176,28 +211,30 @@ async function smartCategorize(description, vendors) {
         };
     }
 
-    // --- STEP 3: Keyword/MCC Pattern Match (Dictionary First) ---
-    // PRIORITIZE: User's custom vendor dictionary keyword rules
+    // --- STEP 4: MCC/Keyword Rules (Tier 3) ---
+    // Dictionary-first logic for categories
     const suggestedCategory = suggestCategory(cleanDesc);
     const coa = JSON.parse(localStorage.getItem('ab_accounts') || '[]');
 
-    // Dynamic lookup: Try to find an account that matches the suggested category name
     let categoryAccount = coa.find(a => a.name.toUpperCase() === suggestedCategory.toUpperCase());
 
-    // Fallback mapping for common categories if dynamic lookup fails
-    if (!categoryAccount) {
+    if (!categoryAccount && suggestedCategory) {
         const categoryAccountMap = {
-            'Utilities': coa.find(a => a.code.startsWith('68'))?.code || '6800',
-            'Office Supplies': coa.find(a => a.code.startsWith('67'))?.code || '6700',
-            'Meals & Entertainment': coa.find(a => a.code.startsWith('63'))?.code || '6300',
-            'Travel': coa.find(a => a.code.startsWith('66'))?.code || '6600',
-            'Vehicle': coa.find(a => a.code.startsWith('64'))?.code || '6400',
-            'Insurance': coa.find(a => a.code.startsWith('65'))?.code || '6500',
-            'Professional Services': coa.find(a => a.code.startsWith('69'))?.code || '6900',
-            'Software': coa.find(a => a.code.startsWith('67'))?.code || '6700'
+            'Utilities': '6800',
+            'Office Supplies': '6700',
+            'Meals & Entertainment': '6300',
+            'Travel': '6600',
+            'Vehicle': '6400',
+            'Insurance': '6500',
+            'Professional Services': '6900',
+            'Software': '6700'
         };
-        const fallbackCode = suggestedCategory && categoryAccountMap[suggestedCategory];
-        if (fallbackCode) categoryAccount = { code: fallbackCode };
+        const mappedCode = categoryAccountMap[suggestedCategory];
+        // Find close match in COA or use generic code
+        if (mappedCode) {
+            const exist = coa.find(a => a.code.startsWith(mappedCode.substring(0, 2)));
+            categoryAccount = exist ? exist : { code: mappedCode };
+        }
     }
 
     if (suggestedCategory && categoryAccount) {
@@ -212,23 +249,15 @@ async function smartCategorize(description, vendors) {
         };
     }
 
-    // --- STEP 4: Historical Memory (User Corrections) ---
-    // (Future: Query Brain/History)
+    // --- STEP 5: Recurring Amount Heuristics (Tier 5) ---
+    // (Reserved for Transaction History Analysis)
 
-    // --- STEP 5: Recurring Pattern Recognition ---
-    // (Future: Identify frequent identical amounts/descriptions)
-
-    // --- STEP 6: Amount-Based Heuristics ---
-    // E.g. Exact $15.00 might be bank fee? Skipped for safety.
-
-    // --- STEP 7: Google AI (Gemini) ---
-    // High-certainty fallback using LLM
+    // --- STEP 6: AI Inference (Tier 6 - Google Gemini) ---
     if (window.GoogleAICategorizer) {
         try {
-            // Construct a mini-transaction object for the AI
             const aiResult = await window.GoogleAICategorizer.categorize({
                 description: description,
-                amount: 0 // Amount not strictly needed for category, but helpful context if avail
+                amount: 0
             });
 
             if (aiResult && aiResult.account) {
@@ -247,20 +276,17 @@ async function smartCategorize(description, vendors) {
         }
     }
 
-    // --- FALLBACK: FORCED CATEGORIZATION ---
-    // Ensure we never return null/empty. Force to "Suspense" (9970)
+    // --- STEP 7: Forced Fallback (Tier 7) ---
     const fallbackName = cleanDesc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-    const finalResult = {
+    return {
         vendorId: null,
-        accountId: '9970', // Automated Suspense / Review Required
+        accountId: '9970', // Automated Suspense
         vendorName: fallbackName,
         isNew: true,
         confidence: 0,
         method: 'Forced Fallback'
     };
-
-    return finalResult;
 }
 
 // Normalize vendor name (clean up common variations)
